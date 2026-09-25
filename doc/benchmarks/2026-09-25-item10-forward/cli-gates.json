@@ -1,0 +1,12 @@
+[
+  {
+    "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "outcome": "passed",
+    "stdout": "XOR_exact reconstruction count: 4/4\n\n"
+  },
+  {
+    "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "outcome": "passed",
+    "stdout": ""
+  }
+]

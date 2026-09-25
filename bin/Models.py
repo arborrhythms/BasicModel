@@ -78,7 +78,7 @@ from checkpoint_migrations import (
     stamp_checkpoint_schema,
 )
 from data import Data, TheData
-from Understanding import AnswerProgram, InputReconstruction, Understanding
+from Understanding import AnswerProgram, ConceptualField, InputReconstruction, Understanding
 from Output import AnswerConstruction, AnswerDerivation, thought_answer_meanings
 from contextlib import contextmanager as _contextmanager
 from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
@@ -4600,7 +4600,7 @@ class BaseModel(Mereology, nn.Module):
             "_chunk_utility_gain",
         )
         legacy_ws_fields = (
-            "_word_whole_ss", "_mereology_raised",
+            "_word_whole_ss",
             "_property_class_whole", "_anchored_pids",
             "_pending_words_summary", "_standalone_run_bytes",
             "_lbg_disp_sum", "_lbg_disp_sum_sq", "_lbg_count",
@@ -5593,6 +5593,16 @@ class BaseModel(Mereology, nn.Module):
             if not _old_key.endswith('.vq._codebook'):
                 continue
             _owner_key = _old_key[:-len('vq._codebook')] + 'W'
+            # A duplicate VQ key has no current entry of its own, so the
+            # carrier rewrite above cannot resolve it. Resolve its owner W
+            # through the same ownership map before removing the alias.
+            if _owner_key not in model_state:
+                for _role, _container in _carrier_key_roles.items():
+                    _candidate = _owner_key.replace(
+                        f'.subspace.{_role}.', f'.{_container}.{_role}.', 1)
+                    if _candidate in model_state:
+                        _owner_key = _candidate
+                        break
             if _owner_key not in model_state:
                 continue
             if _owner_key not in state:
@@ -6075,6 +6085,12 @@ class BaseModel(Mereology, nn.Module):
         ps_space = getattr(self, "perceptualSpace", None)
         ps_store = (getattr(ps_space, "percept_store", None)
                     if ps_space is not None else None)
+        if (ps_store is not None and self.wholePropertyBasis
+                and not self.serial and self.concept_binding == 'aligned'):
+            # Native reconstruction has already decoded attributed radix
+            # activity. Neither original lengths nor live perception is read.
+            return [bytes(row.reshape(-1).to(torch.uint8).tolist()).rstrip(b'\0')
+                    .decode('utf8', errors='replace') for row in recon.detach().cpu()]
         if ps_store is not None:
             vectors = recon.detach()
             # Normalise to [B, N, D].
@@ -9183,6 +9199,13 @@ class BasicModel(BaseModel):
             "combine_last_cs_sub": getattr(self, "_combine_last_cs_sub", None),
             "merge_diffs": merge_diffs,
         }
+        if not self.serial and self.concept_binding == 'aligned' and self.wholePropertyBasis:
+            live = self._combine_last_cs_sub
+            evidence = getattr(live, '_concept_activations', None)
+            carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
+                ConceptualField(live._concept_ids, evidence,
+                    live._concept_position_evidence, live._concept_position_spans,
+                    live._concept_extents) if evidence is not None else None}
         # The answer path's seed (spec 5.3): on the serial grammar path the
         # resolved input symbol is the grammar's ROOT IDEA (the STM-folded
         # S in the terminal conceptual state), which varies with the
@@ -9249,13 +9272,14 @@ class BasicModel(BaseModel):
         object.__setattr__(self, "_reconstruction_product", result)
         return result
 
-    def _reverse_input_surface(self, carrier):
+    def _reverse_input_surface(self, carrier, *, field=None):
         """Realize recovered input ideas through the shared numerical inverse.
 
         The input's grammar traversal is already complete. No generate policy
         or free chart expansion belongs in this path.
         """
-        carrier = self._reverse_body(carrier)
+        carrier = (self._reverse_body(carrier) if field is None else
+                   self._reverse_body(carrier, field=field))
         concepts = getattr(carrier, "_concepts_recon", None)
         carrier = self._reverse_perceptual(carrier)
         if concepts is not None and carrier is not None:
@@ -9331,10 +9355,14 @@ class BasicModel(BaseModel):
                 if unfolded is not None:
                     terminal_idea = unfolded   # [B, W, D_c]
             if terminal_idea is not None:
-                cs = self.conceptualSpace
-                cs.commit_event(terminal_idea)
-                rev_sub = self._reverse_input_surface(
-                    cs.subspace)
+                field = understanding.reconstruction_carriers.get('field')
+                if field is None:
+                    self.conceptualSpace.commit_event(terminal_idea)
+                    rev_sub = self._reverse_input_surface(self.conceptualSpace.subspace)
+                else:
+                    carrier = self.conceptualSpace.subspace.carrier_like()
+                    carrier.set_event(terminal_idea)
+                    rev_sub = self._reverse_input_surface(carrier, field=field)
             rev_ev = (rev_sub.materialize()
                       if rev_sub is not None
                       and hasattr(rev_sub, 'materialize')
@@ -9347,7 +9375,10 @@ class BasicModel(BaseModel):
                     and torch.is_tensor(rev_ev) and torch.is_tensor(fwd_ev)
                     and rev_ev.dim() == fwd_ev.dim() and rev_ev.dim() == 3):
                 # Band-aware seam: the input event's where/when widths, not ModelLoss's (0,0) OutputSpace band.
-                cost = self._reverse_event_loss(rev_ev, fwd_ev)
+                # Native surface bytes are decoded by activity. Score the
+                # continuous native rows produced by that same attribution.
+                score_event = getattr(rev_sub, '_reconstruction_percepts', rev_ev)
+                cost = self._reverse_event_loss(score_event, fwd_ev)
                 # Spec section 11: an EXACT, unmasked inverse identity has zero
                 # error and therefore no learning signal.  Flag it rather than
                 # let a perfect round trip pass as reconstruction learning.
@@ -11322,6 +11353,8 @@ class BasicModel(BaseModel):
         testLosses        = [[],[]]
         self.plot         = False
         accuracy          = []
+        from ConceptLessons import teach_concept_lessons
+        teach_concept_lessons(self)
         self._optimizer   = self.getOptimizer(lr=lr)
 
         # Test gating from BASIC_RUN_TEST. Tri-state: None (skip),
@@ -14782,7 +14815,9 @@ class BasicModel(BaseModel):
                             dtype=(_staged_event.dtype
                                    if _staged_event.is_floating_point() else None))
                     self._stage_fixed_residual_part_capacity()
-                else:
+                elif self.serial:
+                    # Only the serial word carrier has a variable part axis.
+                    # Parallel perception uses its configured fixed slot count.
                     # W is deliberately static (one of 16/32/64/128); the
                     # number of residual radix constituents inside one
                     # complete word is not.  Mark only that P axis dynamic so
@@ -17622,16 +17657,6 @@ class BasicModel(BaseModel):
         if _mereology_raise and terminal_ss is not None:
             object.__setattr__(terminal_ss, '_mereology_raise', True)
             object.__setattr__(self.perceptualSpace, '_mereology_raise', True)
-            # Stamp the STAGE-0 WholeSpace too so it computes the read-only
-            # run-structure observation (``_mereology_ratio_obs``) the top-down
-            # attention handoff dispatches on -- at sO>1 the stage-0 ws is NOT
-            # the terminal, and only the stage that runs ``_stage0_unity_forward``
-            # parks the obs. wholeSpaces[0] runs ONLY the unity branch (never the
-            # recurrent / autobind mutating path), so this enables the obs alone
-            # (byte-identical). Idempotent when stage 0 IS the terminal (sO=1).
-            _ws0 = self.wholeSpaces[0] if len(self.wholeSpaces) else None
-            if _ws0 is not None:
-                object.__setattr__(_ws0, '_mereology_raise', True)
         # <radialStmReduce> (Alec 2026-07-13, "min should be a radial min
         # to deal with signed activations"): the STM idea folds use the
         # RADIAL kernels (radmin/radmax) and their reverses use the radial
@@ -18049,6 +18074,8 @@ class BasicModel(BaseModel):
 
     def _forward_head(self, sub):
         """Head: outputSpace forward."""
+        if self.outputSpace.concept_ids:
+            sub = self._combine_last_cs_sub
         return self.outputSpace(sub)
 
     @staticmethod
@@ -22858,6 +22885,8 @@ class BasicModel(BaseModel):
         ``@torch.compiler.disable``'d); skipped under compile like the
         sibling provenance bookkeeping.
         """
+        if not self.serial:
+            return
         if getattr(self, 'router_wire_serial', 'both') not in (
                 'per-word', 'both'):
             return
@@ -22909,6 +22938,8 @@ class BasicModel(BaseModel):
         preserved. This is the final routing snapshot the inter-sentence
         predictor consumes (retained per plan §4).
         """
+        if not self.serial:
+            return
         if getattr(self, 'router_wire_serial', 'both') not in (
                 'boundary', 'both'):
             return
@@ -22969,6 +23000,8 @@ class BasicModel(BaseModel):
         old derivation, then rebuild ``generate_rules`` from the supplied idea
         seed (falling back to STM when no seed is usable).
         """
+        if not self.serial:
+            return
         from_idea = bool(getattr(self, 'reconstruct_from_idea', False))
         if getattr(self, 'idea_decode', False) and not from_idea:
             return
@@ -23466,7 +23499,7 @@ class BasicModel(BaseModel):
 
         The request addresses native percept identities, which choose the
         mereological units, and field brackets, which choose the region.
-        The source carrier is read-only; reconstruction retains that carrier.
+        The source carrier is read-only.
         """
         if pass_idx not in self.subsymbolic_loop:
             return ps_default
@@ -23477,7 +23510,9 @@ class BasicModel(BaseModel):
             return ps_default
         size = sum(owner._order_caps())
         query = torch.cat((field, field.new_zeros(size - len(field), *field.shape[1:])))
-        columns, attributed, spans = owner.cs_percept_attribution(query, observed=query)
+        columns, attributed, spans = owner.cs_percept_attribution(query, observed=query,
+            memberships=getattr(owner, '_cs_feature_memberships', None),
+            spans=getattr(owner, '_cs_position_spans', None))
         active = attributed.amax(dim=(1, 2, 3)) > 0
         if not bool(active.any()) or spans is None:
             return ps_default
@@ -23505,8 +23540,90 @@ class BasicModel(BaseModel):
                                       event[..., width:]), -1))
         return focused
 
-    def _reverse_body(self, sub):
-        """Per-stage body reverse, mirroring ``_forward_body`` order.
+    def _reverse_field(self, sub, field):
+        """Attribute owned conceptual evidence to native rows at its positions.
+
+        Resolve definitions by id. Descent uses the occurrence evidence before
+        the extent union, never an input event, tiling or current perception.
+        """
+        cs = self.conceptualSpaces[0]
+        store = cs._concept_allocator.layer(0)
+        ids = field.concept_ids
+        by_id = {(key[1] if isinstance(key, tuple) else key): row
+                 for row, key in store._tensor_row_keys.items()}
+        rows = torch.tensor([by_id.get(int(cid), -1) if cid != -1 else -1
+                             for cid in ids.reshape(-1).tolist()],
+                            device=ids.device, dtype=torch.long).reshape(ids.shape)
+        S, B, E, _ = field.evidence.shape
+        P = field.position_spans.shape[1]
+        located = field.position_evidence
+        observed = field.evidence[:, :, :, None].expand(S, B, E, P, 2).clone()
+        # Feature definitions carry occurrence evidence; composite rows carry
+        # extent evidence and descend against those observed occurrences.
+        defined = cs._concept_part_rows(store.features, ids.device)
+        bound = rows[:, None].expand(-1, B) if rows.ndim == 1 else rows
+        valid = (bound >= 0) & (bound < len(defined))
+        feature_rows = defined[bound.clamp(0, len(defined) - 1)] & valid
+        observed[:len(located)] = torch.where(
+            feature_rows[:len(located), :, None, None, None], located,
+            observed[:len(located)])
+        spans = field.position_spans
+        contained = ((spans[:, None, :, 0] >= field.extents[:, :, None, 0])
+                     & (spans[:, None, :, 1] <= field.extents[:, :, None, 1])
+                     & (spans[:, None, :, 1] > spans[:, None, :, 0]))
+        observed = (observed * contained[None, ..., None]).flatten(2, 3)
+        columns, attributed, _ = cs.cs_percept_attribution(
+            observed, observed=observed, inventory_rows=rows)
+        attributed = attributed[..., 0].reshape(-1, B, E, P)
+        radix = self.perceptualSpace.percept_store
+        width = max(int(self.inputSpace.outputShape[0]), int(field.extents.max()))
+        activity = attributed.new_zeros(B, width, len(radix))
+        primitive = self.wholeSpaces[0].subspace.what.primitive_properties
+        properties = attributed.new_zeros(B, width, len(primitive.members))
+        offsets = torch.arange(width, device=attributed.device)
+        covering = ((offsets >= spans[..., :1]) & (offsets < spans[..., 1:]))
+        for edge, col in enumerate(columns.tolist()):
+            support = attributed[edge].amax(1)
+            if (col // 2) % 2:
+                values = (support[..., None] * covering).amax(1)
+                unit = F.one_hot(torch.tensor(col // 4, device=values.device),
+                                 len(primitive.members)).to(values)
+                properties = torch.maximum(properties, values[..., None] * unit)
+            else:
+                row = store.features._rows[edge]
+                group = store.feature_groups.get((row, col), (col // 4,))
+                length = sum(len(radix.bytes_for(pid)) for pid in group)
+                # Parts read by containment at the extent, independently of
+                # WholeSpace's finer run positions. An equal-length bracket
+                # locates the whole ordered group; a larger bracket does not.
+                brackets = torch.cat((spans, field.extents), 1)
+                support = torch.cat((support, attributed[edge].amax(-1)), 1)
+                fits = brackets[..., 1] - brackets[..., 0] == length
+                shift = 0
+                for pid in group:
+                    at = offsets == brackets[..., :1] + shift
+                    values = (support[..., None] * (fits[..., None] & at)).amax(1)
+                    unit = F.one_hot(torch.tensor(pid, device=values.device), len(radix)).to(values)
+                    activity = torch.maximum(activity, values[..., None] * unit)
+                    shift += len(radix.bytes_for(pid))
+        # Property attribution distributes support over primitive members.
+        # Native identities, never nearest distributed codes, address decode.
+        byte_support = primitive.reverse(properties)
+        byte_ids = [radix.get_id(bytes([value])) for value in range(256)]
+        known = [value for value, pid in enumerate(byte_ids) if pid is not None]
+        native = torch.tensor([byte_ids[value] for value in known],
+                              device=activity.device, dtype=torch.long)
+        property_activity = torch.zeros_like(activity).index_add(
+            -1, native, byte_support[..., known])
+        recovered = sub.carrier_like()
+        recovered._radix_activity = torch.maximum(activity, property_activity)
+        return recovered
+
+    def _reverse_body(self, sub, *, field=None):
+        """Native field attribution, or the serial/dense numerical inverse.
+
+        Native aligned perception inverts its explicitly supplied forward
+        evidence by concept id. It never reads stage events or a saved stack.
 
         Inverts the primary IS→PS→CS→OS path's body: walk stages in
         reverse, undo the optional N-halving ``merge`` then
@@ -23525,6 +23642,10 @@ class BasicModel(BaseModel):
         reconstruction (approximate through the averaged loops, per the
         single-input-reverse contract) instead of aborting.
         """
+        if not self.serial and self.concept_binding == 'aligned' and self.wholePropertyBasis:
+            # A free inverse cannot substitute the latest perception. Only
+            # the explicitly supplied forward field supplies evidence.
+            return self._reverse_field(sub, field) if field is not None else sub
         carriers = getattr(self, "_combine_carriers", None)
         _concepts_recon = None
         for t in reversed(range(len(self.body_stages))):
@@ -24429,7 +24550,7 @@ class BasicModel(BaseModel):
             if _restore_ev is not None:
                 body_sub.set_event(_restore_ev)
         pred = head_sub.materialize() if head_sub is not None else None
-        if pred is not None:
+        if pred is not None and not self.outputSpace.concept_ids:
             pred = self.normalizer.denormalize(pred, which="output")
 
         # Capture symbol_states by iterating per-stage WholeSpaces

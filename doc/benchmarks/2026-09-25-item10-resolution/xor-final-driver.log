@@ -1,0 +1,8 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.4s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-001] 1 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 54.6s; peak 1.14 GiB
+[worker-000] exit 0; 55.6s; peak 1.14 GiB
+Result: passed, exit 0; 2/2 cases completed.
+output/item10-resolution/xor-final/result.json

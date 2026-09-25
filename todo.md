@@ -26,9 +26,11 @@ Work follows
 [Testing](doc/Testing.md). The September 17 handoff and preserved candidates
 are in [the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md).
 
-**Publish rule, every item:** failing probe → fix → affected files → one
-source-matched full receipt → BasicModel commit/push → WikiOracle bump/push,
-with the co-author trailer; then stop and report for review. Natural word →
+**Publish rule, every item (updated by Alec, September 24):** failing probe →
+fix → affected files → one source-matched full receipt → **stop for Claude's
+code review** → resolve review → BasicModel commit/push → WikiOracle bump/push,
+with the co-author trailer. Do not commit or push before the review.
+Natural word →
 operator associations use the existing compose/generate grammars. Mechanism
 probes do not satisfy learning gates, and a null result is recorded as null.
 **No test pins a random seed in order to pass** (Alec, 2026-09-21): a fixed
@@ -36,45 +38,24 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
-- **10. Evaluate bounded pi and sigma folds as normalized means** (Alec's
-   proposal, 2026-09-21; [proposal and first evaluation](doc/Architecture.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21)).
-   A new item; the number is reused. Today Sigma and Pi are one map in the
-   atanh chart, so a stack collapses to one affine map and one tanh and the
-   only nonlinearity is the clamp at the rails. Proposed: sigma a weighted
-   arithmetic mean in the raw chart, pi a weighted geometric mean in the log
-   chart, non-negative `L D U` weights normalised per output, a convex bias,
-   exact reverses, on `u` in `[0, 1]`. Claude's evaluation is in the doc: the
-   algebra holds. As written it is the **monotone** form, which is what parts
-   and wholes need and which cannot fit XOR (MSE .25). **XOR belongs to
-   conceptual space with the monotonic flags off** (Alec): signed weights,
-   where a negative weight is the complement. There the pair that works is a
-   signed normalised sigma in the raw chart feeding today's pi unchanged — 8
-   of 8 unseeded runs at four hidden units, 6 of 8 at two; today's same-chart
-   pair 0 of 8; both folds normalised 0 of 8, since a mean has no gain.
-   **Signed weights take the L2 norm, the monotone means the L1 sum** (Alec):
-   over 20 signed layers L1 keeps none of the energy and its reverse gains
-   10⁹, L2 keeps all of it with reverse gain 2.3; L2 is bounded on inputs of
-   at most unit energy, and overshoots into pi's clamp on cube-valued ones,
-   where both are needed. Codex
-   evaluates in the real layers behind a `normalize` mode, **turned on
-   selectively**: first `test_sigmapi` and the crisp-XOR gates of
-   `test_explicit_dimensions`, in conceptual space without the monotonic flag
-   and with at least four hidden units; then the membership folds of the
-   perceptual towers with the monotone means; no production config until
-   measured. **Not the concept pyramid as it stands:** where sigma alone builds
-   higher orders and one member of several is active, a normalised mean gives
-   .125 → .016 → .002 over three orders at 8 members, while max and the
-   probabilistic sum hold 1 (finding 10); compare those union forms there.
-   Answer the doc's findings 4–9 with measurements (init at
-   width or per-node normalisation in butterfly mode; the slope at the log
-   floor; the operating range of fold inputs; contraction with depth; kernel
-   count and sentences/s). Exit: the measurements recorded; the unseeded XOR
-   gates passing under the new mode, or the recorded reason they cannot; and a
-   recommendation for Alec — adopt (then the tanh/atanh path is deleted: no
-   two permanent modes), adopt for memberships only, or drop.
-   Retain item 11a's historical [256-position false-support limit](doc/benchmarks/2026-09-23-item11a/README.md#measurements)
-   in the union comparison alongside item 11c’s max/min choice and item 11b's exact-zero membership controls;
-   the membership read has no such accumulation limit.
+**Review approved for publication (Alec, September 25):**
+
+- **11c residue: accepted September 25.** Refine-before-raise keeps three
+  completed optimizer updates without strict improvement in the worst local
+  both residual; improvement resets patience and a pure/unknown read clears
+  it. No change to the accepted policy.
+- **10. Decided: dropped (Alec, September 25).** Normalized means and their
+  mode are deleted; the [evaluation](doc/benchmarks/2026-09-24-item10/README.md)
+  preserves the measurements and rejected source. The final review correction
+  removes saved percept events, reconstructs from located concept evidence
+  through native activity, asserts the serial/parallel operator exclusions,
+  and removes the unexercised XOR grammar. The lesson teaches memberships and
+  one name, never XOR. `XOR_exact` reconstructs **4/4** against the stated 50%
+  bar and passes the unchanged crisp-output assertion, unseeded. The
+  [forward-artifact receipt](doc/benchmarks/2026-09-25-item10-forward/README.md)
+  records the correction and validation. Review is complete; publish the
+  reviewed source and record its landing hash below.
+
 - **9. Expectation learning gates.** The negative-image mechanism and residual
    query credit are in (`7d7dc4f`,
    [measurements](doc/benchmarks/2026-09-21-item2/README.md)): the predictor

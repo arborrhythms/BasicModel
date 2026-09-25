@@ -1,0 +1,10 @@
+.F......                                                                 [100%]
+=================================== FAILURES ===================================
+_______________ test_relative_links_resolve[doc/Architecture.md] _______________
+test/test_doc_links.py:50: in test_relative_links_resolve
+    assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E   AssertionError: doc/Architecture.md: unresolved ['benchmarks/2026-09-24-item10/README.md']
+E   assert not ['benchmarks/2026-09-24-item10/README.md']
+=========================== short test summary info ============================
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/Architecture.md]
+1 failed, 7 passed in 2.58s

@@ -84,10 +84,14 @@ class PrimitiveProperties(nn.Module):
     def reverse(self, evidence):
         """Distribute property support over its learned primitive members.
 
-        This is normalized attribution through a many-to-one read. The
-        ordered input witness, not this attribution, reconstructs bytes.
+        This is normalized attribution through a many-to-one read. Located
+        conceptual evidence supplies its scope; radix activity decodes the
+        attributed primitive rows as a best-effort reconstruction.
         """
         weights = self.coefficients()
+        # Descent follows existing memberships. Unlike forward teaching,
+        # it has no observed primitive on which to write a missing member.
+        weights = torch.where(weights > 0, weights, 0.)
         weights = weights / weights.sum(-1, keepdim=True).clamp_min(1e-12)
         return evidence @ weights
 

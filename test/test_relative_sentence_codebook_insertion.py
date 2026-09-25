@@ -81,6 +81,16 @@ class TestMaybeLearnRelationInsertion(unittest.TestCase):
         idea2 = torch.zeros(D)
         idea2[2] = 1.0
 
+        # This insertion probe assumes three already-known, distinct ideas.
+        # Give the fixed codebook those exact rows: arbitrary orthogonal
+        # queries can otherwise snap to the same random prototype. The
+        # nearest-row lookup and relation writer still execute normally.
+        with torch.no_grad():
+            prototypes = ws.subspace.what.getW()
+            prototypes.zero_()
+            prototypes[:3, :3].copy_(torch.eye(3).to(prototypes))
+        self.assertEqual([ws.nearest_ws_row(v)[0] for v in (predicate, idea1, idea2)],
+                         [0, 1, 2])
         pred_pos = cs._maybe_learn_relation(predicate, idea1, idea2)
         self.assertIsNotNone(pred_pos, "score 1.0 >= tc 0.3 must accept")
         self.assertIsInstance(pred_pos, int)
@@ -92,6 +102,7 @@ class TestMaybeLearnRelationInsertion(unittest.TestCase):
             len(children), 2,
             f"predicate must parent exactly the two ideas; got "
             f"{children!r}")
+        self.assertEqual(children, [ws.ensure_ws_position(1), ws.ensure_ws_position(2)])
         for c in children:
             self.assertEqual(
                 ws.taxonomy_parent(c), pred_pos,

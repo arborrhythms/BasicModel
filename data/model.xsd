@@ -172,6 +172,7 @@
            ramsification table; its depth is not the mereological rank. Default
            false: no lattice raising (the provenance table still exists). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="mereologyRefinePatience" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Experimental replacement for the row-wide run-count passback.
            Feeds overlapping PS part and WS whole .where candidates through
            the existing subsymbolic pump, settles exact local agreement, and
@@ -801,6 +802,7 @@
       <!-- embedding (text/LM, the default for language configs) | numeric
            (dense slab, e.g. MNIST). Was the architecture-level <modelType>. -->
       <xs:element name="dataType" type="dataTypeEnum"/>
+      <xs:element name="conceptLessons" type="xs:string"/>
       <xs:element name="dataset" type="datasetEnum"/>
       <xs:element name="numShards" type="xs:positiveInteger"/>
       <xs:element name="maxDocs" type="xs:positiveInteger"/>
@@ -1484,6 +1486,7 @@
            features faster so it converges to a crisp solution within the
            epoch budget. -->
       <xs:element name="lrScale" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="conceptIds" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

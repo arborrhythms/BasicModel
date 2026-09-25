@@ -1,0 +1,68 @@
+33 [1.0, 0.0] 0 [False]
+34 [1.0, 0.0] 0 [False]
+35 [1.0, 0.0] 0 [False]
+36 [1.0, 0.0] 0 [False]
+F
+=================================== FAILURES ===================================
+_____ test_learned_particular_stays_at_one_scattered_kind_raises_to_two[0] _____
+
+run = 0
+
+    @pytest.mark.parametrize('run', range(3))
+    def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
+        cs, felix, _ = field_case([49, 49])
+        garfield = _mint_row(cs, 1, 102)
+        cs.add_concept_edge(garfield, 0, 1., negated=True)
+        cs._promotion_enabled = True
+        cs._ensure_concept_pool()
+        store = Spaces._concept_alloc_of(cs).layer()
+        with torch.no_grad():
+            store.features.values.zero_()
+            store.features.values[0] = 1.  # supplied primitive positive membership
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        native, extents = binary_features(cs, torch.tensor([[49], [48], [65]]))
+        dictionary = torch.rand(cs.nVectors, cs.nDim)  # no selected initialization
+        target = torch.tensor([[1., 0.], [0., 1.], [0., 0.]])
+        initial = None
+        for step in range(32):
+            optimizer.zero_grad()
+            read = cs.cs_read_memberships(native, extents)
+            _, field = cs.cs_forward_content(read, dictionary)
+            loss = (field[felix, :, 0] - target).square().mean()
+            if initial is None:
+                initial = float(loss.detach())
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            cs._model._training_step_count += 1
+        assert initial > .1
+        native, extents = binary_features(cs, torch.tensor([[49, 49]]))
+        read = cs.cs_read_memberships(native, extents)
+        _, field = cs.cs_forward_content(read, dictionary)
+        torch.testing.assert_close(field[felix, 0, 0], torch.tensor([1., 0.]))
+        observe(cs, field, 32)
+        context = torch.ones(store.nOutput)
+        evidence = torch.ones(2 * (store.nOutput + 1))
+        assert cs.maybe_raise_order(felix, garfield, context, batch=0, evidence=evidence) is None
+        # The same learned property over separated particulars cannot become
+        # pure by further fitting this definition: both supports remain witnessed.
+        native, extents = binary_features(cs, torch.tensor([[49, 65, 48]]))
+        for step in range(33, 37):
+            optimizer.zero_grad()
+            read = cs.cs_read_memberships(native, extents)
+            _, field = cs.cs_forward_content(read, dictionary)
+            loss = (field[felix, 0, 0] - torch.tensor([1., 0.])).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            observe(cs, field, step)
+            print(step, field[felix, 0, 0].detach().tolist(), store.refinement_stale[felix].item(), cs._refinement_raise_ready[felix].tolist())
+        cat = cs.maybe_raise_order(felix, garfield, context, batch=0, evidence=evidence)
+>       assert cat is not None and cs.order_slice(2)[0] <= cat < cs.order_slice(2)[1]
+E       assert (None is not None)
+
+test/test_refine_raise.py:143: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[0]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 warning in 4.25s

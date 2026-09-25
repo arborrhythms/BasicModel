@@ -1,0 +1,9 @@
+{
+  "source": "test/test_explicit_dimensions.py",
+  "comparison": "HEAD function bodies and decorators, excluding line positions",
+  "unchanged": true,
+  "functions": {
+    "test_at_least_50_pct_inputs_reconstruct": "aa5219bb49e0c79cfbca8e572a589820fe8d01b11b8d9909611af9eab8c49c7f",
+    "test_output_mse_is_crisp": "a848821711b89119f45eee46fd469ef17ced851fb7e84693a0c8ff24b700d30f"
+  }
+}

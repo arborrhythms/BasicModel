@@ -95,7 +95,8 @@ sub-elements `<training>` and `<data>` (see below).
 | `reconstructFromIdea` | bool | `false` | Legacy evaluation selection of recovered word ideas instead of the single-slot seed. Tied mode always returns its owned completed reconstruction, independently of this flag, and never enters the free generate chart ([Models.py](../bin/Models.py)). |
 | `categoryCodebook` | bool | `true` | MetaSymbol participation-category codebook for the role-collapsed grammar: a small role-space `VectorQuantize` initialized with one prototype per labelled grammar role (`op_I1`, `op_I2`, `op_O1`, ...). Unsettled MetaSymbols accumulate bounded temporary role evidence; once mass/confidence/margin/stability thresholds are met, the MetaSymbol commits to one category id and its pending row is discarded. Structured grammar layers use the role context for all `transformChooser` modes: as an input feature for `mlp`, and as a labelled-role score prior for anchordot/default routing. See [Language.md $\to$ Participation Categories](Language.md). |
 | `adverbEigEdit` | bool | `false` | Legacy/direct `LiftLayer` helper flag for the adverb sparse eigenvalue edit. The live `adverb` grammar operator force-builds the same zero-init projection and calls `LiftLayer.apply_adverb`, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, an adverb modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_adv`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
-| `mereologyRaise` | bool | `false` | Mereological node raising: perception's autobind hook builds a lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts; the actual parthood provenance lives in `part_chain`. The always-built ramsification table separately records sigma/pi derivation paths and must not be read as the lattice rank or noun class. Default off disables node raising but not fold-path recording. |
+| `mereologyRaise` | bool | `false` | Enable native meronomy binding and the conceptual refine/raise decision. Beyond order-1 symbolization, a raise requires a both reading with discontiguous retained support after stalled learning; counts never trigger it. |
+| `mereologyRefinePatience` | positive int | `3` | Completed optimizer updates without a strict improvement in the worst local `min(c⁺, c⁻)` reading before discontiguous support may raise an order. Pure/unknown evidence and improvement reset patience; repeated reads do not advance it. |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |
@@ -135,6 +136,7 @@ Data loading and filtering.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `conceptLessons` | string | (empty) | Optional JSON primitive memberships and single-occurrence name lessons, resolved relative to `data/`. Runs before ordinary supervised training; unlabelled training inputs witness located conjunctions and output sigma weights start at zero. Used by `XOR_exact.xml`. |
 | `dataset` | string | `"xor"` | Dataset key: `xor`, `mnist`, `tomatoes`, `text`, `inline`, `grammar`. Omit for inference-only models. |
 | `numShards` | int | `1` | Shard count (streaming text datasets). |
 | `maxDocs` | int | `10000` | Per-shard document cap. |
@@ -297,10 +299,10 @@ Lifts raw data into the model's internal representation.
 
 ### `<PartSpace>`
 
-Transforms lifted input into perceptual features via its synthesis fold —
-a `SigmaLayer` (additive/union; the Pi/Sigma swap of the analysis/synthesis
-plan, rev. 2026-06-09: PS is bottom-up SYNTHESIS over atoms; the
-multiplicative Pi fold moved to WholeSpace as top-down analysis).
+Synthesizes recurrent ordered groups from existing parts. A group's
+distributed code is the max of its constituent codes; the ordered
+containment read retains the distinction between anagrams. Native
+PartSpace has no `SigmaLayer` or `PiLayer`.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -308,15 +310,14 @@ multiplicative Pi fold moved to WholeSpace as top-down analysis).
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
 | `nVectors` | int | sentinel | Initially allocated percept-codebook rows. When `> nOutput`, enables vector quantization with top-k selection of `nOutput` rows. |
 | `maxVectors` | int | `nVectors` | Hard logical ceiling for the canonical meronomy/radix percept store. Promotions are queued during forward and installed after `optimizer.step`; storage grows geometrically only at that safe boundary. Existing ids and optimizer state are preserved. |
-| `invertible` | bool | `false` | `true`: the PartSpace `SigmaLayer` uses the invertible LDU path for forward/reverse. |
+| `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `synthesis` | string | `"lexicon"` | Bottom-up synthesis strategy (renamed from `<chunking>`, which is rejected loudly). `meronomy` is the only canonical mode: the PartSpace fold ladder (doc/plans/2026-09-10-meronomy-fold-ladder.md; until its Phase 1 lands it is backed by the radix store). `lexicon`, `bpe`, `mphf`, `byte`/`none` and `radix` are legacy front ends selected through `Legacy.py`. `analyse` was removed from PartSpace; top-down cuts live on WholeSpace `<analysis>`. |
-| `butterfly` | bool | — | DEPRECATED per-space alias for the architecture-level `<sigmaPi>` enum (`true` $\to$ `butterfly`, `false` $\to$ `last`). The code default for `<sigmaPi>` is `butterfly`, so the FFT-style element-pair cascade on the PS fold (cross-element mixing on the flattened `[B, N*D]` view) is **ON by default**; configs set `false` to opt out. Required for `MM_xor.xml` convergence. |
+| `butterfly` | bool | — | Deprecated per-space alias for the architecture-level `<sigmaPi>` enum. It does not construct a fold in native PartSpace; grammar lift/lower own their operators. |
 | `wordLearning` | int | `2` | Active lexicon-growth mode. `0` = frozen codebook; `>=1` = on first sight of a new word, insert into the lexicon and tag it on the meronomy. Several trained configs override this to `0` or `1`. |
 
-Sigma layer math: $y_j = \tanh(W x + b)$ (the additive/union fold). The
-PS `<codebook>` element was retired (the percept prototypes live on the
+The PS `<codebook>` element was retired (the percept prototypes live on the
 `.what` basis; radix's PerceptStore IS the surface codebook). See
 [Architecture.md](Architecture.md) and [Philosophy.md](Philosophy.md) for
 the analysis/synthesis orientation.
@@ -331,24 +332,25 @@ admission parameter and its calibration are removed. `conceptUseFloor` remains t
 gate over measured use.
 
 Holds the conceptual dictionary, location-aligned PS/WS binding state, and
-short-term memory. The sigma/pi fold ladders live on PS and WS, respectively.
+short-term memory. Located pi is performed in the order-0 field, and sigma
+unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Active concept vectors. For XOR: 3. |
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
 | `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns concepts, META relations, and taxonomy. Aligned property-basis stages share one table; order is metadata, not a row partition. This value is independent of `WholeSpace.nVectors`, PartSpace's allocated/max rows, live `nOutput`, SymbolSpace references, and STM capacity. |
-| `invertible` | bool | `false` | `true`: `SigmaLayer(invertible=True)` (exact inversion via `atanh` + $W^{-1}$); `false`: separate `sigma1` / `sigma2`. |
+| `invertible` | bool | `false` | Space construction flag. Aligned native binding retains both perceptual views for reconstruction; ConceptualSpace owns no unary chart fold. |
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: no longer constructs an attention pass in conceptual processing; kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `butterfly` | bool | — | **Silently ignored**: ConceptualSpace never reads a per-space `<butterfly>` — only PartSpace and WholeSpace carry the per-space read (the deprecated alias for architecture-level `<sigmaPi>`). A `<ConceptualSpace><butterfly>` element in a config has no effect. |
 | `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
 
-> `ConceptualSpace` is now a bookkeeping carrier for STM/event state. The
+> `ConceptualSpace` owns definitions, evidence and STM/event state. The
 > former per-stage `sigma_in` / `sigma_cs` layers are retired and no longer
-> constructed on the live path. On aligned serial BasicModel, all non-raw PS
-> and WS folds bind by equal location and actual concept order is explicit
+> constructed on the live path. On aligned BasicModel, native PS
+> and WS views bind by location and actual concept order is explicit
 > metadata; symbolic generalization remains a separate phase.
 
 ### `<WholeSpace>`
@@ -358,13 +360,12 @@ owns 256 learned primitive memberships alongside its distributed code.
 A-priori byte examples teach the initial properties; runtime analysis reads
 those parameters. Constant-signature runs keep their input brackets.
 Word staging retains byte counts, and the compiled read evaluates the live
-memberships. With parallel symbolic cutover and PartSpace meronomy, each
-tower has a learned map into the shared conceptual chart: WholeSpace unions
-support over an extent; PartSpace requires every contained position. See
-[the property design](Architecture.md#item-11a-primitive-properties-and-grounded-extents-september-23).
+memberships. Native conceptual definitions read PartSpace containment and WholeSpace
+pervasion from those memberships. The distributed codes serve similarity and
+tied reconstruction, never conceptual presence. See [the membership design](Architecture.md#the-three-cognitive-operations-updated-for-11c).
 
 The whole-percept/property side of perception and the home of top-down
-ANALYSIS. WholeSpace owns the Pi fold (multiplicative/intersection), the
+analysis. WholeSpace owns primitive property memberships, the
 `<analysis>` division knob, and the `<lexer>` compatibility knob. It is
 upstream of ConceptualSpace and SymbolSpace and therefore owns no concept,
 META, taxonomy, or symbol-prototype inventory. See
@@ -400,17 +401,18 @@ their parameters independently of either perceptual tower.
 
 ### `<OutputSpace>`
 
-Maps symbols to final predictions via linear layers.
+Maps symbols to final predictions, or reads named conceptual positive poles.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `conceptIds` | string | (empty) | Space-separated persistent concept ids. The bound native field resolves each id per batch and reads its positive pole as one scalar in `[0,1]`; no linear projection, bias or output denormalization is applied. Requires a native conceptual field. |
 | `nOutput` | int | sentinel | Output values. For XOR: 1. |
 | `nDim` | int | `1` | Per-output dim. |
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `invertible` | bool | `false` | Rarely set on OutputSpace. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `nonlinear` | bool | `false` | OutputSpace is linear by default; rescales via `Data.denormalize`. |
-| *(readout — retired 2026-06-19)* | — | — | The OutputSpace regression head (backlog #11): with `nVectors == 1` (or no codebook) it is an unquantised linear `nInputDim -> nOutputDim` plus a learned scalar intercept. The former `<readout>` enum (`identity` \| `sigmoid`) was retired — the head is always linear+bias (a binary $\{0,1\}$ target like XOR is regressed, not squashed; see `OutputSpace.lrScale` + `subsymbolicOrder=3`). Ignored by quantised heads. |
+| *(readout — retired 2026-06-19)* | — | — | The OutputSpace regression head (backlog #11): with `nVectors == 1` (or no codebook) it is an unquantised linear `nInputDim -> nOutputDim` plus a learned scalar intercept. The former `<readout>` enum (`identity` \| `sigmoid`) was retired — the unbound regression head is linear+bias. Named concept outputs read native evidence instead. Ignored by quantised heads. |
 
 `LinearLayer` with `(bias, temp)` support for ergodic mode.
 

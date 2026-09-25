@@ -169,10 +169,9 @@ def test_property_class_whole_minted_once():
     assert ss.property_class_whole([LETTER, DIGIT]) == ss.property_class_whole([DIGIT, LETTER])
 
 
-def test_cross_tower_letters_in_word_bind_and_raise():
+def test_cross_tower_letters_bind_without_raising():
     ss = _whole_space()
     ss.subspace.what.enable_ramsification(2)
-    ss._mereology_k_many = 2                              # 3 part-types > 2 -> raise
     # 3 letter part-TYPES (pids) at positions inside ONE word-run span (0,3).
     part_pids = torch.tensor([65, 66, 67])               # 'A','B','C' codes
     part_where = torch.tensor([0, 1, 2])
@@ -182,16 +181,13 @@ def test_cross_tower_letters_in_word_bind_and_raise():
     # 3 letter-TYPES are parts of the word-type (set: ps_children doubles after
     # a raise, per the documented wrinkle).
     assert len(set(ss.ps_children_of_whole(whole))) == 3
-    assert ss.part_chain                                  # raise fired (3 > 2)
-    ho = next(iter(ss.part_chain))
-    assert len(ss.part_chain[ho]) == 3
+    assert not ss.part_chain
 
 
 def test_cross_tower_where_gates_the_edge():
     # "sometimes yes, sometimes no, and we know by the .where": a letter whose
     # .where is OUTSIDE the word span is NOT a part of the word.
     ss = _whole_space()
-    ss._mereology_k_many = 4
     part_pids = torch.tensor([65, 66])
     part_where = torch.tensor([0, 9])                    # 2nd letter at pos 9
     whole_spans = torch.tensor([[0, 3]])                 # word covers 0..2
@@ -229,7 +225,6 @@ def test_taxonomy_parents_empty_for_unbound():
 def test_autobind_cross_tower_live_where_gated():
     ss = _whole_space()
     ss.subspace.what.enable_ramsification(2)
-    ss._mereology_k_many = 2
     ss._staged_analysis_spans = torch.tensor([[[0, 3]]])   # B=1, one word span (0,3)
     pid_2d = torch.tensor([[65, 66, 67, 68]])              # 4 percept-types
     percept_where = torch.tensor([[0, 1, 2, 9]])           # last is OUTSIDE the span
@@ -237,7 +232,7 @@ def test_autobind_cross_tower_live_where_gated():
     Spaces.ConceptualSpace._autobind_cross_tower(cs, pid_2d, percept_where, ss)
     word = ss.property_class_whole([WORD])
     assert len(set(ss.ps_children_of_whole(word))) == 3    # 65,66,67 in span; 68 out
-    assert ss.part_chain                                   # raise fired (3 > 2)
+    assert not ss.part_chain
 
 
 def test_autobind_cross_tower_noop_without_spans():

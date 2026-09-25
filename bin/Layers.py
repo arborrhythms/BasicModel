@@ -3047,11 +3047,10 @@ class GrammarLayer(Layer):
 
 
 class SigmaLayer(GrammarLayer):
-    """Additive (summation) fold feature of the subsymbolic loop.
+    """Additive chart map used by the grammar's LiftLayer.
 
-    Substrate, not a grammar operation. Instantiated directly by spaces
-    (``ConceptualSpace.sigma_percept``) and used by the subsymbolic
-    loop; not chart-dispatched.
+    Lift owns the operand assembly and dispatch. Perceptual towers use
+    their native meronomies; they do not own this fold.
 
     With ``nonlinear=True``, ``forward`` charts its input through atanh,
     applies the inner linear map, then returns tanh of the result. For the
@@ -4484,12 +4483,11 @@ class IndexedSigmaConceptsFromPercepts(Layer):
 
 
 class PiLayer(GrammarLayer):
-    r"""Multiplicative boundary fold feature of the subsymbolic loop:
+    r"""Multiplicative chart map used by the grammar's LowerLayer:
     ``[-1, 1] -> [-1, 1]``.
 
-    Substrate, not a grammar operation. Instantiated directly by spaces
-    (``PartSpace.pi_input`` / ``pi_concept``) and used by the
-    subsymbolic loop; not chart-dispatched.
+    Lower owns the operand assembly and dispatch. Perceptual towers use
+    their native meronomies; they do not own this fold.
 
     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
 
@@ -5687,6 +5685,9 @@ class ConceptualAttentionLayer(SparseLayer):
                 ('managed', torch.zeros(nOutput, dtype=torch.bool)),
                 ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
                 ('witness_strength', torch.zeros(nOutput)),
+                ('refinement_best', torch.full((nOutput,), float('inf'))),
+                ('refinement_stale', torch.zeros(nOutput, dtype=torch.long)),
+                ('refinement_step', torch.full((nOutput,), -1, dtype=torch.long)),
                 ('context_seen', torch.zeros(nOutput, dtype=torch.long)),
                 ('observation', torch.zeros((), dtype=torch.long))):
             # The structural sidecar owns these row-aligned values. Keeping
@@ -5754,7 +5755,8 @@ class ConceptualAttentionLayer(SparseLayer):
         self.features.nOutput = size
         for name, value in list(self.named_buffers(recurse=False)):
             if value.ndim == 1:
-                fill = 1 if name == 'participation' else 0
+                fill = {'participation': 1, 'refinement_best': float('inf'),
+                        'refinement_step': -1}.get(name, 0)
                 setattr(self, name, torch.cat((value, value.new_full((size - old,), fill))))
         if self.where.numel():
             self.where = torch.sparse_coo_tensor(self.where.indices(), self.where.values(),
@@ -14134,6 +14136,29 @@ class RadixLayer(Layer):
         ``reverse()`` contract holds.
         """
         return self.lookup_with_id(chunks)
+
+    def decode_activity(self, activity):
+        """Realize native row activity at byte offsets, with no code matching.
+
+        A maximum chooses among ambiguous rows. Empty activity emits nothing;
+        a chosen multi-byte row occupies its span before the next selection.
+        """
+        if activity.ndim != 3 or activity.shape[-1] != len(self):
+            raise ValueError('radix decode requires [batch, position, active row]')
+        if not bool(torch.isfinite(activity).all()):
+            raise RuntimeError('radix activity contains NaN/Inf')
+        result = torch.zeros(activity.shape[:2], device=activity.device, dtype=torch.long)
+        strength, rows = activity.detach().max(-1)
+        for b in range(len(result)):
+            position = 0
+            while position < result.shape[1]:
+                raw = self.bytes_for(int(rows[b, position])) if strength[b, position] > 0 else b''
+                count = min(len(raw), result.shape[1] - position)
+                if count:
+                    result[b, position:position + count] = torch.tensor(
+                        list(raw[:count]), device=result.device)
+                position += max(1, count)
+        return result
 
     def reverse(self, vec, *, symbolic_space=None):
         """Layer-API reverse: vec -> canonical bytes (or list-of-bytes).

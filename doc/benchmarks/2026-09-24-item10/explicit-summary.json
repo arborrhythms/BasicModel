@@ -1,0 +1,31 @@
+{
+  "reason": "test_failure",
+  "exit_code": 1,
+  "elapsed_seconds": 95.78310462494846,
+  "peak_aggregate_memory_bytes": 10733217392,
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 2,
+    "max_files": 1
+  },
+  "compile_cache_retries": [],
+  "selected": 28,
+  "completed": 28,
+  "outcomes": {
+    "passed": 27,
+    "failed": 1
+  },
+  "source_files": 647,
+  "source_sha256": "443645887ff450c14939eb3d543a0ce430b1de31f2aa0a7fbf046f929acb886c",
+  "failures": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "message": "test/test_explicit_dimensions.py:235: in test_output_mse_is_crisp\n    self.assertLess(\nE   AssertionError: 0.6183774975 not less than 0.05 : XOR_exact output MSE=0.6184 over 4 rows (expected <0.05; crisp basin ~0.004). Predictions near 0.5 => the readout under-converged (regression of the OutputSpace lrScale=0.5 two-timescale fix)."
+    }
+  ]
+}

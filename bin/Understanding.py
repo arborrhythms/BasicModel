@@ -129,6 +129,25 @@ class InputReconstruction:
 
 
 @dataclass(frozen=True)
+class ConceptualField:
+    """Forward evidence addressed by concept id, with its spatial brackets.
+
+    No percept events or input stack are retained. Clones preserve gradients
+    while insulating reconstruction from the next perception's row binding.
+    """
+
+    concept_ids: Any
+    evidence: Any
+    position_evidence: Any
+    position_spans: Any
+    extents: Any
+
+    def __post_init__(self) -> None:
+        for name in self.__dataclass_fields__:
+            object.__setattr__(self, name, getattr(self, name).clone())
+
+
+@dataclass(frozen=True)
 class Understanding:
     """Immutable logical products of one ``forward()`` call."""
 

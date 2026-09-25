@@ -1,0 +1,26 @@
+[collect] 23 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.40 GiB
+[worker-000] 4 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 11.9s; peak 6.72 GiB
+[worker-001] 1 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 7.1s; peak 3.33 GiB
+[worker-002] 4 selectors; limit 1800s, 8.0 GiB
+[worker-002] exit 0; 11.9s; peak 6.61 GiB
+[worker-003] 1 selectors; limit 1800s, 8.0 GiB
+[worker-003] exit 0; 6.3s; peak 2.39 GiB
+[worker-004] 2 selectors; limit 1800s, 8.0 GiB
+[worker-004] exit 0; 13.4s; peak 7.41 GiB
+[worker-005] 2 selectors; limit 1800s, 8.0 GiB
+[worker-005] exit 0; 7.4s; peak 3.63 GiB
+[worker-006] 4 selectors; limit 1800s, 8.0 GiB
+[worker-006] exit 0; 12.7s; peak 7.25 GiB
+[worker-007] 1 selectors; limit 1800s, 8.0 GiB
+[worker-007] exit 0; 7.2s; peak 3.35 GiB
+[worker-008] 3 selectors; limit 1800s, 8.0 GiB
+[worker-008] exit 0; 13.0s; peak 5.24 GiB
+[worker-009] 1 selectors; limit 1800s, 8.0 GiB
+[worker-009] exit 0; 5.2s; peak 1.94 GiB
+[worker-010] 3 selectors; limit 1800s, 8.0 GiB
+[worker-010] exit 0; 45.3s; peak 1.87 GiB
+Result: passed, exit 0; 23/23 cases completed.
+output/item10-resolution/explicit-final/result.json

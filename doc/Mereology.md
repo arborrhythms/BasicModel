@@ -289,34 +289,29 @@ The two towers stay **in-kind** — `PartSpace` *composes parts $\to$ parts*,
 `WholeSpace` *analyses wholes $\to$ wholes* — and the **concept (META node) is the
 cross-tower link**, associated with both an overlapping part-percept and
 whole-percept (`insert_meta(ps_pos, ws_pos, fused_vec=None, *, ema=0.1,
-trust=None)`; `ss_pos` is the pre-rename spelling). An object's identity is
-**isomorphic**: $\sigma$-up meets $\pi$-down at the object. At init there are only **atoms**
-(part-percepts in PartSpace) and the **universe** (the top whole-percept in
-WholeSpace); objects emerge from attention.
+trust=None)`; `ss_pos` is the pre-rename spelling). The native views meet
+through the concept's definition over their memberships. At init PartSpace
+has primitive parts and WholeSpace has supplied property rows defined over
+primitive input. The attended field binds their location and level;
+object-kind testimony belongs to item 7.
 
-Three balancing forces keep a single coherent lattice and converge it:
+The live 11c decision uses evidence and geometry. A *both* reading prompts
+refinement in the order-0 field. Its retained supporting occurrences are
+attributed through the symbol definitions and tested by `RunStructureLayer`.
+Contiguous support continues pi refinement; discontiguous support can be
+symbolized one order higher by sigma after local refinement has stalled.
+A large number of constituents is never a reason to raise. Ordinary
+symbolization establishes an order-1 individual; context promotion beyond
+that order uses `ConceptualSpace.maybe_raise_order` and the same convergence
+gate. No WS fold-depth node is minted as a substitute for conceptual order.
+See [Architecture](Architecture.md) and the
+[11c residue receipt](benchmarks/2026-09-24-item10/README.md) for the rule,
+patience parameter and controlled Felix/cat gate.
 
-1. **Link the tightest relation** — the largest part-percept $\leftrightarrow$ the smallest
-   whole-percept (via `.where` extent); skip a link a bigger-part/smaller-whole
-   already subsumes; drop useless concepts.
-2. **Too many parts $\to$ synthesize a higher-order part** (`maybe_raise_order`):
-   when a whole accumulates more than `K_many` parts, mint a higher-order PART
-   that subsumes them, with **abstraction order** one above its constituents
-   (tracked via the ramsification table — order 0 = atom, 1 = basic category,
-   …) and explicit `part_chain` provenance (a higher-order part is abstract, so
-   its `.where`/`.when` are discontiguous and the meronymy is tracked, not read
-   off `.where`). Idempotent per whole.
-3. **Only one part $\to$ Lewis' Singleton $\to$ analyse the whole** ($\pi$ divides) or drop
-   the spurious link.
-
-Link surgery: `delete_meta` / `unlink_child` (invert `insert_meta`'s
-registrations); `ps_children_of_whole` counts a whole's parts. The higher-order
-code is synthesized by `SigmaLayer.synthesize_over_set` (the M-way generalization
-of the binary atanh-sum fold) — or, in the "subsymbolic first" phase, the
-mean-combine of constituents, with `part_chain` as the source of truth. (First
-pass: the raise fires correctly when a whole has many parts; the live pid-keyed
-autobind binds 1 percept$\to$1 concept, so similarity-based many-to-one binding + the
-prune-and-rebind of moot edges are noted follow-ups.)
+`delete_meta`, `unlink_child`, and `ps_children_of_whole` still maintain
+native cross-tower bindings. These operations do not by themselves establish
+an object kind; testimony remains item 7's responsibility. Retained brackets
+belong to the attentive field, never to a permanent conceptual location.
 
 ### Automatic analysis: dividing wholes by LBG splitting {#lbg-division}
 
@@ -542,21 +537,15 @@ the other.
   specifies the folds, discovery and reverse; the serial idea-vector path
   remains distinct from this paired conceptual field.
 
-**Coordination.** Order-raising is the coupling between the two. When the explicit
-tower raises a higher-order part-percept/whole-percept (built directly, inserted on
-the **over-collected side** of the higher-order table — too-many-parts $\to$ higher-order
-part, too-many-wholes $\to$ higher-order whole), it **creates the corresponding implicit
-subsymbolic higher-order representation** via the sparse wave above (new untyped
-edges from the relation's row to its constituents on the shared square store). The explicit concept
-**indexes / names** the implicit vector; the implicit vector is the concept's
-**subsymbolic content**. The two co-evolve and must agree: a directly-built
-concept-index paired with a quantized vector that is a valid point in the higher-order
-mereological codebook. Direct index + quantized representation are the two
-complementary halves of one concept.
-
-This is the dual-coded (neuro-symbolic) core: discrete concept **relations over
-indices** in lock-step with continuous **quantized representations** — neither alone,
-but the two coordinating.
+**Coordination.** Definitions persist by concept id, while the attended
+order-0 field binds rows per turn. Native memberships read those definitions;
+their distributed codes support similarity, retrieval and tied
+reconstruction. Above order 0, a definition refers to symbols in the
+preceding order. Symbolization raises the order. A large constituent count
+does not trigger it: automatic context promotion beyond order 1 requires
+discontiguous both support after stalled refinement. The explicit
+definition and its code remain two views of the same concept, with no
+second tower of permanent row identities.
 
 ---
 

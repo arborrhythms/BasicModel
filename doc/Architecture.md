@@ -683,20 +683,16 @@ much lower dimensionality). The freed name `SymbolSpace` was
 grammar/word space-role (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
 the WholeSpace stream is now `ws`).
 
-Gated `<mereologyRaise>` (default false, byte-identical off; the cross-tower
-binding is `ConceptualSpace._autobind_cross_tower`, the part/whole-ratio
-read-out is `RunStructureLayer` via `WholeSpace`'s `_mereology_ratio_obs`,
-threaded read-only, never persisted), the corpus callosum **builds a single
-meronomy out of the two towers**: a part
-`A` (PartSpace) and a whole `B` (WholeSpace) carry `.what` codes from different
-codebooks (incomparable), but their `.where` is comparable, so the callosum links
-**`A isa B`** (token `isa` type) when `A.where` is contained in `B.where` with no
-greater-part/lesser-whole intervening. Word$\leftrightarrow$object — too unlike to link directly —
-is bridged by a **second-order meta-object** (synthesized in PartSpace, outside
-`.where`/`.when`: the MetaSymbol). The correctness signal is the **part/whole
-ratio** (many-parts$\to$one-whole = under-analysed; one-part$\to$one-whole = over-analysed),
-which requests further $\sigma$-synthesis / $\pi$-analysis in the offending `.where` — and is
-the principled fix for the MM_20M mean-collapse.
+Gated `<mereologyRaise>` (default false), the cross-tower binding is
+`ConceptualSpace._autobind_cross_tower`. PartSpace and WholeSpace use
+independent `.what` codes and a shared input location. Concept definitions
+refer to memberships in both views, without equating their code values.
+`RunStructureLayer` reads retained native witness spans in the current
+ConceptualSpace field. Their contiguity and refinement history govern
+automatic promotion above order 1; a constituent count supplies no such
+permission. Word/object identities remain in the conceptual inventory, and
+object-kind relations require item 7's testimony. The live support geometry
+is released with the attended field; only scalar refinement history persists.
 
 ### Spaces
 
@@ -728,20 +724,17 @@ dispatch over STM provides the recurrent character via the signal router.
 
 **Attention-to-relation promotion** (gated `<attentionPromotion>`, default
 off $\to$ byte-identical): the pyramid's admitted field is also the
-DISCOVERY surface for latent taxonomic wholes. The cutover stashes the
-admitted activations; `ConceptualSpace.Reset(hard)` consumes them (the same
-compile-safety hoist as `learn_relations_from_stm`) into a bounded
-candidate cache keyed by context signature --- each active order-0 row is a
-focal member observation over the rest of the active set, with EWMA
-member/context weights and cosine fold-in of near contexts. Recurrent,
-contrasted member sets face the SAME acceptance law as sentence learning
-(learn-score $\ge$ `truthCriterion` AND `truthCriterion` $< 1$, the
-three-factor product over the Task-6c seams); accepted sets mint a
-higher-order whole via `synthesize_higher_order` (member edge values from
-the candidate statistics, top context concepts as weighted `sym_part`
-intent), which then competes in the pyramid like any other row.
-Re-support strengthens (Hebbian) instead of re-minting; unsupported
-wholes decay and retire.
+discovery surface for provisional concept definitions. The cutover stashes
+the admitted pairs; `promotion_observe` consumes them at the sentence
+boundary. Candidate contexts live on the provisional rows themselves.
+Each focal concept observes the rest of the active field as its context;
+cosine matching assigns a pair of alternatives to a sigma row in the next
+order. With `conceptualPi`, located co-present literals can also define a
+conjunction in the order-0 field. Use updates participation by EWMA.
+Beyond order-1 symbolization, context assignment passes through the 11c
+refinement/convergence gate below. It does not mint from significance or
+turn a word form into an object kind; object-kind testimony belongs to
+item 7.
 
 See [Spaces.md Section "Sigma / Pi ownership"](Spaces.md#sigma-pi-ownership)
 for the cognitive rationale and the migration trail.
@@ -816,37 +809,89 @@ gradient variance after backward. See [Ergodic.md](Ergodic.md).
 See [Params.md](Params.md) for all XML parameters. See
 [Training.md](Training.md) for embedding modes.
 
-### The three cognitive operations (2026-06-14)
+### The three cognitive operations (updated for 11c)
 
 Processing decomposes into three operations, in increasing order of
-abstraction. Each maps to a knob (or, for the first, to the folds themselves):
+abstraction. Perceptual granularity is distinct from conceptual order:
 
-1. **Granularity of analysis and synthesis** — done *automatically* by the
-   two perceptual views' folds, per pass. PartSpace's **Sigma synthesizes**
-   (union; count-reducing: many atoms $\to$ fewer chunks); WholeSpace's **Pi
-   analyses** (intersection; count-increasing: one unity $\to$ many parts). How
-   finely the scene is carved, or how coarsely it is chunked, is set by the
-   folds — there is no separate granularity knob. The InputSpace feeds the two
-   views directly: the **Atom** view (`[B, N, D]`, which PartSpace synthesizes
-   bottom-up) and the **Universe** view (`_unity_view`, the whole as one event,
-   which WholeSpace analyses top-down). Optionally (`<mereologyRaise>`),
-   perception builds a meronymic lattice over the towers and **raises
-   abstraction order** as attention requires — see
-   [Mereology.md $\to$ Order-raising](Mereology.md).
+**Mode exclusion (Alec, September 25).** The parallel field's sigma, pi and
+not (observer-written located conjunctions, `_compose_order0` and pole swap)
+operate only in parallel mode. They do not operate in grammatical/serial
+mode. Conversely, the grammar's `lift` and `lower` do not run in parallel
+mode. These are alternative operations; native perception serves both.
 
-2. **Subsymbolic order** (`<subsymbolicOrder>`) — *iterating* the folds:
-   live carriers iterate through PartSpace / WholeSpace across
-   `subsymbolicOrder` passes. Synthesis chunks the codes into higher-order
-   percepts (fewer each pass); analysis re-expands, attention selecting what
-   to expand (a top-k over the priming, applied after the WholeSpace
-   property lookup). Conceptual feedback may condition a later perceptual fold,
-   but concepts and symbols remain owned downstream; no feedback value is
-   inserted into the WholeSpace property inventory.
+1. **Granularity of analysis and synthesis.** PartSpace combines existing
+   parts into recurrent ordered groups; WholeSpace divides the inclusive
+   whole through subsets of primitive properties. These are native
+   perceptual operations, with no learned sigma/pi layers. Parts read by
+   containment and wholes by pervasion. The attended field restricts level
+   and location; rank denotes mereological level. A new percept does not by
+   itself raise conceptual order. See [Mereology](Mereology.md).
+
+2. **Subsymbolic order** (`<subsymbolicOrder>`) bounds repeated passes over
+   the native geometry. `subsymbolicLoop` selects the passes in which
+   attributed conceptual feedback may retarget perception's region or
+   level. Focus scales percepts with a nonzero floor, so novel content
+   remains visible. Repeating a pass does not raise conceptual order or
+   insert a feedback value into the WholeSpace property inventory.
 
    **Refinement, answered in 11c.** A contiguous extent is refined by pi
    within the order-0 field; a discontiguous region is combined through
    sigma over symbols and symbolized at a higher order. Symbols cannot be
    divided. Field brackets express location, and rank is mereological level.
+
+   **Refine before raising (11c review residue, September 24–25).** At the
+   sentence boundary, each *both* reading is attributed through its symbol
+   definitions to the retained order-0 occurrence pairs. `RunStructureLayer`
+   counts the runs of those supporting brackets inside the subject's extent;
+   unrelated positions cannot join them. PartSpace containment remains an
+   extent read; its support marks only the matching canonical id tiles, not
+   every position where the contained literal is readable. Ordered groups
+   retain their actual contiguous constituent tiles. Brackets remain
+   coordinates of the shared field. A contiguous support stays in order-0 pi refinement, however
+   many parts it contains. A discontiguous support may request a sigma row
+   only after refinement stalls. Ordinary symbolization can establish an
+   order-1 individual; context promotion beyond order 1 uses this same gate.
+   No conjunctive edge is introduced in the symbolic loop.
+
+   The accepted policy (Alec, September 25) is `mereologyRefinePatience=3`
+   completed optimizer updates without a strict improvement in the local
+   residual `min(c⁺, c⁻)`. The worst subject reading for a definition is the
+   observed residual. Any reduction restarts patience; a pure or unknown
+   reading clears it. Repeated inference and attention passes do not count.
+   Only scalar convergence history persists, alongside the concept-id-to-
+   definition map in the checkpoint. The turn's brackets and permission to
+   raise are released. Recycled provisional rows start fresh.
+
+   `ConceptualSpace.maybe_raise_order` assigns the context-matched pair to a
+   provisional sigma row, subject to that permission. The WS count-raise,
+   `K_many`, and unused `passback_action` are deleted. The controlled
+   [review gate](benchmarks/2026-09-24-item10/README.md) learns a particular at
+   order 1 and admits a scattered kind at order 2 after unsuccessful local
+   refinement; it is not a claim of unassisted object-kind learning (item 7).
+
+   **Native CLI XOR (September 25 review correction).** `XOR_exact.xml`
+   now uses symbolic order 1, conceptual pi and the native aligned towers.
+   Its inputs `00`, `01`, `10`, `11` are two primitive positions within one
+   word extent. Primitive membership/name lessons teach “is a one”; the
+   ordinary unlabelled observer witnesses every located pure case. Pi is
+   performed at order 0 before symbolization. An order-1 output concept has
+   zero-initialized sigma edges to all four cases; the ordinary supervised
+   output cost learns which cases support its positive pole. No corner is
+   read as XOR and no pi edge exists in the symbolic loop. The lesson file
+   teaches only primitive memberships and one name, never XOR. This parallel
+   config has no grammar block and does not execute grammar `lift` or `lower`.
+   `OutputSpace.conceptIds` selects the
+   positive pole by persistent concept id, without a projection, bias or
+   output denormalization. Reconstruction is best effort from forward
+   artifacts: evidence by persistent concept id, including occurrence pairs
+   and field brackets, descends through `cs_percept_attribution` to memberships
+   and native rows. The radix decodes by activity, without code-neighbour
+   matching. No saved percept event or input stack supplies the inverse, and
+   a later perception cannot replace the captured evidence or coordinates.
+   Ambiguous property definitions and unlocated contained parts can lose
+   information. The crisp-output gate and fifty-percent reconstruction bar
+   are unseeded. See the [forward-artifact receipt](benchmarks/2026-09-25-item10-forward/README.md).
 
 3. **Symbolic order** (`<symbolicOrder>`) — the symbolic / relational loop
    budget. In serial mode (`<serial>true</serial>`), words are read **one at a
@@ -854,10 +899,9 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    and SymbolSpace. `symbolicOrder` limits how many symbolic loops may run;
    `<serial>` selects whether the per-word traversal is active.
 
-So: granularity is intrinsic to the folds, subsymbolic order iterates the
-subsymbolic passes (composing higher-order percepts), symbolic order budgets
-the relational pump, and `serial` selects the serial grammatical loop over
-words.
+Granularity is the perceptual level; subsymbolic order budgets repeated
+attention over that field, symbolic order budgets the relational pump,
+and `serial` selects the serial grammatical loop over words.
 
 > **Current order semantics.** This section supersedes the older mode-selector
 > wording. The three order axes now have
@@ -865,9 +909,10 @@ words.
 >
 > - **`subsymbolicOrder`** — the **analysis/synthesis refinement-pass count and
 >   the area of attention**. `T` parallel CS$\to$PS/WS iterations; each pass
->   *refines* (contiguous `.where`) or *raises* (discontiguous), and attention
->   scopes via a `.where` on the dual-input SECOND ARGUMENT (the top-down WS$\to$PS
->   handoff, gated `<mereologyRaise>`). The
+>   refines the attended field. Contiguous support stays at order 0;
+>   discontiguous both support may raise only after the accepted convergence
+>   gate. Attention scopes via a `.where` on the dual-input second argument.
+>   The
 >   serial-word reading supplies word `.where`s through the **same** channel.
 > - **`symbolicOrder`** — the **relational pump** budget. It spreads activation through the relation
 >   graph to surface *higher-order* (relations-of-relations) features that have
@@ -1297,8 +1342,12 @@ See [Spaces.md](Spaces.md#monotonicity-of-the-lift--lower-chain).
 
 ### Proposal: bounded pi and sigma folds as normalized means (Alec, 2026-09-21)
 
-Under evaluation as [todo](../todo.md) item 10. Not implemented. Alec's text,
-then the evaluation.
+**Decided: dropped (Alec, September 25).** Item 10 evaluated these means in
+real grammar folds and rejected them. The normalization mixin, constructor
+arguments, XML parameters and mode tests are removed. The [measurement
+receipt](benchmarks/2026-09-24-item10/README.md) and archived evaluated source
+preserve the historical proposal and results below. Native min/max perception
+and the max concept pyramid remain the definition.
 
 #### 1. Problem
 
@@ -1442,8 +1491,8 @@ rescale to `[0, 1]` is needed for pi.
 fold is non-decreasing in every input, for every power-mean exponent, and so
 is any stack of them. That is what parts and wholes need — it is what keeps
 parthood through a fold — and it is why this form cannot fit XOR (MSE .2500
-in every run, a constant ½), and need not. The monotone form belongs to the
-perceptual towers.
+in every run, a constant ½), and need not. That was the proposed placement before 11c deleted perceptual fold layers;
+the current native membership read remains min/max.
 
 **2. XOR belongs to conceptual space, with the monotonic flags off** (Alec,
 2026-09-21). Conceptual space needs no monotone operations, so its folds
@@ -1483,8 +1532,9 @@ Under L1 the many small signed entries count in full in the normaliser and
 cancel in the output, so the signal dies and its reverse explodes. L2 keeps
 the energy and keeps the reverse tame, and it removes finding 4's width
 problem for signed folds. Its bound is Cauchy–Schwarz, `|y| ≤ ‖w‖₂ ‖x‖₂`, so
-it is exact on inputs of **at most unit energy** — which conceptual vectors
-are, their codes lying on the unit sphere. On cube-valued activations
+it is exact on inputs of **at most unit energy** — which isolated normalized codes are. Actual grammar operands also include
+composed values; their energy must be measured rather than inferred from
+the codebook normalization. On cube-valued activations
 (coordinates near ±1, energy above one) L2 alone overshoots into pi's clamp:
 with XOR inputs of ±.9 per coordinate it was solved in 4 of 8 runs with a
 third of sigma's outputs at the clamp, against 8 of 8 and none at the clamp
@@ -1556,7 +1606,7 @@ another, by itself, measured no faster.
 **10. Where sigma alone builds higher orders, a normalised mean kills the
 signal** (Alec's question, 2026-09-21). The concept pyramid is sigma only:
 one hop per rung, a higher-order symbol from its members. A higher-order
-symbol is a class — any of its members — and activity is sparse, so usually
+symbol denotes a kind — any of its members — and activity is sparse, so usually
 one member of several is active. A mean then gives the symbol the *share* of
 its members that is active, and the shares multiply up the orders. With
 equal weights and the leaf at 1:
@@ -1568,7 +1618,7 @@ equal weights and the leaf at 1:
 | power mean, `p = 20` | .90 → .81 → .73 → .66 | 1 at every order |
 | max (`p → ∞`) | 1 at every order | 1 at every order |
 | probabilistic sum `1 − ∏(1 − u)` | 1 at every order | 1 at every order |
-| today, `tanh` of the sum at weight 1 | .76 → .64 → .57 → .51 | 1 at every order |
+| pre-11 tanh of the sum at weight 1 | .76 → .64 → .57 → .51 | 1 at every order |
 
 At 32 members the mean is at .001 by the second order. The L2 form is worse
 here: it still decays when one member is active and it grows without bound
@@ -1586,24 +1636,15 @@ members accumulate toward 1, which learned exponents below one and the
 pyramid's top-K taper have to hold down. The arithmetic mean remains right
 where an average is what is meant.
 
-*Does pi build higher orders too?* In the perceptual towers, yes: each
-subsymbolic pass routes a code through the sigma fold or the pi fold, and the
-ramsification table records which. In the concept pyramid, no: every rung is
-one additive hop, `tanh(W[a|1])`, then the top-K taper. That matters for
-this finding in two ways. A pi rung is a *conjunction* — these members
-together — and there a normalised geometric mean is harmless: all members
-present gives 1 at every order, and a missing member is supposed to lower
-it. The decay belongs to a mean-type sigma asked to be a union. And in
-conceptual space pi is the fold that keeps gain (finding 2), so a rung that
-alternates the normalised sigma with today's pi restores what the mean took:
-`tanh(g · atanh(.125))` is .76 at `g = 8` and .97 at `g = 16`, a gain of
-about the fan-in, which is learnable. A sigma-only pyramid has no such stage;
-today its tanh with weights above one is what does that work. So either the
-pyramid alternates pi with sigma — conjunctions of members, then unions of
-alternatives, which is the disjunctive normal form XOR itself needs — or its
-sigma has to be a union that does not decay.
+*Does pi build higher orders too?* The September 21 proposal predates 11c.
+Perceptual towers now use native min/max and have no learned fold layers;
+subsymbolic passes retarget perception. Pi intersects located concepts only
+in the order-0 field. Higher orders use max sigma over symbols of the
+preceding order. Their sigma is a union that does not decay, and the store
+rejects conjunctive edges above order 0. The comparison above does not
+authorize an alternating pi/sigma symbolic pyramid.
 
-**Recommendation.** Evaluate behind a `normalize` mode, turned on
+**September 21 recommendation.** Evaluate behind a `normalize` mode, turned on
 selectively. First the two XOR gates, in conceptual space with the monotonic
 flags off: the signed mean sigma in the raw chart feeding today's pi, at
 least four hidden units. Then the membership folds of the perceptual towers,
@@ -1613,6 +1654,41 @@ does not decay. The grammar's idea-vector folds last, after finding 6 is
 measured. Where a form
 is adopted, the path it replaces is deleted rather than kept as a second
 mode.
+
+#### Real-layer evaluation: dropped (September 25)
+
+The [item 10 receipt](benchmarks/2026-09-24-item10/README.md) records Alec's
+decision to **drop normalized means**. The experimental mode is deleted,
+including its lift/lower arguments, configuration and mode tests. The
+following measurements explain that decision; they describe the archived
+evaluation source, not a callable production mode.
+
+Signed L2 raw-chart Sigma followed by unchanged Pi solves all eight declared
+unit-energy XOR runs at both widths 4 and 8, without reaching Pi's clamp.
+The same-chart control and the both-normalized control solve none. On
+cube-valued inputs the selective pair solves 0/8 at width 4 and 1/8 at width
+8. Actual native grammar operands exceed unit energy: 25 of 68 operands in
+34 retained binary windows, with a maximum norm of 1.7753 and a coordinate
+of 1.0695. Normalized codebook leaves do not establish the required bound
+for composed operands. No activation rescaling is added.
+
+Width-scaled monotone initialization restores the own-input weight at width
+1032 from .0486 to .9482, but 30 alternating arithmetic/geometric means keep
+only about .166 of the input spread at width 264. The geometric floor has
+zero gradient below it and a slope of 353.6 immediately above it in the
+two-input probe. Convex bias and the log floor produce nonzero outputs on
+all-zero membership input, conflicting with exact unknown evidence. They
+are therefore unsuitable replacements for the native membership read.
+
+The serial measurement ends at reconstruction .0891618710 with the current
+folds and .0914028883 with selective normalization. Two timing pairs disagree
+on the direction of the throughput difference; no consistent speedup is
+shown. Balanced binary reverse reproduces the parent but cannot recover
+distinct children without a known reference. Mean union decays through the
+pyramid; max and probabilistic union preserve a single full member. The
+historical 11a projection limit of 256 positions remains in that comparison;
+11b/11c unrelated membership evidence is exactly zero and has no such
+accumulation limit.
 
 #### Decided in direction: a concept is sigma over pi (Alec, 2026-09-21)
 
@@ -1941,12 +2017,12 @@ properties to narrow a region. Runs with a constant property signature
 retain the existing segmentation contract; boundary and singleton policies
 continue to be learned separately. PartSpace conjoins the required parts
 of a whole, each at its own position. These are bounded max/min
-operations, not the normalized means proposed in item 10. Changing the
-learned membership folds to those means still requires item 10's separate
-measurement. The reverse of a property read distributes support through
+operations. Item 10's measurement rejected normalized means; that mode
+is deleted. The reverse of a property read distributes support through
 the same primitive memberships; it is an attribution, not an inverse of
-a many-to-one classification. Exact surface reconstruction retains its
-ordered byte witness, as PartSpace already does.
+a many-to-one classification. Native surface reconstruction uses the
+forward's located conceptual evidence and radix activity. It keeps no
+ordered byte witness or percept-event stack and is best effort.
 
 #### Item 11b: membership read and extent truth corners (September 23)
 

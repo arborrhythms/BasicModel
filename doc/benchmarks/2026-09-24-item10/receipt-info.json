@@ -1,0 +1,10 @@
+{
+  "status": "uncommitted, unpushed; awaiting code review",
+  "basicmodel_head": "606683a8e32aac66569669a5e607f64eeec3ae32",
+  "wikioracle_head": "8e7123a1c55ce10ce924d1f27b1e2037dc8890c7",
+  "source_sha256": "6f9f495ed94f89e6f55f293808d41bf02693180305252e05171a99befcf8ac2e",
+  "source_files": 647,
+  "runtime_source_matches_all_measurements": true,
+  "inherited_cli_failure_retained": true,
+  "recommendation": "drop as a production replacement"
+}

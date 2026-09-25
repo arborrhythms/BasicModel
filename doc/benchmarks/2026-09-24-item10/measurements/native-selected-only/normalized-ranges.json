@@ -1,0 +1,16 @@
+{
+  "scope": "last four validation batches, after seven optimizer updates",
+  "source": "owned AnswerProgram leaves and actions, replayed through current grammar after timing",
+  "folds": {},
+  "replay_root_errors": [
+    0.0,
+    0.0,
+    1.4901161193847656e-08,
+    0.0,
+    1.4901161193847656e-08,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "leaf_norm_max": 0.7615941762924194
+}

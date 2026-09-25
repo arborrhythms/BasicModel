@@ -1,0 +1,74 @@
+{
+  "bin/ConceptLessons.py": {
+    "before": null,
+    "after": "ba35b5508f9239d6a3fb09d269c593bb4121e3c087bf6e0996d65ac7ac013b08"
+  },
+  "bin/Language.py": {
+    "before": "04a806aa6db84e5614ae02ccc0695192a534b083aed70e7c01580d995928ba87",
+    "after": "a462ffb51c10e474af5f3c441a225a723ee843501255c2bccb124165cf201f79"
+  },
+  "bin/Layers.py": {
+    "before": "1fe6844a8566bbc8e931beccd8f85f4a1f8081ad1f276ffe066c69cdcd6f7437",
+    "after": "9959a834b997d36c8d018bda0aac48b781680f4582ca0b7316d0b9c8d2c72007"
+  },
+  "bin/Models.py": {
+    "before": "1b4812dadb2884af1f2ba422ffdb64443ee764209d6c17775e5d94de537e6ff6",
+    "after": "1cbbd7b50f2594e6b2f08904dd43afd3235ea750eb4166eaca69ca34a71450d2"
+  },
+  "bin/Spaces.py": {
+    "before": "c67414f0fa1d6c522dd6e117aa22f41d4a742838888dd72d4f9aaccaf61facb8",
+    "after": "89e6656fdcbc419f47263025c2b3341c96bbd924972a11495b0581b57f4777c0"
+  },
+  "data/XOR_exact.xml": {
+    "before": "845687ee94a92603a318e6205981e9ebe70d2130949e61e6f45595e9733be1ef",
+    "after": "30873188ab149fd4a0fbda766c45d7d07b9772cc7a53d63c4966d022aa844374"
+  },
+  "data/model.xml": {
+    "before": "05d0d9073f82ed1be127f26400df827217887742dec4c27e8c34d4d48d21b243",
+    "after": "275a234d6ca39b76b29f1404921e59fbd72c091944668de122b43d100362a4b0"
+  },
+  "data/model.xsd": {
+    "before": "3a6a246d6ab11f482bb3e0210ce5a041c3ab9ed14b32f8dc958263893a14ed82",
+    "after": "6793469aca674d9fad7857373f0109631126e6becc47ba55590fe8602d0f1fea"
+  },
+  "data/xor_concept_lessons.json": {
+    "before": null,
+    "after": "3d6f4f8ce4ed45b1c68a6c410d19e9cee1b1be6963338802a6f9b8f055d513e2"
+  },
+  "test/fold_evaluation.py": {
+    "before": "d167c3f4f617495fa94f06b9897c7d559d51e4fc09fe31aca15123af8ab0b5ea",
+    "after": null
+  },
+  "test/test_basicmodel.py": {
+    "before": "48adb584b9519d93e7ab08773438e9018e6d60ce3ca9f95b422d1caa0f64c888",
+    "after": "dbf7b4d20cfc4b90b5312c4721de4dc3ee74f66f5481ae3f535bfd8e4443edd3"
+  },
+  "test/test_concept_output.py": {
+    "before": null,
+    "after": "cd8320366abed7ca72edb9ab2f623cefaae0dec92e4526a0948d081c21e12ac6"
+  },
+  "test/test_explicit_dimensions.py": {
+    "before": "3e8a61b69ed742106f2c933e8c7db2f11482bc6f1a9e2330ee8f912c9a5f8e96",
+    "after": "965ea7e9b4be60be75853de7c2ddea41f668d30929980212bfa5e572631b9e71"
+  },
+  "test/test_lexicon_ownership.py": {
+    "before": "aeabbc58c4917dda2a4af98f0822a5ee53608d37823d7a10974c96272e908d0b",
+    "after": "a98cf587654ef6c1f7f309cf760e2916c4c7d838b6316bc4a3b960a7ae33ba63"
+  },
+  "test/test_modality_codebook.py": {
+    "before": "ee69bda7826fa4812ba7dcac4faebbdda21f1394762f8ea51ca4eac8f53e2a48",
+    "after": "36a97026744e5cd641c61e9a44c4d11737ae04e748255b2c7120ba13f932d871"
+  },
+  "test/test_normalized_folds.py": {
+    "before": "cb5f13b92333fa5b61dfa7618c16bb4919fce73f4ed118e5b16d327e84239c86",
+    "after": null
+  },
+  "test/test_pi_sigma_inherit_grammarlayer.py": {
+    "before": "33b3438b33eaa41f750aa6f3ba7d711fe1f9ec3ff62bd2c2d9e91c882481565a",
+    "after": "7fcf071ecfe3e704538eda0b5b9a295688651f387b2a628329471817500a133e"
+  },
+  "test/test_sigmapi.py": {
+    "before": "d7ad944b00c0172893701ab94ecf7cc6167bbf32d2bf8da6884ced18d22e7f49",
+    "after": "591a27e5d9227e32d7321ab02b5af4f8496e03dca40bbf1a6500e76befaafae3"
+  }
+}

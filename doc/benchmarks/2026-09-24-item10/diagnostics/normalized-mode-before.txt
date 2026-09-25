@@ -1,0 +1,18 @@
+F
+=================================== FAILURES ===================================
+_________ test_normalized_unary_and_binary_roundtrip[True-SigmaLayer] __________
+
+kind = <class 'Layers.SigmaLayer'>, monotonic = True
+
+    @pytest.mark.parametrize('kind', [SigmaLayer, PiLayer])
+    @pytest.mark.parametrize('monotonic', [True, False])
+    def test_normalized_unary_and_binary_roundtrip(kind, monotonic):
+>       layer = kind(8, 8, invertible=True, monotonic=monotonic, normalize=True).double()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SigmaLayer.__init__() got an unexpected keyword argument 'normalize'
+
+test/test_normalized_folds.py:11: TypeError
+=========================== short test summary info ============================
+FAILED test/test_normalized_folds.py::test_normalized_unary_and_binary_roundtrip[True-SigmaLayer]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 1.97s

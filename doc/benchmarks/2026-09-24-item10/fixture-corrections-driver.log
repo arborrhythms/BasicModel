@@ -1,0 +1,18 @@
+[collect] 4 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.6s; peak 0.40 GiB
+[worker-000] 8 selectors; limit 1800s, 8.0 GiB
+[worker-001] 2 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 3.9s; peak 0.40 GiB
+[worker-001] exit 0; 4.9s; peak 0.40 GiB
+[worker-002] 8 selectors; limit 1800s, 8.0 GiB
+[worker-003] 2 selectors; limit 1800s, 8.0 GiB
+[worker-002] exit 0; 4.0s; peak 0.42 GiB
+[worker-003] exit 0; 5.0s; peak 3.11 GiB
+[worker-004] 8 selectors; limit 1800s, 8.0 GiB
+[worker-005] 3 selectors; limit 1800s, 8.0 GiB
+[worker-004] exit 0; 3.8s; peak 0.40 GiB
+[worker-005] exit 0; 4.8s; peak 0.46 GiB
+[worker-006] 3 selectors; limit 1800s, 8.0 GiB
+[worker-006] exit 0; 3.6s; peak 0.41 GiB
+Result: passed, exit 0; 34/34 cases completed.
+output/item10-review/fixture-final/result.json

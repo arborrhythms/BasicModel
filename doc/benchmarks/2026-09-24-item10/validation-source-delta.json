@@ -1,0 +1,89 @@
+{
+  "explanation": "Only the three documented test fixture corrections changed after measurements. Runtime, configuration, and all measured gate source files match the final full receipt.",
+  "deltas": {
+    "explicit": {
+      "test/test_structural_checkpoint.py": {
+        "measured": "3104ae2a9fb9469034f350a3c9746d1e0d1d1578e1f7e3b431446492774cefcb",
+        "final": "71b3f3789ef9114870cb99bf0aab9b8a328091c30d65ec248353a5d4e9c177e7"
+      },
+      "test/test_relative_sentence_codebook_insertion.py": {
+        "measured": "b50517387e1351a890d19ed87362aca1c5e1f2a4bb4beb10c9f2ba9928a04d8a",
+        "final": "7c75daba41c387980dd7f55212a120986cd0896404f54932a2ab7f1040b1e364"
+      },
+      "test/test_pi_sigma_inherit_grammarlayer.py": {
+        "measured": "7fcf071ecfe3e704538eda0b5b9a295688651f387b2a628329471817500a133e",
+        "final": "33b3438b33eaa41f750aa6f3ba7d711fe1f9ec3ff62bd2c2d9e91c882481565a"
+      }
+    },
+    "folds": {
+      "test/test_structural_checkpoint.py": {
+        "measured": "3104ae2a9fb9469034f350a3c9746d1e0d1d1578e1f7e3b431446492774cefcb",
+        "final": "71b3f3789ef9114870cb99bf0aab9b8a328091c30d65ec248353a5d4e9c177e7"
+      },
+      "test/test_relative_sentence_codebook_insertion.py": {
+        "measured": "b50517387e1351a890d19ed87362aca1c5e1f2a4bb4beb10c9f2ba9928a04d8a",
+        "final": "7c75daba41c387980dd7f55212a120986cd0896404f54932a2ab7f1040b1e364"
+      },
+      "test/test_pi_sigma_inherit_grammarlayer.py": {
+        "measured": "7fcf071ecfe3e704538eda0b5b9a295688651f387b2a628329471817500a133e",
+        "final": "33b3438b33eaa41f750aa6f3ba7d711fe1f9ec3ff62bd2c2d9e91c882481565a"
+      }
+    },
+    "native-selected-only": {
+      "test/test_structural_checkpoint.py": {
+        "measured": "3104ae2a9fb9469034f350a3c9746d1e0d1d1578e1f7e3b431446492774cefcb",
+        "final": "71b3f3789ef9114870cb99bf0aab9b8a328091c30d65ec248353a5d4e9c177e7"
+      },
+      "test/test_relative_sentence_codebook_insertion.py": {
+        "measured": "b50517387e1351a890d19ed87362aca1c5e1f2a4bb4beb10c9f2ba9928a04d8a",
+        "final": "7c75daba41c387980dd7f55212a120986cd0896404f54932a2ab7f1040b1e364"
+      },
+      "test/test_pi_sigma_inherit_grammarlayer.py": {
+        "measured": "7fcf071ecfe3e704538eda0b5b9a295688651f387b2a628329471817500a133e",
+        "final": "33b3438b33eaa41f750aa6f3ba7d711fe1f9ec3ff62bd2c2d9e91c882481565a"
+      }
+    },
+    "native-complete": {
+      "test/test_structural_checkpoint.py": {
+        "measured": "3104ae2a9fb9469034f350a3c9746d1e0d1d1578e1f7e3b431446492774cefcb",
+        "final": "71b3f3789ef9114870cb99bf0aab9b8a328091c30d65ec248353a5d4e9c177e7"
+      },
+      "test/test_relative_sentence_codebook_insertion.py": {
+        "measured": "b50517387e1351a890d19ed87362aca1c5e1f2a4bb4beb10c9f2ba9928a04d8a",
+        "final": "7c75daba41c387980dd7f55212a120986cd0896404f54932a2ab7f1040b1e364"
+      },
+      "test/test_pi_sigma_inherit_grammarlayer.py": {
+        "measured": "7fcf071ecfe3e704538eda0b5b9a295688651f387b2a628329471817500a133e",
+        "final": "33b3438b33eaa41f750aa6f3ba7d711fe1f9ec3ff62bd2c2d9e91c882481565a"
+      }
+    },
+    "serial": {
+      "test/test_structural_checkpoint.py": {
+        "measured": "3104ae2a9fb9469034f350a3c9746d1e0d1d1578e1f7e3b431446492774cefcb",
+        "final": "71b3f3789ef9114870cb99bf0aab9b8a328091c30d65ec248353a5d4e9c177e7"
+      },
+      "test/test_relative_sentence_codebook_insertion.py": {
+        "measured": "b50517387e1351a890d19ed87362aca1c5e1f2a4bb4beb10c9f2ba9928a04d8a",
+        "final": "7c75daba41c387980dd7f55212a120986cd0896404f54932a2ab7f1040b1e364"
+      },
+      "test/test_pi_sigma_inherit_grammarlayer.py": {
+        "measured": "7fcf071ecfe3e704538eda0b5b9a295688651f387b2a628329471817500a133e",
+        "final": "33b3438b33eaa41f750aa6f3ba7d711fe1f9ec3ff62bd2c2d9e91c882481565a"
+      }
+    },
+    "cli": {
+      "test/test_structural_checkpoint.py": {
+        "measured": "3104ae2a9fb9469034f350a3c9746d1e0d1d1578e1f7e3b431446492774cefcb",
+        "final": "71b3f3789ef9114870cb99bf0aab9b8a328091c30d65ec248353a5d4e9c177e7"
+      },
+      "test/test_relative_sentence_codebook_insertion.py": {
+        "measured": "b50517387e1351a890d19ed87362aca1c5e1f2a4bb4beb10c9f2ba9928a04d8a",
+        "final": "7c75daba41c387980dd7f55212a120986cd0896404f54932a2ab7f1040b1e364"
+      },
+      "test/test_pi_sigma_inherit_grammarlayer.py": {
+        "measured": "7fcf071ecfe3e704538eda0b5b9a295688651f387b2a628329471817500a133e",
+        "final": "33b3438b33eaa41f750aa6f3ba7d711fe1f9ec3ff62bd2c2d9e91c882481565a"
+      }
+    }
+  }
+}

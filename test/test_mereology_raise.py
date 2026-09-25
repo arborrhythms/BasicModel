@@ -1,7 +1,7 @@
 """Mereological order-raising (doc/specs/mereological-order-raising.md), gated dark
 behind <mereologyRaise>. Unit-level: the link-removal API (delete_meta /
 unlink_child / ps_children_of_whole), SigmaLayer.synthesize_over_set, and the
-maybe_raise_order detect+synthesize+order-bump+provenance loop. Flag-off
+native spans and conceptual run geometry. Flag-off
 byte-identity is covered by the full suite.
 """
 
@@ -110,45 +110,7 @@ def test_ps_children_of_whole_counts_parts():
     assert all(ws._pos_kind.get(int(p)) == "ps" for p in parts)
 
 
-# -- maybe_raise_order ----------------------------------------------------
-
-def test_raise_forms_higher_order_part_with_provenance():
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_k_many = 3
-    whole, metas = _bind_parts(ws, 5)            # 5 > 3 -> raise
-    ho = ws.maybe_raise_order(metas[-1])
-    assert ho is not None
-    # provenance: the higher-order node subsumes all 5 constituent parts.
-    assert ho in ws.part_chain
-    assert len(ws.part_chain[ho]) == 5
-    # order bump: the constituent METAs are order 1 (the canonical
-    # insert_meta sigma stamp: a META sits one fold above its order-0
-    # ps/ws constituents), so the raised part lands one above them at 2.
-    meta_row = ws._ws_pos_to_row[metas[-1]]
-    assert ws.subspace.what.abstraction_order(int(meta_row)) == 1
-    ho_row = ws._ws_pos_to_row[ho]
-    assert ws.subspace.what.abstraction_order(int(ho_row)) == 2
-    assert ws._pos_kind[ho] == "meta"
-    # idempotent: a second call on the same whole does not re-raise.
-    assert ws.maybe_raise_order(metas[0]) is None
-
-
-def test_raise_noop_below_threshold():
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_k_many = 4
-    whole, metas = _bind_parts(ws, 3)            # 3 <= 4 -> no raise
-    assert ws.maybe_raise_order(metas[-1]) is None
-    assert not ws.part_chain
-
-
-# -- Slice 2.5: gated, read-only part/whole-ratio observation -------------
-# The WholeSpace OWNS a RunStructureLayer; _stage0_unity_forward calls it
-# (gated, read-only) on the live analysis spans. These exercise the same data
-# path at the Space level -- stage_analysis_spans -> self.run_structure -- and
-# the ownership/cascade wiring. The full forward stash is covered by the suite
-# staying byte-identical with the flag off.
+# Geometry is owned by the conceptual field. Native WS spans are inputs.
 
 def _word_ws():
     ws = _whole_space()
@@ -156,11 +118,12 @@ def _word_ws():
     return ws
 
 
-def test_wholespace_owns_run_structure_layer():
+def test_conceptualspace_owns_run_structure_layer():
     from Layers import RunStructureLayer
-    ws = _whole_space()
-    assert isinstance(ws.run_structure, RunStructureLayer)
-    assert ws.run_structure in list(ws.layers)        # on the cascade
+    from test_cs_sparse_weights import _cs
+    cs = _cs()
+    assert isinstance(cs.run_structure, RunStructureLayer)
+    assert cs.run_structure in list(cs.layers)        # on the cascade
 
 
 def test_run_structure_over_word_spans_counts_words():
@@ -169,7 +132,8 @@ def test_run_structure_over_word_spans_counts_words():
     # (0,2),(3,5),(6,8); the Layer reports 3 runs (== word count), 2 gaps.
     concepts = torch.tensor([[97, 98, 32, 99, 100, 32, 101, 102]], dtype=torch.long)
     spans = ws.stage_analysis_spans(concepts)              # [B, K, 2]
-    out = ws.run_structure(spans.to(torch.float32))        # the forward data path
+    from Layers import RunStructureLayer
+    out = RunStructureLayer()(spans.to(torch.float32))        # the forward data path
     assert int(out["n_runs"][0]) == 3
     assert int(out["n_gaps"][0]) == 2
 
@@ -180,7 +144,8 @@ def test_run_structure_single_blob_is_singleton():
     # should be further analysed to find boundaries).
     concepts = torch.tensor([[97, 98, 99, 100]], dtype=torch.long)
     spans = ws.stage_analysis_spans(concepts)
-    out = ws.run_structure(spans.to(torch.float32))
+    from Layers import RunStructureLayer
+    out = RunStructureLayer()(spans.to(torch.float32))
     assert int(out["n_runs"][0]) == 1
 
 
@@ -191,5 +156,4 @@ def test_stage_analysis_spans_is_structural_only():
     ws._mereology_raise = True
     concepts = torch.tensor([[97, 98, 32, 99, 100]], dtype=torch.long)
     spans = ws.stage_analysis_spans(concepts)
-    assert getattr(ws, "_mereology_ratio_obs", None) is None
     assert spans is not None

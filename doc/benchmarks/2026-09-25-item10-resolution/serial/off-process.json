@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item10-resolution/serial/off.xml",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item10-resolution/serial/off.json"
+  ],
+  "pid": 18035,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4261204528,
+  "elapsed_seconds": 46.00061404099688,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item10-resolution/serial/off.log"
+}

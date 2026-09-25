@@ -1,0 +1,26 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 8 selectors; limit 1800s, 8.0 GiB
+[worker-001] 8 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 3.8s; peak 0.40 GiB
+[worker-001] exit 0; 4.8s; peak 0.40 GiB
+[worker-002] 8 selectors; limit 1800s, 8.0 GiB
+[worker-003] 8 selectors; limit 1800s, 8.0 GiB
+[worker-002] exit 0; 3.8s; peak 0.40 GiB
+[worker-003] exit 0; 4.8s; peak 0.40 GiB
+[worker-004] 8 selectors; limit 1800s, 8.0 GiB
+[worker-005] 8 selectors; limit 1800s, 8.0 GiB
+[worker-004] exit 0; 3.9s; peak 0.40 GiB
+[worker-005] exit 0; 4.9s; peak 0.40 GiB
+[worker-006] 8 selectors; limit 1800s, 8.0 GiB
+[worker-007] 8 selectors; limit 1800s, 8.0 GiB
+[worker-006] exit 0; 3.8s; peak 0.40 GiB
+[worker-007] exit 0; 4.8s; peak 0.40 GiB
+[worker-008] 8 selectors; limit 1800s, 8.0 GiB
+[worker-009] 8 selectors; limit 1800s, 8.0 GiB
+[worker-008] exit 0; 3.8s; peak 0.40 GiB
+[worker-009] exit 0; 4.8s; peak 0.40 GiB
+[worker-010] 2 selectors; limit 1800s, 8.0 GiB
+[worker-010] exit 0; 3.6s; peak 0.40 GiB
+Result: passed, exit 0; 82/82 cases completed.
+output/item10-review/doc-links-final/result.json

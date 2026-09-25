@@ -1,0 +1,20 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_integrated_checkpoint_restores_allocator_and_identity_caches _______
+test/test_structural_checkpoint.py:121: in test_integrated_checkpoint_restores_allocator_and_identity_caches
+    assert restored_ws._mereology_raised == {41}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_mereology_raised'
+----------------------------- Captured stdout call -----------------------------
+[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4848/test_integrated_checkpoint_res0/structure.ckpt
+[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4848/test_integrated_checkpoint_res0/structure.ckpt has no embedding bundle; embeddings stay at random init.
+[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4848/test_integrated_checkpoint_res0/structure.ckpt
+=============================== warnings summary ===============================
+test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches
+1 failed, 2 passed, 1 warning in 2.65s

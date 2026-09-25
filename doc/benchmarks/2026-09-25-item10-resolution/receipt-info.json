@@ -1,0 +1,132 @@
+{
+  "status": "uncommitted, unpushed; awaiting code review",
+  "basicmodel_head": "606683a8e32aac66569669a5e607f64eeec3ae32",
+  "wikioracle_head": "8e7123a1c55ce10ce924d1f27b1e2037dc8890c7",
+  "decision": "normalized means dropped; mode deleted",
+  "summaries": {
+    "affected-final": {
+      "reason": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 90.98822791699786,
+      "peak_aggregate_memory_bytes": 3706547048,
+      "compile_cache_retries": [],
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 8,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 8,
+        "max_files": 1
+      },
+      "selected": 423,
+      "completed": 423,
+      "outcomes": {
+        "passed": 361,
+        "skipped": 61,
+        "xfailed": 1
+      },
+      "source_files": 648,
+      "source_sha256": "f3976bc4b6427491c59625d228128aece337212b47c02037b433eba458ec9baf"
+    },
+    "xor-final": {
+      "reason": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 57.11919716699049,
+      "peak_aggregate_memory_bytes": 2457163488,
+      "compile_cache_retries": [],
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 1,
+        "max_files": 1
+      },
+      "selected": 2,
+      "completed": 2,
+      "outcomes": {
+        "passed": 2
+      },
+      "source_files": 648,
+      "source_sha256": "f3976bc4b6427491c59625d228128aece337212b47c02037b433eba458ec9baf"
+    },
+    "explicit-final": {
+      "reason": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 145.68305599992163,
+      "peak_aggregate_memory_bytes": 7954209536,
+      "compile_cache_retries": [],
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 4,
+        "max_files": 1
+      },
+      "selected": 23,
+      "completed": 23,
+      "outcomes": {
+        "passed": 23
+      },
+      "source_files": 648,
+      "source_sha256": "f3976bc4b6427491c59625d228128aece337212b47c02037b433eba458ec9baf"
+    },
+    "full": {
+      "reason": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 1100.2320084159728,
+      "peak_aggregate_memory_bytes": 14753305312,
+      "compile_cache_retries": [],
+      "limits": {
+        "memory_bytes": 21474836480,
+        "aggregate_memory_bytes": 21474836480,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 10,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 8,
+        "max_files": 1
+      },
+      "selected": 4818,
+      "completed": 4818,
+      "outcomes": {
+        "passed": 4497,
+        "skipped": 320,
+        "xfailed": 1
+      },
+      "source_files": 648,
+      "source_sha256": "f3976bc4b6427491c59625d228128aece337212b47c02037b433eba458ec9baf"
+    },
+    "doc-links": {
+      "reason": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 29.526693459018134,
+      "peak_aggregate_memory_bytes": 861112960,
+      "compile_cache_retries": [],
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 8,
+        "max_files": 1
+      },
+      "selected": 83,
+      "completed": 83,
+      "outcomes": {
+        "passed": 83
+      },
+      "source_files": 648,
+      "source_sha256": "f3976bc4b6427491c59625d228128aece337212b47c02037b433eba458ec9baf"
+    }
+  }
+}

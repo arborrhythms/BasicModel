@@ -1,104 +1,78 @@
-<?xml version="1.0" ?>
-<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- XOR_exact: end-to-end XOR with reconstruction.
-
-       This fixture intentionally keeps the reconstruction path
-       full-width. The scalar project codebook is useful for compact
-       truth activation, but it collapses per-slot content and cannot
-       support this exact word-level reconstruction smoke test. -->
+<?xml version='1.0' encoding='utf-8'?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- XOR from located primitive memberships: order-0 field conjunctions,
+       then a learned order-1 sigma positive pole. The lesson file teaches
+       only primitive memberships and one name, never XOR. Reconstruction
+       is best effort from the forward evidence, with no stored input event
+       or stack. Parallel field operators run here; grammar lift/lower do not. -->
   <architecture>
+    <serial>false</serial>
+    <subsymbolicOrder>2</subsymbolicOrder>
+    <symbolicOrder>1</symbolicOrder>
+    <conceptualPi>true</conceptualPi>
+    <attentionPromotion>true</attentionPromotion>
+    <conceptPoolSize>4</conceptPoolSize>
+    <symbolTower>true</symbolTower>
+    <conceptBinding>aligned</conceptBinding>
     <data>
       <dataType>embedding</dataType>
+      <dataset>inline</dataset>
+      <conceptLessons>xor_concept_lessons.json</conceptLessons>
+      <input use="train">00|01|10|11</input>
+      <output use="train">0|1|1|0</output>
+      <input use="validation">00|01|10|11</input>
+      <output use="validation">0|1|1|0</output>
+      <input use="test">00|01|10|11</input>
+      <output use="test">0|1|1|0</output>
     </data>
-    <subsymbolicOrder>3</subsymbolicOrder>
-    <symbolicOrder>0</symbolicOrder>
-
     <training>
-      <!-- 2026-07-12 re-derivation: the unity byte-channel fix moved the
-           init-sensitive two-timescale trajectory; 600 under-converges
-           (MSE 0.0986), 1200 lands the crisp basin (MSE ~3e-4). -->
-      <numEpochs>1200</numEpochs>
-      <learningRate>0.005</learningRate>
       <autoload>false</autoload>
+      <numEpochs>64</numEpochs>
+      <learningRate>0.03</learningRate>
+      <maskRate>0</maskRate>
+      <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
     </training>
   </architecture>
-
-  <!-- InputSpace: text-mode lexer, full content width. nDim 14 -> 16
-       (2026-07-09 multi-rung pass: .where widened 2 -> 4; +2 preserves the
-       content width nWhat = 8; at 14 the crisp XOR basin was lost, seeds
-       0/1 settled at the 0.5 data mean). -->
   <InputSpace>
-    <nVectors>8</nVectors>
+    <nVectors>16</nVectors>
     <nDim>16</nDim>
-    <nOutput>8</nOutput>
+    <nOutput>16</nOutput>
   </InputSpace>
-
-  <!-- PartSpace: WIDE codebook so 1000 word prototypes have room
-       to sit pairwise-distinct. Stays content-wide on the output
-       (nOutputDim=nDim=10) so reconstruction lookups operate in the
-       full vocabulary space. -->
   <PartSpace>
-    <nInput>8</nInput>
-    <nVectors>1000</nVectors>
+    <nInput>16</nInput>
+    <nVectors>16</nVectors>
+    <maxVectors>256</maxVectors>
     <nDim>16</nDim>
-    <nOutput>8</nOutput>
+    <nOutput>16</nOutput>
     <invertible>true</invertible>
-    <!-- PartSpace is subsymbolic: its <codebook> element was retired
-         (2026-06-09 asymmetric-VQ plan, sec 7 task 7); PS is hardwired to
-         "none". The 1000 word prototypes live on the .what Embedding, not a
-         VQ snap on .event. -->
-    <!-- Butterfly cascade on pi (and historically sigma) gives pi
-         cross-element reach across the flattened [B, N*D] view.
-         Without it, pi is per-slot and cannot compute XOR (or any
-         function that requires combining information across slot
-         positions). XOR_exact relies on this for the exact-XOR
-         convergence property. -->
-    <butterfly>true</butterfly>
-    <synthesis>lexicon</synthesis>
+    <synthesis>meronomy</synthesis>
+    <butterfly>false</butterfly>
+    <chunkPromotionThreshold>100000</chunkPromotionThreshold>
   </PartSpace>
-
-  <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
   <ConceptualSpace>
-    <nInput>8</nInput>
-    <nVectors>8</nVectors>
+    <nInput>16</nInput>
+    <nVectors>32</nVectors>
     <nDim>16</nDim>
-    <nOutput>8</nOutput>
+    <nOutput>16</nOutput>
     <invertible>true</invertible>
-    <butterfly>true</butterfly>
   </ConceptualSpace>
-
-  <!-- WholeSpace: full-width passthrough for the exact smoke test. -->
   <WholeSpace>
     <lexer>word</lexer>
-    <nInput>8</nInput>
+    <nInput>16</nInput>
+    <nVectors>16</nVectors>
     <nDim>16</nDim>
-    <nVectors>8</nVectors>
-    <nOutput>8</nOutput>
-    <!-- XOR_exact overrides the codebook defaults: drop the WholeSpace
-         l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
-    <l1Lambda>0.0</l1Lambda>
-    <commitmentBeta>0.0</commitmentBeta>
-    <!-- WholeSpace codebook is mandatory (modality re-architecture); was none. -->
-    <codebook>none</codebook>
-    <butterfly>true</butterfly>
+    <nOutput>16</nOutput>
+    <propertyBasis>true</propertyBasis>
+    <analysis>meronomy</analysis>
+    <digitWholes>false</digitWholes>
+    <divideWithinWhole>false</divideWithinWhole>
   </WholeSpace>
-
   <OutputSpace>
-    <nInput>8</nInput>
+    <nInput>16</nInput>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
-    <!-- The XOR readout is ill-conditioned (the class-FLIPPING word axis is
-         ~10x lower variance than the dominant word axis) and co-adapts with
-         the upstream features during joint training. At the full model LR the
-         readout chases the moving features and settles near the data mean
-         (~0.5: 100% accurate but mushy, MSE ~0.22). Training the readout at
-         HALF the model LR makes it a slower, stable target the faster-moving
-         features organise toward -> crisp 0/1 (MSE ~0.004). The features are
-         separable (Adam reads them out crisp in 600 steps when frozen); the
-         only issue was the two-timescale convergence. -->
-    <lrScale>0.5</lrScale>
+    <conceptIds>20001</conceptIds>
   </OutputSpace>
 </model>

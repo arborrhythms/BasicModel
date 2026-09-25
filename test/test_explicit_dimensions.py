@@ -188,21 +188,10 @@ class TestXorReconCliReconstruction(unittest.TestCase):
 class TestXorExactCliReconstruction(unittest.TestCase):
     """``data/XOR_exact.xml`` should reconstruct its inputs end-to-end.
 
-    XOR_exact is a fully INVERTIBLE, non-quantized chain: embedding ->
-    PartSpace.pi (butterfly, codebook=none) -> ConceptualSpace
-    bookkeeping (codebook=none) -> WholeSpace.sigma (butterfly,
-    codebook=none) -> OutputSpace. The butterfly on BOTH pi and sigma
-    gives cross-slot reach (a per-slot fold cannot combine the two word
-    slots for XOR); codebook=none keeps the forward<->reverse round-trip
-    exact. All four XOR inputs round-trip exactly AND the XOR prediction
-    converges; the test asserts the OK/MISMATCH word-level match.
-
-    Regression history: this was xfail'd 2026-05-13..2026-06-04 after the
-    modality re-architecture forced a mandatory lossy PS codebook (VQ
-    snap) that destroyed exact reconstruction and blocked gradient. The
-    fix restored the invertible chain (PS/SS codebook=none) plus a
-    butterfly ``WholeSpace.sigma``; the xfail is removed so this gate
-    now catches future regressions.
+    The native field witnesses located order-0 conjunctions from primitive
+    byte memberships. The supervised output learns an order-1 sigma and
+    reads its positive pole. Reconstruction attributes owned forward field
+    evidence to native rows and decodes by activity, without input events.
     """
 
     @pytest.mark.slow
@@ -213,12 +202,14 @@ class TestXorExactCliReconstruction(unittest.TestCase):
             env_extra={"MODEL_COMPILE": "eager"})
         self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
         ok, total = _parse_input_match_counts(stdout)
+        print(f'XOR_exact reconstruction count: {ok}/{total}')
+        print('\n'.join(line for line in stdout.splitlines() if 'Reconstructed:' in line))
         self.assertGreater(total, 0,
                            "Did not find any 'Input: ... -> Reconstructed: ...' lines")
         self.assertGreaterEqual(
-            ok, total // 4,
+            2 * ok, total,
             f"XOR_exact reconstruction: {ok}/{total} inputs match "
-            f"(expected >=25%).",
+            f"(expected >=50%).",
         )
 
     @pytest.mark.slow

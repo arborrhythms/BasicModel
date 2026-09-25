@@ -131,7 +131,7 @@ def _xml_uses_embedding(filename):
     return (root.findtext("architecture/data/dataType") or "").strip().lower() == "embedding"
 
 
-_XOR_EXACT_USES_EMBEDDING = _xml_uses_embedding("XOR_exact.xml")
+_LEXICON_USES_EMBEDDING = _xml_uses_embedding("XOR_pos.xml")
 
 
 def _emit_warning_summary(caught):
@@ -2073,8 +2073,8 @@ class TestReconstructionSymbols(unittest.TestCase):
 
         # SS codebook is mandatory (symbolic). PS is subsymbolic -- its
         # <codebook> element was retired (#13 / asymmetric-vq), so DROP any PS
-        # codebook and do not emit one. XOR_exact ships SS as none, so force
-        # quantize for the fixture build.
+        # codebook and do not emit one. Keep WholeSpace quantized for this
+        # fixture build.
         _ps_cb = root.find("PartSpace/codebook")
         if _ps_cb is not None:
             root.find("PartSpace").remove(_ps_cb)
@@ -2110,6 +2110,18 @@ class TestReconstructionSymbols(unittest.TestCase):
         if con_nvec is not None:
             con_nvec.text = str(nSymbols)
 
+        # Keep the native field's slot geometry aligned when changing its cap.
+        for section, tags in (("InputSpace", ("nOutput",)),
+                              ("PartSpace", ("nInput", "nOutput")),
+                              ("ConceptualSpace", ("nInput",)),
+                              ("WholeSpace", ("nInput",)),
+                              ("OutputSpace", ("nInput",))):
+            for tag in tags:
+                node = root.find(f"{section}/{tag}")
+                if node is None:
+                    node = ET.SubElement(root.find(section), tag)
+                node.text = str(nSymbols)
+
         # Patch output count
         out_active = root.find("OutputSpace/nOutput")
         if out_active is not None:
@@ -2131,9 +2143,8 @@ class TestReconstructionSymbols(unittest.TestCase):
         """Forward pass output shape is [batch, nOutput] regardless of nSymbols.
 
         The flat-slab invariant (post Stage 1.C) requires IS.nOutput
-        == PS.nOutput == CS.nOutput == SS.nOutput; the XOR_exact.xml
-        ships with N=8 across these space_roles, so the test fixes nSymbols
-        to that value rather than the legacy ``nSymbols=3``.
+        == PS.nOutput == CS.nOutput == SS.nOutput. This fixture sets all
+        peers to eight slots before varying the output geometry.
         """
         m = self._create_xor_model(nSymbols=8, nOutput=1)
         m.train(False)
@@ -2147,7 +2158,7 @@ class TestReconstructionSymbols(unittest.TestCase):
 
 # class TestXor3dReversePass::test_construct_and_forward_reverse retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
-@unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "Model doesn't use Embedding")
+@unittest.skipIf(not _LEXICON_USES_EMBEDDING, "Model doesn't use Embedding")
 class TestTrainEmbeddingsFlag(unittest.TestCase):
     """trainEmbeddings config flag controls whether embedding weights are in optimizer."""
 
@@ -2155,7 +2166,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         """Create an XOR embedding model with specified trainEmbeddings flag."""
         import xml.etree.ElementTree as ET
 
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
         tree = ET.parse(xml_path)
         root = tree.getroot()
 
@@ -2318,7 +2329,7 @@ class TestWeightShapeMismatch(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # Training actually updates weights (regression: numEpochs=1 did nothing)
 # ---------------------------------------------------------------------------
-@unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "XOR_exact doesn't use Embedding")
+@unittest.skipIf(not _LEXICON_USES_EMBEDDING, "Lexicon fixture doesn't use Embedding")
 class TestVocabSaveRestore(unittest.TestCase):
     """Verify vocab is saved with weights and restored on load."""
 
@@ -2330,7 +2341,7 @@ class TestVocabSaveRestore(unittest.TestCase):
         single ``save_weights`` bundle alongside model parameters.
         """
 
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
         Models.TheData.load("xor")
 
         m1 = Models.BasicModel()
@@ -2375,7 +2386,8 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
 
         # XOR_exact.xml has autoload=false, autosave=false
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
-        Models.TheData.load("xor")
+        Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
+        Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
 
         m = Models.BasicModel()
         m.create_from_config(xml_path, data=Models.TheData)

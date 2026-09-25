@@ -1,0 +1,86 @@
+[
+  {
+    "name": "baseline",
+    "exit_code": 0,
+    "predictions": [
+      [
+        "0.0000",
+        "0.5897",
+        "MISMATCH"
+      ],
+      [
+        "1.0000",
+        "0.6003",
+        "MISMATCH"
+      ],
+      [
+        "1.0000",
+        "0.6156",
+        "MISMATCH"
+      ],
+      [
+        "0.0000",
+        "0.6709",
+        "OK"
+      ]
+    ],
+    "output_mse": 0.27634408750000006,
+    "reconstruction_matches": 1
+  },
+  {
+    "name": "current",
+    "exit_code": 0,
+    "predictions": [
+      [
+        "0.0000",
+        "0.5897",
+        "MISMATCH"
+      ],
+      [
+        "1.0000",
+        "0.6003",
+        "MISMATCH"
+      ],
+      [
+        "1.0000",
+        "0.6156",
+        "MISMATCH"
+      ],
+      [
+        "0.0000",
+        "0.6709",
+        "OK"
+      ]
+    ],
+    "output_mse": 0.27634408750000006,
+    "reconstruction_matches": 1
+  },
+  {
+    "name": "normalized",
+    "exit_code": 0,
+    "predictions": [
+      [
+        "0.0000",
+        "0.5897",
+        "MISMATCH"
+      ],
+      [
+        "1.0000",
+        "0.6003",
+        "MISMATCH"
+      ],
+      [
+        "1.0000",
+        "0.6156",
+        "MISMATCH"
+      ],
+      [
+        "0.0000",
+        "0.6709",
+        "OK"
+      ]
+    ],
+    "output_mse": 0.27634408750000006,
+    "reconstruction_matches": 1
+  }
+]

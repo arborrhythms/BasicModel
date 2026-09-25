@@ -1,0 +1,8 @@
+[collect] 2 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-001] 1 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 49.3s; peak 1.20 GiB
+[worker-000] exit 0; 50.4s; peak 1.19 GiB
+Result: passed, exit 0; 2/2 cases completed.
+output/item10-forward-reconstruction/xor-final/result.json

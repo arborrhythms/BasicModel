@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='utf-8'?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
+  
+  <architecture>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <symbolicOrder>0</symbolicOrder>
+
+    <training>
+      
+      <numEpochs>1200</numEpochs>
+      <learningRate>0.005</learningRate>
+      <autoload>false</autoload>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+  <normalizeSigma>true</normalizeSigma><normalizePi>false</normalizePi></architecture>
+
+  
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  
+  <PartSpace>
+    <nInput>8</nInput>
+    <nVectors>1000</nVectors>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    
+    
+    <butterfly>true</butterfly>
+    <synthesis>lexicon</synthesis>
+  </PartSpace>
+
+  
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+  </ConceptualSpace>
+
+  
+  <WholeSpace>
+    <lexer>word</lexer>
+    <nInput>8</nInput>
+    <nDim>16</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>8</nOutput>
+    
+    <l1Lambda>0.0</l1Lambda>
+    <commitmentBeta>0.0</commitmentBeta>
+    
+    <codebook>none</codebook>
+    <butterfly>true</butterfly>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+    
+    <lrScale>0.5</lrScale>
+  </OutputSpace>
+</model>

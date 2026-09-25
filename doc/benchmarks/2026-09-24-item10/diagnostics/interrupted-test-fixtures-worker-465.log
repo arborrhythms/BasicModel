@@ -1,0 +1,9 @@
+....F...                                                                 [100%]
+=================================== FAILURES ===================================
+___________ TestPiSigmaInheritGrammarLayer.test_pi_mro_direct_parent ___________
+test/test_pi_sigma_inherit_grammarlayer.py:57: in test_pi_mro_direct_parent
+    self.assertIs(PiLayer.__mro__[1], GrammarLayer)
+E   AssertionError: <class 'Layers._NormalizedFold'> is not <class 'Layers.GrammarLayer'>
+=========================== short test summary info ============================
+FAILED test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_mro_direct_parent
+1 failed, 7 passed in 2.90s

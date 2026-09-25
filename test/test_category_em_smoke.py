@@ -45,10 +45,9 @@ _DEFAULTS = os.path.join(_DATA, "model.xml")
 
 def _write_category_config(*, mlp=False):
     """Write a temp config = POS_smoke.xml + the category flags, injected in
-    the architecture block. Forces PARALLEL mode
-    (serial=false, symbolicOrder=0): the round-0 role observation that drives
-    the E/M is parallel-mode-correct (serial per-word attribution is
-    approximate -- the handoff §3.3 caveat). Written outside the validated
+    the architecture block. Uses SERIAL mode: category roles are grammatical
+    observations, and parallel field processing excludes grammar lift/lower.
+    Written outside the validated
     source tree and unlinked by the caller."""
     with open(_BASE_CONFIG) as fh:
         text = fh.read()
@@ -60,7 +59,7 @@ def _write_category_config(*, mlp=False):
     assert needle in text, "POS_smoke.xml shape changed"
     text = text.replace(
         needle,
-        "<serial>false</serial>\n"
+        "<serial>true</serial>\n"
         "    <symbolicOrder>0</symbolicOrder>\n" + flags,
         1)
     tmp = tempfile.NamedTemporaryFile(

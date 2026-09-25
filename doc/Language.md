@@ -194,6 +194,18 @@ compose rule is either an implicit passthrough or the default unary
 `False` the moment any non-default operator rule (`part`, `equal`,
 `conjunction`, ...) is present.
 
+**What the grammar's `sigma` and `pi` bind to (item 11c, 2026-09-24).** The
+perceptual towers no longer own fold layers, so a unary `P = sigma(P)` or
+`C = pi(C)` rule has no host layer and the dispatcher passes the operand
+through unchanged (`_by_name` miss → `return subspace`); `sigma` and `pi`
+are not in `GRAMMAR_LAYER_CLASSES` and no host layer is shared across
+roles. The grammar's own folds are the `GrammarLayer` operators it declares
+and owns: `lift` (a `SigmaLayer` inside `LiftLayer`), `lower` (a `PiLayer`
+inside `LowerLayer`), `union`, `intersection` and the rest of the registry,
+plus `symbolize`. They act within conceptual space at the field's current
+order; what raises order is symbolization, not sigma
+([11c plan, entry 9](plans/2026-09-24-item-11c.md)).
+
 > **SS-analysis vs CS-execution.** `SymbolSubSpace.compose` is the
 > SS-side *analysis* stage (it selects the per-space hard rule dict
 > `current_rules`); the CS-side *execution* (applying lift / lower /
@@ -310,10 +322,10 @@ fabricating a split would corrupt the reconstruction.
 | `chunk` | 2 | CS | additive `left + right` (PS-style chunking); in `ladder.grammar` a reducer candidate licensed only on a pair the analysis tiling places in one coarser whole (doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b); an admitted chunk is a concept over its member concepts | PEEL w/ basis: best-cosine row `x1`, exact residual `(x1, parent − x1)`; empty-set decomposition `(parent, 0)` without |
 | `sum` | 2 | CS | element-wise `left + right` | empty-set decomposition `(parent, 0)` — recomposes exactly |
 | `product` | 2 | CS | element-wise `left * right` | **raise** (zeros annihilate; many-to-one) |
-| `lift` | 2 | CS | order-raising fold (internal SigmaLayer; optional gate) | `Ops.liftReverseAll` w/ basis ($\to$ disjunctionReverse); balanced `_sigma.generate` split without |
+| `lift` | 2 | CS | union fold within the current order (internal SigmaLayer; optional gate); order is raised by symbolization, not by this fold (11c) | `Ops.liftReverseAll` w/ basis ($\to$ disjunctionReverse); balanced `_sigma.generate` split without |
 | `verb` | 2 | CS | sparse verb-conditioned spectral operator | requires `verb_what` (`reverse_required_kwargs`); returns `(unapply_verb(parent, verb_what), verb_what)` |
 | `adverb` | 2 | CS | VP eigenmodifier (`apply_adverb`) | **not dispatchable** (`reverse_dispatchable = False`; lossy) |
-| `lower` | 2 | CS | order-lowering (internal PiLayer; DET) | `Ops.lowerReverseAll` w/ basis ($\to$ conjunctionReverse); `_pi.generate` without |
+| `lower` | 2 | CS | intersection fold within the current order (internal PiLayer; DET); selects a particular under 11c's reference orders | `Ops.lowerReverseAll` w/ basis ($\to$ conjunctionReverse); `_pi.generate` without |
 | `preposition` | 2 | CS | `.where`-relation refinement of NP/VP | `(x, x)` with the `.where` rotation undone (content-exact, marker-lossy) |
 | `bind` | 2 | CS | contextual missing/controlled-NP resolution | **raise** (context not preserved in the parent) |
 | `tense` | 1 | CS | phase rotation of the `.when` band (`shift_time(+delta)`) | exact inverse rotation (`shift_time(-delta)`) |

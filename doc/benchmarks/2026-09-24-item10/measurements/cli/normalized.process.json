@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item10-review/cli-paired/XOR_exact-normalized.xml"
+  ],
+  "pid": 377,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 682542568,
+  "elapsed_seconds": 30.97993687505368,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item10-review/cli-paired/normalized.log"
+}

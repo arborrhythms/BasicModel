@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-24-item10/measure_native.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item10-review/native-ranges/normalized.xml",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item10-review/native-ranges/normalized.json"
+  ],
+  "pid": 95871,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4138177192,
+  "elapsed_seconds": 47.8148787090322,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item10-review/native-ranges/normalized.log"
+}

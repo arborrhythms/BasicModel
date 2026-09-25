@@ -162,6 +162,9 @@
 
     <!-- Passes allowed to retarget perception: all, off, or indices 1..T-1. -->
     <subsymbolicLoop>all</subsymbolicLoop>
+    <!-- Completed learning updates without improved local both evidence,
+         before discontiguous support may raise conceptual order. -->
+    <mereologyRefinePatience>3</mereologyRefinePatience>
     <maxActivePerLayer>8</maxActivePerLayer>
     <!-- Role-participation category codebook for the role-collapsed grammar.
          Unsettled MetaSymbols accumulate bounded temporary role evidence, then
@@ -198,6 +201,8 @@
       <!-- Dataset key: xor | mnist | tomatoes | text | inline.
            Omit for inference-only models. -->
       <dataset>xor</dataset>
+      <!-- Optional primitive/name teaching examples for concept-id outputs. -->
+      <conceptLessons></conceptLessons>
       <!-- Shard count and per-shard document cap (streaming datasets). -->
       <numShards>1</numShards>
       <maxDocs>10000</maxDocs>
@@ -527,6 +532,8 @@
   </WholeSpace>
 
   <OutputSpace>
+    <!-- Space-separated persistent concept ids; each reads its positive pole. -->
+    <conceptIds></conceptIds>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>

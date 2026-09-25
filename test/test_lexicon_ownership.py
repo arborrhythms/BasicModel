@@ -19,7 +19,7 @@ def _build_text_model(train_embeddings=False):
     """Construct an embedding-mode XOR model. Mirrors
     test_basicmodel.TestTrainEmbeddingsFlag._create_model.
     """
-    xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+    xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
     tree = ET.parse(xml_path)
     root = tree.getroot()
     training = root.find("architecture/training")

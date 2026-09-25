@@ -1,0 +1,7 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7924: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9f01usyc.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+Starting with dynamic 12-dim embedding (words added at runtime)
+  Building span table: 0/16 docs
+serial True
+fired 15
+assign 31 role 25.0 pid True

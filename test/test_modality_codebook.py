@@ -10,9 +10,8 @@ asymmetric per space_role:
     a codebook on for PS.
   * WholeSpace is SYMBOLIC: a symbol qua symbol quantizes onto a codebook,
     so its ``<codebook>`` DEFAULTS to ``"quantize"`` when a config omits it. An
-    explicit ``<codebook>none</codebook>`` on SS is still honored (e.g.
-    data/XOR_exact.xml builds a full-width invertible passthrough for the
-    exact-XOR reconstruction fixture).
+    explicit ``<codebook>none</codebook>`` on WholeSpace is still honored.
+    The opt-out fixture derives that setting from data/XOR_pos.xml.
 """
 
 import os, sys, tempfile, unittest, warnings
@@ -55,13 +54,14 @@ class TestCodebookTiering(unittest.TestCase):
                             "WholeSpace codebook defaults to quantize")
 
     def test_ws_codebook_none_opt_out_honored(self):
-        """data/XOR_exact.xml explicitly resolves WholeSpace to
-        <codebook>none</codebook> (a full-width invertible passthrough) and
-        must build without raising. PartSpace is subsymbolic regardless,
-        so it is always "none"."""
-        with warnings.catch_warnings():
+        """An explicit WholeSpace codebook opt-out remains honored."""
+        tree = ET.parse(os.path.join(_DATA, "XOR_pos.xml"))
+        ET.SubElement(tree.getroot().find("WholeSpace"), "codebook").text = "none"
+        with tempfile.TemporaryDirectory() as directory, warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            model = _build(os.path.join(_DATA, "XOR_exact.xml"))
+            path = os.path.join(directory, "codebook-none.xml")
+            tree.write(path)
+            model = _build(path)
         self.assertEqual(model.perceptualSpace.codebook_mode, "none",
                          "PartSpace is subsymbolic: always none")
         self.assertEqual(model.wholeSpace.codebook_mode, "none",

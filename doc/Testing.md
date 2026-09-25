@@ -1757,3 +1757,149 @@ completes **4,812 cases: 4,485 passed, 326 existing skips, and 1 existing expect
 **19/19**, including the restored raw smoke.
 All six unseeded XOR runs in the full receipt improve from MSE .5 to 0.
 All three manifests match the 644-file reconstruction snapshot byte for byte.
+
+
+### Item 11c refinement residue and item 10 evaluation record (2026-09-25)
+
+The [evaluation receipt](benchmarks/2026-09-24-item10/README.md) records the 11c
+refinement/raise residue and item 10's normalized-fold experiment. Its source
+is archived; the [review resolution](benchmarks/2026-09-25-item10-resolution/README.md)
+records the current implementation and validation. The refinement implementation
+uses actual retained witness spans, preserves extent containment, removes
+count-triggered raising, and gates promotion beyond order 1 on discontiguous
+both support after local refinement stalls. Three completed updates without
+strict local improvement was accepted by Alec on September 25.
+
+All six native XOR row-learning runs still improve from MSE .5 to 0. The
+normalized raw-Sigma/current-Pi pair solves all 16 declared unit-energy
+measurement trials at widths 4 and 8; all six additional explicit learning
+assertions pass. Cube-valued inputs, native operand norms, depth contraction,
+log-floor slopes, binary inverse ambiguity, operator counts and both timing
+pairs are reported. The recommendation was **drop as a production replacement**;
+Alec accepted it and the evaluation mode and its switches are deleted.
+Native min/max perception and the
+max concept pyramid remain unchanged.
+
+Serial reconstruction is .0891618710 after training versus .0923267286 at
+`d4dc385`, without a tolerance gate. Pi off/on and frozen priors agree.
+All eight 11a prior rows over 256 bytes and all 160 segmentation runs across
+32 sentences are unchanged. The native smoke has positive evidence and no
+negative evidence for every present word.
+
+The archived [full receipt](benchmarks/2026-09-24-item10/full-result.json.gz)
+completes **4,829 unique cases: 4,502 passed,
+326 existing skips and 1 existing expected failure**,
+exit zero. The affected selection passes 140 cases and the final fixture
+correction selection passes 34/34. The [explicit slow receipt](benchmarks/2026-09-24-item10/explicit-result.json.gz)
+is **27 passed and one failed**. Its inherited `XOR_exact` CLI crisp-output
+gate fails at .61838 unseeded; untouched `606683a` also fails. At measurement
+seed 42, baseline, current defaults and selective normalization report the
+same predictions and MSE .27634. Its unary tower-fold hosts were deleted in
+11c, so the normalization switch cannot affect that fixture. The assertion
+remained in place. Alec required the gate to pass through native conceptual
+space; the review resolution below replaces this failed configuration.
+The historical failure is preserved and does not count as a passing gate.
+No skip, expected-failure marker, or selected initialization was added.
+
+The full and final fixture receipts match all **647 source files**,
+SHA-256 of the sorted source map:
+`6f9f495ed94f89e6f55f293808d41bf02693180305252e05171a99befcf8ac2e`.
+Runtime, configuration and measured-gate files match every measurement and
+the explicit receipt. Three later fixture corrections are recorded in the
+[source delta](benchmarks/2026-09-24-item10/validation-source-delta.json):
+direct GrammarLayer inheritance with an auxiliary mixin, and distinct known
+codebook rows for the relation-insertion probe, and omission of deleted
+WS count-raise state from checkpoints. The failure logs remain in
+the receipt. The final documentation-link check passes **82/82**.
+
+
+### Item 10 review resolution and native CLI XOR — historical (2026-09-25)
+
+The [resolution receipt](benchmarks/2026-09-25-item10-resolution/README.md)
+records the source before the final review. Its saved native perceptual views
+were rejected; the forward-artifact correction below supersedes that inverse.
+The following counts and unchanged-assertion comparison describe only the
+archived source. It implements Alec's initial three decisions. Refine-before-raise keeps three completed
+optimizer updates without strict improvement of the worst local both residual,
+reset by improvement and cleared by pure/unknown evidence. Item 10 is **decided:
+dropped**. The normalization mixin, lift/lower arguments, XML/schema parameters
+and mode tests are deleted. The measurement scripts and exact evaluated source
+remain archived with the reasons: composed operands exceed unit energy, depth
+loses spread, the geometric floor has a dead gradient below and steep slope
+above, convex bias breaks all-zero input, reconstruction is worse and there
+is no consistent speedup.
+
+`XOR_exact.xml` now uses symbolic order 1, conceptual pi and native aligned
+perception. Two primitive positions lie in one extent. Primitive/name lessons
+teach “is a one”; the ordinary unlabelled observer forms located pi cases at
+order 0. A zero-initialized order-1 sigma learns the XOR cases, and the output
+reads that concept's positive pole by persistent identity. No pooled both
+corner or pi edge in the symbolic loop supplies the result. Grammar owns
+`lift` and `lower`; no unary tower fold is restored. The understanding retains
+native perceptual views for the ordered inverse. A serial derivation or free
+inverse cannot substitute the latest live field for owned reconstruction.
+
+Both existing end-to-end CLI tests pass unseeded with unchanged function
+bodies, decorators and thresholds; the [AST comparison](benchmarks/2026-09-25-item10-resolution/unchanged-cli-assertions.json)
+records that equality. All nine declared native learning runs return
+`[0, 1, 1, 0]` from initial MSE .5. The three added native curriculum runs
+reconstruct all four inputs and assert exact-zero unrelated controls.
+The restored native smoke and serial ownership checks pass with slow tests
+enabled. The initial crisp-output failure, the intermediate reconstruction
+failure and the ownership regression are retained in the receipt's diagnostics.
+
+The single final [full receipt](benchmarks/2026-09-25-item10-resolution/full-result.json.gz)
+completes **4,818 unique cases: 4,497 passed, 320 existing skips and one existing
+expected failure**, exit zero, with no red outcomes. The affected selection
+completes **423 cases: 361 passed, 61 existing skips and one existing expected
+failure**. The two CLI gates pass **2/2**, and the explicit slow selection
+passes **23/23**. A pre-correction full run was interrupted; it contributes
+nothing to these final counts. A memory-limited slow attempt was rerun with
+one worker. No new skip or expected-failure marker is added.
+
+All final selections and the serial measurements match **648 source files**,
+SHA-256 of the sorted source map:
+`f3976bc4b6427491c59625d228128aece337212b47c02037b433eba458ec9baf`.
+Serial reconstruction after training remains **.0891618710**, against
+**.0923267286** at `d4dc385`, with no tolerance gate. Pi off/on and frozen
+priors agree; all eight 11a prior rows over 256 bytes and all 160 segmentation
+runs over 32 sentences are unchanged. Changes remain uncommitted and unpushed
+for review; no parent bump or item 9 work has been performed. The final
+documentation-link check passes **83/83**.
+
+### Item 10 final review correction: forward-artifact reconstruction (2026-09-25)
+
+The [final correction receipt](benchmarks/2026-09-25-item10-forward/README.md)
+replaces the saved-view inverse. The native understanding retains concept ids,
+paired field evidence, occurrence evidence and brackets. `_reverse_body`
+resolves those identities and uses `cs_percept_attribution` to reach native
+memberships and radix rows. Radix activity decodes the input; no saved event,
+input stack, code-neighbour match or later live perception supplies the read.
+An equal-length subject extent locates an ordered part group even when the
+WholeSpace runs are finer. Property attribution follows written memberships;
+an absent primitive receives no inverse gradient.
+
+The initial CLI attribution attempt reconstructed **1/4** and failed crisp
+output. The extent-placement and absent-membership-gradient probes exposed
+the defects above. The corrected CLI reconstructs **4/4** and passes MSE < .05.
+The reconstruction test's name said fifty percent but its old assertion
+checked twenty-five; it now enforces the stated **50%** requirement directly.
+No seed is selected and no learning-rate, epoch or tolerance adjustment is
+used. Poisoned-access tests preserve a prior inverse after another perception,
+and zero retained evidence reconstructs no bytes.
+
+The mode-exclusion tests assert that serial grammar executes no field sigma,
+pi or not, and parallel perception dispatches no grammar lift/lower. The
+grammar category-learning smoke fixture now runs in serial mode, preserving
+its assignment and role-learning assertions. `XOR_exact.xml` removes its
+unexercised grammar and says that the lesson teaches only memberships and one
+name, never XOR; reconstruction is best effort from forward artifacts.
+
+The serial measurement remains **.0891618710** after training against
+**.0923267286** at `d4dc385`, without a tolerance gate. Pi off/on and frozen
+priors agree. All eight 11a property rows over 256 bytes and all 160 runs
+over 32 sentences match their preserved reference.
+
+The final source-matched full receipt completes **4,824 cases**: **4,502 passed**, **321 skipped** and **1 existing expected failure**, with no red outcomes. All 648 source files match `bac8dbede6bc069132a4fb1e3ca75c683ace40614ea7e8e1832f9745a734b001` across the full, affected, CLI and explicit slow receipts and the serial measurements. The new slow serial exclusion check is included in the explicit passing selection. Work stops for review before commit, push or parent bump.
+
+Final documentation-link verification: **84/84 passed**.

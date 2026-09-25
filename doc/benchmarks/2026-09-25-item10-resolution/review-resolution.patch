@@ -1,0 +1,1480 @@
+--- evaluation/bin/ConceptLessons.py
++++ review/bin/ConceptLessons.py
+@@ -0,0 +1,101 @@
++"""Teacher-owned primitive and name lessons for native conceptual output.
++
++Only primitive memberships and single-occurrence names are taught here.
++Located conjunctions come from the ordinary, target-free pool observer;
++output definitions begin with zero weights over every witnessed case.
++"""
++import json
++from pathlib import Path
++
++import torch
++
++from util import TheXMLConfig, ProjectPaths
++
++
++def teach_concept_lessons(model):
++    filename = TheXMLConfig.get('architecture.data.conceptLessons', default='')
++    if not filename or getattr(model, '_concept_lessons_taught', False):
++        return
++    path = Path(filename)
++    if not path.is_absolute():
++        path = Path(ProjectPaths.DATA_DIR) / path
++    lesson = json.loads(path.read_text())
++    cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
++    if not (cs._sparse_active() and cs.conceptual_pi and cs._promotion_enabled):
++        raise ValueError('concept lessons require symbolic order, conceptual pi and promotion')
++    primitive = ws.subspace.what.primitive_properties
++    for item in lesson['properties']:
++        primitive.teach(item['row'], item['bytes'], item['memberships'])
++    for item in lesson['names']:
++        row = cs._csw_concept_row(0, int(item['concept']))
++        for feature in item['features']:
++            cs.add_concept_feature(row, feature['tower'], feature['row'],
++                                   feature['weight'], negated=feature.get('negative', False))
++    for concept in model.outputSpace.concept_ids:
++        cs._csw_concept_row(1, concept)
++    store = cs._concept_allocator.layer(0)
++    device = primitive.members.device
++    width = int(model.inputSpace.outputShape[0])
++
++    def encode(texts):
++        data = torch.zeros(len(texts), 1, width, device=device, dtype=torch.long)
++        for b, text in enumerate(texts):
++            raw = text.encode('utf8')
++            if len(raw) > width:
++                raise ValueError('concept lesson exceeds input width')
++            data[b, 0, :len(raw)] = torch.tensor(list(raw), device=device)
++        return data
++
++    def read_name(concept):
++        carrier = model._combine_last_cs_sub
++        ids, evidence = carrier._concept_ids, carrier._concept_activations
++        if ids.ndim == 1:
++            ids = ids[:, None].expand(-1, evidence.shape[1])
++        return (evidence.amax(2) * (ids == concept)[..., None]).amax(0)
++
++    was_training = model.training
++    model.eval()
++    model.set_sigma(0.)
++    # Name targets never enter forward; optimize the existing feature weights.
++    optimizer = torch.optim.Adam([store.features.values], lr=float(lesson['learning_rate']))
++    history = []
++    for item in lesson['names']:
++        examples = item['examples']
++        native = encode([e['text'] for e in examples])
++        target = torch.tensor([e['evidence'] for e in examples], device=device)
++        for _ in range(int(lesson['updates'])):
++            optimizer.zero_grad()
++            model.forward(native)
++            loss = (read_name(item['concept']) - target).square().mean()
++            loss.backward()
++            optimizer.step()
++            store.project_parts()
++            model.End()
++        history.append(float(loss.detach()))
++
++    # The cases are unlabelled training inputs. Observe their located field,
++    # then let raw use (never the optimizer) earn pool participation.
++    inputs = model.inputSpace.data.train_input
++    with torch.no_grad():
++        for _ in range(int(lesson['witness_updates'])):
++            for start in range(0, len(inputs), 64):
++                texts = [x if isinstance(x, str) else
++                         bytes(x.reshape(-1).tolist()).rstrip(b'\0').decode('utf8')
++                         for x in inputs[start:start + 64]]
++                model.forward(encode(texts))
++                cs.promotion_observe()
++                cs.promotion_pass()
++                model.End()
++    cases = sorted({r for r, _ in store.conjunctive._index
++                    if cs._order0_inventory_row(r) and not bool(store.provisional[r])})
++    if not cases:
++        raise ValueError('concept lessons did not witness any located field conjunctions')
++    for concept in model.outputSpace.concept_ids:
++        output = cs._csw_row_of(concept)
++        for row in cases:
++            cs.add_concept_edge(output, row)  # unwritten; labels train these later
++    model._concept_lesson_receipt = dict(name_losses=history, cases=cases,
++                                        output_concepts=list(model.outputSpace.concept_ids))
++    model._concept_lessons_taught = True
++    model.zero_grad(set_to_none=True)
++    model.train(was_training)
+--- evaluation/bin/Language.py
++++ review/bin/Language.py
+@@ -3176,7 +3176,7 @@
+                  wholeSpace=None, perceptualSpace=None,
+                  conceptualSpace=None,
+                  invertible=True, nonlinear=True,
+-                 butterfly=False, N=None, normalize=None,
++                 butterfly=False, N=None,
+                  force_verb_spectrum=False,
+                  force_adverb_eig_edit=False):
+         """Initialize LiftLayer.
+@@ -3226,13 +3226,10 @@
+         # The inner sigma is used both for the binary forward(left, right)
+         # path and (via its ``_butterfly_pair_op`` method) for the
+         # butterfly per-pair op when the cascade is enabled.
+-        normalize = bool(TheXMLConfig.get('architecture.normalizeSigma', default=False)) if normalize is None else bool(normalize)
+-        if normalize and butterfly:
+-            raise ValueError('normalizeSigma evaluates dense width-scaled factors only')
+         if int(nInput) > 0:
+             self._sigma = SigmaLayer(
+                 nInput=int(nInput), nOutput=int(nOutput),
+-                invertible=invertible, nonlinear=nonlinear, normalize=normalize)
++                invertible=invertible, nonlinear=nonlinear)
+             self._sigma._bounded_backward = True   # nested grammar fold
+             self.layers.append(self._sigma)
+             # Lexical-mask projection (GrammarOpsPass §2): the word's
+@@ -3636,7 +3633,7 @@
+                  wholeSpace=None, perceptualSpace=None,
+                  conceptualSpace=None,
+                  invertible=True, nonlinear=True,
+-                 butterfly=False, N=None, normalize=None):
++                 butterfly=False, N=None):
+         """Initialize LowerLayer; symmetric to ``LiftLayer.__init__``
+         but with an internal PiLayer (multiplicative log-domain
+         fold) instead of a SigmaLayer.
+@@ -3658,13 +3655,10 @@
+         object.__setattr__(self, 'wholeSpace', wholeSpace)
+         object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+         object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+-        normalize = bool(TheXMLConfig.get('architecture.normalizePi', default=False)) if normalize is None else bool(normalize)
+-        if normalize and butterfly:
+-            raise ValueError('normalizePi evaluates dense width-scaled factors only')
+         if int(nInput) > 0:
+             self._pi = PiLayer(
+                 nInput=int(nInput), nOutput=int(nOutput),
+-                invertible=invertible, nonlinear=nonlinear, normalize=normalize)
++                invertible=invertible, nonlinear=nonlinear)
+             self._pi._bounded_backward = True      # nested grammar fold
+             self.layers.append(self._pi)
+             # Lexical-mask projection (GrammarOpsPass §2); see LiftLayer.
+--- evaluation/bin/Layers.py
++++ review/bin/Layers.py
+@@ -3046,123 +3046,11 @@
+         return self.generate(*args, **kwargs)
+ 
+ 
+-class _NormalizedFold:
+-    """Item 10 evaluation: column-normalized weights and convex chart bias.
+-
+-    Signed sigma uses the raw chart and L2 columns. Monotone sigma/pi
+-    use arithmetic/geometric L1 means. Signed pi is the normalized-odds
+-    control; its complement is -x. The proposed selective pair leaves pi
+-    unnormalized. No activation normalization is hidden in these operators.
+-    """
+-    _geometric_mean = False
+-    _mean_log_floor = 1e-6
+-
+-    def _init_normalization(self, normalize):
+-        self.normalize = bool(normalize)
+-        if not self.normalize:
+-            return
+-        if self.butterfly:
+-            raise ValueError('normalize uses width-scaled dense factors; butterfly is not evaluated')
+-        self.raw_beta = nn.Parameter(torch.full((1, self.nOutput), -5.))
+-        self.raw_operands = nn.Parameter(torch.zeros(2))
+-        if self.monotonic and isinstance(self.layer, NonNegativeInvertibleLinearLayer):
+-            # Fixed total off-diagonal mass, instead of O(width) dilution.
+-            off = math.log(math.expm1(math.log1p(math.exp(-5.)) * 8 / max(8, self.nInput, self.nOutput)))
+-            with torch.no_grad():
+-                self.layer.raw_L.fill_(off)
+-                self.layer.raw_U.fill_(off)
+-
+-    def normalized_weights(self, gate=None):
+-        """Return W/scale and the same scale needed by the tied inverse."""
+-        inner = self.layer
+-        if isinstance(inner, InvertibleLinearLayer):
+-            L = inner._L_eff() if inner.ergodic else inner._L()
+-            U = inner._U_eff() if inner.ergodic else inner._U()
+-            d = inner._d_eff_for_gate(gate) if inner.ergodic else inner._d_effective_for_gate(gate)
+-            W = L @ F.pad(torch.diag(d), (0, inner.nOutput-inner.rank,
+-                                          0, inner.nInput-inner.rank)) @ U
+-        else:
+-            W = inner.compute_W_current()
+-            if self.monotonic:
+-                W = F.softplus(W)
+-        scale = W.sum(0) if self.monotonic else W.square().sum(0).sqrt()
+-        scale = scale.clamp_min(torch.finfo(W.dtype).tiny)
+-        return W / scale, scale
+-
+-    def _mean_chart(self, x):
+-        if not self._geometric_mean:
+-            return x
+-        if self.monotonic:
+-            return x.clamp_min(self._mean_log_floor).log()
+-        return bounded_atanh(x, bounded=False)
+-
+-    def _mean_unchart(self, x, *, inverse=False):
+-        if self._geometric_mean:
+-            x = x.exp() if self.monotonic else x.tanh()
+-        return x.clamp(0, 1) if inverse and self.monotonic else x
+-
+-    def _mean_bias(self):
+-        raw = self.layer._effective_bias()
+-        if not torch.is_tensor(raw):
+-            raw = torch.zeros_like(self.raw_beta) + raw
+-        if self._geometric_mean:
+-            c = F.logsigmoid(raw) if self.monotonic else raw
+-        else:
+-            c = raw.sigmoid() if self.monotonic else raw.tanh()
+-        # Compute both gates directly: 1-sigmoid(beta) rounds to zero early.
+-        return torch.sigmoid(-self.raw_beta), torch.sigmoid(self.raw_beta) * c
+-
+-    def _mean_forward_chart(self, chart, gate=None):
+-        W, _ = self.normalized_weights(gate)
+-        alpha, bias = self._mean_bias()
+-        return self._mean_unchart(alpha * (chart.to(W) @ W) + bias)
+-
+-    def _mean_forward(self, x, binary=False, gate=None):
+-        if binary:
+-            x = Ops.top2_select_ste(x)
+-        return self._mean_forward_chart(self._mean_chart(x), gate)
+-
+-    def _mean_reverse_chart(self, y, gate=None, W_inv=None):
+-        if not isinstance(self.layer, InvertibleLinearLayer):
+-            raise ValueError('normalized reverse requires invertible=True')
+-        _, scale = self.normalized_weights(gate)
+-        alpha, bias = self._mean_bias()
+-        chart = (self._mean_chart(y) - bias) / alpha
+-        return self.layer.functional_reverse(chart * scale, gate=gate, W_inv=W_inv)
+-
+-    def _mean_reverse(self, y, gate=None, W_inv=None):
+-        return self._mean_unchart(self._mean_reverse_chart(y, gate, W_inv), inverse=True)
+-
+-    def _mean_operand_weights(self):
+-        weights = F.softplus(self.raw_operands)
+-        return weights / weights.sum()
+-
+-    def _mean_compose(self, left, right, gate=None):
+-        weights = self._mean_operand_weights()
+-        chart = weights[0] * self._mean_chart(left) + weights[1] * self._mean_chart(right)
+-        return self._mean_forward_chart(chart, gate)
+-
+-    def _mean_generate(self, parent, gate=None, W_inv=None, reference=None, reference_side=None):
+-        chart = self._mean_reverse_chart(parent, gate, W_inv)
+-        op = self._mean_unchart(chart, inverse=True)
+-        if reference is None:
+-            return op, op
+-        right, known = reference_side
+-        weights = self._mean_operand_weights()
+-        weight_known = torch.where(right[:, None], weights[1], weights[0])
+-        weight_other = torch.where(right[:, None], weights[0], weights[1])
+-        remainder = (chart - weight_known * self._mean_chart(reference)) / weight_other
+-        remainder = self._mean_unchart(remainder, inverse=True)
+-        left = torch.where(right[:, None], remainder, reference)
+-        right_value = torch.where(right[:, None], reference, remainder)
+-        return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
+-
+-
+-class SigmaLayer(_NormalizedFold, GrammarLayer):
+-    """Additive conceptual fold owned by the grammar's LiftLayer.
+-
+-    Perceptual towers have no learned fold layers. ``normalize=True`` is
+-    the item 10 evaluation mode documented by _NormalizedFold.
++class SigmaLayer(GrammarLayer):
++    """Additive chart map used by the grammar's LiftLayer.
++
++    Lift owns the operand assembly and dispatch. Perceptual towers use
++    their native meronomies; they do not own this fold.
+ 
+     With ``nonlinear=True``, ``forward`` charts its input through atanh,
+     applies the inner linear map, then returns tanh of the result. For the
+@@ -3192,7 +3080,7 @@
+ 
+     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
+                  invertible=False, nonlinear=True, stable=False,
+-                 monotonic=False, butterfly=False, N=None, normalize=False):
++                 monotonic=False, butterfly=False, N=None):
+         """Initialize SigmaLayer; allocate state for the class contract.
+ 
+         See class docstring for invariants.
+@@ -3207,7 +3095,6 @@
+         cascade node.
+         """
+         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+-        self.monotonic = bool(monotonic)
+         self.invertible = invertible
+         self.ergodic    = ergodic
+         self.nonlinear  = nonlinear
+@@ -3230,7 +3117,6 @@
+             else:
+                 self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
+             self.layers.append(self.layer)
+-        self._init_normalization(normalize)
+ 
+     @property
+     def bias(self): return self.layer.bias
+@@ -3275,10 +3161,8 @@
+             out = torch.tanh(out)
+         return out
+ 
+-    def compute_forward(self, x, binary=False, gate=None):
++    def compute_forward(self, x, binary=False):
+         """Pure ungated Sigma computation for a recurrent HOP body."""
+-        if self.normalize:
+-            return self._mean_forward(x, binary=binary, gate=gate)
+         if self.butterfly:
+             if self.nonlinear:
+                 x = bounded_atanh(x, bounded=self._bounded_backward)
+@@ -3315,8 +3199,6 @@
+         nonlinearity preserves the sigma semantics. ``binary`` and
+         ``gate`` are not honoured in butterfly mode.
+         """
+-        if self.normalize:
+-            return self._mean_forward(x, binary=binary, gate=gate)
+         if self.butterfly:
+             if self.nonlinear:
+                 x = bounded_atanh(x, bounded=self._bounded_backward)
+@@ -3345,8 +3227,6 @@
+         Butterfly mode: wrap ``_butterfly_reverse`` with atanh / tanh
+         symmetric to forward.
+         """
+-        if self.normalize:
+-            return self._mean_reverse(y, gate=gate)
+         if self.butterfly:
+             if self.nonlinear:
+                 y = bounded_atanh(y, bounded=self._bounded_backward)
+@@ -3386,8 +3266,6 @@
+         Returns:
+             ``[..., nOutput]`` in [-1, 1].
+         """
+-        if self.normalize:
+-            return self._mean_compose(left, right, gate=gate)
+         if self.nonlinear:
+             a_l = bounded_atanh(left, bounded=self._bounded_backward)
+             a_r = bounded_atanh(right, bounded=self._bounded_backward)
+@@ -3416,13 +3294,6 @@
+         balanced split in :meth:`generate` inverts it (each constituent
+         ``= tanh(s / M)``) when the inner layer is invertible -- the explicit
+         ``part_chain`` provenance is the fallback when it is not."""
+-        if self.normalize:
+-            valid = (torch.ones(part_codes.shape[:-1], device=part_codes.device, dtype=torch.bool)
+-                     if mask is None else mask.to(device=part_codes.device, dtype=torch.bool))
+-            count = valid.sum(-1, keepdim=True)
+-            chart = torch.where(valid[..., None], self._mean_chart(part_codes), 0.).sum(-2)
+-            result = self._mean_forward_chart(chart / count.clamp_min(1))
+-            return torch.where(count > 0, result, torch.zeros_like(result))
+         if mask is not None:
+             valid = mask.to(device=part_codes.device, dtype=torch.bool)
+             part_codes = torch.where(
+@@ -3457,8 +3328,6 @@
+ 
+         Requires ``invertible=True`` on the inner LinearLayer.
+         """
+-        if self.normalize:
+-            return self._mean_generate(parent, gate=gate)
+         if self.nonlinear:
+             a_y = bounded_atanh(parent, bounded=self._bounded_backward)
+         else:
+@@ -3476,8 +3345,6 @@
+                             reference_side=None):
+         """``generate`` without module mutation (compiled reverse loops);
+         ``W_inv`` is the inner layer's precomputed inverse (optional)."""
+-        if self.normalize:
+-            return self._mean_generate(parent, gate=gate, W_inv=W_inv, reference=reference, reference_side=reference_side)
+         a_y = bounded_atanh(parent, bounded=self._bounded_backward) if self.nonlinear else parent
+         a_sum = self.layer.functional_reverse(
+             a_y - self.layer._effective_bias(), gate=gate, W_inv=W_inv)
+@@ -4615,13 +4482,12 @@
+                                      missing_keys, unexpected_keys, error_msgs)
+ 
+ 
+-class PiLayer(_NormalizedFold, GrammarLayer):
+-    r"""Multiplicative boundary fold feature of the subsymbolic loop:
++class PiLayer(GrammarLayer):
++    r"""Multiplicative chart map used by the grammar's LowerLayer:
+     ``[-1, 1] -> [-1, 1]``.
+ 
+-    Owned by the grammar's LowerLayer and explicit conceptual computations.
+-    Perceptual towers have no learned fold layers. ``normalize=True`` is the
+-    item 10 evaluation mode documented by _NormalizedFold.
++    Lower owns the operand assembly and dispatch. Perceptual towers use
++    their native meronomies; they do not own this fold.
+ 
+     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
+ 
+@@ -4643,13 +4509,12 @@
+         monotonic=False: W unrestricted (InvertibleLinearLayer) -- bitonic response
+     """
+ 
+-    _geometric_mean = True
+     _eps = 1e-6
+ 
+     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
+                  invertible=False, hasBias=True, stable=True,
+                  monotonic=False, nonlinear=True,
+-                 butterfly=False, N=None, normalize=False):
++                 butterfly=False, N=None):
+         """Initialize PiLayer; allocate state for the class contract.
+ 
+         See class docstring for invariants.
+@@ -4685,7 +4550,6 @@
+             else:
+                 self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
+             self.layers.append(self.layer)
+-        self._init_normalization(normalize)
+ 
+     @property
+     def bias(self):
+@@ -4783,8 +4647,6 @@
+ 
+     def compute_forward(self, x, binary=False, gate=None):
+         """Pure ungated Pi computation for a recurrent HOP body."""
+-        if self.normalize:
+-            return self._mean_forward(x, binary=binary, gate=gate)
+         if self.butterfly:
+             if binary:
+                 x = Ops.top2_select_ste(x)
+@@ -4823,8 +4685,6 @@
+         linear core in log-mult space; the surrounding nonlinearity
+         preserves the pi semantics.
+         """
+-        if self.normalize:
+-            return self._mean_forward(x, binary=binary, gate=gate)
+         if self.butterfly:
+             if binary:
+                 x = Ops.top2_select_ste(x)
+@@ -4867,8 +4727,6 @@
+         Butterfly mode: wrap ``_butterfly_reverse`` with pi log-domain
+         transforms symmetric to forward.
+         """
+-        if self.normalize:
+-            return self._mean_reverse(y, gate=gate)
+         if self.butterfly:
+             if self.nonlinear:
+                 l = self._log_mult(y)
+@@ -4928,8 +4786,6 @@
+         domain, π splits a PRODUCT by M in the log-mult domain. Requires
+         ``invertible=True``; round-trips (re-folding M equal copies recovers
+         ``y``)."""
+-        if self.normalize:
+-            return self._mean_reverse(y, gate=gate)
+         M = max(1, int(M))
+         if self.butterfly:
+             if self.nonlinear:
+@@ -4978,8 +4834,6 @@
+         Returns:
+             ``[..., nOutput]`` in [-1, 1].
+         """
+-        if self.normalize:
+-            return self._mean_compose(left, right, gate=gate)
+         if not self.layer.ergodic or torch.compiler.is_compiling():
+             # ``PiLayer(invertible=False)`` owns a plain LinearLayer, which
+             # has ``W`` but no LDU diagonal ``d``.  Composition is valid for
+@@ -5031,8 +4885,6 @@
+         """``generate`` without module mutation (compiled reverse loops):
+         the same balanced split through the tied inverse; ``W_inv`` is the
+         inner layer's precomputed inverse (optional)."""
+-        if self.normalize:
+-            return self._mean_generate(parent, gate=gate, W_inv=W_inv, reference=reference, reference_side=reference_side)
+         if not self.nonlinear:
+             raise RuntimeError("generate_functional requires nonlinear pi")
+         log_mult_y = self._log_mult(parent)
+@@ -5066,8 +4918,6 @@
+ 
+         Requires ``invertible=True``.
+         """
+-        if self.normalize:
+-            return self._mean_generate(parent, gate=gate)
+         self.layer._current_gate = gate
+         try:
+             W_inv = self.layer.compute_Winverse_current()
+--- evaluation/bin/Models.py
++++ review/bin/Models.py
+@@ -5593,6 +5593,16 @@
+             if not _old_key.endswith('.vq._codebook'):
+                 continue
+             _owner_key = _old_key[:-len('vq._codebook')] + 'W'
++            # A duplicate VQ key has no current entry of its own, so the
++            # carrier rewrite above cannot resolve it. Resolve its owner W
++            # through the same ownership map before removing the alias.
++            if _owner_key not in model_state:
++                for _role, _container in _carrier_key_roles.items():
++                    _candidate = _owner_key.replace(
++                        f'.subspace.{_role}.', f'.{_container}.{_role}.', 1)
++                    if _candidate in model_state:
++                        _owner_key = _candidate
++                        break
+             if _owner_key not in model_state:
+                 continue
+             if _owner_key not in state:
+@@ -6075,6 +6085,14 @@
+         ps_space = getattr(self, "perceptualSpace", None)
+         ps_store = (getattr(ps_space, "percept_store", None)
+                     if ps_space is not None else None)
++        if (ps_store is not None and self.wholePropertyBasis
++                and not self.serial and self.concept_binding == 'aligned'):
++            # The native inverse has already recovered the ordered PS slots.
++            # Property rows are not a symbolic vocabulary to decode through.
++            from Spaces import _render_token_buffer
++            decoded = ps_space._decode_radix_meta(
++                ps_space.vocabulary, recon.detach(), ps_space.subspace)
++            return [_render_token_buffer(row) for row in decoded['tokens']]
+         if ps_store is not None:
+             vectors = recon.detach()
+             # Normalise to [B, N, D].
+@@ -9182,6 +9200,11 @@
+             "terminal_idea": conceptual,
+             "combine_last_cs_sub": getattr(self, "_combine_last_cs_sub", None),
+             "merge_diffs": merge_diffs,
++            "native_perceptual_views": (tuple(
++                stage['cs'].unbind(stage['cs'].subspace)
++                for stage in (getattr(self, 'body_stages', None) or ()))
++                if (getattr(self, 'concept_binding', None) == 'aligned'
++                    and not self.serial) else None),
+         }
+         # The answer path's seed (spec 5.3): on the serial grammar path the
+         # resolved input symbol is the grammar's ROOT IDEA (the STM-folded
+@@ -9249,13 +9272,14 @@
+         object.__setattr__(self, "_reconstruction_product", result)
+         return result
+ 
+-    def _reverse_input_surface(self, carrier):
++    def _reverse_input_surface(self, carrier, *, native_views=None):
+         """Realize recovered input ideas through the shared numerical inverse.
+ 
+         The input's grammar traversal is already complete. No generate policy
+         or free chart expansion belongs in this path.
+         """
+-        carrier = self._reverse_body(carrier)
++        carrier = (self._reverse_body(carrier) if native_views is None else
++                   self._reverse_body(carrier, native_views=native_views))
+         concepts = getattr(carrier, "_concepts_recon", None)
+         carrier = self._reverse_perceptual(carrier)
+         if concepts is not None and carrier is not None:
+@@ -9333,8 +9357,9 @@
+             if terminal_idea is not None:
+                 cs = self.conceptualSpace
+                 cs.commit_event(terminal_idea)
+-                rev_sub = self._reverse_input_surface(
+-                    cs.subspace)
++                native_views = understanding.reconstruction_carriers.get('native_perceptual_views')
++                rev_sub = (self._reverse_input_surface(cs.subspace) if native_views is None else
++                           self._reverse_input_surface(cs.subspace, native_views=native_views))
+             rev_ev = (rev_sub.materialize()
+                       if rev_sub is not None
+                       and hasattr(rev_sub, 'materialize')
+@@ -11322,6 +11347,8 @@
+         testLosses        = [[],[]]
+         self.plot         = False
+         accuracy          = []
++        from ConceptLessons import teach_concept_lessons
++        teach_concept_lessons(self)
+         self._optimizer   = self.getOptimizer(lr=lr)
+ 
+         # Test gating from BASIC_RUN_TEST. Tri-state: None (skip),
+@@ -14782,7 +14809,9 @@
+                             dtype=(_staged_event.dtype
+                                    if _staged_event.is_floating_point() else None))
+                     self._stage_fixed_residual_part_capacity()
+-                else:
++                elif self.serial:
++                    # Only the serial word carrier has a variable part axis.
++                    # Parallel perception uses its configured fixed slot count.
+                     # W is deliberately static (one of 16/32/64/128); the
+                     # number of residual radix constituents inside one
+                     # complete word is not.  Mark only that P axis dynamic so
+@@ -18039,6 +18068,8 @@
+ 
+     def _forward_head(self, sub):
+         """Head: outputSpace forward."""
++        if self.outputSpace.concept_ids:
++            sub = self._combine_last_cs_sub
+         return self.outputSpace(sub)
+ 
+     @staticmethod
+@@ -23495,7 +23526,7 @@
+                                       event[..., width:]), -1))
+         return focused
+ 
+-    def _reverse_body(self, sub):
++    def _reverse_body(self, sub, *, native_views=None):
+         """Per-stage body reverse, mirroring ``_forward_body`` order.
+ 
+         Inverts the primary IS→PS→CS→OS path's body: walk stages in
+@@ -23519,6 +23550,18 @@
+         _concepts_recon = None
+         for t in reversed(range(len(self.body_stages))):
+             stage = self.body_stages[t]
++            if native_views is not None:
++                native = native_views[t]
++                if native is not None:
++                    # The understanding owns these aligned perceptual views.
++                    # A serial derivation or free inverse has no such views;
++                    # it must not substitute the most recently bound field.
++                    recovered = SubSpace(inputShape=(1, 1), outputShape=(1, 1),
++                                         nInputDim=1, nOutputDim=1)
++                    recovered.copy_context(sub)
++                    recovered.set_event(native[0])
++                    sub = recovered
++                    continue
+             # A4 (2026-06-06 parallel-conceptual-recurrence): invert the
+             # per-stage ConceptualCombine before the CS bookkeeping reverse
+             # -- exact mirror of the forward order ``cs.forward -> combine``.
+@@ -24419,7 +24462,7 @@
+             if _restore_ev is not None:
+                 body_sub.set_event(_restore_ev)
+         pred = head_sub.materialize() if head_sub is not None else None
+-        if pred is not None:
++        if pred is not None and not self.outputSpace.concept_ids:
+             pred = self.normalizer.denormalize(pred, which="output")
+ 
+         # Capture symbol_states by iterating per-stage WholeSpaces
+--- evaluation/bin/Spaces.py
++++ review/bin/Spaces.py
+@@ -14502,7 +14502,13 @@
+         fwd = getattr(self, "_forward_input", None) or {}
+         spans_2d = fwd.get("tile_spans")
+         pid_grid = fwd.get("indices")
+-        if (spans_2d is not None and pid_grid is not None
++        native_spans = fwd.get('part_spans')
++        if torch.is_tensor(native_spans) and tuple(native_spans.shape[:2]) == (B, N):
++            # The canonical tiling places each constituent, even when a word
++            # has no interned row. Word extents cannot stand in for part sizes.
++            tile_spans = [[(lo, hi) if hi > lo else (-1, -1)
++                           for lo, hi in row] for row in native_spans.tolist()]
++        elif (spans_2d is not None and pid_grid is not None
+                 and tuple(pid_grid.shape[:2]) == (B, N)
+                 and len(spans_2d) == B):
+             tile_spans = spans_2d
+@@ -29995,12 +30001,11 @@
+ 
+ 
+ class OutputSpace(Space):
+-    """Maps symbolic vectors to task targets (classification logits, regression values).
+-
+-    In the forward data flow: WholeSpace -> **OutputSpace** -> loss.
+-    Uses a LinearLayer to project the (flattened) symbolic representation down
+-    to the target dimensionality.  Always uses reshape=True since the number of
+-    input objects (symbols) typically differs from the number of outputs.
++    """Reads named concept evidence or projects symbolic vectors to task targets.
++
++    Configured concept ids select native positive poles from the bound field.
++    Vector outputs use a linear map from the flattened symbolic representation
++    to the target dimensions. Input reconstruction starts from the understanding.
+ 
+     ``text_mode``: when enabled via ``set_text_mode()``, supports reconstructing
+     text from symbolic vectors by snapping to the nearest codebook entry and
+@@ -30040,16 +30045,26 @@
+         section = self.config_section
+         invertible = TheXMLConfig.space(section, "invertible")
+         object.__setattr__(self, "_initial_vectors", vectors)
++        ids = TheXMLConfig.space(section, 'conceptIds', default='')
++        self.concept_ids = tuple(int(cid) for cid in str(ids or '').split())
+         self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
+-        # The unquantised regression head is a bare LINEAR map plus a learned
+-        # scalar intercept (the ``_readout_bias`` below). The former
+-        # ``<readout>`` enum (identity | sigmoid) was retired 2026-06-19: the
+-        # head is always linear+bias (a {0,1} target like XOR is regressed,
+-        # not squashed -- see the lrScale / subsymbolicOrder=3 XOR basin).
++        # Vector regression uses a linear map and learned intercept.
++        # Named concept evidence already has the target's [0,1] range.
+         super().__init__(inputShape, spaceShape, outputShape)
+         self.data = TheData
+         self._vocabulary = getattr(self, '_vocabulary', None)
+         self.text_mode = isinstance(self._vocabulary, Embedding)
++
++        if self.concept_ids:
++            if len(set(self.concept_ids)) != len(self.concept_ids):
++                raise ValueError('OutputSpace conceptIds must be distinct concept identities')
++            if tuple(self.outputShape) != (len(self.concept_ids), 1):
++                raise ValueError('concept output requires one scalar per configured concept id')
++            self._regression_head = False
++            self._readout_bias = None
++            self.params = list(self.parameters())
++            self._batch_results = []
++            return
+ 
+         # OutputSpace is the SOLE flattener (2026-06-07 dim-explicitness pass):
+         # the analysed/synthesised spaces (IS/PS/CS/WS) stay per-vector
+@@ -30069,9 +30084,8 @@
+             self.subspace._nInputDim = flat_in
+ 
+         if self.nonlinear_output:
+-            # Activation-mode S->O remap. Architectural rule: only PS / CS
+-            # may own SigmaLayer/PiLayer, so this path uses an
+-            # InvertibleLinearLayer and wraps it with the same
++            # Activation-mode S->O remap uses an InvertibleLinearLayer
++            # and wraps it with the same
+             # atanh -> linear -> tanh nonlinearity that SigmaLayer
+             # applies internally (Layers.py:_sigma_inner_forward).
+             nIn = inputShape[0]
+@@ -30204,13 +30218,14 @@
+         return out.reshape(B, int(self.outputShape[0]), int(self.outputShape[1]))
+ 
+     def forward(self, subspace):
+-        """Acting: project symbols to task output.
+-
+-        Two paths: activation-mode applies PiLayer to the scalar
+-        activation vector; vector-mode applies the configured linear /
+-        attention chain to the symbol event tensor. Writes the result
+-        back to the subspace's event.
+-        """
++        """Read named positive evidence or map symbolic vectors to task output.
++
++        Activation output charts an invertible linear map with atanh/tanh;
++        vector output applies the configured linear chain. Named concepts
++        select evidence directly by persistent identity.
++        """
++        if self.concept_ids:
++            return self.read_concepts(subspace)
+         if subspace.is_empty():
+             return subspace
+         self.subspace.copy_context(subspace)
+@@ -30236,12 +30251,33 @@
+         vspace = self.forwardEnd(output, returnVectors=True)
+         return vspace
+ 
++    def read_concepts(self, subspace):
++        """Read named positive poles, resolving this turn's field by concept id.
++
++        The extent union is already represented by the concept's evidence.
++        Selecting an identity adds no projection, bias, or Boolean corner.
++        """
++        evidence = getattr(subspace, '_concept_activations', None)
++        ids = getattr(subspace, '_concept_ids', None)
++        if not torch.is_tensor(evidence) or not torch.is_tensor(ids):
++            raise ValueError('concept output requires a bound native conceptual field')
++        if ids.ndim == 1:
++            ids = ids[:, None].expand(-1, evidence.shape[1])
++        requested = torch.tensor(self.concept_ids, device=ids.device)
++        selected = ids[..., None] == requested
++        positive = evidence[..., 0].amax(2)
++        result = (positive[..., None] * selected.to(positive)).amax(0)[..., None]
++        self.subspace.copy_context(subspace)
++        self.subspace.set_event(result)
++        return self.subspace
++
+     def reverse(self, subspace):
+         """Being acted upon: map output back to symbolic space.
+ 
+-        Inverse of ``forward``: activation-mode runs PiLayer.reverse on
+-        the scalar activation; vector-mode runs the inverse linear chain
+-        (with codebook-aware lookup when ``self.codebook`` is True).
++        Activation output inverts its charted linear map; vector output
++        inverts the linear chain, with codebook lookup when configured.
++        Concept evidence alone does not define an input inverse; native
++        reconstruction uses the understanding's retained perceptual views.
+         """
+         if subspace.is_empty():
+             return subspace
+--- evaluation/data/XOR_exact.xml
++++ review/data/XOR_exact.xml
+@@ -1,104 +1,83 @@
+-<?xml version="1.0" ?>
+-<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-       xsi:noNamespaceSchemaLocation="model.xsd">
+-  <!-- XOR_exact: end-to-end XOR with reconstruction.
+-
+-       This fixture intentionally keeps the reconstruction path
+-       full-width. The scalar project codebook is useful for compact
+-       truth activation, but it collapses per-slot content and cannot
+-       support this exact word-level reconstruction smoke test. -->
++<?xml version='1.0' encoding='utf-8'?>
++<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
++  <!-- XOR from located primitive memberships: order-0 field conjunctions, then a learned order-1 sigma positive pole. Input words are two-byte extents; ordered percept witnesses own reconstruction. No tower fold participates. -->
+   <architecture>
++    <serial>false</serial>
++    <subsymbolicOrder>2</subsymbolicOrder>
++    <symbolicOrder>1</symbolicOrder>
++    <conceptualPi>true</conceptualPi>
++    <attentionPromotion>true</attentionPromotion>
++    <conceptPoolSize>4</conceptPoolSize>
++    <symbolTower>true</symbolTower>
++    <conceptBinding>aligned</conceptBinding>
+     <data>
+       <dataType>embedding</dataType>
++      <dataset>inline</dataset>
++      <conceptLessons>xor_concept_lessons.json</conceptLessons>
++      <input use="train">00|01|10|11</input>
++      <output use="train">0|1|1|0</output>
++      <input use="validation">00|01|10|11</input>
++      <output use="validation">0|1|1|0</output>
++      <input use="test">00|01|10|11</input>
++      <output use="test">0|1|1|0</output>
+     </data>
+-    <subsymbolicOrder>3</subsymbolicOrder>
+-    <symbolicOrder>0</symbolicOrder>
+-
+     <training>
+-      <!-- 2026-07-12 re-derivation: the unity byte-channel fix moved the
+-           init-sensitive two-timescale trajectory; 600 under-converges
+-           (MSE 0.0986), 1200 lands the crisp basin (MSE ~3e-4). -->
+-      <numEpochs>1200</numEpochs>
+-      <learningRate>0.005</learningRate>
+       <autoload>false</autoload>
++      <numEpochs>64</numEpochs>
++      <learningRate>0.03</learningRate>
++      <maskRate>0</maskRate>
++      <reconstructionScale>0.1</reconstructionScale>
+       <trainEmbedding>JOINT</trainEmbedding>
+       <embeddingScale>0.05</embeddingScale>
+     </training>
+   </architecture>
+-
+-  <!-- InputSpace: text-mode lexer, full content width. nDim 14 -> 16
+-       (2026-07-09 multi-rung pass: .where widened 2 -> 4; +2 preserves the
+-       content width nWhat = 8; at 14 the crisp XOR basin was lost, seeds
+-       0/1 settled at the 0.5 data mean). -->
+   <InputSpace>
+-    <nVectors>8</nVectors>
++    <nVectors>16</nVectors>
+     <nDim>16</nDim>
+-    <nOutput>8</nOutput>
++    <nOutput>16</nOutput>
+   </InputSpace>
+-
+-  <!-- PartSpace: WIDE codebook so 1000 word prototypes have room
+-       to sit pairwise-distinct. Stays content-wide on the output
+-       (nOutputDim=nDim=10) so reconstruction lookups operate in the
+-       full vocabulary space. -->
+   <PartSpace>
+-    <nInput>8</nInput>
+-    <nVectors>1000</nVectors>
++    <nInput>16</nInput>
++    <nVectors>16</nVectors>
++    <maxVectors>256</maxVectors>
+     <nDim>16</nDim>
+-    <nOutput>8</nOutput>
++    <nOutput>16</nOutput>
+     <invertible>true</invertible>
+-    <!-- PartSpace is subsymbolic: its <codebook> element was retired
+-         (2026-06-09 asymmetric-VQ plan, sec 7 task 7); PS is hardwired to
+-         "none". The 1000 word prototypes live on the .what Embedding, not a
+-         VQ snap on .event. -->
+-    <!-- Butterfly cascade on pi (and historically sigma) gives pi
+-         cross-element reach across the flattened [B, N*D] view.
+-         Without it, pi is per-slot and cannot compute XOR (or any
+-         function that requires combining information across slot
+-         positions). XOR_exact relies on this for the exact-XOR
+-         convergence property. -->
+-    <butterfly>true</butterfly>
+-    <synthesis>lexicon</synthesis>
++    <synthesis>meronomy</synthesis>
++    <butterfly>false</butterfly>
++    <chunkPromotionThreshold>100000</chunkPromotionThreshold>
+   </PartSpace>
+-
+-  <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
+   <ConceptualSpace>
+-    <nInput>8</nInput>
+-    <nVectors>8</nVectors>
++    <nInput>16</nInput>
++    <nVectors>32</nVectors>
+     <nDim>16</nDim>
+-    <nOutput>8</nOutput>
++    <nOutput>16</nOutput>
+     <invertible>true</invertible>
+-    <butterfly>true</butterfly>
+   </ConceptualSpace>
+-
+-  <!-- WholeSpace: full-width passthrough for the exact smoke test. -->
+   <WholeSpace>
+     <lexer>word</lexer>
+-    <nInput>8</nInput>
++    <nInput>16</nInput>
++    <nVectors>16</nVectors>
+     <nDim>16</nDim>
+-    <nVectors>8</nVectors>
+-    <nOutput>8</nOutput>
+-    <!-- XOR_exact overrides the codebook defaults: drop the WholeSpace
+-         l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
+-    <l1Lambda>0.0</l1Lambda>
+-    <commitmentBeta>0.0</commitmentBeta>
+-    <!-- WholeSpace codebook is mandatory (modality re-architecture); was none. -->
+-    <codebook>none</codebook>
+-    <butterfly>true</butterfly>
++    <nOutput>16</nOutput>
++    <propertyBasis>true</propertyBasis>
++    <analysis>meronomy</analysis>
++    <digitWholes>false</digitWholes>
++    <divideWithinWhole>false</divideWithinWhole>
+   </WholeSpace>
+-
+   <OutputSpace>
+-    <nInput>8</nInput>
++    <nInput>16</nInput>
+     <nVectors>1</nVectors>
+     <nOutput>1</nOutput>
+-    <!-- The XOR readout is ill-conditioned (the class-FLIPPING word axis is
+-         ~10x lower variance than the dominant word axis) and co-adapts with
+-         the upstream features during joint training. At the full model LR the
+-         readout chases the moving features and settles near the data mean
+-         (~0.5: 100% accurate but mushy, MSE ~0.22). Training the readout at
+-         HALF the model LR makes it a slower, stable target the faster-moving
+-         features organise toward -> crisp 0/1 (MSE ~0.004). The features are
+-         separable (Adam reads them out crisp in 600 steps when frozen); the
+-         only issue was the two-timescale convergence. -->
+-    <lrScale>0.5</lrScale>
++    <conceptIds>20001</conceptIds>
+   </OutputSpace>
+-</model>
++  <SymbolSpace>
++    <language>
++      <start>S</start>
++      <grammar>
++        <S>S = lift(S, S)</S>
++        <S>S = lower(S, S)</S>
++      </grammar>
++    </language>
++  </SymbolSpace>
++</model>--- evaluation/data/model.xml
++++ review/data/model.xml
+@@ -165,9 +165,6 @@
+     <!-- Completed learning updates without improved local both evidence,
+          before discontiguous support may raise conceptual order. -->
+     <mereologyRefinePatience>3</mereologyRefinePatience>
+-    <!-- Item 10 evaluation, grammar lift/lower only. No production adoption. -->
+-    <normalizeSigma>false</normalizeSigma>
+-    <normalizePi>false</normalizePi>
+     <maxActivePerLayer>8</maxActivePerLayer>
+     <!-- Role-participation category codebook for the role-collapsed grammar.
+          Unsettled MetaSymbols accumulate bounded temporary role evidence, then
+@@ -204,6 +201,8 @@
+       <!-- Dataset key: xor | mnist | tomatoes | text | inline.
+            Omit for inference-only models. -->
+       <dataset>xor</dataset>
++      <!-- Optional primitive/name teaching examples for concept-id outputs. -->
++      <conceptLessons></conceptLessons>
+       <!-- Shard count and per-shard document cap (streaming datasets). -->
+       <numShards>1</numShards>
+       <maxDocs>10000</maxDocs>
+@@ -533,6 +532,8 @@
+   </WholeSpace>
+ 
+   <OutputSpace>
++    <!-- Space-separated persistent concept ids; each reads its positive pole. -->
++    <conceptIds></conceptIds>
+     <nInput>0</nInput>
+     <nOutput>0</nOutput>
+     <nDim>1</nDim>
+--- evaluation/data/model.xsd
++++ review/data/model.xsd
+@@ -173,8 +173,6 @@
+            false: no lattice raising (the provenance table still exists). -->
+       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+       <xs:element name="mereologyRefinePatience" type="xs:positiveInteger" minOccurs="0"/>
+-      <xs:element name="normalizeSigma" type="xs:boolean" minOccurs="0"/>
+-      <xs:element name="normalizePi" type="xs:boolean" minOccurs="0"/>
+       <!-- Experimental replacement for the row-wide run-count passback.
+            Feeds overlapping PS part and WS whole .where candidates through
+            the existing subsymbolic pump, settles exact local agreement, and
+@@ -804,6 +802,7 @@
+       <!-- embedding (text/LM, the default for language configs) | numeric
+            (dense slab, e.g. MNIST). Was the architecture-level <modelType>. -->
+       <xs:element name="dataType" type="dataTypeEnum"/>
++      <xs:element name="conceptLessons" type="xs:string"/>
+       <xs:element name="dataset" type="datasetEnum"/>
+       <xs:element name="numShards" type="xs:positiveInteger"/>
+       <xs:element name="maxDocs" type="xs:positiveInteger"/>
+@@ -1487,6 +1486,7 @@
+            features faster so it converges to a crisp solution within the
+            epoch budget. -->
+       <xs:element name="lrScale" type="xs:decimal" minOccurs="0"/>
++      <xs:element name="conceptIds" type="xs:string" minOccurs="0"/>
+     </xs:all>
+   </xs:complexType>
+ 
+--- evaluation/data/xor_concept_lessons.json
++++ review/data/xor_concept_lessons.json
+@@ -0,0 +1,22 @@
++{
++  "updates": 32,
++  "learning_rate": 0.03,
++  "witness_updates": 32,
++  "properties": [
++    {"row": 8, "bytes": [48, 49], "memberships": [0, 1]},
++    {"row": 9, "bytes": [48, 49], "memberships": [1, 0]}
++  ],
++  "names": [{
++    "concept": 10001,
++    "features": [
++      {"tower": "ws", "row": 8, "weight": 1},
++      {"tower": "ws", "row": 9, "weight": 0},
++      {"tower": "ws", "row": 9, "weight": 0, "negative": true}
++    ],
++    "examples": [
++      {"text": "0", "evidence": [0, 1]},
++      {"text": "1", "evidence": [1, 0]},
++      {"text": "A", "evidence": [0, 0]}
++    ]
++  }]
++}
+--- evaluation/test/fold_evaluation.py
++++ review/test/fold_evaluation.py
+@@ -1,32 +0,0 @@
+-"""Controlled real-layer measurements shared by item 10 and its gates."""
+-import torch
+-import torch.nn.functional as F
+-from Layers import SigmaLayer, PiLayer
+-
+-
+-def xor_trial(width=4, mode='selective', unit_energy=True, steps=2500):
+-    sigma = SigmaLayer(2, width, normalize=mode != 'current')
+-    pi = PiLayer(width, 1, normalize=mode == 'both')
+-    x = torch.tensor([[-1., -1.], [-1., 1.], [1., -1.], [1., 1.]]) * .9
+-    if unit_energy:
+-        x = F.normalize(x, dim=-1) * .9
+-    target = torch.tensor([[-1.], [1.], [1.], [-1.]])
+-    optimizer = torch.optim.Adam(list(sigma.parameters()) + list(pi.parameters()), lr=.03)
+-    initial = None
+-    for step in range(steps):
+-        optimizer.zero_grad()
+-        out = pi(sigma(x))
+-        loss = (out-target).square().mean()
+-        if initial is None:
+-            initial = float(loss.detach())
+-        loss.backward()
+-        optimizer.step()
+-    with torch.no_grad():
+-        hidden = sigma(x)
+-        out = pi(hidden)
+-    return dict(width=width, mode=mode, unit_energy=unit_energy, steps=steps,
+-                initial_mse=initial, mse=float((out-target).square().mean()),
+-                probability_mse=float(((out-target)/2).square().mean()),
+-                output=out[:, 0].tolist(), hidden_max=float(hidden.abs().max()),
+-                clamp_fraction=float((hidden.abs() >= 1-1e-6).float().mean()))
+-
+--- evaluation/test/test_basicmodel.py
++++ review/test/test_basicmodel.py
+@@ -131,7 +131,7 @@
+     return (root.findtext("architecture/data/dataType") or "").strip().lower() == "embedding"
+ 
+ 
+-_XOR_EXACT_USES_EMBEDDING = _xml_uses_embedding("XOR_exact.xml")
++_LEXICON_USES_EMBEDDING = _xml_uses_embedding("XOR_pos.xml")
+ 
+ 
+ def _emit_warning_summary(caught):
+@@ -2073,8 +2073,8 @@
+ 
+         # SS codebook is mandatory (symbolic). PS is subsymbolic -- its
+         # <codebook> element was retired (#13 / asymmetric-vq), so DROP any PS
+-        # codebook and do not emit one. XOR_exact ships SS as none, so force
+-        # quantize for the fixture build.
++        # codebook and do not emit one. Keep WholeSpace quantized for this
++        # fixture build.
+         _ps_cb = root.find("PartSpace/codebook")
+         if _ps_cb is not None:
+             root.find("PartSpace").remove(_ps_cb)
+@@ -2110,6 +2110,18 @@
+         if con_nvec is not None:
+             con_nvec.text = str(nSymbols)
+ 
++        # Keep the native field's slot geometry aligned when changing its cap.
++        for section, tags in (("InputSpace", ("nOutput",)),
++                              ("PartSpace", ("nInput", "nOutput")),
++                              ("ConceptualSpace", ("nInput",)),
++                              ("WholeSpace", ("nInput",)),
++                              ("OutputSpace", ("nInput",))):
++            for tag in tags:
++                node = root.find(f"{section}/{tag}")
++                if node is None:
++                    node = ET.SubElement(root.find(section), tag)
++                node.text = str(nSymbols)
++
+         # Patch output count
+         out_active = root.find("OutputSpace/nOutput")
+         if out_active is not None:
+@@ -2131,9 +2143,8 @@
+         """Forward pass output shape is [batch, nOutput] regardless of nSymbols.
+ 
+         The flat-slab invariant (post Stage 1.C) requires IS.nOutput
+-        == PS.nOutput == CS.nOutput == SS.nOutput; the XOR_exact.xml
+-        ships with N=8 across these space_roles, so the test fixes nSymbols
+-        to that value rather than the legacy ``nSymbols=3``.
++        == PS.nOutput == CS.nOutput == SS.nOutput. This fixture sets all
++        peers to eight slots before varying the output geometry.
+         """
+         m = self._create_xor_model(nSymbols=8, nOutput=1)
+         m.train(False)
+@@ -2147,7 +2158,7 @@
+ 
+ # class TestXor3dReversePass::test_construct_and_forward_reverse retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
+ 
+-@unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "Model doesn't use Embedding")
++@unittest.skipIf(not _LEXICON_USES_EMBEDDING, "Model doesn't use Embedding")
+ class TestTrainEmbeddingsFlag(unittest.TestCase):
+     """trainEmbeddings config flag controls whether embedding weights are in optimizer."""
+ 
+@@ -2155,7 +2166,7 @@
+         """Create an XOR embedding model with specified trainEmbeddings flag."""
+         import xml.etree.ElementTree as ET
+ 
+-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
++        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+         tree = ET.parse(xml_path)
+         root = tree.getroot()
+ 
+@@ -2318,7 +2329,7 @@
+ # ---------------------------------------------------------------------------
+ # Training actually updates weights (regression: numEpochs=1 did nothing)
+ # ---------------------------------------------------------------------------
+-@unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "XOR_exact doesn't use Embedding")
++@unittest.skipIf(not _LEXICON_USES_EMBEDDING, "Lexicon fixture doesn't use Embedding")
+ class TestVocabSaveRestore(unittest.TestCase):
+     """Verify vocab is saved with weights and restored on load."""
+ 
+@@ -2330,7 +2341,7 @@
+         single ``save_weights`` bundle alongside model parameters.
+         """
+ 
+-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
++        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+         Models.TheData.load("xor")
+ 
+         m1 = Models.BasicModel()
+@@ -2375,7 +2386,8 @@
+ 
+         # XOR_exact.xml has autoload=false, autosave=false
+         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+-        Models.TheData.load("xor")
++        Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
++        Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
+ 
+         m = Models.BasicModel()
+         m.create_from_config(xml_path, data=Models.TheData)
+--- evaluation/test/test_concept_output.py
++++ review/test/test_concept_output.py
+@@ -0,0 +1,109 @@
++"""Native concept identity, learned output, and its independent ordered inverse."""
++from pathlib import Path
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++from ConceptLessons import teach_concept_lessons
++from recon_bench import _build_model
++from Spaces import OutputSpace, SubSpace
++
++
++ROOT = Path(__file__).resolve().parents[1]
++
++
++def _bytes(texts, width=16):
++    result = torch.zeros(len(texts), 1, width, dtype=torch.long)
++    for b, text in enumerate(texts):
++        result[b, 0, :len(text)] = torch.tensor(list(text.encode()))
++    return result
++
++
++def test_concept_output_resolves_each_batch_identity_and_preserves_unknown():
++    # Field rows exchange identities between batch rows. A both pair reads
++    # positive evidence, never the both corner or a signed difference.
++    carrier = SubSpace(inputShape=(1, 1), outputShape=(1, 1), nInputDim=1, nOutputDim=1)
++    carrier._concept_ids = torch.tensor([[17, 23], [23, 17], [-1, -1]])
++    carrier._concept_activations = torch.tensor([
++        [[ [.8, .8], [.3, 0.] ], [[0., 0.], [0., 0.]]],
++        [[ [0., 0.], [0., 0.] ], [[.2, 0.], [.6, .9]]],
++        [[ [1., 1.], [1., 1.] ], [[1., 1.], [1., 1.]]],
++    ], requires_grad=True)
++    head = SimpleNamespace(concept_ids=(17, 23), subspace=SubSpace(
++        inputShape=(1, 1), outputShape=(1, 1), nInputDim=1, nOutputDim=1))
++    result = OutputSpace.read_concepts(head, carrier).materialize()
++    torch.testing.assert_close(result[..., 0], torch.tensor([[.8, 0.], [.6, 0.]]))
++    result.sum().backward()
++    assert carrier._concept_activations.grad[..., 1].count_nonzero() == 0
++    assert carrier._concept_activations.grad[2].count_nonzero() == 0
++
++
++def test_reconstruction_without_owned_views_cannot_read_the_latest_field(monkeypatch):
++    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
++    model.forward(_bytes(['01']))
++    carrier = SubSpace(inputShape=(1, 1), outputShape=(1, 1), nInputDim=1, nOutputDim=1)
++    expected = torch.full_like(model.conceptualSpaces[0].subspace.materialize(), .125)
++    carrier.set_event(expected)
++    carrier.carrier_pure = True
++
++    def forbidden(_carrier):
++        raise AssertionError('inverse read a live field absent from its understanding')
++
++    for cs in model.conceptualSpaces:
++        monkeypatch.setattr(cs, 'unbind', forbidden)
++    recovered = model._reverse_body(carrier)
++    torch.testing.assert_close(recovered.materialize(), expected)
++    model.End()
++
++
++@pytest.mark.parametrize('trial', range(3))
++def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial):
++    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
++    teach_concept_lessons(model)
++    model.eval()
++    model.set_sigma(0.)
++    cs = model.conceptualSpaces[0]
++    store = cs._concept_allocator.layer(0)
++    output = cs._csw_row_of(20001)
++    cases = model._concept_lesson_receipt['cases']
++    assert len(cases) == 4
++    assert all(value == 0 for _, value in cs.concept_weights(output))
++    assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))
++               for r, c in store.conjunctive._index)
++    assert not any(r == output for r, _ in store.conjunctive._index)
++    assert all(len(brackets) > 0 for brackets in store.conjunctive.locations.values())
++    x = _bytes(['00', '01', '10', '11'])
++    target = torch.tensor([0., 1., 1., 0.])
++    optimizer = torch.optim.Adam([store.values], lr=.03)
++    initial = None
++    for _ in range(40):
++        model.End()
++        optimizer.zero_grad()
++        prediction = model.forward(x)[2][:, 0, 0]
++        loss = (prediction - target).square().mean()
++        if initial is None:
++            initial = float(loss.detach())
++        loss.backward()
++        optimizer.step()
++        store.project_parts()
++    model.End()
++    understanding = model.understand(x)
++    prediction = understanding.execution[2][:, 0, 0]
++    assert initial == .5
++    torch.testing.assert_close(prediction, target, atol=1e-6, rtol=0)
++    torch.testing.assert_close(cs._cs_extents, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
++    assert len([weight for _, weight in cs.concept_weights(output) if weight > 0]) == 2
++    reverse, _ = model.reverseReconstruct(understanding)
++    assert model._decode_reconstructed_inputs(reverse, ['00', '01', '10', '11']) == ['00', '01', '10', '11']
++    # A later perception cannot replace the captured understanding's inverse.
++    model.End()
++    model.forward(_bytes(['11', '10', '01', '00']))
++    repeated, _ = model.reverseReconstruct(understanding)
++    torch.testing.assert_close(repeated, reverse)
++    model.End()
++    for texts in [['AA', 'ZZ', '22', '!!'], ['A', 'ZZZZ', '222222', '!!!!!!!!']]:
++        assert model.forward(_bytes(texts))[2].count_nonzero() == 0
++        model.End()
++    print(dict(trial=trial, initial_mse=initial, output=prediction.detach().tolist(),
++               conjunctions=len(cases), reconstructed=['00', '01', '10', '11']))
+--- evaluation/test/test_explicit_dimensions.py
++++ review/test/test_explicit_dimensions.py
+@@ -188,21 +188,11 @@
+ class TestXorExactCliReconstruction(unittest.TestCase):
+     """``data/XOR_exact.xml`` should reconstruct its inputs end-to-end.
+ 
+-    XOR_exact is a fully INVERTIBLE, non-quantized chain: embedding ->
+-    PartSpace.pi (butterfly, codebook=none) -> ConceptualSpace
+-    bookkeeping (codebook=none) -> WholeSpace.sigma (butterfly,
+-    codebook=none) -> OutputSpace. The butterfly on BOTH pi and sigma
+-    gives cross-slot reach (a per-slot fold cannot combine the two word
+-    slots for XOR); codebook=none keeps the forward<->reverse round-trip
+-    exact. All four XOR inputs round-trip exactly AND the XOR prediction
+-    converges; the test asserts the OK/MISMATCH word-level match.
+-
+-    Regression history: this was xfail'd 2026-05-13..2026-06-04 after the
+-    modality re-architecture forced a mandatory lossy PS codebook (VQ
+-    snap) that destroyed exact reconstruction and blocked gradient. The
+-    fix restored the invertible chain (PS/SS codebook=none) plus a
+-    butterfly ``WholeSpace.sigma``; the xfail is removed so this gate
+-    now catches future regressions.
++    The native field witnesses located order-0 conjunctions from primitive
++    byte memberships. The supervised output learns an order-1 sigma and
++    reads its positive pole. Ordered native carriers own reconstruction;
++    no deleted unary tower fold participates. The assertion bodies and
++    their original thresholds remain unchanged.
+     """
+ 
+     @pytest.mark.slow
+@@ -306,16 +296,3 @@
+ 
+ if __name__ == "__main__":
+     unittest.main(verbosity=2)
+-
+-
+-@pytest.mark.slow
+-@pytest.mark.parametrize('run', range(3))
+-def test_explicit_width_normalized_fold_pair_is_crisp(run):
+-    # Controlled fold gate, independent of XOR_exact's deleted tower folds.
+-    # Two explicit input coordinates, eight hidden coordinates, one output.
+-    from fold_evaluation import xor_trial
+-    result = xor_trial(width=8)
+-    print(result)
+-    assert result['initial_mse'] > .05
+-    assert result['mse'] < .05
+-    assert result['clamp_fraction'] == 0.
+--- evaluation/test/test_lexicon_ownership.py
++++ review/test/test_lexicon_ownership.py
+@@ -19,7 +19,7 @@
+     """Construct an embedding-mode XOR model. Mirrors
+     test_basicmodel.TestTrainEmbeddingsFlag._create_model.
+     """
+-    xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
++    xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+     tree = ET.parse(xml_path)
+     root = tree.getroot()
+     training = root.find("architecture/training")
+--- evaluation/test/test_modality_codebook.py
++++ review/test/test_modality_codebook.py
+@@ -10,9 +10,8 @@
+     a codebook on for PS.
+   * WholeSpace is SYMBOLIC: a symbol qua symbol quantizes onto a codebook,
+     so its ``<codebook>`` DEFAULTS to ``"quantize"`` when a config omits it. An
+-    explicit ``<codebook>none</codebook>`` on SS is still honored (e.g.
+-    data/XOR_exact.xml builds a full-width invertible passthrough for the
+-    exact-XOR reconstruction fixture).
++    explicit ``<codebook>none</codebook>`` on WholeSpace is still honored.
++    The opt-out fixture derives that setting from data/XOR_pos.xml.
+ """
+ 
+ import os, sys, tempfile, unittest, warnings
+@@ -55,13 +54,14 @@
+                             "WholeSpace codebook defaults to quantize")
+ 
+     def test_ws_codebook_none_opt_out_honored(self):
+-        """data/XOR_exact.xml explicitly resolves WholeSpace to
+-        <codebook>none</codebook> (a full-width invertible passthrough) and
+-        must build without raising. PartSpace is subsymbolic regardless,
+-        so it is always "none"."""
+-        with warnings.catch_warnings():
++        """An explicit WholeSpace codebook opt-out remains honored."""
++        tree = ET.parse(os.path.join(_DATA, "XOR_pos.xml"))
++        ET.SubElement(tree.getroot().find("WholeSpace"), "codebook").text = "none"
++        with tempfile.TemporaryDirectory() as directory, warnings.catch_warnings():
+             warnings.filterwarnings("ignore")
+-            model = _build(os.path.join(_DATA, "XOR_exact.xml"))
++            path = os.path.join(directory, "codebook-none.xml")
++            tree.write(path)
++            model = _build(path)
+         self.assertEqual(model.perceptualSpace.codebook_mode, "none",
+                          "PartSpace is subsymbolic: always none")
+         self.assertEqual(model.wholeSpace.codebook_mode, "none",
+--- evaluation/test/test_normalized_folds.py
++++ review/test/test_normalized_folds.py
+@@ -1,80 +0,0 @@
+-"""Item 10 evaluation mode: column means, tied inverses and binary means."""
+-import pytest
+-import torch
+-
+-from Layers import PiLayer, SigmaLayer
+-
+-
+-@pytest.mark.parametrize('kind', [SigmaLayer, PiLayer])
+-@pytest.mark.parametrize('monotonic', [True, False])
+-def test_normalized_unary_and_binary_roundtrip(kind, monotonic):
+-    layer = kind(8, 8, invertible=True, monotonic=monotonic, normalize=True).double()
+-    x = .2 + .6 * torch.rand(7, 8, dtype=torch.float64)
+-    if not monotonic:
+-        x = .6 * torch.nn.functional.normalize(x - .5, dim=-1)
+-    gate = torch.linspace(.6, .9, 8, dtype=torch.float64)
+-    y = layer(x, gate=gate)
+-    torch.testing.assert_close(layer.reverse(y, gate=gate), x, atol=1e-10, rtol=1e-10)
+-    other = x.flip(0)
+-    parent = layer.compose(x, other, gate=gate)
+-    left, right = layer.generate(parent, gate=gate)
+-    torch.testing.assert_close(layer.compose(left, right, gate=gate), parent, atol=1e-10, rtol=1e-10)
+-    l, r = layer.generate_functional(parent, gate=gate, reference=x,
+-        reference_side=(torch.zeros(7, dtype=torch.bool), torch.ones(7, dtype=torch.bool)))
+-    torch.testing.assert_close(l, x, atol=1e-10, rtol=1e-10)
+-    torch.testing.assert_close(r, other, atol=1e-10, rtol=1e-10)
+-
+-
+-def test_monotone_means_remain_bounded_through_thirty_layers():
+-    x = torch.rand(16, 8, dtype=torch.float64, requires_grad=True)
+-    y = x
+-    for depth in range(30):
+-        kind = SigmaLayer if depth % 2 == 0 else PiLayer
+-        y = kind(8, 8, invertible=True, monotonic=True, normalize=True).double()(y)
+-        assert bool(((0 <= y) & (y <= 1)).all())
+-    y.square().sum().backward()
+-    assert torch.isfinite(x.grad).all() and x.grad.norm() > 0
+-
+-
+-def test_normalized_set_and_empty_set():
+-    sigma = SigmaLayer(4, 4, invertible=True, monotonic=True, normalize=True).double()
+-    parts = torch.rand(2, 3, 4, dtype=torch.float64)
+-    torch.testing.assert_close(sigma.synthesize_over_set(parts), sigma(parts.mean(-2)))
+-    empty = torch.zeros(2, 3, dtype=torch.bool)
+-    assert sigma.synthesize_over_set(parts, mask=empty).count_nonzero() == 0
+-
+-
+-def test_width_scaled_monotone_initialization_keeps_own_input():
+-    layer = SigmaLayer(264, 264, invertible=True, monotonic=True, normalize=True)
+-    w, scale = layer.normalized_weights()
+-    assert w.diag().amin() > .9
+-    torch.testing.assert_close(w.sum(0), torch.ones(264))
+-
+-
+-def test_signed_l2_is_not_a_cube_bound():
+-    layer = SigmaLayer(4, 1, normalize=True)
+-    with torch.no_grad():
+-        layer.layer.W.fill_(1.)
+-    assert layer(torch.ones(1, 4)).item() > 1.
+-    assert layer(torch.ones(1, 4) / 2).item() <= 1.
+-
+-
+-@pytest.mark.parametrize('kind', ['lift', 'lower'])
+-def test_grammar_hosts_use_the_selected_normalized_fold(kind):
+-    from Language import LiftLayer, LowerLayer
+-    host = (LiftLayer if kind == 'lift' else LowerLayer)(8, 8, normalize=True).double()
+-    left = .6 * torch.nn.functional.normalize(torch.randn(3, 8, dtype=torch.float64), dim=-1)
+-    right = left.flip(0)
+-    parent = host(left, right)
+-    a, b = host.reverse(parent)
+-    torch.testing.assert_close(host(a, b), parent, atol=1e-10, rtol=1e-10)
+-
+-
+-def test_normalized_functional_composition_compiles_without_mutating_gate():
+-    layer = SigmaLayer(4, 4, invertible=True, normalize=True)
+-    compose = torch.compile(layer.compose, backend='eager', fullgraph=True)
+-    x = torch.rand(3, 4) / 3
+-    gate = torch.full((4,), .8)
+-    expected = layer.compose(x, x.flip(0), gate=gate)
+-    torch.testing.assert_close(compose(x, x.flip(0), gate=gate), expected)
+-    assert getattr(layer.layer, '_current_gate', None) is None
+--- evaluation/test/test_pi_sigma_inherit_grammarlayer.py
++++ review/test/test_pi_sigma_inherit_grammarlayer.py
+@@ -13,10 +13,11 @@
+     ``compose(left, right)`` API is overridden directly on each subclass
+     and is not gated by the ``arity`` flag).
+ 
+-  * Pi / Sigma stay anonymous folds: their empty ``rule_name``
++  * Pi / Sigma stay anonymous substrate folds: their empty ``rule_name``
+     means ``GrammarLayer.__init__``'s auto-registration with the chart
+-    authority is a no-op. Grammar LiftLayer / LowerLayer own them;
+-    perceptual towers have no fold layers after item 11c.
++    authority is a no-op. They are instantiated directly by spaces
++    (``PartSpace.pi`` / ``PartSpace.sigma``), not by the
++    chart parser's typed-GrammarLayer registry.
+ 
+   * This Stage 2 inheritance change is a precondition for Stage 5
+     (butterfly mode on GrammarLayer base): the butterfly cascade lives
+@@ -51,12 +52,14 @@
+         self.assertTrue(issubclass(SigmaLayer, GrammarLayer))
+ 
+     def test_pi_mro_direct_parent(self):
+-        """GrammarLayer remains a direct base alongside the mean mixin."""
+-        self.assertIn(GrammarLayer, PiLayer.__bases__)
++        """PiLayer's immediate parent in the MRO is GrammarLayer
++        (not Layer). PiLayer.__mro__[1] is the direct base."""
++        self.assertIs(PiLayer.__mro__[1], GrammarLayer)
+ 
+     def test_sigma_mro_direct_parent(self):
+-        """GrammarLayer remains a direct base alongside the mean mixin."""
+-        self.assertIn(GrammarLayer, SigmaLayer.__bases__)
++        """SigmaLayer's immediate parent in the MRO is GrammarLayer
++        (not Layer). SigmaLayer.__mro__[1] is the direct base."""
++        self.assertIs(SigmaLayer.__mro__[1], GrammarLayer)
+ 
+     def test_pi_instance_is_grammarlayer(self):
+         """An instantiated PiLayer passes isinstance(.., GrammarLayer)."""
+--- evaluation/test/test_sigmapi.py
++++ review/test/test_sigmapi.py
+@@ -191,14 +191,3 @@
+ 
+ if __name__ == '__main__':
+     unittest.main()
+-
+-
+-@pytest.mark.slow
+-@pytest.mark.parametrize('run', range(3))
+-def test_normalized_sigma_current_pi_learns_crisp_xor(run):
+-    from fold_evaluation import xor_trial
+-    result = xor_trial(width=4)
+-    print(result)
+-    assert result['initial_mse'] > .05
+-    assert result['mse'] < .05
+-    assert result['clamp_fraction'] == 0.

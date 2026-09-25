@@ -93,6 +93,9 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
 
     saved = torch.load(path, map_location="cpu", weights_only=False)
     assert saved["structural_extras"]["version"] == 1
+    # Count-based WS raising is deleted; even a stale source attribute must
+    # not be saved beside the live concept-id and refinement state.
+    assert "_mereology_raised" not in saved["structural_extras"]["whole_spaces"][0]["attributes"]
 
     restored_alloc = _allocator()
     restored_cs = types.SimpleNamespace(_concept_allocator=restored_alloc)
@@ -118,7 +121,7 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     assert restored_cs._concept_admission_drops == {"word/object/META": 2}
 
     assert restored_ws._word_whole_ss == {"cat": 41}
-    assert restored_ws._mereology_raised == {41}
+    assert not hasattr(restored_ws, "_mereology_raised")
     assert restored_ws._property_class_whole == {(1, 3): 44}
     assert restored_ws._anchored_pids == {7: "operator"}
     torch.testing.assert_close(

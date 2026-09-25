@@ -1,0 +1,24 @@
+{
+  "reason": "passed",
+  "exit_code": 0,
+  "elapsed_seconds": 51.831291208043694,
+  "peak_aggregate_memory_bytes": 2566526592,
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "selected": 2,
+  "completed": 2,
+  "outcomes": {
+    "passed": 2
+  },
+  "source_files": 648,
+  "source_sha256": "bac8dbede6bc069132a4fb1e3ca75c683ace40614ea7e8e1832f9745a734b001"
+}

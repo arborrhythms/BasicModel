@@ -1,0 +1,35 @@
+F
+=================================== FAILURES ===================================
+___ test_extent_containment_does_not_fill_gaps_between_part_witnesses[False] ___
+
+grouped = False
+
+    @pytest.mark.parametrize('grouped', [False, True])
+    def test_extent_containment_does_not_fill_gaps_between_part_witnesses(grouped):
+        cs = _cs(nS=128, order=2)
+        cs._mereology_raise = True
+        cs.mereology_refine_patience = 2
+        object.__setattr__(cs, '_model', SimpleNamespace(_training_step_count=0))
+        _mint_row(cs, 0, 100)
+        individual = _mint_row(cs, 1, 101)
+        cs.add_concept_edge(individual, 0, 1.)
+        cs.add_concept_feature(0, 'ps', (1, 2) if grouped else 1, 1.)
+        cs.add_concept_feature(0, 'ps', (3, 4) if grouped else 2, -1.)
+        ids = torch.tensor([[1, 2, 99, 3, 4] if grouped else [1, 99, 2]])
+        starts = torch.arange(ids.shape[1])
+        spans = torch.stack((starts, starts + 1), -1)[None]
+        extents = torch.tensor([[[0, ids.shape[1]]]])
+        read = cs.cs_read_memberships((ids, spans, None, ids, spans), extents)
+        # Both literals are contained by this subject, as before the routing fix.
+        torch.testing.assert_close(read[0, 0, 0], torch.tensor([1., 1.]))
+        _, field = cs.cs_forward_content(read, torch.rand(cs.nVectors, cs.nDim))
+        for step in range(3):
+            requests = observe(cs, field, step)
+>       assert cs._refinement_raise_ready[individual, 0]
+E       assert tensor(False)
+
+test/test_refine_raise.py:148: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 10 deselected, 1 warning in 2.05s

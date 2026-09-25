@@ -1,0 +1,38 @@
+{
+  "bin/Layers.py": {
+    "before": "9959a834b997d36c8d018bda0aac48b781680f4582ca0b7316d0b9c8d2c72007",
+    "after": "af68e48977b363822e03874bfd163ec36d5717a21e9a90ba32f92daf3ce5dfe5"
+  },
+  "bin/Models.py": {
+    "before": "1cbbd7b50f2594e6b2f08904dd43afd3235ea750eb4166eaca69ca34a71450d2",
+    "after": "1603e23110e03c513b4bcb9e952c4a1ba59167324eb7647aca3277fcdde5a16d"
+  },
+  "bin/PerceptProperties.py": {
+    "before": "5891eb03ccef46abc417c4983ad32125702120d7977582741a42b05c75379476",
+    "after": "2018507cdadcd11435004ae1393a2962e790d1bbb3bf733636c745f2a8ad8f31"
+  },
+  "bin/Spaces.py": {
+    "before": "89e6656fdcbc419f47263025c2b3341c96bbd924972a11495b0581b57f4777c0",
+    "after": "d4411dd10523358d19e3a0d51af65f40c30990a3c87fb1ec60f38f95b84a1cfe"
+  },
+  "bin/Understanding.py": {
+    "before": "16bb20a3668691a58a282aab94b77855f35c1b5e6b2df222fb2f8b4be479dfba",
+    "after": "2556766525af9f57d5e73aef14c01538700660dfae01efed8cc5a262840360fd"
+  },
+  "data/XOR_exact.xml": {
+    "before": "30873188ab149fd4a0fbda766c45d7d07b9772cc7a53d63c4966d022aa844374",
+    "after": "ce5e7bdac8e724609112d33b0a1e8256c3f1c40f0ed91a5ef632237f2f76079e"
+  },
+  "test/test_category_em_smoke.py": {
+    "before": "e19dd858c39ddd8b61b57b753462eeb560f997e560cc5d7ce67c0960c1b7f13d",
+    "after": "1ea2740972163a0c7993193fe89f6492c3de0eb59d7ae5d0ca475c8622454880"
+  },
+  "test/test_concept_output.py": {
+    "before": "cd8320366abed7ca72edb9ab2f623cefaae0dec92e4526a0948d081c21e12ac6",
+    "after": "ba830391dea0d6b9c2ece65a67ba8d369cf4a0d4d57d8b19cde535cca9d0533d"
+  },
+  "test/test_explicit_dimensions.py": {
+    "before": "965ea7e9b4be60be75853de7c2ddea41f668d30929980212bfa5e572631b9e71",
+    "after": "7dc6fe7d1d5fa1a47f62cefdb09ec57d3ca71224a642bdc6f23bedfcdfdd4805"
+  }
+}

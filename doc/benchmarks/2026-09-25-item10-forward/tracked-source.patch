@@ -1,0 +1,2309 @@
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 1ab0700..bfce69a 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -3047,11 +3047,10 @@ class GrammarLayer(Layer):
+ 
+ 
+ class SigmaLayer(GrammarLayer):
+-    """Additive (summation) fold feature of the subsymbolic loop.
++    """Additive chart map used by the grammar's LiftLayer.
+ 
+-    Substrate, not a grammar operation. Instantiated directly by spaces
+-    (``ConceptualSpace.sigma_percept``) and used by the subsymbolic
+-    loop; not chart-dispatched.
++    Lift owns the operand assembly and dispatch. Perceptual towers use
++    their native meronomies; they do not own this fold.
+ 
+     With ``nonlinear=True``, ``forward`` charts its input through atanh,
+     applies the inner linear map, then returns tanh of the result. For the
+@@ -4484,12 +4483,11 @@ class IndexedSigmaConceptsFromPercepts(Layer):
+ 
+ 
+ class PiLayer(GrammarLayer):
+-    r"""Multiplicative boundary fold feature of the subsymbolic loop:
++    r"""Multiplicative chart map used by the grammar's LowerLayer:
+     ``[-1, 1] -> [-1, 1]``.
+ 
+-    Substrate, not a grammar operation. Instantiated directly by spaces
+-    (``PartSpace.pi_input`` / ``pi_concept``) and used by the
+-    subsymbolic loop; not chart-dispatched.
++    Lower owns the operand assembly and dispatch. Perceptual towers use
++    their native meronomies; they do not own this fold.
+ 
+     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
+ 
+@@ -5687,6 +5685,9 @@ class ConceptualAttentionLayer(SparseLayer):
+                 ('managed', torch.zeros(nOutput, dtype=torch.bool)),
+                 ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
+                 ('witness_strength', torch.zeros(nOutput)),
++                ('refinement_best', torch.full((nOutput,), float('inf'))),
++                ('refinement_stale', torch.zeros(nOutput, dtype=torch.long)),
++                ('refinement_step', torch.full((nOutput,), -1, dtype=torch.long)),
+                 ('context_seen', torch.zeros(nOutput, dtype=torch.long)),
+                 ('observation', torch.zeros((), dtype=torch.long))):
+             # The structural sidecar owns these row-aligned values. Keeping
+@@ -5754,7 +5755,8 @@ class ConceptualAttentionLayer(SparseLayer):
+         self.features.nOutput = size
+         for name, value in list(self.named_buffers(recurse=False)):
+             if value.ndim == 1:
+-                fill = 1 if name == 'participation' else 0
++                fill = {'participation': 1, 'refinement_best': float('inf'),
++                        'refinement_step': -1}.get(name, 0)
+                 setattr(self, name, torch.cat((value, value.new_full((size - old,), fill))))
+         if self.where.numel():
+             self.where = torch.sparse_coo_tensor(self.where.indices(), self.where.values(),
+@@ -14135,6 +14137,29 @@ class RadixLayer(Layer):
+         """
+         return self.lookup_with_id(chunks)
+ 
++    def decode_activity(self, activity):
++        """Realize native row activity at byte offsets, with no code matching.
++
++        A maximum chooses among ambiguous rows. Empty activity emits nothing;
++        a chosen multi-byte row occupies its span before the next selection.
++        """
++        if activity.ndim != 3 or activity.shape[-1] != len(self):
++            raise ValueError('radix decode requires [batch, position, active row]')
++        if not bool(torch.isfinite(activity).all()):
++            raise RuntimeError('radix activity contains NaN/Inf')
++        result = torch.zeros(activity.shape[:2], device=activity.device, dtype=torch.long)
++        strength, rows = activity.detach().max(-1)
++        for b in range(len(result)):
++            position = 0
++            while position < result.shape[1]:
++                raw = self.bytes_for(int(rows[b, position])) if strength[b, position] > 0 else b''
++                count = min(len(raw), result.shape[1] - position)
++                if count:
++                    result[b, position:position + count] = torch.tensor(
++                        list(raw[:count]), device=result.device)
++                position += max(1, count)
++        return result
++
+     def reverse(self, vec, *, symbolic_space=None):
+         """Layer-API reverse: vec -> canonical bytes (or list-of-bytes).
+ 
+diff --git a/bin/Models.py b/bin/Models.py
+index 4319a95..c699656 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -78,7 +78,7 @@ from checkpoint_migrations import (
+     stamp_checkpoint_schema,
+ )
+ from data import Data, TheData
+-from Understanding import AnswerProgram, InputReconstruction, Understanding
++from Understanding import AnswerProgram, ConceptualField, InputReconstruction, Understanding
+ from Output import AnswerConstruction, AnswerDerivation, thought_answer_meanings
+ from contextlib import contextmanager as _contextmanager
+ from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
+@@ -4600,7 +4600,7 @@ class BaseModel(Mereology, nn.Module):
+             "_chunk_utility_gain",
+         )
+         legacy_ws_fields = (
+-            "_word_whole_ss", "_mereology_raised",
++            "_word_whole_ss",
+             "_property_class_whole", "_anchored_pids",
+             "_pending_words_summary", "_standalone_run_bytes",
+             "_lbg_disp_sum", "_lbg_disp_sum_sq", "_lbg_count",
+@@ -5593,6 +5593,16 @@ class BaseModel(Mereology, nn.Module):
+             if not _old_key.endswith('.vq._codebook'):
+                 continue
+             _owner_key = _old_key[:-len('vq._codebook')] + 'W'
++            # A duplicate VQ key has no current entry of its own, so the
++            # carrier rewrite above cannot resolve it. Resolve its owner W
++            # through the same ownership map before removing the alias.
++            if _owner_key not in model_state:
++                for _role, _container in _carrier_key_roles.items():
++                    _candidate = _owner_key.replace(
++                        f'.subspace.{_role}.', f'.{_container}.{_role}.', 1)
++                    if _candidate in model_state:
++                        _owner_key = _candidate
++                        break
+             if _owner_key not in model_state:
+                 continue
+             if _owner_key not in state:
+@@ -6075,6 +6085,12 @@ class BaseModel(Mereology, nn.Module):
+         ps_space = getattr(self, "perceptualSpace", None)
+         ps_store = (getattr(ps_space, "percept_store", None)
+                     if ps_space is not None else None)
++        if (ps_store is not None and self.wholePropertyBasis
++                and not self.serial and self.concept_binding == 'aligned'):
++            # Native reconstruction has already decoded attributed radix
++            # activity. Neither original lengths nor live perception is read.
++            return [bytes(row.reshape(-1).to(torch.uint8).tolist()).rstrip(b'\0')
++                    .decode('utf8', errors='replace') for row in recon.detach().cpu()]
+         if ps_store is not None:
+             vectors = recon.detach()
+             # Normalise to [B, N, D].
+@@ -9183,6 +9199,13 @@ class BasicModel(BaseModel):
+             "combine_last_cs_sub": getattr(self, "_combine_last_cs_sub", None),
+             "merge_diffs": merge_diffs,
+         }
++        if not self.serial and self.concept_binding == 'aligned' and self.wholePropertyBasis:
++            live = self._combine_last_cs_sub
++            evidence = getattr(live, '_concept_activations', None)
++            carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
++                ConceptualField(live._concept_ids, evidence,
++                    live._concept_position_evidence, live._concept_position_spans,
++                    live._concept_extents) if evidence is not None else None}
+         # The answer path's seed (spec 5.3): on the serial grammar path the
+         # resolved input symbol is the grammar's ROOT IDEA (the STM-folded
+         # S in the terminal conceptual state), which varies with the
+@@ -9249,13 +9272,14 @@ class BasicModel(BaseModel):
+         object.__setattr__(self, "_reconstruction_product", result)
+         return result
+ 
+-    def _reverse_input_surface(self, carrier):
++    def _reverse_input_surface(self, carrier, *, field=None):
+         """Realize recovered input ideas through the shared numerical inverse.
+ 
+         The input's grammar traversal is already complete. No generate policy
+         or free chart expansion belongs in this path.
+         """
+-        carrier = self._reverse_body(carrier)
++        carrier = (self._reverse_body(carrier) if field is None else
++                   self._reverse_body(carrier, field=field))
+         concepts = getattr(carrier, "_concepts_recon", None)
+         carrier = self._reverse_perceptual(carrier)
+         if concepts is not None and carrier is not None:
+@@ -9331,10 +9355,14 @@ class BasicModel(BaseModel):
+                 if unfolded is not None:
+                     terminal_idea = unfolded   # [B, W, D_c]
+             if terminal_idea is not None:
+-                cs = self.conceptualSpace
+-                cs.commit_event(terminal_idea)
+-                rev_sub = self._reverse_input_surface(
+-                    cs.subspace)
++                field = understanding.reconstruction_carriers.get('field')
++                if field is None:
++                    self.conceptualSpace.commit_event(terminal_idea)
++                    rev_sub = self._reverse_input_surface(self.conceptualSpace.subspace)
++                else:
++                    carrier = self.conceptualSpace.subspace.carrier_like()
++                    carrier.set_event(terminal_idea)
++                    rev_sub = self._reverse_input_surface(carrier, field=field)
+             rev_ev = (rev_sub.materialize()
+                       if rev_sub is not None
+                       and hasattr(rev_sub, 'materialize')
+@@ -9347,7 +9375,10 @@ class BasicModel(BaseModel):
+                     and torch.is_tensor(rev_ev) and torch.is_tensor(fwd_ev)
+                     and rev_ev.dim() == fwd_ev.dim() and rev_ev.dim() == 3):
+                 # Band-aware seam: the input event's where/when widths, not ModelLoss's (0,0) OutputSpace band.
+-                cost = self._reverse_event_loss(rev_ev, fwd_ev)
++                # Native surface bytes are decoded by activity. Score the
++                # continuous native rows produced by that same attribution.
++                score_event = getattr(rev_sub, '_reconstruction_percepts', rev_ev)
++                cost = self._reverse_event_loss(score_event, fwd_ev)
+                 # Spec section 11: an EXACT, unmasked inverse identity has zero
+                 # error and therefore no learning signal.  Flag it rather than
+                 # let a perfect round trip pass as reconstruction learning.
+@@ -11322,6 +11353,8 @@ class BasicModel(BaseModel):
+         testLosses        = [[],[]]
+         self.plot         = False
+         accuracy          = []
++        from ConceptLessons import teach_concept_lessons
++        teach_concept_lessons(self)
+         self._optimizer   = self.getOptimizer(lr=lr)
+ 
+         # Test gating from BASIC_RUN_TEST. Tri-state: None (skip),
+@@ -14782,7 +14815,9 @@ class BasicModel(BaseModel):
+                             dtype=(_staged_event.dtype
+                                    if _staged_event.is_floating_point() else None))
+                     self._stage_fixed_residual_part_capacity()
+-                else:
++                elif self.serial:
++                    # Only the serial word carrier has a variable part axis.
++                    # Parallel perception uses its configured fixed slot count.
+                     # W is deliberately static (one of 16/32/64/128); the
+                     # number of residual radix constituents inside one
+                     # complete word is not.  Mark only that P axis dynamic so
+@@ -17622,16 +17657,6 @@ class BasicModel(BaseModel):
+         if _mereology_raise and terminal_ss is not None:
+             object.__setattr__(terminal_ss, '_mereology_raise', True)
+             object.__setattr__(self.perceptualSpace, '_mereology_raise', True)
+-            # Stamp the STAGE-0 WholeSpace too so it computes the read-only
+-            # run-structure observation (``_mereology_ratio_obs``) the top-down
+-            # attention handoff dispatches on -- at sO>1 the stage-0 ws is NOT
+-            # the terminal, and only the stage that runs ``_stage0_unity_forward``
+-            # parks the obs. wholeSpaces[0] runs ONLY the unity branch (never the
+-            # recurrent / autobind mutating path), so this enables the obs alone
+-            # (byte-identical). Idempotent when stage 0 IS the terminal (sO=1).
+-            _ws0 = self.wholeSpaces[0] if len(self.wholeSpaces) else None
+-            if _ws0 is not None:
+-                object.__setattr__(_ws0, '_mereology_raise', True)
+         # <radialStmReduce> (Alec 2026-07-13, "min should be a radial min
+         # to deal with signed activations"): the STM idea folds use the
+         # RADIAL kernels (radmin/radmax) and their reverses use the radial
+@@ -18049,6 +18074,8 @@ class BasicModel(BaseModel):
+ 
+     def _forward_head(self, sub):
+         """Head: outputSpace forward."""
++        if self.outputSpace.concept_ids:
++            sub = self._combine_last_cs_sub
+         return self.outputSpace(sub)
+ 
+     @staticmethod
+@@ -22858,6 +22885,8 @@ class BasicModel(BaseModel):
+         ``@torch.compiler.disable``'d); skipped under compile like the
+         sibling provenance bookkeeping.
+         """
++        if not self.serial:
++            return
+         if getattr(self, 'router_wire_serial', 'both') not in (
+                 'per-word', 'both'):
+             return
+@@ -22909,6 +22938,8 @@ class BasicModel(BaseModel):
+         preserved. This is the final routing snapshot the inter-sentence
+         predictor consumes (retained per plan §4).
+         """
++        if not self.serial:
++            return
+         if getattr(self, 'router_wire_serial', 'both') not in (
+                 'boundary', 'both'):
+             return
+@@ -22969,6 +23000,8 @@ class BasicModel(BaseModel):
+         old derivation, then rebuild ``generate_rules`` from the supplied idea
+         seed (falling back to STM when no seed is usable).
+         """
++        if not self.serial:
++            return
+         from_idea = bool(getattr(self, 'reconstruct_from_idea', False))
+         if getattr(self, 'idea_decode', False) and not from_idea:
+             return
+@@ -23466,7 +23499,7 @@ class BasicModel(BaseModel):
+ 
+         The request addresses native percept identities, which choose the
+         mereological units, and field brackets, which choose the region.
+-        The source carrier is read-only; reconstruction retains that carrier.
++        The source carrier is read-only.
+         """
+         if pass_idx not in self.subsymbolic_loop:
+             return ps_default
+@@ -23477,7 +23510,9 @@ class BasicModel(BaseModel):
+             return ps_default
+         size = sum(owner._order_caps())
+         query = torch.cat((field, field.new_zeros(size - len(field), *field.shape[1:])))
+-        columns, attributed, spans = owner.cs_percept_attribution(query, observed=query)
++        columns, attributed, spans = owner.cs_percept_attribution(query, observed=query,
++            memberships=getattr(owner, '_cs_feature_memberships', None),
++            spans=getattr(owner, '_cs_position_spans', None))
+         active = attributed.amax(dim=(1, 2, 3)) > 0
+         if not bool(active.any()) or spans is None:
+             return ps_default
+@@ -23505,8 +23540,90 @@ class BasicModel(BaseModel):
+                                       event[..., width:]), -1))
+         return focused
+ 
+-    def _reverse_body(self, sub):
+-        """Per-stage body reverse, mirroring ``_forward_body`` order.
++    def _reverse_field(self, sub, field):
++        """Attribute owned conceptual evidence to native rows at its positions.
++
++        Resolve definitions by id. Descent uses the occurrence evidence before
++        the extent union, never an input event, tiling or current perception.
++        """
++        cs = self.conceptualSpaces[0]
++        store = cs._concept_allocator.layer(0)
++        ids = field.concept_ids
++        by_id = {(key[1] if isinstance(key, tuple) else key): row
++                 for row, key in store._tensor_row_keys.items()}
++        rows = torch.tensor([by_id.get(int(cid), -1) if cid != -1 else -1
++                             for cid in ids.reshape(-1).tolist()],
++                            device=ids.device, dtype=torch.long).reshape(ids.shape)
++        S, B, E, _ = field.evidence.shape
++        P = field.position_spans.shape[1]
++        located = field.position_evidence
++        observed = field.evidence[:, :, :, None].expand(S, B, E, P, 2).clone()
++        # Feature definitions carry occurrence evidence; composite rows carry
++        # extent evidence and descend against those observed occurrences.
++        defined = cs._concept_part_rows(store.features, ids.device)
++        bound = rows[:, None].expand(-1, B) if rows.ndim == 1 else rows
++        valid = (bound >= 0) & (bound < len(defined))
++        feature_rows = defined[bound.clamp(0, len(defined) - 1)] & valid
++        observed[:len(located)] = torch.where(
++            feature_rows[:len(located), :, None, None, None], located,
++            observed[:len(located)])
++        spans = field.position_spans
++        contained = ((spans[:, None, :, 0] >= field.extents[:, :, None, 0])
++                     & (spans[:, None, :, 1] <= field.extents[:, :, None, 1])
++                     & (spans[:, None, :, 1] > spans[:, None, :, 0]))
++        observed = (observed * contained[None, ..., None]).flatten(2, 3)
++        columns, attributed, _ = cs.cs_percept_attribution(
++            observed, observed=observed, inventory_rows=rows)
++        attributed = attributed[..., 0].reshape(-1, B, E, P)
++        radix = self.perceptualSpace.percept_store
++        width = max(int(self.inputSpace.outputShape[0]), int(field.extents.max()))
++        activity = attributed.new_zeros(B, width, len(radix))
++        primitive = self.wholeSpaces[0].subspace.what.primitive_properties
++        properties = attributed.new_zeros(B, width, len(primitive.members))
++        offsets = torch.arange(width, device=attributed.device)
++        covering = ((offsets >= spans[..., :1]) & (offsets < spans[..., 1:]))
++        for edge, col in enumerate(columns.tolist()):
++            support = attributed[edge].amax(1)
++            if (col // 2) % 2:
++                values = (support[..., None] * covering).amax(1)
++                unit = F.one_hot(torch.tensor(col // 4, device=values.device),
++                                 len(primitive.members)).to(values)
++                properties = torch.maximum(properties, values[..., None] * unit)
++            else:
++                row = store.features._rows[edge]
++                group = store.feature_groups.get((row, col), (col // 4,))
++                length = sum(len(radix.bytes_for(pid)) for pid in group)
++                # Parts read by containment at the extent, independently of
++                # WholeSpace's finer run positions. An equal-length bracket
++                # locates the whole ordered group; a larger bracket does not.
++                brackets = torch.cat((spans, field.extents), 1)
++                support = torch.cat((support, attributed[edge].amax(-1)), 1)
++                fits = brackets[..., 1] - brackets[..., 0] == length
++                shift = 0
++                for pid in group:
++                    at = offsets == brackets[..., :1] + shift
++                    values = (support[..., None] * (fits[..., None] & at)).amax(1)
++                    unit = F.one_hot(torch.tensor(pid, device=values.device), len(radix)).to(values)
++                    activity = torch.maximum(activity, values[..., None] * unit)
++                    shift += len(radix.bytes_for(pid))
++        # Property attribution distributes support over primitive members.
++        # Native identities, never nearest distributed codes, address decode.
++        byte_support = primitive.reverse(properties)
++        byte_ids = [radix.get_id(bytes([value])) for value in range(256)]
++        known = [value for value, pid in enumerate(byte_ids) if pid is not None]
++        native = torch.tensor([byte_ids[value] for value in known],
++                              device=activity.device, dtype=torch.long)
++        property_activity = torch.zeros_like(activity).index_add(
++            -1, native, byte_support[..., known])
++        recovered = sub.carrier_like()
++        recovered._radix_activity = torch.maximum(activity, property_activity)
++        return recovered
++
++    def _reverse_body(self, sub, *, field=None):
++        """Native field attribution, or the serial/dense numerical inverse.
++
++        Native aligned perception inverts its explicitly supplied forward
++        evidence by concept id. It never reads stage events or a saved stack.
+ 
+         Inverts the primary IS→PS→CS→OS path's body: walk stages in
+         reverse, undo the optional N-halving ``merge`` then
+@@ -23525,6 +23642,10 @@ class BasicModel(BaseModel):
+         reconstruction (approximate through the averaged loops, per the
+         single-input-reverse contract) instead of aborting.
+         """
++        if not self.serial and self.concept_binding == 'aligned' and self.wholePropertyBasis:
++            # A free inverse cannot substitute the latest perception. Only
++            # the explicitly supplied forward field supplies evidence.
++            return self._reverse_field(sub, field) if field is not None else sub
+         carriers = getattr(self, "_combine_carriers", None)
+         _concepts_recon = None
+         for t in reversed(range(len(self.body_stages))):
+@@ -24429,7 +24550,7 @@ class BasicModel(BaseModel):
+             if _restore_ev is not None:
+                 body_sub.set_event(_restore_ev)
+         pred = head_sub.materialize() if head_sub is not None else None
+-        if pred is not None:
++        if pred is not None and not self.outputSpace.concept_ids:
+             pred = self.normalizer.denormalize(pred, which="output")
+ 
+         # Capture symbol_states by iterating per-stage WholeSpaces
+diff --git a/bin/PerceptProperties.py b/bin/PerceptProperties.py
+index 6bdd851..acb68c5 100644
+--- a/bin/PerceptProperties.py
++++ b/bin/PerceptProperties.py
+@@ -84,10 +84,14 @@ class PrimitiveProperties(nn.Module):
+     def reverse(self, evidence):
+         """Distribute property support over its learned primitive members.
+ 
+-        This is normalized attribution through a many-to-one read. The
+-        ordered input witness, not this attribution, reconstructs bytes.
++        This is normalized attribution through a many-to-one read. Located
++        conceptual evidence supplies its scope; radix activity decodes the
++        attributed primitive rows as a best-effort reconstruction.
+         """
+         weights = self.coefficients()
++        # Descent follows existing memberships. Unlike forward teaching,
++        # it has no observed primitive on which to write a missing member.
++        weights = torch.where(weights > 0, weights, 0.)
+         weights = weights / weights.sum(-1, keepdim=True).clamp_min(1e-12)
+         return evidence @ weights
+ 
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index 6d15235..6d7b1df 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -11910,23 +11910,27 @@ class PartSpace(Space):
+         return self.percept_store.canonical_parts(part_ids)
+ 
+     @staticmethod
+-    def part_memberships(store, features, part_ids, part_spans, spans, length):
++    def part_memberships(store, features, part_ids, part_spans, spans, length, *, return_support=False):
+         """Containment of ids or ordered id groups in the canonical tiling.
+ 
+         Groups preserve order, repetition and adjacency. A negative pole
+         requires an observed span without the literal; missing input is unknown.
+         No byte reconstruction or alternate tiling participates in this read.
++        Optional support marks the actual matching native tiles, independently
++        of the extent-wide containment value.
+         """
+         valid = (part_ids >= 0) & (part_spans[..., 1] > part_spans[..., 0])
+         overlap = (torch.minimum(spans[..., 1, None], part_spans[:, None, :, 1])
+                    - torch.maximum(spans[..., 0, None], part_spans[:, None, :, 0])).clamp_min(0)
+         size = spans[..., 1] - spans[..., 0]
+         complete = ((overlap * valid[:, None]).sum(-1) == size) & (size > 0)
+-        pairs = []
++        pairs, supports = [], []
+         for literal in features:
+             ids = tuple(int(i) for i in literal) if isinstance(literal, (list, tuple)) else (int(literal),)
+             count = part_ids.shape[1] - len(ids) + 1
+             present = torch.zeros_like(complete)
++            support = torch.zeros(*complete.shape, part_ids.shape[1],
++                                  dtype=torch.bool, device=part_ids.device) if return_support else None
+             if count > 0 and ids:
+                 match = valid[:, :count].clone()
+                 for offset, pid in enumerate(ids):
+@@ -11937,9 +11941,16 @@ class PartSpace(Space):
+                 contained = ((part_spans[:, None, :count, 0] >= spans[..., 0, None])
+                              & (part_spans[:, None, len(ids) - 1:len(ids) - 1 + count, 1]
+                                 <= spans[..., 1, None]))
+-                present = (match[:, None] & contained).any(-1)
++                witnesses = match[:, None] & contained
++                present = witnesses.any(-1)
++                if return_support:
++                    for offset in range(len(ids)):
++                        support[..., offset:offset + count] |= witnesses
+             pairs.append(torch.stack((present, ~present & complete), -1))
+-        return torch.stack(pairs)
++            if return_support:
++                supports.append(support)
++        result = torch.stack(pairs)
++        return (result, torch.stack(supports)) if return_support else result
+ 
+     def _ensure_radix_atomic_bytes(self, batch_tokens):
+         """Pre-seed every byte needed by this eager lexical batch.
+@@ -14341,6 +14352,22 @@ class PartSpace(Space):
+         attention / VQ chain. ``invertible`` paths use the LDU solve to
+         avoid materializing the dense inverse weights.
+         """
++        activity = getattr(subspace, '_radix_activity', None)
++        if activity is not None:
++            # Attribute first, then decode by native activity. Distributed
++            # codes supply the continuous reconstruction score, never a read.
++            radix = self.percept_store
++            code = activity @ radix.active_prototypes().to(activity)
++            width = int(self.subspace.nWhat + self.subspace.nWhere + self.subspace.nWhen)
++            code = F.pad(code, (0, width - code.shape[-1]))
++            indices = self._radix_where_indices
++            if indices and indices[0] >= radix.dim:
++                offsets = torch.arange(activity.shape[1], device=activity.device)
++                stamp = self.subspace.whereEncoding.encode(offsets.float())
++                code[..., indices] = stamp * activity.amax(-1, keepdim=True)
++            subspace._reconstruction_percepts = code
++            subspace.set_event(radix.decode_activity(activity)[:, None])
++            return subspace
+         if subspace.is_empty():
+             return subspace
+         target = self._adopt_reverse_carrier(subspace)
+@@ -15302,6 +15329,14 @@ class ConceptualSpace(Space):
+ 
+         # Parts use presence charts. Discovery is a finite pool of rows;
+         # its gate is measured use, independent of sentence truth learning.
++        self._mereology_raise = bool(TheXMLConfig.get(
++            "architecture.mereologyRaise", default=False))
++        self.mereology_refine_patience = int(TheXMLConfig.get(
++            "architecture.mereologyRefinePatience", default=3))
++        if self.mereology_refine_patience < 1:
++            raise ValueError("mereologyRefinePatience must be positive")
++        self.run_structure = RunStructureLayer(contiguity_tol=0.)
++        self.layers.append(self.run_structure)
+         self.conceptual_pi = bool(TheXMLConfig.space(
+             "ConceptualSpace", "conceptualPi", False))
+         self._promotion_enabled = bool(TheXMLConfig.space(
+@@ -16409,6 +16444,14 @@ class ConceptualSpace(Space):
+ 
+     def _clear_percept_field(self, batch=None):
+         """Release native analysis state without touching learned reference rows."""
++        for name in ('_refinement_field', '_refinement_both', '_refinement_raise_ready', '_cs_feature_support'):
++            value = getattr(self, name, None)
++            if batch is None or value is None:
++                object.__setattr__(self, name, None)
++            else:
++                value = value.clone()
++                value[:, int(batch)] = 0
++                object.__setattr__(self, name, value)
+         for name in ("subspace", "CSsub", "CSsym"):
+             sub = getattr(self, name, None)
+             field = getattr(sub, "_percept_field", None)
+@@ -17108,7 +17151,7 @@ class ConceptualSpace(Space):
+         # Order-0 mereology binding (GATED <mereologyRaise>, dark by default ->
+         # byte-identical). A lexer token's spell-out pids (``word_groups``,
+         # parked by PartSpace._embed_radix) all bind to ONE shared word-whole,
+-        # so the whole accumulates > 1 part and ``maybe_raise_order`` fires
++        # so the whole retains the ordered spelling without raising its order
+         # (doc/specs/mereological-order-raising.md, order-0 MEREOLOGY). The
+         # per-pid path below is the flag-off default.
+         if (getattr(ws, '_mereology_raise', False)
+@@ -17218,16 +17261,6 @@ class ConceptualSpace(Space):
+                 if sym_pos is not None:
+                     ws.record_lbg_pull(int(sym_pos), seed)
+                     ws.maybe_split_lbg(int(sym_pos))
+-                # Mereological order-raising (gated <mereologyRaise>, dark by
+-                # default -> byte-identical). After a percept's META gains /
+-                # refreshes its child, rebalance the lattice: a whole with
+-                # > K_many parts raises a higher-order part subsuming them.
+-                # Re-resolve the parent META via ps_pos (the fresh-bind branch
+-                # never set ``meta_pos``); the raise is idempotent per whole.
+-                if getattr(ws, '_mereology_raise', False):
+-                    _pm = ws.taxonomy_parent(ps_pos)
+-                    if _pm is not None:
+-                        ws.maybe_raise_order(int(_pm))
+ 
+         _stash_category_roles(ws, pid_host, B, N)
+ 
+@@ -17240,13 +17273,12 @@ class ConceptualSpace(Space):
+         for an unfamiliar word, one pid once the radix has promoted it -- and
+         those pids ARE the parts of the word-as-WHOLE. Bind every part to ONE
+         shared whole symbol (keyed by the token's surface TEXT so the same word
+-        is one stable whole across rows / presentations), then rebalance via
+-        :meth:`maybe_raise_order` -- which now sees > 1 part under the whole and
+-        can fire (the per-pid path mints one whole per part, so the whole always
+-        had exactly one part and the raise was dormant).
++        is one stable whole across rows / presentations). This binding does
++        not raise an order. ConceptualSpace separately tests retained evidence
++        and refinement convergence. The per-pid path keeps separate wholes.
+ 
+         Reuses the SAME APIs as the per-pid path (``ensure_ps_position`` /
+-        ``insert_whole`` / ``insert_meta`` / ``maybe_raise_order``); only the
++        ``insert_whole`` / ``insert_meta``); only the
+         WHOLE is shared across a token's parts. Word-keyed wholes persist on
+         ``ws._word_whole_ss`` (text -> ws position). This gated path
+         deliberately skips the per-pid LBG / category-codebook bookkeeping (both
+@@ -17320,10 +17352,6 @@ class ConceptualSpace(Space):
+                     ps_pos = ws.ensure_ps_position(pid)
+                     last_meta = ws.insert_meta(
+                         ps_pos, int(whole_pos), fused_vec=part_seed)
+-                # Rebalance: a whole with > k_many parts raises a higher-order
+-                # part subsuming them (idempotent per whole).
+-                if last_meta is not None:
+-                    ws.maybe_raise_order(int(last_meta))
+                 # Syntactic anchor (Alec 2026-07-13): a closed-class relation
+                 # surface ("partOf" ...) binds its pids to the OPERATOR role —
+                 # the "is of definition" resolves grammatically, feeding the
+@@ -17693,19 +17721,11 @@ class ConceptualSpace(Space):
+         alloc = _concept_alloc_of(self)
+         return alloc.store_of(sym).row_is_identity(sym)
+ 
+-    def concept_over_collected(self, sym, *, k_parts=None, k_wholes=None):
+-        """True iff ``sym`` has TOO MANY parts or wholes -- actionable, i.e. it
+-        should trigger refinement (more-parts-per-symbol via σ-synthesis;
+-        fewer-wholes-per-symbol via π-analysis / splitting an over-subscribed
+-        whole). Thresholds default to ``_concept_k_many`` (4)."""
+-        alloc = _concept_alloc_of(self)
+-        kp = int(k_parts if k_parts is not None
+-                 else getattr(self, "_concept_k_many", 4))
+-        kw = int(k_wholes if k_wholes is not None
+-                 else getattr(self, "_concept_k_many", 4))
+-        store = alloc.store_of(sym)
+-        return (store.count_role(sym, "part") > kp
+-                or store.count_role(sym, "whole") > kw)
++    def concept_over_collected(self, sym):
++        """Whether the current field gives this concept both poles of evidence."""
++        row = ConceptualSpace._csw_row_of(self, sym)
++        both = getattr(self, '_refinement_both', None)
++        return row is not None and both is not None and bool(both[row].any())
+ 
+     def retire_concept(self, sym):
+         """Retire a TRANSIENT symbol that has triggered refinement -- the
+@@ -17782,17 +17802,15 @@ class ConceptualSpace(Space):
+     def _concept_raise_set(self):
+         """The set of HIGHER-ORDER symbols minted by σ-synthesis (idempotency:
+         a raised symbol's many constituents are its DEFINITION, not over-
+-        collection, so it is never re-refined). Mirrors WholeSpace's
+-        ``_mereology_raised`` for the legacy raise."""
++        collection, so it is never re-refined)."""
+         return _concept_alloc_of(self).raised
+ 
+     def synthesize_higher_order(self, part_codes):
+         """σ-SYNTHESIS at the relation level: mint a HIGHER-ORDER symbol H that
+         subsumes ``part_codes`` as ONE unit — ``Parts(H) = part_codes`` is H's
+-        provenance (the relation-only analogue of the legacy ``part_chain`` /
+-        :meth:`maybe_raise_order`; the geometric σ-over-set
+-        (:meth:`SigmaLayer.synthesize_over_set`) is the deferred tower-codebook
+-        realization). H is tagged RAISED so the lifecycle never re-refines it.
++        provenance. This explicit reasoning operation remains separate from
++        automatic pool assignment, whose :meth:`maybe_raise_order` requires
++        stalled refinement on discontiguous support. H is tagged RAISED.
+         Returns H. Idempotent per identical ``part_codes`` set."""
+         alloc = _concept_alloc_of(self)
+         key = ("raise", frozenset(part_codes))
+@@ -18251,13 +18269,14 @@ class ConceptualSpace(Space):
+         from PerceptProperties import counts_in_spans
+         part_ids, part_spans, primitive, raw, whole_spans = percepts
+         if raw.shape[0] > 1:
+-            fields, bindings, identities, positions, brackets, subjects, raw_fields, feature_fields = [], [], [], [], [], [], [], []
++            fields, bindings, identities, positions, brackets, subjects, raw_fields, feature_fields, supports = [], [], [], [], [], [], [], [], []
+             for b in range(raw.shape[0]):
+                 field = self.cs_read_memberships((part_ids[b:b+1], part_spans[b:b+1],
+                     primitive, raw[b:b+1], whole_spans[b:b+1]), extents[b:b+1])
+                 fields.append(field)
+                 raw_fields.append(self._cs_order0_raw)
+                 feature_fields.append(self._cs_feature_memberships)
++                supports.append(self._cs_feature_support)
+                 bindings.append(self._cs_field_rows)
+                 identities.append(self._cs_field_concept_ids)
+                 positions.append(self._cs_position_evidence)
+@@ -18268,6 +18287,7 @@ class ConceptualSpace(Space):
+                 binding, ids = binding[:, 0], ids[:, 0]
+             object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
+             object.__setattr__(self, '_cs_feature_memberships', torch.cat(feature_fields, 1))
++            object.__setattr__(self, '_cs_feature_support', torch.cat(supports, 1))
+             object.__setattr__(self, '_cs_field_rows', binding)
+             object.__setattr__(self, '_cs_field_concept_ids', ids)
+             object.__setattr__(self, '_cs_position_evidence', torch.cat(positions, 1))
+@@ -18296,6 +18316,7 @@ class ConceptualSpace(Space):
+         features, towers, poles = columns // 4, (columns // 2) % 2, columns % 2
+         dtype = self.similarity_codebook.getW().dtype
+         membership = torch.zeros(len(columns), B, E, P, 2, device=raw.device, dtype=dtype)
++        feature_support = torch.zeros(len(columns), B, E, P, device=raw.device, dtype=torch.bool)
+         ps_edges = (towers == 0).nonzero().flatten()
+         if len(ps_edges):
+             model = getattr(self, '_model', None)
+@@ -18303,8 +18324,10 @@ class ConceptualSpace(Space):
+             native = getattr(ps, 'percept_store', None)
+             literals = [store.feature_groups.get((matrix._rows[i], matrix._cols[i]),
+                                                  (matrix._cols[i] // 4,)) for i in ps_edges.tolist()]
+-            pair = PartSpace.part_memberships(
+-                native, literals, part_ids, part_spans, extents, raw.shape[1])
++            pair, support = PartSpace.part_memberships(
++                native, literals, part_ids, part_spans, extents, raw.shape[1], return_support=True)
++            feature_support = feature_support.index_copy(0, ps_edges,
++                F.pad(support, (0, P - part_ids.shape[1])))
+             # Containment supplies a one-sided percept. Counterevidence
+             # requires a present percept with a negative conceptual weight.
+             pair = torch.stack((pair[..., 0], torch.zeros_like(pair[..., 0])), -1)
+@@ -18319,6 +18342,8 @@ class ConceptualSpace(Space):
+             membership = membership.index_copy(0, ws_edges,
+                 pair.index_select(2, features[ws_edges]).permute(2, 0, 1, 3)[:, :, None]
+                     .expand(-1, -1, E, -1, -1).to(membership))
++            feature_support = feature_support.index_copy(0, ws_edges,
++                membership[ws_edges, ..., 0] > 0)
+         # Extents retain separate copies of their position evidence. Flatten
+         # only for the existing sparse fold, then restore the subject axis.
+         contained = ((spans[:, None, :, 0] >= extents[:, :, None, 0])
+@@ -18326,6 +18351,7 @@ class ConceptualSpace(Space):
+                      & (spans[:, None, :, 1] > spans[:, None, :, 0]))
+         object.__setattr__(self, '_cs_feature_memberships',
+                            membership[..., 0].detach() * contained[None])
++        object.__setattr__(self, '_cs_feature_support', feature_support & contained[None])
+         object.__setattr__(self, '_cs_witness_feature_refs', tuple(
+             (r, c, store.feature_groups.get((r, c), (c // 4,)))
+             for r, c in zip(matrix._rows, matrix._cols)))
+@@ -18843,7 +18869,8 @@ class ConceptualSpace(Space):
+                 break
+         return result
+ 
+-    def cs_percept_attribution(self, field, *, observed=None, inventory_rows=None):
++    def cs_percept_attribution(self, field, *, observed=None, inventory_rows=None,
++                              memberships=None, spans=None):
+         """Attribute conceptual demand to the native memberships it defines.
+ 
+         Columns retain the feature inventory's PS/WS identity and pole;
+@@ -18864,12 +18891,10 @@ class ConceptualSpace(Space):
+             slots = torch.tensor([inverse.get(int(row), -1) for row in rows.tolist()], device=field.device, dtype=torch.long)
+             values = inferred[slots.clamp_min(0), b, :, columns % 2]
+             output[:, b, :, 0] = values * (written & (slots >= 0))[:, None]
+-        spans = None
+-        if observed is not None:
+-            memberships = getattr(self, '_cs_feature_memberships', None)
+-            if torch.is_tensor(memberships) and memberships.shape[:3] == output.shape[:3]:
+-                output = torch.minimum(output, memberships.to(output))
+-                spans = getattr(self, '_cs_position_spans', None)
++        if memberships is not None:
++            if memberships.shape[:3] != output.shape[:3]:
++                raise ValueError('attribution memberships must match the supplied field')
++            output = torch.minimum(output, memberships.to(output))
+         return columns, output, spans
+ 
+     # -- per-order weight population at mint (abstraction_order-keyed) ---------
+@@ -19152,6 +19177,8 @@ class ConceptualSpace(Space):
+             self.subspace.set_index(inventory.t().unsqueeze(-1).long())
+         # Attention-to-relation promotion: stash the admitted field for the
+         # Reset(hard) collector (consumed once; the compile-safety hoist).
++        if getattr(self, '_mereology_raise', False):
++            object.__setattr__(self, '_refinement_field', acts.detach())
+         if getattr(self, "_promotion_enabled", False):
+             object.__setattr__(self, "_promo_last_acts", acts.detach())
+         return content, acts
+@@ -19162,77 +19189,109 @@ class ConceptualSpace(Space):
+         row = store.row_of(('snap', int(concept_id)))
+         return row is not None and any(r == row for r, _ in store._index)
+ 
+-    def refine_over_collected(self, *, k_parts=None, k_wholes=None):
+-        """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
+-        towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
+-        resolve the 1:1 identities (done; excluded). Then for each still-active
+-        OVER-COLLECTED symbol APPLY the refinement and RETIRE it (transient — the
+-        restructuring supersedes it):
+-
+-          - too many PARTS → σ-SYNTHESIS (APPLIED): group the parts under a
+-            higher-order symbol H (:meth:`synthesize_higher_order`); the request
+-            carries ``'result': H``. This is the relation-level σ ("σ-synthesis,
+-            today only the [legacy] raise fires" — now the `_sym_*` table raises).
+-          - too many WHOLES → π-ANALYSE (REQUEST ONLY, deferred): the finer-whole
+-            split criterion is underspecified (which finer wholes?), so this pass
+-            emits the request without minting; the actual π-split is a follow-up.
+-
+-        RAISED higher-order symbols (their many constituents are their
+-        definition) are skipped — no re-refinement. A symbol over-collected on
+-        BOTH sides synthesizes AND emits the analyse request. Returns a list of
+-        ``{'sym', 'op', 'codes', ['result']}``. Idempotent. Thresholds default
+-        to ``_concept_k_many`` (4)."""
++    @torch.no_grad()
++    def refine_over_collected(self, *, field=None):
++        """Route a both reading by its retained support after learning updates.
++
++        Strict improvement of min(positive, negative) restarts patience. The
++        history follows the definition inventory through its concept-id map;
++        brackets and readiness are released with the current attended field.
++        No number of parts, inference passes, or repeated reads can raise it.
++        """
+         self.resolve_identities()
+-        alloc = _concept_alloc_of(self)
+-        raised = alloc.raised
+-        kp = int(k_parts if k_parts is not None
+-                 else getattr(self, "_concept_k_many", 4))
+-        kw = int(k_wholes if k_wholes is not None
+-                 else getattr(self, "_concept_k_many", 4))
++        self.prune_concept_links()
++        if not getattr(self, '_mereology_raise', False) or not self._sparse_active():
++            return []
++        field = getattr(self, '_refinement_field', None) if field is None else field
++        positions = getattr(self, '_cs_position_evidence', None)
++        spans = getattr(self, '_cs_position_spans', None)
++        feature_support = getattr(self, '_cs_feature_support', None)
++        if not all(torch.is_tensor(t) for t in (field, positions, spans, feature_support)):
++            return []
++        store = _concept_alloc_of(self).layer()
++        spans = spans.to(field.device)
++        feature_support = feature_support.to(field.device)
++        addresses = self._field_inventory_rows(field.device)
++        both = field.amin(-1)
++        residual = both.amax(-1) if both.shape[-1] else both.new_zeros(both.shape[:2])
++        ready = torch.zeros(store.nOutput, field.shape[1], dtype=torch.bool)
++        current = torch.zeros_like(ready)
++        step = int(getattr(getattr(self, '_model', None), '_training_step_count', 0))
++        # One observation per definition per completed optimizer step. Batch
++        # subjects contribute to the same worst unresolved local reading.
++        by_row = {}
++        for batch in range(field.shape[1]):
++            bound = addresses[:, batch] if addresses.ndim == 2 else addresses
++            for slot, row in enumerate(bound.tolist()):
++                if row >= 0:
++                    by_row[row] = max(by_row.get(row, 0.), float(residual[slot, batch]))
++                    current[row, batch] = residual[slot, batch] > 0
++        for row, error in by_row.items():
++            if error == 0:
++                store.refinement_best[row] = float('inf')
++                store.refinement_stale[row] = 0
++                store.refinement_step[row] = step
++            elif step != int(store.refinement_step[row]):
++                improved = error < float(store.refinement_best[row])
++                store.refinement_stale[row] = (0 if improved else
++                    int(store.refinement_stale[row]) + int(step > 0))
++                store.refinement_best[row] = min(error, float(store.refinement_best[row]))
++                store.refinement_step[row] = step
+         requests = []
+-        for sym in list(alloc.placement):
+-            if sym in raised:
+-                continue                              # higher-order: not re-refined
+-            if int(sym) in getattr(self, "_frozen_concepts", ()):
+-                continue                              # frozen: no restructuring
+-            # The accumulated witness references span alternatives, not one
+-            # co-present group. Each alternative owns its own conjunction.
+-            if ConceptualSpace._has_percept_alternatives(self, sym):
++        n0 = self._order_caps()[0]
++        for slot, batch, extent in (both > 0).nonzero().tolist():
++            bound = addresses[:, batch] if addresses.ndim == 2 else addresses
++            row = int(bound[slot])
++            if row < 0 or positions.shape[-2] == 0:
+                 continue
+-            store = alloc.store_of(sym)
+-            n_p = store.count_role(sym, "part")
+-            n_w = store.count_role(sym, "whole")
+-            row = ConceptualSpace._csw_row_of(self, sym)
+-            if row is not None and any(r == row and col % 4 == 0 for r, col in store.features._index):
+-                # An ordered PS group is one literal. Its repeated native
+-                # members are not independent conceptual conjuncts.
+-                n_p = sum(r == row and col % 4 == 0 for r, col in store.features._index)
+-            if n_p <= kp and n_w <= kw:
+-                continue                              # not over-collected
+-            refinement_applied = True
+-            if n_p > kp:
+-                codes = self.concept_parts(sym)
+-                H = ConceptualSpace._automatic_synthesize_higher_order(
+-                    self, codes, reason="mereological synthesis")
+-                if H is None:
+-                    # Keep the trigger live: retiring it without the
+-                    # replacement would silently discard its definition.
+-                    refinement_applied = False
+-                else:
+-                    requests.append({"sym": sym, "op": "synthesize",
+-                                     "codes": codes, "result": H})
+-                # synthesize_higher_order already populates H's per-order sparse
+-                # weights from its constituents (gated; byte-identical when off).
+-            if n_w > kw:
+-                requests.append({"sym": sym, "op": "analyse",
+-                                 "codes": self.concept_wholes(sym)})
+-            if refinement_applied:
+-                self.retire_concept(sym)               # retire-on-trigger
+-        # Periodic closest-links pruning: parts-of-parts / wholes-of-wholes
+-        # accumulated at mint are dropped here, not enforced at runtime.
+-        self.prune_concept_links()
++            query = torch.zeros_like(field[:, batch:batch+1, extent:extent+1])
++            query[slot] = field[slot, batch:batch+1, extent:extent+1]
++            sources = self.cs_reverse_presence(query,
++                observed=field[:, batch:batch+1, extent:extent+1], inventory_rows=bound)
++            # PS containment is extent-wide, but only its matching id tiles
++            # are witnesses. WS support is the pervading property occurrence.
++            # Attribute the requested poles through the current definitions,
++            # then recover those native witnesses without spreading location.
++            inverse = {r: i for i, r in enumerate(bound.tolist()) if r >= 0}
++            refs = self._cs_witness_feature_refs
++            demand = []
++            for inventory_row, column, _ in refs:
++                position = store.features._index.get((inventory_row, column))
++                source_slot = inverse.get(inventory_row)
++                demand.append(source_slot is not None and position is not None
++                    and float(store.features.values[position]) > 0
++                    and float(sources[source_slot, 0, 0, column % 2]) > 0)
++            demand = torch.tensor(demand, dtype=torch.bool, device=feature_support.device)
++            support = (feature_support[:, batch, extent] & demand[:, None]).any(0)
++            observation = self.run_structure(spans[batch].float(), valid=support)
++            runs = int(observation['n_runs'])
++            stalled = int(store.refinement_stale[row]) >= self.mereology_refine_patience
++            can_raise = runs > 1 and stalled
++            ready[row, batch] |= can_raise
++            cid = self.concept_id_at_row(row)
++            requests.append(dict(sym=cid, op='raise' if can_raise else 'refine',
++                                 batch=batch, extent=extent, runs=runs))
++        object.__setattr__(self, '_refinement_both', current)
++        object.__setattr__(self, '_refinement_raise_ready', ready)
+         return requests
+ 
++    def maybe_raise_order(self, focal, alternative, context, *, batch, evidence):
++        """Symbolize a context-matched pair; beyond individuals require a
++        stalled both reading on discontiguous field support. All edges are
++        sigma to the preceding order; pi remains in the order-0 field.
++        """
++        order = next((k for k in range(1, len(self._order_caps()))
++                      if self.order_slice(k)[0] <= focal < self.order_slice(k)[1]), 0)
++        if order + 1 >= len(self._order_caps()):
++            return None
++        if order > 0:
++            ready = getattr(self, '_refinement_raise_ready', None)
++            if (not getattr(self, '_mereology_raise', False) or ready is None
++                    or not bool(ready[focal, batch])):
++                return None
++        return self._assign_concept_parts(order + 1, (focal, alternative),
++                                          context, evidence=evidence)
++
+     def _whole_ancestors(self, whole_pos):
+         """Within-tower taxonomy ancestors of a WS whole position (transitive,
+         cycle-guarded); empty when the relation store is unwired."""
+@@ -19795,6 +19854,9 @@ class ConceptualSpace(Space):
+                 if hasattr(m, 'locations'):
+                     m.locations = {key: value for key, value in m.locations.items() if key in m._index}
+             ly.clear_context(best)
++            ly.refinement_best[best] = float('inf')
++            ly.refinement_stale[best] = 0
++            ly.refinement_step[best] = -1
+             ly.participation[best] = 0.
+             ly.context_seen[best] = 0
+             ly.assigned[best] = True
+@@ -19836,6 +19898,7 @@ class ConceptualSpace(Space):
+         ly = _concept_alloc_of(self).layer(0)
+         N, offset = ly.nOutput, ly.nOutput + 1
+         a = acts.detach().cpu()
++        self.refine_over_collected(field=a)
+         field_rows = self._field_inventory_rows(torch.device('cpu'))
+         readings = a.new_zeros(N, a.shape[1], 2)
+         paired = symbols(a)
+@@ -19878,7 +19941,8 @@ class ConceptualSpace(Space):
+                     similarities = ly.context_similarities(context)[alternatives]
+                     similarity, index = similarities.max(0)
+                     if float(similarity) >= self.concept_match_cos:
+-                        self._assign_concept_parts(order + 1, (focal, alternatives[int(index)]), context, evidence=evidence)
++                        self.maybe_raise_order(focal, alternatives[int(index)],
++                            context, batch=b, evidence=evidence)
+             if self.conceptual_pi:
+                 # Patterns are joint witnesses in the order-0 position field.
+                 # Pooling the poles first would discard the matching brackets.
+@@ -24065,15 +24129,8 @@ class WholeSpace(Space):
+                 self.semantic_arrangement_weight = 0.0
+         self.params = []
+         self.layers = nn.ModuleList()
+-        # Mereological run-structure measure (the part/whole ratio + the
+-        # A-isa-B containment test, doc/specs/mereological-order-raising.md).
+-        # Parameter-free Layer; on self.layers so the Start/End/Reset cascade
+-        # reaches it. Consumed GATED + read-only in _stage0_unity_forward.
+-        self.run_structure = RunStructureLayer()
+-        self.layers.append(self.run_structure)
+-        # Experimental dual observation over overlapping PS/WS `.where`
+-        # candidates.  Unlike run_structure this never collapses the towers or
+-        # the batch.  It is constructed only under the opt-in so legacy module
++        # Experimental observation of overlapping PS/WS candidates preserves
++        # each tower and batch row. ConceptualSpace owns refine/raise routing.  It is constructed only under the opt-in so legacy module
+         # trees/state remain unchanged while the corpus gates are pending.
+         self.overlap_where_tiling = bool(TheXMLConfig.get(
+             "architecture.overlapWhereTiling", default=False))
+@@ -26427,75 +26484,6 @@ class WholeSpace(Space):
+             self.delete_meta(parent)
+         return True
+ 
+-    @torch.no_grad()
+-    def maybe_raise_order(self, meta_pos):
+-        """Mereological order-raising (doc/specs/mereological-order-raising.md,
+-        force #2): when a whole has accumulated more than ``K_many`` parts,
+-        synthesize a higher-order PART that subsumes them -- a new node carrying
+-        the combined code, one compatibility fold depth above its constituents,
+-        with
+-        explicit ``part_chain`` provenance (a higher-order part is abstract: its
+-        ``.where``/``.when`` are discontiguous, so its meronymy is tracked here,
+-        not read off ``.where``). **Idempotent per whole** (fires once it first
+-        crosses the threshold, never churns). Returns the new higher-order
+-        position on a raise, else ``None``.
+-
+-        First pass (the spec's "subsymbolic first" phase): the higher-order code
+-        is the mean-combine of its constituents' bound vectors and ``part_chain``
+-        is the source of truth; the σ-over-set geometric synthesis
+-        (:meth:`SigmaLayer.synthesize_over_set`) and the prune-and-rebind of the
+-        moot per-part edges (which needs discriminate-from-others re-binding to
+-        avoid orphan churn) are deferred. Gated: only ever reached when
+-        ``_mereology_raise`` is set."""
+-        children = self.taxonomy_children(int(meta_pos))
+-        if not children:
+-            return None
+-        whole = next((int(c) for c in children
+-                      if self._pos_kind.get(int(c)) in ("ws", "meta")), None)
+-        if whole is None:
+-            return None
+-        raised = getattr(self, '_mereology_raised', None)
+-        if raised is None:
+-            raised = set()
+-            object.__setattr__(self, '_mereology_raised', raised)
+-        if whole in raised:
+-            return None                       # idempotent -- already raised
+-        ps_children = self.ps_children_of_whole(whole)
+-        k_many = int(getattr(self, '_mereology_k_many', 4))
+-        if len(ps_children) <= k_many:
+-            return None
+-        cb = getattr(self.subspace, 'what', None)
+-        W = cb.getW() if cb is not None else None
+-        if W is None:
+-            return None
+-        # Gather the constituents' bound META vectors -> [M, D], and their
+-        # current fold depths (the raised code is stamped one fold deeper;
+-        # ``part_chain`` separately carries its real mereological ancestry).
+-        rows, orders = [], []
+-        for pc in ps_children:
+-            m = self.taxonomy_parent(int(pc))
+-            if m is None:
+-                continue
+-            r = self._ws_pos_to_row.get(int(m))
+-            if r is None or int(r) >= int(W.shape[0]):
+-                continue
+-            rows.append(int(r))
+-            orders.append(int(cb.fold_depth(int(r))))
+-        if len(rows) < 2:
+-            return None
+-        raised_code = W[rows].detach().mean(dim=0)   # subsymbolic-first combine
+-        # Mint the higher-order node, record its constituents, and bump its
+-        # order one above the max constituent order (clamped to the table width
+-        # = subsymbolicOrder, per "subsymbolicOrder sets the max order").
+-        ho_pos = self.insert_whole(init_vec=raised_code)
+-        self._pos_kind[ho_pos] = "meta"
+-        self.taxonomy[ho_pos] = [int(whole)] + [int(p) for p in ps_children]
+-        self.part_chain[ho_pos] = [int(p) for p in ps_children]
+-        self.stamp_fold(ho_pos, cb.FOLD_SIGMA,
+-                        count=(max(orders) if orders else 0) + 1)
+-        raised.add(int(whole))
+-        return ho_pos
+-
+     def property_class_whole(self, class_ids):
+         """The generic TYPE whole for a char-class set (minted ONCE per set,
+         keyed by the sorted class tuple) -- the intensional "letters" /
+@@ -26534,8 +26522,8 @@ class WholeSpace(Space):
+         :meth:`property_class_whole`. The edge is **idempotent per
+         (part-type, whole-type)** -- the TYPES and their edges persist, the
+         per-instance ``.where`` is only the deciding evidence, so there is NO
+-        taxonomy churn. :meth:`maybe_raise_order` then forms the higher-order
+-        whole-type over its accumulated part-types. Returns the whole-type
++        taxonomy churn. This binding never raises conceptual order; that
++        decision uses the retained conceptual field. Returns the whole
+         position. Gated: reached only under ``<mereologyRaise>``.
+ 
+         The point-in-interval containment test is the host-side binding move
+@@ -26559,8 +26547,6 @@ class WholeSpace(Space):
+                 seed = (fused if fused is not None
+                         else torch.zeros(int(self.nDim), dtype=torch.float32))
+                 last_meta = self.insert_meta(ps_pos, whole, fused_vec=seed)
+-        if last_meta is not None:
+-            self.maybe_raise_order(int(last_meta))
+         return whole
+ 
+     @torch.no_grad()
+@@ -28586,7 +28572,7 @@ class WholeSpace(Space):
+         is an iterable of ``LETTER`` / ``DIGIT`` / ``WHITESPACE`` / ``PUNCT``.
+         Returns a ``LongTensor [B, K, 2]`` of ``(start, end)`` for the ``+1``
+         runs, zero-padded ``(0, 0)`` for rows with fewer runs; ``None`` when
+-        ``IS_concepts`` is ``None``. The result feeds ``self.run_structure``
++        ``IS_concepts`` is ``None``. The result supplies native analysis geometry
+         (``contained_mask`` / ``n_runs`` / ``tightest_container``) like the
+         whitespace spans do."""
+         if IS_concepts is None:
+@@ -29197,15 +29183,6 @@ class WholeSpace(Space):
+                 B, N, D, device=dev, dtype=torch.get_default_dtype()))
+             return self.subspace
+         spans = getattr(self, "_staged_analysis_spans", None)
+-        # Mereological ratio observation (GATED + READ-ONLY): the part/whole
+-        # run-structure of the live analysis spans, computed by the
+-        # WholeSpace-owned RunStructureLayer and threaded as a forward-local
+-        # (the repo's "thread, do not persist" rule). ``spans`` is [B, K, 2]
+-        # (start, end), None in byte mode. Off (default ``_mereology_raise``
+-        # unset) => not computed, byte-identical.
+-        if getattr(self, "_mereology_raise", False) and spans is not None:
+-            object.__setattr__(self, "_mereology_ratio_obs",
+-                               self.run_structure(spans.to(torch.float32)))
+         carrier, W = self._stage0_carrier(IS_concepts, spans)
+         # Thread the pre-snap z + indices as forward-locals (the repo's
+         # data-flow rule: thread, do not persist) -- consumed by tests and
+@@ -29355,69 +29332,6 @@ class WholeSpace(Space):
+         mask.scatter_(1, topk, 1.0)
+         return mask.unsqueeze(-1)
+ 
+-    def passback_action(self, pass_idx, scope=None):
+-        """The 4-case WS->PS top-down pass-back dispatch
+-        (doc/specs/mereological-order-raising.md "the top-down attention
+-        handoff"). Returns ``(action, where)`` -- ``action`` one of
+-        ``"noop" | "scoped" | "refine" | "chunk"`` -- naming what this (the
+-        stage-0) WholeSpace passes back through the recursive WS->PS connection
+-        to scope PartSpace's analysis on a SUBSEQUENT subsymbolic pass:
+-
+-          * pass 0                 -> ("noop", None)   [first-pass wide-open]
+-          * an explicit scope `.where` set on this space
+-            (``_passback_scope_where``, a normalized [start,end])
+-                                   -> ("scoped", where) [null-content + the nth
+-                                       word's `.where`: the model loop focuses
+-                                       the percept to that span -- the serial /
+-                                       deterministic-reading override]
+-          * no words-category attention engaged (intent_boosts is None)
+-                                   -> ("noop", None)
+-          * route_hint 0 (no contiguous runs in the analysis `.where`)
+-                                   -> ("noop", None)
+-          * route_hint 1 (a single non-null chunk / one run)
+-                                   -> ("chunk", None)  [return that chunk + its
+-                                       parts -- no further chunking]
+-          * route_hint 2 (multiple chunks / >1 run)
+-                                   -> ("refine", None) [PS must analyse finer:
+-                                       sigma refine]
+-
+-        Read-only and parameter-free. DARK by default: with no scope, no
+-        words-category intent, or no parked run-structure observation it returns
+-        ``("noop", None)`` -- byte-identical. The route_hint comes from the
+-        ``RunStructureLayer`` observation parked at stage 0
+-        (``_mereology_ratio_obs``); identity = ``union(parts) ∩ union(wholes)``
+-        and the disjoint => sigma/pi raise are the route_hint==2 (RAISE) case.
+-        """
+-        if int(pass_idx) == 0:
+-            return ("noop", None)               # first pass is wide-open
+-        # The scope is CS-owned (R2: CS is the home of the .where-producer) and
+-        # passed in by the model orchestrator; fall back to a self-parked scope
+-        # for standalone callers (unit tests).
+-        if scope is None:
+-            scope = getattr(self, "_passback_scope_where", None)
+-        if scope is not None:
+-            return ("scoped", scope)            # serial / word-`.where` reading
+-        if self.intent_boosts() is None:
+-            return ("noop", None)               # no words-category attention
+-        obs = getattr(self, "_mereology_ratio_obs", None)
+-        if not obs:
+-            return ("noop", None)               # nothing observed at stage 0
+-        rh = obs.get("route_hint")
+-        if torch.is_tensor(rh):
+-            hint = int(rh.reshape(-1).amax().item()) if rh.numel() else 0
+-        else:
+-            hint = int(rh or 0)
+-        if hint <= 0:
+-            return ("noop", None)               # 0 = NULL: nothing to attend
+-        # 1 = REFINE (one run -> single chunk + parts); 2 = RAISE (many runs
+-        # / disjoint parts+wholes -> sigma/pi refine).
+-        return ("chunk", None) if hint == 1 else ("refine", None)
+-
+-
+-
+-
+-
+-
+     def _record_truth_activations(self, act, symbolSpace):
+         """Continuous truthCriterion-gated truth recording (one knob, fires
+         from BOTH the carrier body and the universe branch)."""
+@@ -30096,12 +30010,11 @@ for _category_method_name in (
+ 
+ 
+ class OutputSpace(Space):
+-    """Maps symbolic vectors to task targets (classification logits, regression values).
++    """Reads named concept evidence or projects symbolic vectors to task targets.
+ 
+-    In the forward data flow: WholeSpace -> **OutputSpace** -> loss.
+-    Uses a LinearLayer to project the (flattened) symbolic representation down
+-    to the target dimensionality.  Always uses reshape=True since the number of
+-    input objects (symbols) typically differs from the number of outputs.
++    Configured concept ids select native positive poles from the bound field.
++    Vector outputs use a linear map from the flattened symbolic representation
++    to the target dimensions. Input reconstruction starts from the understanding.
+ 
+     ``text_mode``: when enabled via ``set_text_mode()``, supports reconstructing
+     text from symbolic vectors by snapping to the nearest codebook entry and
+@@ -30141,17 +30054,27 @@ class OutputSpace(Space):
+         section = self.config_section
+         invertible = TheXMLConfig.space(section, "invertible")
+         object.__setattr__(self, "_initial_vectors", vectors)
++        ids = TheXMLConfig.space(section, 'conceptIds', default='')
++        self.concept_ids = tuple(int(cid) for cid in str(ids or '').split())
+         self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
+-        # The unquantised regression head is a bare LINEAR map plus a learned
+-        # scalar intercept (the ``_readout_bias`` below). The former
+-        # ``<readout>`` enum (identity | sigmoid) was retired 2026-06-19: the
+-        # head is always linear+bias (a {0,1} target like XOR is regressed,
+-        # not squashed -- see the lrScale / subsymbolicOrder=3 XOR basin).
++        # Vector regression uses a linear map and learned intercept.
++        # Named concept evidence already has the target's [0,1] range.
+         super().__init__(inputShape, spaceShape, outputShape)
+         self.data = TheData
+         self._vocabulary = getattr(self, '_vocabulary', None)
+         self.text_mode = isinstance(self._vocabulary, Embedding)
+ 
++        if self.concept_ids:
++            if len(set(self.concept_ids)) != len(self.concept_ids):
++                raise ValueError('OutputSpace conceptIds must be distinct concept identities')
++            if tuple(self.outputShape) != (len(self.concept_ids), 1):
++                raise ValueError('concept output requires one scalar per configured concept id')
++            self._regression_head = False
++            self._readout_bias = None
++            self.params = list(self.parameters())
++            self._batch_results = []
++            return
++
+         # OutputSpace is the SOLE flattener (2026-06-07 dim-explicitness pass):
+         # the analysed/synthesised spaces (IS/PS/CS/WS) stay per-vector
+         # [B, N, D] ("3D in between"); only here, the 3D->2D after-output
+@@ -30170,9 +30093,8 @@ class OutputSpace(Space):
+             self.subspace._nInputDim = flat_in
+ 
+         if self.nonlinear_output:
+-            # Activation-mode S->O remap. Architectural rule: only PS / CS
+-            # may own SigmaLayer/PiLayer, so this path uses an
+-            # InvertibleLinearLayer and wraps it with the same
++            # Activation-mode S->O remap uses an InvertibleLinearLayer
++            # and wraps it with the same
+             # atanh -> linear -> tanh nonlinearity that SigmaLayer
+             # applies internally (Layers.py:_sigma_inner_forward).
+             nIn = inputShape[0]
+@@ -30305,13 +30227,14 @@ class OutputSpace(Space):
+         return out.reshape(B, int(self.outputShape[0]), int(self.outputShape[1]))
+ 
+     def forward(self, subspace):
+-        """Acting: project symbols to task output.
++        """Read named positive evidence or map symbolic vectors to task output.
+ 
+-        Two paths: activation-mode applies PiLayer to the scalar
+-        activation vector; vector-mode applies the configured linear /
+-        attention chain to the symbol event tensor. Writes the result
+-        back to the subspace's event.
++        Activation output charts an invertible linear map with atanh/tanh;
++        vector output applies the configured linear chain. Named concepts
++        select evidence directly by persistent identity.
+         """
++        if self.concept_ids:
++            return self.read_concepts(subspace)
+         if subspace.is_empty():
+             return subspace
+         self.subspace.copy_context(subspace)
+@@ -30337,12 +30260,33 @@ class OutputSpace(Space):
+         vspace = self.forwardEnd(output, returnVectors=True)
+         return vspace
+ 
++    def read_concepts(self, subspace):
++        """Read named positive poles, resolving this turn's field by concept id.
++
++        The extent union is already represented by the concept's evidence.
++        Selecting an identity adds no projection, bias, or Boolean corner.
++        """
++        evidence = getattr(subspace, '_concept_activations', None)
++        ids = getattr(subspace, '_concept_ids', None)
++        if not torch.is_tensor(evidence) or not torch.is_tensor(ids):
++            raise ValueError('concept output requires a bound native conceptual field')
++        if ids.ndim == 1:
++            ids = ids[:, None].expand(-1, evidence.shape[1])
++        requested = torch.tensor(self.concept_ids, device=ids.device)
++        selected = ids[..., None] == requested
++        positive = evidence[..., 0].amax(2)
++        result = (positive[..., None] * selected.to(positive)).amax(0)[..., None]
++        self.subspace.copy_context(subspace)
++        self.subspace.set_event(result)
++        return self.subspace
++
+     def reverse(self, subspace):
+         """Being acted upon: map output back to symbolic space.
+ 
+-        Inverse of ``forward``: activation-mode runs PiLayer.reverse on
+-        the scalar activation; vector-mode runs the inverse linear chain
+-        (with codebook-aware lookup when ``self.codebook`` is True).
++        Activation output inverts its charted linear map; vector output
++        inverts the linear chain, with codebook lookup when configured.
++        Concept evidence alone does not define an input inverse; native
++        reconstruction attributes the understanding's located field evidence.
+         """
+         if subspace.is_empty():
+             return subspace
+diff --git a/bin/Understanding.py b/bin/Understanding.py
+index 8f95cc4..a979cb2 100644
+--- a/bin/Understanding.py
++++ b/bin/Understanding.py
+@@ -128,6 +128,25 @@ class InputReconstruction:
+             object.__setattr__(self, name, value.clone() if value is not None else None)
+ 
+ 
++@dataclass(frozen=True)
++class ConceptualField:
++    """Forward evidence addressed by concept id, with its spatial brackets.
++
++    No percept events or input stack are retained. Clones preserve gradients
++    while insulating reconstruction from the next perception's row binding.
++    """
++
++    concept_ids: Any
++    evidence: Any
++    position_evidence: Any
++    position_spans: Any
++    extents: Any
++
++    def __post_init__(self) -> None:
++        for name in self.__dataclass_fields__:
++            object.__setattr__(self, name, getattr(self, name).clone())
++
++
+ @dataclass(frozen=True)
+ class Understanding:
+     """Immutable logical products of one ``forward()`` call."""
+diff --git a/data/XOR_exact.xml b/data/XOR_exact.xml
+index 904c980..629062c 100644
+--- a/data/XOR_exact.xml
++++ b/data/XOR_exact.xml
+@@ -1,104 +1,78 @@
+-<?xml version="1.0" ?>
+-<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-       xsi:noNamespaceSchemaLocation="model.xsd">
+-  <!-- XOR_exact: end-to-end XOR with reconstruction.
+-
+-       This fixture intentionally keeps the reconstruction path
+-       full-width. The scalar project codebook is useful for compact
+-       truth activation, but it collapses per-slot content and cannot
+-       support this exact word-level reconstruction smoke test. -->
++<?xml version='1.0' encoding='utf-8'?>
++<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
++  <!-- XOR from located primitive memberships: order-0 field conjunctions,
++       then a learned order-1 sigma positive pole. The lesson file teaches
++       only primitive memberships and one name, never XOR. Reconstruction
++       is best effort from the forward evidence, with no stored input event
++       or stack. Parallel field operators run here; grammar lift/lower do not. -->
+   <architecture>
++    <serial>false</serial>
++    <subsymbolicOrder>2</subsymbolicOrder>
++    <symbolicOrder>1</symbolicOrder>
++    <conceptualPi>true</conceptualPi>
++    <attentionPromotion>true</attentionPromotion>
++    <conceptPoolSize>4</conceptPoolSize>
++    <symbolTower>true</symbolTower>
++    <conceptBinding>aligned</conceptBinding>
+     <data>
+       <dataType>embedding</dataType>
++      <dataset>inline</dataset>
++      <conceptLessons>xor_concept_lessons.json</conceptLessons>
++      <input use="train">00|01|10|11</input>
++      <output use="train">0|1|1|0</output>
++      <input use="validation">00|01|10|11</input>
++      <output use="validation">0|1|1|0</output>
++      <input use="test">00|01|10|11</input>
++      <output use="test">0|1|1|0</output>
+     </data>
+-    <subsymbolicOrder>3</subsymbolicOrder>
+-    <symbolicOrder>0</symbolicOrder>
+-
+     <training>
+-      <!-- 2026-07-12 re-derivation: the unity byte-channel fix moved the
+-           init-sensitive two-timescale trajectory; 600 under-converges
+-           (MSE 0.0986), 1200 lands the crisp basin (MSE ~3e-4). -->
+-      <numEpochs>1200</numEpochs>
+-      <learningRate>0.005</learningRate>
+       <autoload>false</autoload>
++      <numEpochs>64</numEpochs>
++      <learningRate>0.03</learningRate>
++      <maskRate>0</maskRate>
++      <reconstructionScale>0.1</reconstructionScale>
+       <trainEmbedding>JOINT</trainEmbedding>
+       <embeddingScale>0.05</embeddingScale>
+     </training>
+   </architecture>
+-
+-  <!-- InputSpace: text-mode lexer, full content width. nDim 14 -> 16
+-       (2026-07-09 multi-rung pass: .where widened 2 -> 4; +2 preserves the
+-       content width nWhat = 8; at 14 the crisp XOR basin was lost, seeds
+-       0/1 settled at the 0.5 data mean). -->
+   <InputSpace>
+-    <nVectors>8</nVectors>
++    <nVectors>16</nVectors>
+     <nDim>16</nDim>
+-    <nOutput>8</nOutput>
++    <nOutput>16</nOutput>
+   </InputSpace>
+-
+-  <!-- PartSpace: WIDE codebook so 1000 word prototypes have room
+-       to sit pairwise-distinct. Stays content-wide on the output
+-       (nOutputDim=nDim=10) so reconstruction lookups operate in the
+-       full vocabulary space. -->
+   <PartSpace>
+-    <nInput>8</nInput>
+-    <nVectors>1000</nVectors>
++    <nInput>16</nInput>
++    <nVectors>16</nVectors>
++    <maxVectors>256</maxVectors>
+     <nDim>16</nDim>
+-    <nOutput>8</nOutput>
++    <nOutput>16</nOutput>
+     <invertible>true</invertible>
+-    <!-- PartSpace is subsymbolic: its <codebook> element was retired
+-         (2026-06-09 asymmetric-VQ plan, sec 7 task 7); PS is hardwired to
+-         "none". The 1000 word prototypes live on the .what Embedding, not a
+-         VQ snap on .event. -->
+-    <!-- Butterfly cascade on pi (and historically sigma) gives pi
+-         cross-element reach across the flattened [B, N*D] view.
+-         Without it, pi is per-slot and cannot compute XOR (or any
+-         function that requires combining information across slot
+-         positions). XOR_exact relies on this for the exact-XOR
+-         convergence property. -->
+-    <butterfly>true</butterfly>
+-    <synthesis>lexicon</synthesis>
++    <synthesis>meronomy</synthesis>
++    <butterfly>false</butterfly>
++    <chunkPromotionThreshold>100000</chunkPromotionThreshold>
+   </PartSpace>
+-
+-  <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
+   <ConceptualSpace>
+-    <nInput>8</nInput>
+-    <nVectors>8</nVectors>
++    <nInput>16</nInput>
++    <nVectors>32</nVectors>
+     <nDim>16</nDim>
+-    <nOutput>8</nOutput>
++    <nOutput>16</nOutput>
+     <invertible>true</invertible>
+-    <butterfly>true</butterfly>
+   </ConceptualSpace>
+-
+-  <!-- WholeSpace: full-width passthrough for the exact smoke test. -->
+   <WholeSpace>
+     <lexer>word</lexer>
+-    <nInput>8</nInput>
++    <nInput>16</nInput>
++    <nVectors>16</nVectors>
+     <nDim>16</nDim>
+-    <nVectors>8</nVectors>
+-    <nOutput>8</nOutput>
+-    <!-- XOR_exact overrides the codebook defaults: drop the WholeSpace
+-         l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
+-    <l1Lambda>0.0</l1Lambda>
+-    <commitmentBeta>0.0</commitmentBeta>
+-    <!-- WholeSpace codebook is mandatory (modality re-architecture); was none. -->
+-    <codebook>none</codebook>
+-    <butterfly>true</butterfly>
++    <nOutput>16</nOutput>
++    <propertyBasis>true</propertyBasis>
++    <analysis>meronomy</analysis>
++    <digitWholes>false</digitWholes>
++    <divideWithinWhole>false</divideWithinWhole>
+   </WholeSpace>
+-
+   <OutputSpace>
+-    <nInput>8</nInput>
++    <nInput>16</nInput>
+     <nVectors>1</nVectors>
+     <nOutput>1</nOutput>
+-    <!-- The XOR readout is ill-conditioned (the class-FLIPPING word axis is
+-         ~10x lower variance than the dominant word axis) and co-adapts with
+-         the upstream features during joint training. At the full model LR the
+-         readout chases the moving features and settles near the data mean
+-         (~0.5: 100% accurate but mushy, MSE ~0.22). Training the readout at
+-         HALF the model LR makes it a slower, stable target the faster-moving
+-         features organise toward -> crisp 0/1 (MSE ~0.004). The features are
+-         separable (Adam reads them out crisp in 600 steps when frozen); the
+-         only issue was the two-timescale convergence. -->
+-    <lrScale>0.5</lrScale>
++    <conceptIds>20001</conceptIds>
+   </OutputSpace>
+ </model>
+diff --git a/data/model.xml b/data/model.xml
+index a0edcc9..5e0ac12 100644
+--- a/data/model.xml
++++ b/data/model.xml
+@@ -162,6 +162,9 @@
+ 
+     <!-- Passes allowed to retarget perception: all, off, or indices 1..T-1. -->
+     <subsymbolicLoop>all</subsymbolicLoop>
++    <!-- Completed learning updates without improved local both evidence,
++         before discontiguous support may raise conceptual order. -->
++    <mereologyRefinePatience>3</mereologyRefinePatience>
+     <maxActivePerLayer>8</maxActivePerLayer>
+     <!-- Role-participation category codebook for the role-collapsed grammar.
+          Unsettled MetaSymbols accumulate bounded temporary role evidence, then
+@@ -198,6 +201,8 @@
+       <!-- Dataset key: xor | mnist | tomatoes | text | inline.
+            Omit for inference-only models. -->
+       <dataset>xor</dataset>
++      <!-- Optional primitive/name teaching examples for concept-id outputs. -->
++      <conceptLessons></conceptLessons>
+       <!-- Shard count and per-shard document cap (streaming datasets). -->
+       <numShards>1</numShards>
+       <maxDocs>10000</maxDocs>
+@@ -527,6 +532,8 @@
+   </WholeSpace>
+ 
+   <OutputSpace>
++    <!-- Space-separated persistent concept ids; each reads its positive pole. -->
++    <conceptIds></conceptIds>
+     <nInput>0</nInput>
+     <nOutput>0</nOutput>
+     <nDim>1</nDim>
+diff --git a/data/model.xsd b/data/model.xsd
+index 9d3fd04..1abbc60 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -172,6 +172,7 @@
+            ramsification table; its depth is not the mereological rank. Default
+            false: no lattice raising (the provenance table still exists). -->
+       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
++      <xs:element name="mereologyRefinePatience" type="xs:positiveInteger" minOccurs="0"/>
+       <!-- Experimental replacement for the row-wide run-count passback.
+            Feeds overlapping PS part and WS whole .where candidates through
+            the existing subsymbolic pump, settles exact local agreement, and
+@@ -801,6 +802,7 @@
+       <!-- embedding (text/LM, the default for language configs) | numeric
+            (dense slab, e.g. MNIST). Was the architecture-level <modelType>. -->
+       <xs:element name="dataType" type="dataTypeEnum"/>
++      <xs:element name="conceptLessons" type="xs:string"/>
+       <xs:element name="dataset" type="datasetEnum"/>
+       <xs:element name="numShards" type="xs:positiveInteger"/>
+       <xs:element name="maxDocs" type="xs:positiveInteger"/>
+@@ -1484,6 +1486,7 @@
+            features faster so it converges to a crisp solution within the
+            epoch budget. -->
+       <xs:element name="lrScale" type="xs:decimal" minOccurs="0"/>
++      <xs:element name="conceptIds" type="xs:string" minOccurs="0"/>
+     </xs:all>
+   </xs:complexType>
+ 
+diff --git a/test/test_basicmodel.py b/test/test_basicmodel.py
+index 27c0ef8..5010585 100644
+--- a/test/test_basicmodel.py
++++ b/test/test_basicmodel.py
+@@ -131,7 +131,7 @@ def _xml_uses_embedding(filename):
+     return (root.findtext("architecture/data/dataType") or "").strip().lower() == "embedding"
+ 
+ 
+-_XOR_EXACT_USES_EMBEDDING = _xml_uses_embedding("XOR_exact.xml")
++_LEXICON_USES_EMBEDDING = _xml_uses_embedding("XOR_pos.xml")
+ 
+ 
+ def _emit_warning_summary(caught):
+@@ -2073,8 +2073,8 @@ class TestReconstructionSymbols(unittest.TestCase):
+ 
+         # SS codebook is mandatory (symbolic). PS is subsymbolic -- its
+         # <codebook> element was retired (#13 / asymmetric-vq), so DROP any PS
+-        # codebook and do not emit one. XOR_exact ships SS as none, so force
+-        # quantize for the fixture build.
++        # codebook and do not emit one. Keep WholeSpace quantized for this
++        # fixture build.
+         _ps_cb = root.find("PartSpace/codebook")
+         if _ps_cb is not None:
+             root.find("PartSpace").remove(_ps_cb)
+@@ -2110,6 +2110,18 @@ class TestReconstructionSymbols(unittest.TestCase):
+         if con_nvec is not None:
+             con_nvec.text = str(nSymbols)
+ 
++        # Keep the native field's slot geometry aligned when changing its cap.
++        for section, tags in (("InputSpace", ("nOutput",)),
++                              ("PartSpace", ("nInput", "nOutput")),
++                              ("ConceptualSpace", ("nInput",)),
++                              ("WholeSpace", ("nInput",)),
++                              ("OutputSpace", ("nInput",))):
++            for tag in tags:
++                node = root.find(f"{section}/{tag}")
++                if node is None:
++                    node = ET.SubElement(root.find(section), tag)
++                node.text = str(nSymbols)
++
+         # Patch output count
+         out_active = root.find("OutputSpace/nOutput")
+         if out_active is not None:
+@@ -2131,9 +2143,8 @@ class TestReconstructionSymbols(unittest.TestCase):
+         """Forward pass output shape is [batch, nOutput] regardless of nSymbols.
+ 
+         The flat-slab invariant (post Stage 1.C) requires IS.nOutput
+-        == PS.nOutput == CS.nOutput == SS.nOutput; the XOR_exact.xml
+-        ships with N=8 across these space_roles, so the test fixes nSymbols
+-        to that value rather than the legacy ``nSymbols=3``.
++        == PS.nOutput == CS.nOutput == SS.nOutput. This fixture sets all
++        peers to eight slots before varying the output geometry.
+         """
+         m = self._create_xor_model(nSymbols=8, nOutput=1)
+         m.train(False)
+@@ -2147,7 +2158,7 @@ class TestReconstructionSymbols(unittest.TestCase):
+ 
+ # class TestXor3dReversePass::test_construct_and_forward_reverse retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
+ 
+-@unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "Model doesn't use Embedding")
++@unittest.skipIf(not _LEXICON_USES_EMBEDDING, "Model doesn't use Embedding")
+ class TestTrainEmbeddingsFlag(unittest.TestCase):
+     """trainEmbeddings config flag controls whether embedding weights are in optimizer."""
+ 
+@@ -2155,7 +2166,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
+         """Create an XOR embedding model with specified trainEmbeddings flag."""
+         import xml.etree.ElementTree as ET
+ 
+-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
++        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+         tree = ET.parse(xml_path)
+         root = tree.getroot()
+ 
+@@ -2318,7 +2329,7 @@ class TestWeightShapeMismatch(unittest.TestCase):
+ # ---------------------------------------------------------------------------
+ # Training actually updates weights (regression: numEpochs=1 did nothing)
+ # ---------------------------------------------------------------------------
+-@unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "XOR_exact doesn't use Embedding")
++@unittest.skipIf(not _LEXICON_USES_EMBEDDING, "Lexicon fixture doesn't use Embedding")
+ class TestVocabSaveRestore(unittest.TestCase):
+     """Verify vocab is saved with weights and restored on load."""
+ 
+@@ -2330,7 +2341,7 @@ class TestVocabSaveRestore(unittest.TestCase):
+         single ``save_weights`` bundle alongside model parameters.
+         """
+ 
+-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
++        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+         Models.TheData.load("xor")
+ 
+         m1 = Models.BasicModel()
+@@ -2375,7 +2386,8 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
+ 
+         # XOR_exact.xml has autoload=false, autosave=false
+         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+-        Models.TheData.load("xor")
++        Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
++        Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
+ 
+         m = Models.BasicModel()
+         m.create_from_config(xml_path, data=Models.TheData)
+diff --git a/test/test_category_em_smoke.py b/test/test_category_em_smoke.py
+index 40d8c55..8dc1eb7 100644
+--- a/test/test_category_em_smoke.py
++++ b/test/test_category_em_smoke.py
+@@ -45,10 +45,9 @@ _DEFAULTS = os.path.join(_DATA, "model.xml")
+ 
+ def _write_category_config(*, mlp=False):
+     """Write a temp config = POS_smoke.xml + the category flags, injected in
+-    the architecture block. Forces PARALLEL mode
+-    (serial=false, symbolicOrder=0): the round-0 role observation that drives
+-    the E/M is parallel-mode-correct (serial per-word attribution is
+-    approximate -- the handoff §3.3 caveat). Written outside the validated
++    the architecture block. Uses SERIAL mode: category roles are grammatical
++    observations, and parallel field processing excludes grammar lift/lower.
++    Written outside the validated
+     source tree and unlinked by the caller."""
+     with open(_BASE_CONFIG) as fh:
+         text = fh.read()
+@@ -60,7 +59,7 @@ def _write_category_config(*, mlp=False):
+     assert needle in text, "POS_smoke.xml shape changed"
+     text = text.replace(
+         needle,
+-        "<serial>false</serial>\n"
++        "<serial>true</serial>\n"
+         "    <symbolicOrder>0</symbolicOrder>\n" + flags,
+         1)
+     tmp = tempfile.NamedTemporaryFile(
+diff --git a/test/test_cs_symbol_table.py b/test/test_cs_symbol_table.py
+index 0ebf3d5..b577657 100644
+--- a/test/test_cs_symbol_table.py
++++ b/test/test_cs_symbol_table.py
+@@ -80,16 +80,16 @@ def test_identity_at_one_part_one_whole():
+     assert not cs.concept_is_identity(A)          # 2 parts -> no longer identity
+ 
+ 
+-def test_over_collection_is_actionable():
++def test_counts_alone_do_not_request_refinement():
+     cs = _cs()
+     A = cs.new_concept()
+     for p in range(6):
+         cs.add_part(A, p)                        # 6 parts > k_parts
+-    assert cs.concept_over_collected(A, k_parts=4)
++    assert not cs.concept_over_collected(A)
+     B = cs.new_concept()
+     for w in range(6):
+         cs.add_whole(B, ("w", w))                # 6 wholes > k_wholes
+-    assert cs.concept_over_collected(B, k_wholes=4)
++    assert not cs.concept_over_collected(B)
+     assert not cs.concept_over_collected(cs.relate(7, 8))   # 1+1, not over
+ 
+ 
+@@ -269,86 +269,17 @@ def test_resolve_identities_does_not_collapse_unspecified_object():
+     assert cs.symbol_identity(B) == (65, WORD)
+ 
+ 
+-# -- over-collection lifecycle: retire-on-trigger driving both towers --------
+-
+-def test_refine_over_collected_too_many_parts_requests_synthesize():
+-    cs = _cs()
+-    A = cs.new_concept()
+-    for p in range(6):
+-        cs.add_part(A, p)                 # 6 parts > k_many(4) -> over-collected
+-    cs.add_whole(A, 100)
+-    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+-    assert len(reqs) == 1
+-    assert reqs[0]["sym"] == A and reqs[0]["op"] == "synthesize"
+-    assert set(reqs[0]["codes"]) == set(range(6))
+-    # retire-on-trigger: the transient triggering symbol is gone.
+-    assert cs.concept_parts(A) == [] and A not in cs.symbols_needing_processing()
+-
+-
+-def test_refine_over_collected_too_many_wholes_requests_analyse():
+-    cs = _cs()
+-    B = cs.new_concept()
+-    cs.add_part(B, 10)
+-    for w in range(6):
+-        cs.add_whole(B, ("w", w))         # 6 wholes > k_many -> over-collected
+-    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+-    assert len(reqs) == 1 and reqs[0]["op"] == "analyse" and reqs[0]["sym"] == B
+-    assert len(reqs[0]["codes"]) == 6
+-
+-
+-def test_refine_over_collected_both_sides_emits_both_requests():
++def test_refinement_keeps_definitions_without_a_both_reading():
+     cs = _cs()
+-    S = cs.new_concept()
+-    for p in range(5):
+-        cs.add_part(S, p)
+-    for w in range(5):
+-        cs.add_whole(S, ("w", w))
+-    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+-    ops = sorted(r["op"] for r in reqs)
+-    assert ops == ["analyse", "synthesize"]
+-    assert all(r["sym"] == S for r in reqs)
+-    assert S not in cs.symbols_needing_processing()        # retired once
+-
+-
+-def test_refine_over_collected_leaves_well_sized_and_identities_alone():
+-    cs = _cs()
+-    ident = cs.relate(1, 2)                                 # 1:1 -> identity
++    ident = cs.relate(1, 2)
+     keep = cs.new_concept()
+-    cs.add_part(keep, 7)
+-    cs.add_part(keep, 8)                                    # 2 parts <= 4
+-    cs.add_whole(keep, 9)
+-    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+-    assert reqs == []                                       # nothing over-collected
+-    assert cs.symbol_identity(ident) == (1, 2)             # identity resolved
+-    assert keep in cs.symbols_needing_processing()         # well-sized, untouched
+-
+-
+-def test_refine_over_collected_is_idempotent():
+-    cs = _cs()
+-    A = cs.new_concept()
+-    for p in range(6):
+-        cs.add_part(A, p)
+-    cs.add_whole(A, 100)
+-    assert len(cs.refine_over_collected(k_parts=4, k_wholes=4)) == 1
+-    assert cs.refine_over_collected(k_parts=4, k_wholes=4) == []   # already retired
+-
+-
+-def test_refine_over_collected_applies_synthesis():
+-    cs = _cs()
+-    A = cs.new_concept()
+-    for p in range(6):
+-        cs.add_part(A, p)
+-    cs.add_whole(A, 100)
+-    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+-    H = reqs[0]["result"]                       # the σ-synthesized higher-order
+-    # H subsumes the over-collected parts as its provenance...
+-    assert set(cs.concept_parts(H)) == set(range(6))
+-    # ...is tagged RAISED (so the lifecycle never re-refines it), and is
+-    # therefore excluded from the active processing set even though it carries
+-    # > k_many parts.
+-    assert H in cs._concept_raise_set()
+-    assert H not in cs.symbols_needing_processing()
+-    assert not cs.refine_over_collected(k_parts=4, k_wholes=4)  # H not re-raised
++    for part in range(20):
++        cs.add_part(keep, part)
++    cs.add_whole(keep, 100)
++    assert cs.refine_over_collected() == []
++    assert cs.symbol_identity(ident) == (1, 2)
++    assert set(cs.concept_parts(keep)) == set(range(20))
++    assert cs.refine_over_collected() == []
+ 
+ 
+ def test_synthesize_higher_order_idempotent_per_part_set():
+diff --git a/test/test_explicit_dimensions.py b/test/test_explicit_dimensions.py
+index 915d446..d8262f2 100644
+--- a/test/test_explicit_dimensions.py
++++ b/test/test_explicit_dimensions.py
+@@ -188,21 +188,10 @@ class TestXorReconCliReconstruction(unittest.TestCase):
+ class TestXorExactCliReconstruction(unittest.TestCase):
+     """``data/XOR_exact.xml`` should reconstruct its inputs end-to-end.
+ 
+-    XOR_exact is a fully INVERTIBLE, non-quantized chain: embedding ->
+-    PartSpace.pi (butterfly, codebook=none) -> ConceptualSpace
+-    bookkeeping (codebook=none) -> WholeSpace.sigma (butterfly,
+-    codebook=none) -> OutputSpace. The butterfly on BOTH pi and sigma
+-    gives cross-slot reach (a per-slot fold cannot combine the two word
+-    slots for XOR); codebook=none keeps the forward<->reverse round-trip
+-    exact. All four XOR inputs round-trip exactly AND the XOR prediction
+-    converges; the test asserts the OK/MISMATCH word-level match.
+-
+-    Regression history: this was xfail'd 2026-05-13..2026-06-04 after the
+-    modality re-architecture forced a mandatory lossy PS codebook (VQ
+-    snap) that destroyed exact reconstruction and blocked gradient. The
+-    fix restored the invertible chain (PS/SS codebook=none) plus a
+-    butterfly ``WholeSpace.sigma``; the xfail is removed so this gate
+-    now catches future regressions.
++    The native field witnesses located order-0 conjunctions from primitive
++    byte memberships. The supervised output learns an order-1 sigma and
++    reads its positive pole. Reconstruction attributes owned forward field
++    evidence to native rows and decodes by activity, without input events.
+     """
+ 
+     @pytest.mark.slow
+@@ -213,12 +202,14 @@ class TestXorExactCliReconstruction(unittest.TestCase):
+             env_extra={"MODEL_COMPILE": "eager"})
+         self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
+         ok, total = _parse_input_match_counts(stdout)
++        print(f'XOR_exact reconstruction count: {ok}/{total}')
++        print('\n'.join(line for line in stdout.splitlines() if 'Reconstructed:' in line))
+         self.assertGreater(total, 0,
+                            "Did not find any 'Input: ... -> Reconstructed: ...' lines")
+         self.assertGreaterEqual(
+-            ok, total // 4,
++            2 * ok, total,
+             f"XOR_exact reconstruction: {ok}/{total} inputs match "
+-            f"(expected >=25%).",
++            f"(expected >=50%).",
+         )
+ 
+     @pytest.mark.slow
+diff --git a/test/test_lexicon_ownership.py b/test/test_lexicon_ownership.py
+index 37d941e..f9d1902 100644
+--- a/test/test_lexicon_ownership.py
++++ b/test/test_lexicon_ownership.py
+@@ -19,7 +19,7 @@ def _build_text_model(train_embeddings=False):
+     """Construct an embedding-mode XOR model. Mirrors
+     test_basicmodel.TestTrainEmbeddingsFlag._create_model.
+     """
+-    xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
++    xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+     tree = ET.parse(xml_path)
+     root = tree.getroot()
+     training = root.find("architecture/training")
+diff --git a/test/test_mereology_raise.py b/test/test_mereology_raise.py
+index f608ad0..2017a2c 100644
+--- a/test/test_mereology_raise.py
++++ b/test/test_mereology_raise.py
+@@ -1,7 +1,7 @@
+ """Mereological order-raising (doc/specs/mereological-order-raising.md), gated dark
+ behind <mereologyRaise>. Unit-level: the link-removal API (delete_meta /
+ unlink_child / ps_children_of_whole), SigmaLayer.synthesize_over_set, and the
+-maybe_raise_order detect+synthesize+order-bump+provenance loop. Flag-off
++native spans and conceptual run geometry. Flag-off
+ byte-identity is covered by the full suite.
+ """
+ 
+@@ -110,45 +110,7 @@ def test_ps_children_of_whole_counts_parts():
+     assert all(ws._pos_kind.get(int(p)) == "ps" for p in parts)
+ 
+ 
+-# -- maybe_raise_order ----------------------------------------------------
+-
+-def test_raise_forms_higher_order_part_with_provenance():
+-    ws = _whole_space()
+-    ws.subspace.what.enable_ramsification(2)
+-    ws._mereology_k_many = 3
+-    whole, metas = _bind_parts(ws, 5)            # 5 > 3 -> raise
+-    ho = ws.maybe_raise_order(metas[-1])
+-    assert ho is not None
+-    # provenance: the higher-order node subsumes all 5 constituent parts.
+-    assert ho in ws.part_chain
+-    assert len(ws.part_chain[ho]) == 5
+-    # order bump: the constituent METAs are order 1 (the canonical
+-    # insert_meta sigma stamp: a META sits one fold above its order-0
+-    # ps/ws constituents), so the raised part lands one above them at 2.
+-    meta_row = ws._ws_pos_to_row[metas[-1]]
+-    assert ws.subspace.what.abstraction_order(int(meta_row)) == 1
+-    ho_row = ws._ws_pos_to_row[ho]
+-    assert ws.subspace.what.abstraction_order(int(ho_row)) == 2
+-    assert ws._pos_kind[ho] == "meta"
+-    # idempotent: a second call on the same whole does not re-raise.
+-    assert ws.maybe_raise_order(metas[0]) is None
+-
+-
+-def test_raise_noop_below_threshold():
+-    ws = _whole_space()
+-    ws.subspace.what.enable_ramsification(2)
+-    ws._mereology_k_many = 4
+-    whole, metas = _bind_parts(ws, 3)            # 3 <= 4 -> no raise
+-    assert ws.maybe_raise_order(metas[-1]) is None
+-    assert not ws.part_chain
+-
+-
+-# -- Slice 2.5: gated, read-only part/whole-ratio observation -------------
+-# The WholeSpace OWNS a RunStructureLayer; _stage0_unity_forward calls it
+-# (gated, read-only) on the live analysis spans. These exercise the same data
+-# path at the Space level -- stage_analysis_spans -> self.run_structure -- and
+-# the ownership/cascade wiring. The full forward stash is covered by the suite
+-# staying byte-identical with the flag off.
++# Geometry is owned by the conceptual field. Native WS spans are inputs.
+ 
+ def _word_ws():
+     ws = _whole_space()
+@@ -156,11 +118,12 @@ def _word_ws():
+     return ws
+ 
+ 
+-def test_wholespace_owns_run_structure_layer():
++def test_conceptualspace_owns_run_structure_layer():
+     from Layers import RunStructureLayer
+-    ws = _whole_space()
+-    assert isinstance(ws.run_structure, RunStructureLayer)
+-    assert ws.run_structure in list(ws.layers)        # on the cascade
++    from test_cs_sparse_weights import _cs
++    cs = _cs()
++    assert isinstance(cs.run_structure, RunStructureLayer)
++    assert cs.run_structure in list(cs.layers)        # on the cascade
+ 
+ 
+ def test_run_structure_over_word_spans_counts_words():
+@@ -169,7 +132,8 @@ def test_run_structure_over_word_spans_counts_words():
+     # (0,2),(3,5),(6,8); the Layer reports 3 runs (== word count), 2 gaps.
+     concepts = torch.tensor([[97, 98, 32, 99, 100, 32, 101, 102]], dtype=torch.long)
+     spans = ws.stage_analysis_spans(concepts)              # [B, K, 2]
+-    out = ws.run_structure(spans.to(torch.float32))        # the forward data path
++    from Layers import RunStructureLayer
++    out = RunStructureLayer()(spans.to(torch.float32))        # the forward data path
+     assert int(out["n_runs"][0]) == 3
+     assert int(out["n_gaps"][0]) == 2
+ 
+@@ -180,7 +144,8 @@ def test_run_structure_single_blob_is_singleton():
+     # should be further analysed to find boundaries).
+     concepts = torch.tensor([[97, 98, 99, 100]], dtype=torch.long)
+     spans = ws.stage_analysis_spans(concepts)
+-    out = ws.run_structure(spans.to(torch.float32))
++    from Layers import RunStructureLayer
++    out = RunStructureLayer()(spans.to(torch.float32))
+     assert int(out["n_runs"][0]) == 1
+ 
+ 
+@@ -191,5 +156,4 @@ def test_stage_analysis_spans_is_structural_only():
+     ws._mereology_raise = True
+     concepts = torch.tensor([[97, 98, 32, 99, 100]], dtype=torch.long)
+     spans = ws.stage_analysis_spans(concepts)
+-    assert getattr(ws, "_mereology_ratio_obs", None) is None
+     assert spans is not None
+diff --git a/test/test_mereology_word_binding.py b/test/test_mereology_word_binding.py
+index d1e52f6..e27e90f 100644
+--- a/test/test_mereology_word_binding.py
++++ b/test/test_mereology_word_binding.py
+@@ -3,8 +3,7 @@
+ doc/specs/mereological-order-raising.md "order-0 MEREOLOGY": a lexer token's
+ spell-out pids are the PARTS of the word-as-WHOLE. The gated autobind binds a
+ token's parts to ONE shared whole (keyed by surface text), so the whole
+-accumulates > 1 part and ``maybe_raise_order`` fires -- the binding that makes
+-the (previously dormant) raise live. Flag-off byte-identity is covered by the
++retains all its parts without raising conceptual order. Flag-off byte-identity is covered by the
+ full suite; here we assert the gated path's behaviour and that the flag-off
+ path does NOT word-bind.
+ """
+@@ -90,10 +89,9 @@ def _one_word_inputs():
+     return pid_2d, vec_tensor, word_groups, tokens
+ 
+ 
+-def test_word_whole_accumulates_parts_and_raises():
++def test_word_whole_accumulates_parts_without_raising():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+-    ss._mereology_k_many = 2                       # 3 parts > 2 -> raise
+     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+     Spaces.ConceptualSpace._autobind_word_wholes(
+         None, pid_2d, vec_tensor, word_groups, tokens, ss)
+@@ -106,24 +104,15 @@ def test_word_whole_accumulates_parts_and_raises():
+     parts = set(ss.ps_children_of_whole(whole))
+     assert len(parts) == 3
+     assert all(ss._pos_kind.get(int(p)) == "ps" for p in parts)
+-    # the raise fired: a higher-order part subsuming the 3 constituents,
+-    # with explicit provenance. Canonical fold ladder: the word-whole is
+-    # order 1 (sigma over its order-0 parts), its METAs are order 2 (one
+-    # above the whole), and the raised node tops out at the table width
+-    # (max_order=2 here -- subsymbolicOrder caps the ladder).
+-    assert ss.part_chain
+-    ho = next(iter(ss.part_chain))
+-    assert len(ss.part_chain[ho]) == 3
++    # Binding a contiguous spelling never creates an abstract kind.
++    assert not ss.part_chain
+     whole_row = ss._ws_pos_to_row[int(whole)]
+     assert ss.subspace.what.abstraction_order(int(whole_row)) == 1
+-    ho_row = ss._ws_pos_to_row[int(ho)]
+-    assert ss.subspace.what.abstraction_order(int(ho_row)) == 2
+ 
+ 
+ def test_same_word_reuses_one_whole_idempotently():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+-    ss._mereology_k_many = 4                         # no raise -> clean counts
+     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+     Spaces.ConceptualSpace._autobind_word_wholes(
+         None, pid_2d, vec_tensor, word_groups, tokens, ss)
+@@ -140,7 +129,6 @@ def test_same_word_reuses_one_whole_idempotently():
+ def test_short_word_below_threshold_does_not_raise():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+-    ss._mereology_k_many = 4                        # 3 parts <= 4 -> no raise
+     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+     Spaces.ConceptualSpace._autobind_word_wholes(
+         None, pid_2d, vec_tensor, word_groups, tokens, ss)
+@@ -153,7 +141,6 @@ def test_gate_on_routes_to_word_binding():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+     ss._mereology_raise = True
+-    ss._mereology_k_many = 2
+     stub = _cs_stub(ss)
+     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+     stub._maybe_autobind_meta(
+@@ -183,7 +170,6 @@ def test_gate_on_creates_word_object_meta():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+     ss._mereology_raise = True
+-    ss._mereology_k_many = 2
+     stub = _cs_stub(ss)
+     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc" -> 10,11,12
+     stub._maybe_autobind_meta(
+@@ -211,7 +197,6 @@ def test_meronomy_two_words_keyed_by_surface():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+     ss._mereology_raise = True
+-    ss._mereology_k_many = 2
+     stub = _cs_stub(ss)
+     # "the cat": the=pids 10,11,12 (word 0); sep slot -1; cat=20,21,22 (word 1).
+     pid_2d = torch.tensor([[10, 11, 12, 0, 20, 21, 22, 0]], dtype=torch.long)
+@@ -236,7 +221,6 @@ def test_cs_owns_relation_taxonomy_by_reference():
+     deferred meta-vector retirement)."""
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+-    ss._mereology_k_many = 4                         # 3 parts <= 4 -> no raise
+     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc"
+     Spaces.ConceptualSpace._autobind_word_wholes(
+         None, pid_2d, vec_tensor, word_groups, tokens, ss)
+diff --git a/test/test_modality_codebook.py b/test/test_modality_codebook.py
+index 5ca9e6d..e9c28c3 100644
+--- a/test/test_modality_codebook.py
++++ b/test/test_modality_codebook.py
+@@ -10,9 +10,8 @@ asymmetric per space_role:
+     a codebook on for PS.
+   * WholeSpace is SYMBOLIC: a symbol qua symbol quantizes onto a codebook,
+     so its ``<codebook>`` DEFAULTS to ``"quantize"`` when a config omits it. An
+-    explicit ``<codebook>none</codebook>`` on SS is still honored (e.g.
+-    data/XOR_exact.xml builds a full-width invertible passthrough for the
+-    exact-XOR reconstruction fixture).
++    explicit ``<codebook>none</codebook>`` on WholeSpace is still honored.
++    The opt-out fixture derives that setting from data/XOR_pos.xml.
+ """
+ 
+ import os, sys, tempfile, unittest, warnings
+@@ -55,13 +54,14 @@ class TestCodebookTiering(unittest.TestCase):
+                             "WholeSpace codebook defaults to quantize")
+ 
+     def test_ws_codebook_none_opt_out_honored(self):
+-        """data/XOR_exact.xml explicitly resolves WholeSpace to
+-        <codebook>none</codebook> (a full-width invertible passthrough) and
+-        must build without raising. PartSpace is subsymbolic regardless,
+-        so it is always "none"."""
+-        with warnings.catch_warnings():
++        """An explicit WholeSpace codebook opt-out remains honored."""
++        tree = ET.parse(os.path.join(_DATA, "XOR_pos.xml"))
++        ET.SubElement(tree.getroot().find("WholeSpace"), "codebook").text = "none"
++        with tempfile.TemporaryDirectory() as directory, warnings.catch_warnings():
+             warnings.filterwarnings("ignore")
+-            model = _build(os.path.join(_DATA, "XOR_exact.xml"))
++            path = os.path.join(directory, "codebook-none.xml")
++            tree.write(path)
++            model = _build(path)
+         self.assertEqual(model.perceptualSpace.codebook_mode, "none",
+                          "PartSpace is subsymbolic: always none")
+         self.assertEqual(model.wholeSpace.codebook_mode, "none",
+diff --git a/test/test_property_tiling.py b/test/test_property_tiling.py
+index 0c6b15c..a400fca 100644
+--- a/test/test_property_tiling.py
++++ b/test/test_property_tiling.py
+@@ -169,10 +169,9 @@ def test_property_class_whole_minted_once():
+     assert ss.property_class_whole([LETTER, DIGIT]) == ss.property_class_whole([DIGIT, LETTER])
+ 
+ 
+-def test_cross_tower_letters_in_word_bind_and_raise():
++def test_cross_tower_letters_bind_without_raising():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+-    ss._mereology_k_many = 2                              # 3 part-types > 2 -> raise
+     # 3 letter part-TYPES (pids) at positions inside ONE word-run span (0,3).
+     part_pids = torch.tensor([65, 66, 67])               # 'A','B','C' codes
+     part_where = torch.tensor([0, 1, 2])
+@@ -182,16 +181,13 @@ def test_cross_tower_letters_in_word_bind_and_raise():
+     # 3 letter-TYPES are parts of the word-type (set: ps_children doubles after
+     # a raise, per the documented wrinkle).
+     assert len(set(ss.ps_children_of_whole(whole))) == 3
+-    assert ss.part_chain                                  # raise fired (3 > 2)
+-    ho = next(iter(ss.part_chain))
+-    assert len(ss.part_chain[ho]) == 3
++    assert not ss.part_chain
+ 
+ 
+ def test_cross_tower_where_gates_the_edge():
+     # "sometimes yes, sometimes no, and we know by the .where": a letter whose
+     # .where is OUTSIDE the word span is NOT a part of the word.
+     ss = _whole_space()
+-    ss._mereology_k_many = 4
+     part_pids = torch.tensor([65, 66])
+     part_where = torch.tensor([0, 9])                    # 2nd letter at pos 9
+     whole_spans = torch.tensor([[0, 3]])                 # word covers 0..2
+@@ -229,7 +225,6 @@ def test_taxonomy_parents_empty_for_unbound():
+ def test_autobind_cross_tower_live_where_gated():
+     ss = _whole_space()
+     ss.subspace.what.enable_ramsification(2)
+-    ss._mereology_k_many = 2
+     ss._staged_analysis_spans = torch.tensor([[[0, 3]]])   # B=1, one word span (0,3)
+     pid_2d = torch.tensor([[65, 66, 67, 68]])              # 4 percept-types
+     percept_where = torch.tensor([[0, 1, 2, 9]])           # last is OUTSIDE the span
+@@ -237,7 +232,7 @@ def test_autobind_cross_tower_live_where_gated():
+     Spaces.ConceptualSpace._autobind_cross_tower(cs, pid_2d, percept_where, ss)
+     word = ss.property_class_whole([WORD])
+     assert len(set(ss.ps_children_of_whole(word))) == 3    # 65,66,67 in span; 68 out
+-    assert ss.part_chain                                   # raise fired (3 > 2)
++    assert not ss.part_chain
+ 
+ 
+ def test_autobind_cross_tower_noop_without_spans():
+diff --git a/test/test_relative_sentence_codebook_insertion.py b/test/test_relative_sentence_codebook_insertion.py
+index 8af4584..ad5d4ba 100644
+--- a/test/test_relative_sentence_codebook_insertion.py
++++ b/test/test_relative_sentence_codebook_insertion.py
+@@ -81,6 +81,16 @@ class TestMaybeLearnRelationInsertion(unittest.TestCase):
+         idea2 = torch.zeros(D)
+         idea2[2] = 1.0
+ 
++        # This insertion probe assumes three already-known, distinct ideas.
++        # Give the fixed codebook those exact rows: arbitrary orthogonal
++        # queries can otherwise snap to the same random prototype. The
++        # nearest-row lookup and relation writer still execute normally.
++        with torch.no_grad():
++            prototypes = ws.subspace.what.getW()
++            prototypes.zero_()
++            prototypes[:3, :3].copy_(torch.eye(3).to(prototypes))
++        self.assertEqual([ws.nearest_ws_row(v)[0] for v in (predicate, idea1, idea2)],
++                         [0, 1, 2])
+         pred_pos = cs._maybe_learn_relation(predicate, idea1, idea2)
+         self.assertIsNotNone(pred_pos, "score 1.0 >= tc 0.3 must accept")
+         self.assertIsInstance(pred_pos, int)
+@@ -92,6 +102,7 @@ class TestMaybeLearnRelationInsertion(unittest.TestCase):
+             len(children), 2,
+             f"predicate must parent exactly the two ideas; got "
+             f"{children!r}")
++        self.assertEqual(children, [ws.ensure_ws_position(1), ws.ensure_ws_position(2)])
+         for c in children:
+             self.assertEqual(
+                 ws.taxonomy_parent(c), pred_pos,
+diff --git a/test/test_structural_checkpoint.py b/test/test_structural_checkpoint.py
+index 08868bb..7cbb6a3 100644
+--- a/test/test_structural_checkpoint.py
++++ b/test/test_structural_checkpoint.py
+@@ -93,6 +93,9 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
+ 
+     saved = torch.load(path, map_location="cpu", weights_only=False)
+     assert saved["structural_extras"]["version"] == 1
++    # Count-based WS raising is deleted; even a stale source attribute must
++    # not be saved beside the live concept-id and refinement state.
++    assert "_mereology_raised" not in saved["structural_extras"]["whole_spaces"][0]["attributes"]
+ 
+     restored_alloc = _allocator()
+     restored_cs = types.SimpleNamespace(_concept_allocator=restored_alloc)
+@@ -118,7 +121,7 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
+     assert restored_cs._concept_admission_drops == {"word/object/META": 2}
+ 
+     assert restored_ws._word_whole_ss == {"cat": 41}
+-    assert restored_ws._mereology_raised == {41}
++    assert not hasattr(restored_ws, "_mereology_raised")
+     assert restored_ws._property_class_whole == {(1, 3): 44}
+     assert restored_ws._anchored_pids == {7: "operator"}
+     torch.testing.assert_close(
+diff --git a/test/test_where_attention_handoff.py b/test/test_where_attention_handoff.py
+index 178eaeb..1561ee1 100644
+--- a/test/test_where_attention_handoff.py
++++ b/test/test_where_attention_handoff.py
+@@ -1,14 +1,7 @@
+-"""The top-down attention handoff: the 4-case WS->PS pass-back
+-(doc/specs/mereological-order-raising.md "the top-down attention handoff").
++"""The model enables refinement on the conceptual field.
+ 
+-Gated ``<mereologyRaise>`` and DARK by default: with no words-category
+-attention, no scope, and no parked run-structure observation the pass-back
+-action is ``"noop"`` and PartSpace gets the stage-0 percept re-fed -- the
+-forward is byte-identical. The mechanism sits on the multi-stage carrier the
+-subsymbolicOrder=3 combine fix restored.
+-
+-These tests exercise the dispatch (``WholeSpace.passback_action``) across all
+-four cases and verify the default is inert.
++Attribution focus and its nonzero floor are covered by test_item11c_review;
++retained occurrence routing is covered by test_refine_raise.
+ """
+ import os, sys, warnings
+ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+@@ -45,129 +38,16 @@ def _batch(m):
+ 
+ 
+ @pytest.mark.slow
+-def test_mereology_raise_stamps_stage0_ws_and_is_byte_identical():
++def test_mereology_raise_enables_conceptual_refinement():
+     # <mereologyRaise> stamps the stage-0 WholeSpace (so it can compute the
+     # read-only run-structure obs) and the default forward stays deterministic
+     # + finite -- the pass-back is "noop" without attention.
+     m = _build("MM_mereology.xml")
+     assert m.mereology_raise
+-    ws0 = m.wholeSpaces[0]
+-    assert getattr(ws0, "_mereology_raise", False)
++    assert m.conceptualSpaces[0]._mereology_raise
+     x = _batch(m)
+     with torch.no_grad():
+         out1 = m.forward(x)[2]
+         out2 = m.forward(x)[2]
+     assert torch.isfinite(out1).all()
+     assert torch.equal(out1, out2), "the dark pass-back must be deterministic"
+-
+-
+-@pytest.mark.slow
+-def test_first_pass_is_wide_open():
+-    # Pass 0 ignores any scope/attention (wide-open); always "noop".
+-    m = _build("MM_mereology.xml")
+-    ws0 = m.wholeSpaces[0]
+-    ws0._intent_boosts = torch.ones(4)
+-    object.__setattr__(ws0, "_mereology_ratio_obs",
+-                       {"route_hint": torch.tensor([2, 2, 2, 2])})
+-    assert ws0.passback_action(0) == ("noop", None)
+-
+-
+-@pytest.mark.slow
+-def test_passback_noop_without_attention():
+-    # No words-category attention engaged -> "noop" (byte-identical), even with
+-    # a parked observation.
+-    m = _build("MM_mereology.xml")
+-    ws0 = m.wholeSpaces[0]
+-    ws0._intent_boosts = None
+-    object.__setattr__(ws0, "_mereology_ratio_obs",
+-                       {"route_hint": torch.tensor([2, 2, 2, 2])})
+-    assert ws0.passback_action(1) == ("noop", None)
+-
+-
+-@pytest.mark.slow
+-def test_passback_route_hint_dispatch():
+-    # With attention engaged, route_hint routes the 4 cases:
+-    #   0 = NULL -> noop ; 1 = single run -> chunk ; 2 = many runs -> refine.
+-    m = _build("MM_mereology.xml")
+-    ws0 = m.wholeSpaces[0]
+-    ws0._intent_boosts = torch.ones(4)
+-    for hint, expect in [(0, "noop"), (1, "chunk"), (2, "refine")]:
+-        object.__setattr__(ws0, "_mereology_ratio_obs",
+-                           {"route_hint": torch.tensor([hint] * 4)})
+-        action, where = ws0.passback_action(1)
+-        assert action == expect, f"route_hint {hint} -> {action} (want {expect})"
+-        assert where is None
+-
+-
+-@pytest.mark.slow
+-def test_passback_scoped_word_where():
+-    # An explicit scope `.where` (the serial / deterministic-reading override)
+-    # returns ("scoped", where) regardless of route_hint -- the
+-    # null-content + word-`.where` second-argument mechanism.
+-    m = _build("MM_mereology.xml")
+-    ws0 = m.wholeSpaces[0]
+-    where = torch.tensor([0.25, 0.75])
+-    object.__setattr__(ws0, "_passback_scope_where", where)
+-    action, got = ws0.passback_action(1)
+-    assert action == "scoped"
+-    assert torch.equal(got, where)
+-
+-
+-@pytest.mark.slow
+-def test_passback_scope_ps_selects_refed_input_when_engaged():
+-    # The model-loop helper returns the stage-0 percept (ps_default) when the
+-    # action is noop, and a re-fed PS analysis when refine/chunk fires.
+-    m = _build("MM_mereology.xml")
+-    x = _batch(m)
+-    # Drive a forward so the per-batch spaces/STM are warm, then exercise the
+-    # helper directly with a non-empty prior-symbol carrier.
+-    with torch.no_grad():
+-        m.forward(x)
+-    ws0 = m.wholeSpaces[0]
+-    cs0 = m.conceptualSpaces[0]
+-    prev = cs0._subspaceForWS
+-    ps_default = m.perceptualSpace.forward(m._staged_in_sub) \
+-        if getattr(m, "_staged_in_sub", None) is not None else None
+-    # noop (no attention) -> returns ps_default unchanged.
+-    ws0._intent_boosts = None
+-    out_noop = m._passback_scope_ps(1, ps_default, prev)
+-    assert out_noop is ps_default
+-    # refine (attention + route 2) -> a re-fed PS subspace (not ps_default),
+-    # OR ps_default when the prior carrier is empty (guarded). Either way the
+-    # call is finite + does not raise.
+-    ws0._intent_boosts = torch.ones(4)
+-    object.__setattr__(ws0, "_mereology_ratio_obs",
+-                       {"route_hint": torch.tensor([2, 2, 2, 2])})
+-    with torch.no_grad():
+-        out_refine = m._passback_scope_ps(1, ps_default, prev)
+-    assert out_refine is not None
+-
+-
+-@pytest.mark.slow
+-def test_passback_scoped_focus_zeros_out_of_span():
+-    # The "scoped" case focuses the percept to the word's [start, end] span:
+-    # slots whose normalized position falls OUTSIDE the span are zeroed.
+-    m = _build("MM_mereology.xml")
+-    x = _batch(m)
+-    with torch.no_grad():
+-        m.forward(x)
+-    ws0 = m.wholeSpaces[0]
+-    prev = m.conceptualSpaces[0]._subspaceForWS
+-    if prev is None or prev.is_empty():
+-        pytest.skip("prior-symbol carrier empty for this config/batch")
+-    # Scope to the FIRST ~40% of the slots; the tail must come back zeroed.
+-    object.__setattr__(ws0, "_passback_scope_where", torch.tensor([0.0, 0.4]))
+-    with torch.no_grad():
+-        ps = m._passback_scope_ps(1, None, prev)
+-    ev = ps.materialize() if ps is not None else None
+-    if ev is None or ev.dim() != 3 or ev.shape[1] < 4:
+-        pytest.skip("scoped focus needs a [B, N>=4, D] percept event")
+-    N = int(ev.shape[1])
+-    pos = (torch.arange(N).float() + 0.5) / N
+-    out_of_span = pos > 0.4
+-    assert float(ev[:, out_of_span, :].abs().max()) == 0.0, (
+-        "slots outside the scope .where span must be zeroed")
+-
+-
+-if __name__ == "__main__":
+-    sys.exit(pytest.main([__file__, "-q"]))

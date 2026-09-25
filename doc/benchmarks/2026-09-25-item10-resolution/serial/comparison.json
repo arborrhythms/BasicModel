@@ -1,0 +1,65 @@
+{
+  "reference": "d4dc385",
+  "native": {
+    "off": [
+      {
+        "phase": "before_training",
+        "baseline": 0.10059325583279133,
+        "current": 0.10061445273458958,
+        "delta": 2.119690179824829e-05
+      },
+      {
+        "phase": "training",
+        "baseline": 0.0927930697798729,
+        "current": 0.0879226878285408,
+        "delta": -0.0048703819513320895
+      },
+      {
+        "phase": "after_training",
+        "baseline": 0.09232672862708569,
+        "current": 0.08916187100112438,
+        "delta": -0.0031648576259613037
+      }
+    ],
+    "on": [
+      {
+        "phase": "before_training",
+        "baseline": 0.10059325583279133,
+        "current": 0.10061445273458958,
+        "delta": 2.119690179824829e-05
+      },
+      {
+        "phase": "training",
+        "baseline": 0.0927930697798729,
+        "current": 0.0879226878285408,
+        "delta": -0.0048703819513320895
+      },
+      {
+        "phase": "after_training",
+        "baseline": 0.09232672862708569,
+        "current": 0.08916187100112438,
+        "delta": -0.0031648576259613037
+      }
+    ],
+    "frozen": [
+      {
+        "phase": "before_training",
+        "baseline": 0.10059325583279133,
+        "current": 0.10061445273458958,
+        "delta": 2.119690179824829e-05
+      },
+      {
+        "phase": "training",
+        "baseline": 0.0927930697798729,
+        "current": 0.0879226878285408,
+        "delta": -0.0048703819513320895
+      },
+      {
+        "phase": "after_training",
+        "baseline": 0.09232672862708569,
+        "current": 0.08916187100112438,
+        "delta": -0.0031648576259613037
+      }
+    ]
+  }
+}

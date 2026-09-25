@@ -1,0 +1,9 @@
+F.......                                                                 [100%]
+=================================== FAILURES ===================================
+__ TestMaybeLearnRelationInsertion.test_accepted_relation_taxonomy_and_trust ___
+test/test_relative_sentence_codebook_insertion.py:91: in test_accepted_relation_taxonomy_and_trust
+    self.assertEqual(
+E   AssertionError: 1 != 2 : predicate must parent exactly the two ideas; got [2]
+=========================== short test summary info ============================
+FAILED test/test_relative_sentence_codebook_insertion.py::TestMaybeLearnRelationInsertion::test_accepted_relation_taxonomy_and_trust
+1 failed, 7 passed in 2.74s
