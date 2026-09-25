@@ -1,0 +1,14 @@
+{
+  "implementation_commit": "d5f2e1a0ab6df93fe9e68c15191aa6ef3d9abd3c",
+  "validated_source_files": 644,
+  "source_sha256": "78d4d76d694e3c17a7cc3203a8a45e296880a3d071ed632ff65bc3653fcfb077",
+  "all_committed_blobs_match": true,
+  "full_affected_explicit_and_measurement_sources_match": true,
+  "full": {
+    "passed": 4485,
+    "skipped": 326,
+    "xfailed": 1
+  },
+  "explicit_slow_passed": 19,
+  "documentation_links_passed": 81
+}

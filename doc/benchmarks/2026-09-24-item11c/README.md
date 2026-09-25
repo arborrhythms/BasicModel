@@ -131,5 +131,6 @@ Unrelated controls are exactly zero at every scope. The restored
 symbol scope and asserts their retained position and carrier poles.
 
 All three final test receipts and the reconstruction/priors probes match the
-same 644-file validated source map byte for byte. Source
-hashes are checked again against the implementation commit before publication.
+same 644-file validated source map byte for byte. All 644 committed blobs
+match implementation `d5f2e1a` ([verification](receipt-info.json)).
+The final [documentation-link check](doc-links.log) passes all 81 cases.
