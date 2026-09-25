@@ -47,13 +47,13 @@ def test_frozen_no_forming():
 
 
 def test_others_can_reference_frozen():
-    """Other concepts may still BUILD ON a frozen concept (col allowed)."""
-    cs, rA, rB = _fixture()
-    ly = cs._sparse_families(0)[1]
+    """A higher order may still reference the symbol of a frozen concept."""
+    from test_cs_sparse_weights import _cs, _mint_row
+    cs = _cs(nS=64, order=2)
+    rA, rB = _mint_row(cs, 1, 301), _mint_row(cs, 2, 302)
+    cs.add_concept_edge(rA, 3, 1.)
     cs.freeze_concept(301)
-    nnz = ly.nnz
     assert cs.add_concept_edge(rB, rA) is not None
-    assert ly.nnz == nnz + 1, "references TO frozen concepts stay legal"
 
 
 def test_frozen_weights_no_grad():

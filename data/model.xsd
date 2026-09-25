@@ -195,18 +195,11 @@
            concept table, never substituting the subsymbolic advance.
            Parsed only to emit a DeprecationWarning. -->
       <xs:element name="sparseReplace" type="xs:boolean" minOccurs="0"/>
-      <!-- P4 sigma/pi stacks (2026-07-02 two-phase plan; now CANONICAL,
-           always built): distinct per-pass subsymbolic layers, PS sigmas[t]
-           / WS pis[t], t in 0..subsymbolicOrder-1. Fold depth is derivation
-           provenance, not mereological rank or part of speech. Pass 0 is
-           the base sigma/pi; an order-1 config is the single reused fold,
-           byte-identical (construction is RNG-neutral). The old
-           subsymbolicStack boolean toggle is retired; the stack is no
-           longer opt-in. -->
-      <!-- Pass indices whose stack layer is the IDENTITY pass-through, e.g.
-           "0,2"; the slot still occupies its pass so the pump always runs
-           to subsymbolicOrder. -->
-      <xs:element name="subsymbolicNoop" type="xs:string" minOccurs="0"/>
+      <!-- Passes on which conceptual demand may retarget perception to a
+           region or mereological level: all (default), off, or comma-
+           separated indices in 1..subsymbolicOrder-1. Pass 0 reads the
+           initial field; subsymbolicOrder remains the processing bound. -->
+      <xs:element name="subsymbolicLoop" type="xs:string" minOccurs="0"/>
       <!-- SymbolSpace 3-stream peer bind (2026-06-21, Slice B). When true, the
            terminal ConceptualCombine is built with n_streams=3 and bind_streams
            routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default
@@ -568,10 +561,6 @@
            has no consumer yet; it stands by for future signal-router
            rule load-balancing. -->
       <xs:element name="loadBalanceWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Symbol-partition geometry for subsymbolicOrder > 1:
-           tapered = geometrically narrowing slices (default);
-           uniform = equal-width slices. -->
-      <xs:element name="conceptualWidth" type="conceptualWidthEnum" minOccurs="0"/>
       <xs:element name="maxActivePerLayer" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Single continuous truth bar in [0, 1] (read onto ConceptualSpace
            AND WholeSpace; overridable per-space). 0 = record/accept all
@@ -633,12 +622,6 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <xs:simpleType name="conceptualWidthEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="tapered"/>
-      <xs:enumeration value="uniform"/>
-    </xs:restriction>
-  </xs:simpleType>
 
   <xs:simpleType name="conceptBindingEnum">
     <xs:restriction base="xs:string">

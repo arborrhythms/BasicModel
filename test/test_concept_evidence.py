@@ -5,7 +5,7 @@ import torch
 import Spaces
 from ConceptEvidence import corners, symbols, union
 from test_concept_memberships import binary_features
-from test_cs_sparse_weights import _cs, _mint_row
+from test_cs_sparse_weights import _cs, _mint_row, _mint_field, _field_forward
 
 
 def field(cs, batch=1, occurrences=1):
@@ -17,7 +17,7 @@ def field(cs, batch=1, occurrences=1):
 def test_production_snap_background_is_neither(pi, parts):
     cs = _cs()
     cs.conceptual_pi = pi
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     for part in range(parts):
         cs.add_concept_edge(row, part, 1., conjunctive=pi)
     native, extents = binary_features(cs, torch.zeros(2, 8, dtype=torch.long))
@@ -40,25 +40,25 @@ def test_membership_read_keeps_both_until_symbol_readout():
 
 @pytest.mark.parametrize('conjunctive', [False, True])
 @pytest.mark.parametrize('pair', [(0., 0.), (1., 1.)])
-def test_dual_folds_preserve_both_and_neither(conjunctive, pair):
+def test_per_pole_folds_preserve_both_and_neither(conjunctive, pair):
     cs = _cs()
     cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     for col in (0, 1):
         cs.add_concept_edge(row, col, 1., conjunctive=conjunctive)
     a = field(cs)
     a[:2, 0, 0] = torch.tensor(pair)
-    _, result = cs.cs_forward_content(a, torch.zeros(64, 8))
+    _, result = _field_forward(cs, a, torch.zeros(64, 8))
     torch.testing.assert_close(result[row, 0, 0], torch.tensor(pair), atol=1e-6, rtol=0)
 
 
 def test_unknown_definition_is_neither_even_with_zero_edges():
     cs = _cs()
     cs.conceptual_pi = True
-    rows = [_mint_row(cs, 1, 101 + i) for i in range(3)]
+    rows = [_mint_field(cs, 101 + i) for i in range(3)]
     cs.add_concept_edge(rows[1], 0)
     cs.add_concept_edge(rows[2], 0, conjunctive=True)
-    _, result = cs.cs_forward_content(torch.ones_like(field(cs)), torch.zeros(64, 8))
+    _, result = _field_forward(cs, torch.ones_like(field(cs)), torch.zeros(64, 8))
     assert result[rows].count_nonzero() == 0
 
 
@@ -73,46 +73,23 @@ def test_kind_both_member_and_absent_member_is_both():
     torch.testing.assert_close(result[row, 0, 0], torch.ones(2))
 
 
-def test_xor_combination_preserves_occurrence_and_observed_zero():
-    """The OR and AND features are already grounded at one occurrence.
-
-    This checks concept composition, not item 11a's tower learning gate.
-    The final example omits B's observation: unknown is not an observed 0.
-    """
-    cs = _cs()
-    cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    cs.add_concept_edge(row, 1, 1., conjunctive=True, negated=True)
-    a = field(cs, batch=5, occurrences=2)
-    a[0, :4, 0] = torch.tensor([[0., 1.], [1., 0.], [1., 0.], [1., 0.]])
-    a[1, :4, 0] = torch.tensor([[0., 1.], [0., 1.], [0., 1.], [1., 0.]])
-    a[0, 4, 0] = torch.tensor([1., 0.])
-    _, before = cs.cs_forward_content(a, torch.zeros(64, 8))
-    torch.testing.assert_close(before[row, :4, 0, 0], torch.tensor([0., 1., 1., 0.]))
-    assert before[row, 4, 0].count_nonzero() == 0
-    a[:, :, 1] = 1.  # unrelated occurrence cannot refute the first
-    _, after = cs.cs_forward_content(a, torch.zeros(64, 8))
-    torch.testing.assert_close(after[row, :, 0], before[row, :, 0])
-
-
 def test_reverse_keeps_counterevidence_and_its_occurrence():
     cs = _cs()
     cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
     cs.add_concept_edge(row, 1, 1., conjunctive=True, negated=True)
     query = torch.zeros(sum(cs._order_caps()), 1, 2, 2)
     query[row, 0, 1, 0] = .81
     result = cs.cs_reverse_presence(query)
-    torch.testing.assert_close(result[0, 0, 1], torch.tensor([.9, 0.]))
-    torch.testing.assert_close(result[1, 0, 1], torch.tensor([0., .9]))
+    torch.testing.assert_close(result[0, 0, 1], torch.tensor([.81, 0.]))
+    torch.testing.assert_close(result[1, 0, 1], torch.tensor([0., .81]))
     assert result[:, :, 0].count_nonzero() == 0
 
 
 def test_part_values_have_only_one_checkpoint_owner():
     cs = _cs()
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     cs.add_concept_edge(row, 0, .7, negated=True)
     cs.add_concept_edge(row, 1, .8, conjunctive=True)
     store = Spaces._concept_alloc_of(cs).layer()
@@ -228,7 +205,7 @@ def test_signed_checkpoint_migrates_poles_and_optimizer_first_moments():
     from types import SimpleNamespace
     from test_structural_checkpoint import _model_with
     cs = _cs()
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     cs.add_concept_edge(row, 0, .7)
     cs.add_concept_edge(row, 1, .8, conjunctive=True)
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
@@ -280,7 +257,7 @@ def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
     from QueryWork import QueryWorkBudget
     cs = _cs()
     cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
     cs.add_concept_edge(row, 1, 1., conjunctive=True, negated=True)
     before = torch.zeros(sum(cs._order_caps()), 1, 1, 2)

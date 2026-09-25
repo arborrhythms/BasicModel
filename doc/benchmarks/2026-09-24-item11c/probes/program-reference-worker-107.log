@@ -1,0 +1,22 @@
+...F.s.                                                                  [100%]
+=================================== FAILURES ===================================
+___________ test_selected_surface_preserves_complete_content_meaning ___________
+test/test_surface_grammar.py:71: in test_selected_surface_preserves_complete_content_meaning
+    attached = replace(entry, rows=torch.cat((entry.rows, entry.rows[:1])),
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:14: in __init__
+    ???
+bin/Understanding.py:70: in __post_init__
+    raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
+E   ValueError: program reference IDs must be native addresses or -1, aligned to leaves
+=============================== warnings summary ===============================
+test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning
+1 failed, 5 passed, 1 skipped, 1 warning in 195.71s (0:03:15)

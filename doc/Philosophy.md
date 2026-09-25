@@ -847,6 +847,14 @@ it.
 
 ### A concept has no where of its own
 
+All concepts are read in one attentive field. Occurrence brackets locate
+that field, not individual concept identities. Precision belongs to location.
+Symbolization retains an identity and pools its occurrences; union commutes
+with pooling and intersection does not. This is why symbols can combine but
+cannot be cut, as derived in [Architecture](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21).
+Division returns to order 0; a higher kind unions symbolized cases.
+
+
 Defining a concept's where as its context says that a concept has no
 location intrinsically. Where it is, is what surrounds it — the meaning of
 a word is its company (Firth 1957), a value in a system of differences with

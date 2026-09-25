@@ -1,7 +1,7 @@
 """Learn XOR through native, independently coded perceptual towers.
 
-Teaching supplies byte memberships and one conceptual property. The extent
-read retains both symbols; XOR learns their conjunction from primitive input.
+Teaching supplies byte memberships and one conceptual property. Located cases
+are witnessed without labels; a learned sigma row's positive pole must be XOR.
 No random seed is set, and every declared run is an assertion.
 """
 from pathlib import Path
@@ -20,10 +20,10 @@ from test_wholespace_property_migration import _set_text
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def grounded_model(tmp_path, pool=4, inventory=None, load_data=False):
+def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slots=None):
     tree = ET.parse(ROOT / 'data/MM_xor_fixture.xml')
     root = tree.getroot()
-    slots = 2 * pool
+    slots = 2 * pool if field_slots is None else field_slots
     values = {
         'architecture/serial': False, 'architecture/symbolicOrder': 1,
         'architecture/subsymbolicOrder': 2, 'architecture/conceptualPi': True,
@@ -70,7 +70,7 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False):
 
 
 def learn_grounded_xor(tmp_path, pool):
-    model, x = grounded_model(tmp_path, pool)
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
     cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
     prior = ws.subspace.what.primitive_properties
     # Teach primitive memberships, then the name's feature definition.
@@ -101,49 +101,85 @@ def learn_grounded_xor(tmp_path, pool):
     expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
     torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
     torch.testing.assert_close(cs._cs_extents, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
-    assert int(store.provisional.sum()) == pool
-    rows = store.provisional.nonzero().flatten().tolist()[:4]
-    # Four provisional hypotheses begin with the same witnessed positive
-    # property. Only its opposite symbol is offered at zero; supervision
-    # must learn that both are necessary. Participation begins at zero.
-    for row in rows:
-        cs.add_concept_edge(row, 0, 1., conjunctive=True)
-        store.assigned[row] = True
-    cs._prepare_part_learning()
-    negative = [store.conjunctive._index[row, store.nOutput + 1] for row in rows]
-    assert torch.count_nonzero(store.conjunctive.values[negative]) == 0
-    assert torch.count_nonzero(store.participation[rows]) == 0
+    # Composition check only, on the two located primitive readings. It is
+    # independent of the output row's learned case selection below.
+    positions = cs._cs_position_evidence[0, :, 0]
+    spans = cs._cs_position_spans
+    located = []
+    for start in (0, 1):
+        mask = (spans[..., 0] == start) & (spans[..., 1] == start + 1)
+        located.append((positions * mask[..., None]).amax(1))
+    a, b = located
+    or_positive = torch.maximum(a[:, 0], b[:, 0])
+    not_and = torch.maximum(a[:, 1], b[:, 1])
+    torch.testing.assert_close(torch.minimum(or_positive, not_and), torch.tensor([0., 1., 1., 0.]))
+    pool_rows = [r for r in store.provisional.nonzero().flatten().tolist()
+                 if cs._order0_inventory_row(r)]
+    assert len(pool_rows) == pool
+    assert torch.count_nonzero(store.participation[pool_rows]) == 0
     assert not store.participation.requires_grad
-    optimizer = torch.optim.Adam([store.conjunctive.values], lr=.03)
+    # The ordinary observer receives all four unlabeled primitive fields.
+    # It records complete located witnesses, including both repeated-pole
+    # patterns. No XOR-specific part or output edge is supplied.
+    cs.promotion_observe()
+    rows = [r for r in pool_rows if bool(store.assigned[r])]
+    assert len(rows) == 4
+    assert all(sum(len(v) for (r, _), v in store.conjunctive.locations.items() if r == row) >= 2
+               for row in rows)
+    for _ in range(8):
+        model.End()
+        model.forward(x)
+        cs.observe_concept_use(model._combine_last_cs_sub._concept_activations)
+    cs.promotion_pass()
+    assert all(not bool(store.provisional[r]) and store.participation[r] == 1 for r in rows)
+    xor = cs._csw_concept_row(1, 20001)
+    assert xor is not None
+    for row in rows:
+        cs.add_concept_edge(xor, row)  # all exponents start unwritten
+    initial = store.values.detach().clone()
+    optimizer = torch.optim.Adam([store.values], lr=.03)
     target = torch.tensor([0., 1., 1., 0.])
-    for _ in range(120):
+    initial_mse = None
+    for step in range(32):
         optimizer.zero_grad()
+        model.End()
         model.forward(x)
         leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
-        output = leg._symbol_evidence[rows]
-        loss = (output[..., 0] - target[None]).square().mean()
+        bound = leg._concept_inventory_rows
+        slot = int((bound == xor).nonzero()[0, 0])
+        output = leg._symbol_evidence[slot, :, 0]
+        loss = (output - target).square().mean()
+        if step == 0:
+            initial_mse = float(loss.detach())
+            assert initial_mse >= .25, 'the unwritten XOR row must fail before learning'
         loss.backward()
         optimizer.step()
         store.project_parts()
-        cs.observe_concept_use(leg._concept_activations)
-        model.End()
     with torch.no_grad():
+        model.End()
         model.forward(x)
         leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
-        output = leg._symbol_evidence[rows]
-        mse = float((output[..., 0] - target[None]).square().mean())
+        bound = leg._concept_inventory_rows
+        slot = int((bound == xor).nonzero()[0, 0])
+        output = leg._symbol_evidence[slot, :, 0]
+        mse = float((output - target).square().mean())
     print({'pool': pool, 'primitive_updates': 32, 'definition_updates': 32,
-           'concept_updates': 120, 'mse': mse, 'output': output.tolist(),
+           'concept_updates': 32, 'initial_mse': initial_mse, 'mse': mse, 'output': output.tolist(),
            'conjunctions': len(rows), 'gates': store.participation[rows].tolist(),
-           'positive_parts': [cs.concept_weights(row, conjunctive=True) for row in rows],
-           'negative_parts': [cs.concept_weights(row, conjunctive=True, negated=True) for row in rows]})
+           'xor_parts': cs.concept_weights(xor),
+           'located_parts': repr(store.conjunctive.locations)})
     assert mse < 1e-6
-    torch.testing.assert_close(output[..., 0], target[None].expand(len(rows), -1), atol=1e-6, rtol=0)
-    assert bool((store.conjunctive.values[negative] > 0).all())
-    assert all({source for source, weight in cs.concept_weights(row, conjunctive=True)
-                if weight > 0} == {0} for row in rows)
-    assert all({source for source, weight in cs.concept_weights(row, conjunctive=True, negated=True)
-                if weight > 0} == {0} for row in rows)
+    torch.testing.assert_close(output, target, atol=1e-6, rtol=0)
+    assert not torch.equal(initial, store.values)
+    learned = [(r, weight) for r, weight in cs.concept_weights(xor) if weight > 0]
+    assert len(learned) == 2
+    assert store.features.values[store.features._index[0, 4 * 9 + 3]] > 0
+    # Pi was performed on retained order-0 positions, before symbolization.
+    # The higher-order XOR row contains only sigma edges to those cases.
+    assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))
+               for r, c in store.conjunctive._index)
+    assert all(r != xor for r, _ in store.conjunctive._index)
+    assert set(r for r, _ in learned).issubset(rows)
     torch.testing.assert_close(leg._concept_extents, cs._cs_extents)
     torch.testing.assert_close(leg._concept_position_spans, cs._cs_position_spans)
     assert leg.materialize().shape[1] == 2 * sum(cs._order_caps())

@@ -130,7 +130,7 @@ def test_new_model_configs_enable_word_grain_boundary():
         assert root.findtext("./architecture/serialObjectMeta") == "true"
         assert int(root.findtext("./architecture/serialWordCapacity")) == 64
         assert float(root.findtext("./architecture/stmReduceTau")) == 0.75
-        assert root.findtext("./architecture/conceptualWidth") == "uniform"
+        assert root.find("./architecture/conceptualWidth") is None
         assert int(root.findtext("./PartSpace/nOutput")) == 8
         assert int(root.findtext("./ConceptualSpace/stmCapacity")) == 8
         assert int(root.findtext("./ConceptualSpace/nOutput")) == 8

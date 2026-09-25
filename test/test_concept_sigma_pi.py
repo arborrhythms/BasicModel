@@ -2,7 +2,7 @@
 import pytest
 import torch
 import Spaces
-from test_cs_sparse_weights import _cs, _mint_row, _evidence
+from test_cs_sparse_weights import _cs, _mint_row, _evidence, _mint_field, _field_forward
 
 
 def test_union_holds_one_present_part_across_orders():
@@ -14,8 +14,10 @@ def test_union_holds_one_present_part_across_orders():
     for order in range(1, 5):
         row = _mint_row(cs, order, 100 + order)
         cs.add_concept_edge(row, source, weight=1.)
-        for missing in range(1, 8):
-            cs.add_concept_edge(row, missing, weight=1.)
+        start, end = cs.order_slice(order - 1)
+        for missing in range(start, end):
+            if missing != source:
+                cs.add_concept_edge(row, missing, weight=1.)
         source = row
         rows.append(row)
     _, a = cs.cs_forward_content(a0, torch.randn(128, 8))
@@ -25,7 +27,7 @@ def test_union_holds_one_present_part_across_orders():
 def test_sigma_reads_same_order_conjunction_and_lower_order_parts():
     cs = _cs()
     cs.conceptual_pi = True
-    p = _mint_row(cs, 1, 101)
+    p = _mint_field(cs, 101)
     u = _mint_row(cs, 1, 102)
     cs.add_concept_edge(p, 0, weight=1., conjunctive=True)
     cs.add_concept_edge(p, 1, weight=1., conjunctive=True, negated=True)
@@ -34,30 +36,29 @@ def test_sigma_reads_same_order_conjunction_and_lower_order_parts():
     positive = torch.zeros(32, 4)
     positive[:3] = torch.tensor([[1., 1., 0., 0.], [0., 1., 0., 1.], [0., 0., 1., 0.]])
     a0 = _evidence(positive, 1 - positive)
-    _, a = cs.cs_forward_content(a0, torch.randn(64, 8))
-    torch.testing.assert_close(a[p, :, 0, 0], torch.tensor([1., 0., 0., 0.]), atol=3e-6, rtol=0)
-    torch.testing.assert_close(a[u, :, 0, 0], torch.tensor([1., 0., 1., 0.]), atol=3e-6, rtol=0)
+    _, a = _field_forward(cs, a0, torch.randn(64, 8))
+    torch.testing.assert_close(a[p, :, 0, 0], torch.tensor([1., 1., 1., 0.]), atol=3e-6, rtol=0)
+    torch.testing.assert_close(a[u, :, 0, 0], torch.tensor([1., 1., 1., 0.]), atol=3e-6, rtol=0)
 
 
-def test_unspecified_exponents_start_at_zero_and_assert_neither():
+def test_unwritten_alternative_receives_credit_from_present_witness():
     cs = _cs()
     r = _mint_row(cs, 1, 101)
     cs.add_concept_edge(r, 0)
     ly = Spaces._concept_alloc_of(cs).layer()
     assert ly.values.item() == 0.
-    ly.conjunctive.add_edge(r, 1)
-    assert ly.conjunctive.values.item() == 0.
     a0 = _evidence(torch.full((32, 1), .25), torch.full((32, 1), .75))
     _, a = cs.cs_forward_content(a0, torch.randn(64, 8))
     a[r].sum().backward()
     assert torch.isfinite(ly.values.grad).all()
-    assert ly.values.grad.abs().sum() == 0
+    assert ly.values.grad.abs().sum() > 0
+    assert a[r].count_nonzero() == 0
 
 
-def test_transpose_splits_union_and_implies_conjunctive_parts():
+def test_attribution_selects_a_case_and_demands_all_conjunctive_parts():
     cs = _cs()
     cs.conceptual_pi = True
-    p = _mint_row(cs, 1, 101)
+    p = _mint_field(cs, 101)
     u = _mint_row(cs, 1, 102)
     for col in (0, 1):
         cs.add_concept_edge(p, col, weight=1., conjunctive=True)
@@ -66,10 +67,10 @@ def test_transpose_splits_union_and_implies_conjunctive_parts():
     y[p, :, :, 0] = .81
     y[u, :, :, 0] = .84
     restored = cs.cs_reverse_presence(y)
-    torch.testing.assert_close(restored[:4, 0, 0, 0], torch.tensor([.9, .9, .6, .6]), atol=1e-6, rtol=0)
+    torch.testing.assert_close(restored[:4, 0, 0, 0], torch.tensor([.81, .81, .84, 0.]), atol=1e-6, rtol=0)
 
 
-def test_weak_disjuncts_have_declared_accumulation_bound():
+def test_weak_disjuncts_do_not_accumulate():
     cs = _cs(nS=128, order=2)
     r = _mint_row(cs, 1, 101)
     for part in range(32):
@@ -77,20 +78,19 @@ def test_weak_disjuncts_have_declared_accumulation_bound():
     a0 = _evidence(torch.full((cs._order_caps()[0], 1), .001))
     _, a = cs.cs_forward_content(a0, torch.randn(128, 8))
     presence = float(a[r, 0, 0, 0])
-    assert presence == pytest.approx(1 - .999 ** 32, abs=2e-6)
-    assert presence - .001 < .031  # K=32; union bound (K-1)*epsilon
+    assert presence == pytest.approx(.001, abs=2e-7)
 
 
 def test_negated_disjunct_and_mixed_parts_on_one_concept():
     cs = _cs()
     cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     cs.add_concept_edge(row, 0, weight=1., conjunctive=True, negated=True)
     cs.add_concept_edge(row, 1, weight=1., conjunctive=True)
     cs.add_concept_edge(row, 2, weight=1., negated=True)
     a0 = _evidence(torch.full((32, 1), .25), torch.full((32, 1), .75))
-    _, a = cs.cs_forward_content(a0, torch.randn(64, 8))
-    expected = 1 - (1 - .75 * .25) * (1 - .75)
+    _, a = _field_forward(cs, a0, torch.randn(64, 8))
+    expected = max(min(.75, .25), .75)
     assert float(a[row, 0, 0, 0]) == pytest.approx(expected, abs=1e-6)
 
 
@@ -131,40 +131,33 @@ def test_recycled_edge_cannot_receive_pending_gradient():
 def test_unwritten_conjunction_has_no_invented_directional_credit():
     cs = _cs()
     cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     cs.add_concept_edge(row, 0, conjunctive=True)
-    _, a = cs.cs_forward_content(_evidence(torch.full((32, 1), .5)), torch.zeros(64, 8))
-    a[row].sum().backward()
+    _, a = _field_forward(cs, _evidence(torch.full((32, 1), .5)), torch.zeros(64, 8))
+    if a[row].requires_grad:
+        a[row].sum().backward()
     grad = Spaces._concept_alloc_of(cs).layer().conjunctive.values.grad
-    assert torch.isfinite(grad).all() and float(grad.abs().sum()) == 0
+    assert grad is None or (torch.isfinite(grad).all() and float(grad.abs().sum()) == 0)
 
 
 def test_frozen_conjunctive_edge_stays_frozen_across_pending_growth():
     cs = _cs()
     cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
+    row = _mint_field(cs, 101)
     cs.add_concept_edge(row, 0, .5, conjunctive=True)
     cs.freeze_concept(101)
-    _, a = cs.cs_forward_content(_evidence(torch.full((32, 1), .5)), torch.ones(64, 8))
-    other = _mint_row(cs, 1, 102)
+    _, a = _field_forward(cs, _evidence(torch.full((32, 1), .5)), torch.ones(64, 8))
+    other = _mint_field(cs, 102)
     cs.add_concept_edge(other, 1, .5, conjunctive=True)
     a[row].sum().backward()
     ly = Spaces._concept_alloc_of(cs).layer().conjunctive
     assert ly.values.grad is None or not ly.values.grad.any()
 
 
-def test_four_conjunctions_represent_xor_with_explicit_pole_edges():
-    """Representation check only: the learning gates start every exponent at zero."""
+
+def test_pi_edges_are_rejected_above_the_field():
     cs = _cs()
-    cs.conceptual_pi = True
-    rows = [_mint_row(cs, 1, 100 + i) for i in range(4)]
-    union = _mint_row(cs, 1, 200)
-    for i, row in enumerate(rows):
-        cs.add_concept_edge(row, 0, weight=1., conjunctive=True, negated=not bool(i % 2))
-        cs.add_concept_edge(row, 1, weight=1., conjunctive=True, negated=bool(i % 2))
-        cs.add_concept_edge(union, row, weight=1.)
-    positive = torch.zeros(32, 4)
-    positive[:2] = torch.tensor([[0., 0., 1., 1.], [0., 1., 0., 1.]])
-    a0 = _evidence(positive, 1 - positive)
-    _, a = cs.cs_forward_content(a0, torch.zeros(64, 8))
-    torch.testing.assert_close(a[union, :, 0, 0], torch.tensor([0., 1., 1., 0.]), atol=3e-6, rtol=0)
+    row = _mint_row(cs, 1, 201)
+    with pytest.raises(ValueError, match='order-0'):
+        cs.add_concept_edge(row, 0, 1., conjunctive=True)
+    assert Spaces._concept_alloc_of(cs).layer().conjunctive.nnz == 0

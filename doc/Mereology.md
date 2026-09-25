@@ -285,8 +285,8 @@ Gated behind `<mereologyRaise>` (default off $\to$ byte-identical).
 > no longer exists in code (it survives only in older comments); prose below
 > uses "concept" for the relation.
 
-The two towers stay **in-kind** — `PartSpace` $\sigma$ *composes parts $\to$ parts*,
-`WholeSpace` $\pi$ *analyses wholes $\to$ wholes* — and the **concept (META node) is the
+The two towers stay **in-kind** — `PartSpace` *composes parts $\to$ parts*,
+`WholeSpace` *analyses wholes $\to$ wholes* — and the **concept (META node) is the
 cross-tower link**, associated with both an overlapping part-percept and
 whole-percept (`insert_meta(ps_pos, ws_pos, fused_vec=None, *, ema=0.1,
 trust=None)`; `ss_pos` is the pre-rename spelling). An object's identity is
@@ -530,8 +530,10 @@ the other.
 - **Implicit (subsymbolic).** Each concept has one distributed code in the
   ConceptualSpace dictionary. The parallel knowing field carries independent
   positive and negative evidence per occurrence. `cs_forward_content`
-  composes disjunctive parts by a union and its negative-channel dual;
-  `conceptualPi` adds conjunctive parts before that union. Exponents are
+  composes disjunctive parts by max independently on each pole.
+  `conceptualPi` enables intersections within the order-0 field; their
+  required contributions reduce by min over nonzero evidence per pole.
+  Higher orders combine symbols through sigma and never hold pi edges. Exponents are
   nonnegative, and a negated part selects the opposite symbol pole. The
   taper admits both poles together. Final symbol readout unions occurrences
   and scales the two directions of the one code, preserving both separately
@@ -639,8 +641,8 @@ complement(x) = 1 - x
 
 Implement the join-from-$\bot$ synthesizer; obtain the analyzer by reflection.
 These are sigma/pi *lattice roles* (union from zero and intersection from one),
-not the `SigmaLayer`/`PiLayer` butterfly folds. The butterfly folds remain the
-higher-order abstraction machinery. See
+not the `SigmaLayer`/`PiLayer` butterfly folds. The perceptual butterfly folds are deleted. Rank is mereological level
+in the same native cube; conceptual order counts symbolizations. See
 [Percept Geometry](Spaces.md#percept-geometry-positive-unit-hypercube).
 
 ### The Order Lives in the Codes
@@ -689,9 +691,9 @@ synthesize(parts):
 
 The join seed dominates the parts used in the local build, but it may initially
 violate a cross-boundary constraint. Projection repairs the code against the
-complete `.where` order. On sparse, bounded-depth grounding, the soft union
-stays away from the all-one corner. Cross-order abstraction is handled by the
-separate butterfly folds rather than by repeatedly stacking this join.
+complete `.where` order. Max is idempotent, so repeating a part does not accumulate evidence.
+Higher rank changes the extent or level while retaining the native cube.
+Cross-order conceptual abstraction is sigma over symbols and symbolization.
 
 ### Redistribution as Isotonic Projection
 
@@ -755,6 +757,9 @@ modes (`radix`, `lexicon`, `bpe`, `mphf`, `byte`) and analysis cuts
 dispatched by `bin/Legacy.py`. The two towers are not duals: the join is the only OR in
 perception, the meet over positions is the only AND, and negation enters
 first at the conceptual level.
+Rank is mereological level in both towers, and all ranks use the same
+`[0,1]^D` membership cube. Conceptual order counts symbolizations.
+
 
 ### Live Routing and Implementation Boundary
 
@@ -778,7 +783,7 @@ exercised over projected trees in [`bin/Meronomy.py`](../bin/Meronomy.py)
 `test/test_meronomy.py`, and `test/test_meronomy_laws.py` covering both. It is
 not yet applied to the live percept codebook; the relational analyzer basis
 and learned convergence criterion are the remaining next-boundary work. The
-existing butterfly folds and conceptual SBOW remain unaffected.
+native max synthesis and conceptual SBOW remain unaffected.
 
 Implementation references:
 

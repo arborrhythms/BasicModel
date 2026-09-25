@@ -208,11 +208,12 @@ def test_reading_heat_from_canonical_on_multistage():
     object.__setattr__(ws_c, "_stage0_indices", idx)
     object.__setattr__(ws_c, "_priming_boosts", None)
     ws_c.prime_seen(idx[0, 1:2], bump=5.0, decay=1.0)  # heat slot 1's row
+    object.__setattr__(m, '_staged_concepts_in', _t.zeros(1, 1, 16))
     try:
         m._primed_reading_step()
-        scope = getattr(ws0, "_passback_scope_where", None)
-        assert _t.is_tensor(scope), "canonical heat must reach the scope"
-        assert scope[0].tolist() == [6.0, 11.0]
+        scope = getattr(m.conceptualSpace, "_passback_scope_where", None)
+        assert _t.is_tensor(scope), "canonical heat must reach the shared field"
+        _t.testing.assert_close(scope[0], _t.tensor([6., 11.]) / 16)
     finally:
         for attr in ("_staged_analysis_spans", "_passback_scope_where"):
             object.__setattr__(ws0, attr, None)

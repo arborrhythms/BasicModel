@@ -79,7 +79,7 @@
 
   <!-- ConceptualSpace: hierarchical-mode shape from MM_5M_IR.
        Per-level shapes are computed dynamically by _level_shapes
-       based on subsymbolicOrder and the conceptualWidth mode. -->
+       with native geometry shared across the subsymbolic passes. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nDim>1030</nDim>

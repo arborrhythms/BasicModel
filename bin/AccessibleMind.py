@@ -144,9 +144,13 @@ def apply_thought_effect(model, result, *, row, work):
             index = int(slots[0]) if len(slots) else -1
         if 0 <= index < len(query):
             query[index, row, location, 0] = 1.
-    inferred = space.cs_reverse_presence(query, inventory_rows=addresses) if sparse else query
+    # A new imagined extent has no observed field. Existing extents select
+    # only cases supported in the current attentive field.
+    observed = field if location < previous_locations else None
+    inferred = space.cs_reverse_presence(query, observed=observed,
+                                         inventory_rows=addresses) if sparse else query
     if sparse:
-        # The paired COO transpose is the definition. Include inferred
+        # The paired sparse attribution follows the definition. Include inferred
         # literals even when no separate relation record names the edge.
         roots = (query[:, row].amax(dim=(1, 2)) > 0).nonzero().flatten().tolist()
         supported = (inferred[:, row].amax(dim=(1, 2)) > 0).nonzero().flatten().tolist()
@@ -154,7 +158,7 @@ def apply_thought_effect(model, result, *, row, work):
             if not work.consume('effect_node'):
                 break
             previous, added = field[index, row], inferred[index, row]
-            field[index, row] = previous + added - previous * added
+            field[index, row] = torch.maximum(previous, added)
     pending, seen = ([] if sparse else list(seeds)), set()
     while pending:
         reference = pending.pop()

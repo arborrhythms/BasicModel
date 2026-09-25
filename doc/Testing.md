@@ -1720,3 +1720,40 @@ expected failure**, exit zero. All six fresh unseeded XOR runs pass again.
 Its source map matches the affected and measurement receipts byte for byte.
 The bounded run takes 1,092.1 seconds with a 12.39 GiB aggregate memory peak;
 no compiler-cache retry ran.
+
+
+### Item 11c: located XOR and native perception (2026-09-24)
+
+The [11c receipt](benchmarks/2026-09-24-item11c/README.md) records the
+[decided plan](plans/2026-09-24-item-11c.md) and its review corrections.
+The current XOR gate learns a row's positive pole from primitive input.
+Four unlabelled located cases are formed by pi at order 0 and symbolized;
+a zero-initialized sigma row learns which cases are XOR at order 1.
+Pools four and eight each have three unseeded runs, with no run selection.
+The gate asserts nonzero initial error, the final positive pole, and that
+no pi edge exists above order 0 or in the symbolic loop. A pooled both
+corner cannot satisfy this gate. The classical DNF expression is a
+composition check over retained positions only.
+
+Unrelated content must remain exactly zero at position, extent, carrier
+and symbol scope. Other affected probes cover per-pole witnessing,
+unwritten inventory addresses, getter purity, transient field identity,
+nonzero pass-back focus, grammar reference resolution and checkpoints.
+The native priors and constant-signature segmentation are checked against
+11a. Serial reconstruction is measured against `d4dc385` and reported
+without a tolerance gate. Historical 11a/11b receipts below their own
+headings retain their original evidence; they do not define the 11c gate.
+
+The fixed serial measurement gives after-training reconstruction
+**0.0891618710**, against **0.0923267286** at `d4dc385` (3.43% lower in
+this comparison). Pi off, pi on and frozen priors agree. All eight prior
+rows over 256 bytes and 32 sentences / 160 segmentation runs are unchanged.
+This measurement sets no tolerance and does not close the separate item 8
+learning gates.
+
+The final source-matched [full receipt](benchmarks/2026-09-24-item11c/full-result.json.gz)
+completes **4,812 cases: 4,485 passed, 326 existing skips, and 1 existing expected failure**, exit zero. The final correction selection completes
+**98 cases: 80 passed and 18 existing skips**, and the explicit relevant slow selection passes
+**19/19**, including the restored raw smoke.
+All six unseeded XOR runs in the full receipt improve from MSE .5 to 0.
+All three manifests match the 644-file reconstruction snapshot byte for byte.

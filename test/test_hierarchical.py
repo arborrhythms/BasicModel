@@ -1,7 +1,6 @@
 """Tests for the hierarchical epistemic architecture.
 
-Covers: _level_shapes, _pair_merge/unmerge, WordEncoding 4-tuple,
-per-level Sigmas/Pis, hierarchical forward, and backward compat.
+Covers native pass geometry, WordEncoding identities, and model forward paths.
 """
 
 import sys
@@ -41,46 +40,28 @@ def _make_model(config='MentalModel.xml'):
 class TestLevelShapes(unittest.TestCase):
 
     def test_constant_dim(self):
-        """D stays constant across all levels (average merge keeps D fixed)."""
+        """Each attention pass retains the native code dimension."""
         shapes = Models.BasicModel._level_shapes(1024, 4, 8)
         for n, d in shapes:
             self.assertEqual(d, 4)
 
     def test_single_order(self):
-        """subsymbolicOrder=1 returns a single post-merge shape."""
+        """One subsymbolic pass retains the native occurrence count."""
         shapes = Models.BasicModel._level_shapes(64, 8, 1)
         self.assertEqual(len(shapes), 1)
-        # Post-merge: 64/2 = 32 vectors, D stays 8
-        self.assertEqual(shapes[0], (32, 8))
+        self.assertEqual(shapes[0], (64, 8))
 
     def test_eight_levels(self):
-        """8 levels: N halves each time, D constant."""
-        shapes = Models.BasicModel._level_shapes(1024, 4, 8)
-        self.assertEqual(len(shapes), 8)
-        # Level 0: 1024/2=512, D=4
-        self.assertEqual(shapes[0], (512, 4))
-        # Level 7: 1024/256=4, D=4
-        self.assertEqual(shapes[7], (4, 4))
-        # Each level halves N, D stays constant
-        for i in range(7):
-            self.assertEqual(shapes[i][0], 2 * shapes[i + 1][0])
-            self.assertEqual(shapes[i][1], shapes[i + 1][1])
+        """Attention can revisit native geometry without halving its positions."""
+        self.assertEqual(Models.BasicModel._level_shapes(1024, 4, 8),
+                         [(1024, 4)] * 8)
 
     def test_two_levels(self):
-        """Simple 2-level case."""
-        shapes = Models.BasicModel._level_shapes(8, 4, 2)
-        # Level 0: 8/2=4, D=4. Level 1: 8/4=2, D=4
-        self.assertEqual(shapes, [(4, 4), (2, 4)])
+        self.assertEqual(Models.BasicModel._level_shapes(8, 4, 2),
+                         [(8, 4), (8, 4)])
 
 
-# _pair_merge / _pair_unmerge retired 2026-05-14 alongside the reverse
-# pipeline (the operators only fired inside ``_reverse_per_stage``,
-# which itself was retired along with ``<reconstruct>output</...>``).
-# The level-shape contract above is the only piece of the progressive-
-# bottleneck story that still has a forward-time caller.
-
-
-# -- WordEncoding 4-tuple ---------------------------------------------
+# -- WordEncoding 7-tuple ---------------------------------------------
 
 class TestWordEncoding(unittest.TestCase):
 
@@ -176,28 +157,21 @@ class TestBackwardCompat(unittest.TestCase):
         self.assertEqual(len(model.wholeSpaces), model.subsymbolicOrder)
 
 
-# -- Per-level layer construction -------------------------------------
+class TestNativePasses(unittest.TestCase):
 
-class TestPerLevelLayers(unittest.TestCase):
-
-    def test_symbolic_spaces_own_pi_not_sigma(self):
-        """Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
-        2026-06-09): each WholeSpace OWNS the pi (the top-down
-        analysis operator + the SS-space_role fold-rule binding target) but NO
-        sigma -- Sigma (synthesis) lives on PartSpace."""
-        from Layers import PiLayer, MeronymicFoldAdapter
+    def test_ramsified_passes_have_native_reads_and_no_perceptual_folds(self):
         model = _make_model('RamsifiedModel.xml')
-        self.assertEqual(len(model.wholeSpaces), model.subsymbolicOrder)
-        for s in model.wholeSpaces:
-            # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
-            fold = getattr(s, 'pi', None)
-            self.assertIsInstance(
-                fold, (PiLayer, MeronymicFoldAdapter),
-                "WholeSpace must own a pi.")
-            if isinstance(fold, MeronymicFoldAdapter):
-                self.assertEqual(fold.kind, 'pi')
-            self.assertFalse(hasattr(s, 'sigma'),
-                             "WholeSpace must not own a sigma layer.")
+        try:
+            self.assertEqual(len(model.wholeSpaces), model.subsymbolicOrder)
+            self.assertTrue(callable(model.perceptualSpace.synthesize_word_parts))
+            self.assertFalse(hasattr(model.perceptualSpace, 'sigmas'))
+            for space in model.wholeSpaces:
+                self.assertTrue(callable(space.compute_word_property_event))
+                self.assertFalse(hasattr(space, 'pi'))
+                self.assertFalse(hasattr(space, 'pis'))
+        finally:
+            model.End()
+            model.symbolSpace.soft_reset()
 
 
 if __name__ == '__main__':

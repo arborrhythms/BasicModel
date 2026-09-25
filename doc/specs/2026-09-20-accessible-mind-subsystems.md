@@ -34,6 +34,14 @@ declared and charged. "Access to X" never means "all of X".
 
 ### 2.0 Fields, codes and ideas
 
+A higher-order vector names a possibly discontinuous union of lower regions:
+sigma over the preceding order's symbols, sealed by symbolization. Pi
+intersects located readings only in order 0, before those readings lose
+their occurrence structure. The [Architecture argument](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
+explains this restriction. Order counts symbolizations, with lexical
+resolution specified in [Lexicon](../Lexicon.md#word-forms-and-concept-orders).
+
+
 Three forms must not be confused (Alec, 2026-09-20). Let `W ∈ ℝ^{N×D}` be the
 codebook, one row per concept.
 

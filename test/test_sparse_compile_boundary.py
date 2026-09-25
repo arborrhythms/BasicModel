@@ -170,6 +170,10 @@ def test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook(
             model.serial = True
             model.serial_object_meta = True
             model.concept_binding = "aligned"
+            model.perceptualSpace = types.SimpleNamespace(
+                synthesize_word_parts=lambda *args: None)
+            model.wholeSpace = types.SimpleNamespace(
+                compute_word_property_event=lambda *args: None)
         model._prewarm_checkpoint_shapes = lambda: None
         model.forward = lambda input_data: input_data
 
@@ -187,12 +191,12 @@ def test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook(
 
         if staged_serial_bank and sparse_lookup_grad:
             # The peer scheduler stays eager on CPU while each independent
-            # tower's complete numerical fold ladder is a strict fullgraph.
+            # tower's native word read is a strict fullgraph.
             assert len(compile_calls) == 2
             assert all(call[1]["fullgraph"] is True
                        for call in compile_calls)
-            assert model._compiled_part_fold_ladder is compile_calls[0][0]
-            assert model._compiled_whole_fold_ladder is compile_calls[1][0]
+            assert model.perceptualSpace.synthesize_word_parts is compile_calls[0][0]
+            assert model.wholeSpace.compute_word_property_event is compile_calls[1][0]
             assert model._compiled_word_chunk_active is False
             assert model._compiled_step is model.forward
         else:

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11c-measurements-final-receipt/off.xml",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item11c-measurements-final-receipt/off.json"
+  ],
+  "pid": 84413,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4263006792,
+  "elapsed_seconds": 41.839966624975204,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item11c-measurements-final-receipt/off.log"
+}

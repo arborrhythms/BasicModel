@@ -1,0 +1,163 @@
+F.........F..FF                                                          [100%]
+=================================== FAILURES ===================================
+________ test_different_positions_in_one_extent_supply_the_two_symbols _________
+
+    def test_different_positions_in_one_extent_supply_the_two_symbols():
+        from test_concept_memberships import binary_features
+        cs = _cs()
+        cs.conceptual_pi = True
+        row = _mint_row(cs, 1, 101)
+>       cs.add_concept_edge(row, 0, 1., conjunctive=True)
+
+test/test_primitive_properties.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+row = 32, col = 0, weight = 1.0, conjunctive = True, negated = False
+locations = None
+
+    def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False,
+                         negated=False, locations=None):
+        """Add a nonnegative exponent; a negated part addresses its c-minus.
+    
+        W_pi intersects order-0 field concepts. Order-0 W_sigma unions
+        alternatives in that field; higher W_sigma reads the preceding
+        order's symbols. The trailing column is the standing EVERYTHING.
+        """
+        r = int(row)
+        order0 = self._order0_inventory_row(r)
+        source0 = self._order0_inventory_row(int(col))
+        if conjunctive and not (order0 and source0):
+>           raise ValueError('conjunctive edges require order-0 field concepts')
+E           ValueError: conjunctive edges require order-0 field concepts
+
+bin/Spaces.py:18063: ValueError
+____________ test_copresence_never_writes_a_witnessed_negative_part ____________
+
+    def test_copresence_never_writes_a_witnessed_negative_part():
+        import Spaces
+        from test_attention_promotion import _fixture, _pool_rows
+        cs, rows = _fixture(pi=True)
+        a, b, negative = [r for _, r in rows[:3]]
+        evidence = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
+        evidence[[a, b], 0, 0, 0] = 1.
+        evidence[negative, 0, 0, 1] = 1.
+        cs._promo_last_acts = evidence
+        cs._cs_level_rows = [torch.arange(cs._order_caps()[0])[:, None]]
+        cs.promotion_observe()
+        assigned = _pool_rows(cs)
+>       assert len(assigned) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+test/test_primitive_properties.py:161: AssertionError
+_________ test_zero_candidate_can_learn_negation_but_is_not_witnessed __________
+
+    def test_zero_candidate_can_learn_negation_but_is_not_witnessed():
+        cs = _cs()
+        cs.conceptual_pi = True
+        row = _mint_row(cs, 1, 101)
+>       cs.add_concept_edge(row, 0, 1., conjunctive=True)
+
+test/test_primitive_properties.py:214: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+row = 32, col = 0, weight = 1.0, conjunctive = True, negated = False
+locations = None
+
+    def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False,
+                         negated=False, locations=None):
+        """Add a nonnegative exponent; a negated part addresses its c-minus.
+    
+        W_pi intersects order-0 field concepts. Order-0 W_sigma unions
+        alternatives in that field; higher W_sigma reads the preceding
+        order's symbols. The trailing column is the standing EVERYTHING.
+        """
+        r = int(row)
+        order0 = self._order0_inventory_row(r)
+        source0 = self._order0_inventory_row(int(col))
+        if conjunctive and not (order0 and source0):
+>           raise ValueError('conjunctive edges require order-0 field concepts')
+E           ValueError: conjunctive edges require order-0 field concepts
+
+bin/Spaces.py:18063: ValueError
+_______ test_candidate_growth_keeps_freeze_and_positive_witness_barriers _______
+
+    def test_candidate_growth_keeps_freeze_and_positive_witness_barriers():
+        import Spaces
+        cs = _cs()
+        frozen = _mint_row(cs, 1, 101)
+        live = _mint_row(cs, 1, 102)
+>       cs.add_concept_edge(frozen, 0, .5, conjunctive=True)
+
+test/test_primitive_properties.py:234: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+row = 32, col = 0, weight = 0.5, conjunctive = True, negated = False
+locations = None
+
+    def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False,
+                         negated=False, locations=None):
+        """Add a nonnegative exponent; a negated part addresses its c-minus.
+    
+        W_pi intersects order-0 field concepts. Order-0 W_sigma unions
+        alternatives in that field; higher W_sigma reads the preceding
+        order's symbols. The trailing column is the standing EVERYTHING.
+        """
+        r = int(row)
+        order0 = self._order0_inventory_row(r)
+        source0 = self._order0_inventory_row(int(col))
+        if conjunctive and not (order0 and source0):
+>           raise ValueError('conjunctive edges require order-0 field concepts')
+E           ValueError: conjunctive edges require order-0 field concepts
+
+bin/Spaces.py:18063: ValueError
+=============================== warnings summary ===============================
+test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols
+FAILED test/test_primitive_properties.py::test_copresence_never_writes_a_witnessed_negative_part
+FAILED test/test_primitive_properties.py::test_zero_candidate_can_learn_negation_but_is_not_witnessed
+FAILED test/test_primitive_properties.py::test_candidate_growth_keeps_freeze_and_positive_witness_barriers
+4 failed, 11 passed, 2 warnings in 2.86s

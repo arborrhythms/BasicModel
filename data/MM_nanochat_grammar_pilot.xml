@@ -35,7 +35,6 @@
     <!-- Keep traversal separate from the symbolic iteration budget. -->
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
-    <conceptualWidth>uniform</conceptualWidth>
     <symbolicOrder>4</symbolicOrder>
     <!-- Let sentence length, rather than an arbitrary cap, determine parse
          depth during the pilot.  This knob adds no parameters. -->

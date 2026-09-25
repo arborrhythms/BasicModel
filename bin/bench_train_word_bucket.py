@@ -70,7 +70,6 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     ss = model.symbolSpace
     language = model.languageSpace
     stm = cs.stm
-    fold_passes = tuple(range(max(0, int(model.subsymbolicOrder) - 1)))
     symbolic_passes = tuple(range(max(0, int(model.symbolicOrder))))
     batch = int(isp._ar_embedded_N.shape[0])
 
@@ -80,12 +79,10 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     property_weights = ws._staged_word_primitive_counts[:, 0, :, :]
 
     def ps_leg(ids, mask, offsets):
-        return ps.compute_word_fold_sources(
-            ids, mask, offsets, fold_passes)
+        return (ps.synthesize_word_parts(ids, mask, offsets),)
 
     def ws_leg(weights):
-        return ws.compute_word_property_fold_sources(
-            weights, fold_passes)
+        return (ws.compute_word_property_event(weights),)
 
     compiled_ps = model_util.compile(
         ps_leg, verbose=False, fullgraph=True)
@@ -135,10 +132,8 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
             readout_coefficients=coefficients)
 
     def cs_sub_leg(ids, mask, offsets, weights, gate):
-        local_parts = ps.compute_word_fold_sources(
-            ids, mask, offsets, fold_passes)
-        local_wholes = ws.compute_word_property_fold_sources(
-            weights, fold_passes)
+        local_parts = (ps.synthesize_word_parts(ids, mask, offsets),)
+        local_wholes = (ws.compute_word_property_event(weights),)
         return readout(local_parts, local_wholes, gate)
 
     def cs_sub_reduce_leg(gate):

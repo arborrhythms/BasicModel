@@ -8,12 +8,10 @@ import torch
 
 
 def union(values, dim):
-    """Probabilistic union in log-complement coordinates, with exact rails."""
-    eps = torch.finfo(values.dtype).eps
-    safe = values + (values.clamp(0, 1 - eps) - values).detach()
-    result = -torch.expm1(torch.log1p(-safe).sum(dim=dim))
-    exact = torch.where((values >= 1).any(dim=dim), torch.ones_like(result), result)
-    return result + (exact - result).detach()
+    """Idempotent union: repeated support contributes its maximum once."""
+    if values.shape[dim] == 0:
+        return values.sum(dim=dim)
+    return values.amax(dim=dim)
 
 
 def symbols(field):
@@ -26,8 +24,10 @@ def symbols(field):
 def corners(pair):
     """Derived true-only, false-only, both and neither; never storage."""
     positive, negative = pair.unbind(-1)
-    return torch.stack((positive * (1 - negative), negative * (1 - positive),
-                        positive * negative, (1 - positive) * (1 - negative)), -1)
+    return torch.stack((torch.minimum(positive, 1 - negative),
+                        torch.minimum(negative, 1 - positive),
+                        torch.minimum(positive, negative),
+                        torch.minimum(1 - positive, 1 - negative)), -1)
 
 
 def decode(field, codes):

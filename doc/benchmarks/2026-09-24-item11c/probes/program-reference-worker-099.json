@@ -1,0 +1,73 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[eager]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[pending]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+    "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write"
+  ],
+  "completed": [
+    "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[eager]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[pending]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+    "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.006126375054009259,
+      "message": "test/test_selected_nested_meaning.py:36: in test_nested_compose_preserves_complete_child_roles_without_a_write\n    _cs, registry, language, entry, leaves = _nested(monkeypatch)\n                                             ^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:26: in _nested\n    entry = replace(entry,\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace\n    return obj.__class__(**changes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:14: in __init__\n    ???\nbin/Understanding.py:70: in __post_init__\n    raise ValueError(\"program reference IDs must be native addresses or -1, aligned to leaves\")\nE   ValueError: program reference IDs must be native addresses or -1, aligned to leaves",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[eager]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004043083055876195,
+      "message": "test/test_selected_nested_meaning.py:51: in test_nested_observation_writers_retain_children_without_certifying_them\n    _cs, registry, language, entry, leaves = _nested(monkeypatch)\n                                             ^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:26: in _nested\n    entry = replace(entry,\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace\n    return obj.__class__(**changes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:14: in __init__\n    ???\nbin/Understanding.py:70: in __post_init__\n    raise ValueError(\"program reference IDs must be native addresses or -1, aligned to leaves\")\nE   ValueError: program reference IDs must be native addresses or -1, aligned to leaves",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[pending]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004041124950163066,
+      "message": "test/test_selected_nested_meaning.py:51: in test_nested_observation_writers_retain_children_without_certifying_them\n    _cs, registry, language, entry, leaves = _nested(monkeypatch)\n                                             ^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:26: in _nested\n    entry = replace(entry,\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace\n    return obj.__class__(**changes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:14: in __init__\n    ???\nbin/Understanding.py:70: in __post_init__\n    raise ValueError(\"program reference IDs must be native addresses or -1, aligned to leaves\")\nE   ValueError: program reference IDs must be native addresses or -1, aligned to leaves",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004066708032041788,
+      "message": "test/test_selected_nested_meaning.py:51: in test_nested_observation_writers_retain_children_without_certifying_them\n    _cs, registry, language, entry, leaves = _nested(monkeypatch)\n                                             ^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:26: in _nested\n    entry = replace(entry,\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace\n    return obj.__class__(**changes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:14: in __init__\n    ???\nbin/Understanding.py:70: in __post_init__\n    raise ValueError(\"program reference IDs must be native addresses or -1, aligned to leaves\")\nE   ValueError: program reference IDs must be native addresses or -1, aligned to leaves",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02243374998215586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003984042094089091,
+      "message": "test/test_selected_nested_meaning.py:86: in test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write\n    _cs, registry, language, entry, _ = _nested(monkeypatch)\n                                        ^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:26: in _nested\n    entry = replace(entry,\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace\n    return obj.__class__(**changes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:14: in __init__\n    ???\nbin/Understanding.py:70: in __post_init__\n    raise ValueError(\"program reference IDs must be native addresses or -1, aligned to leaves\")\nE   ValueError: program reference IDs must be native addresses or -1, aligned to leaves",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

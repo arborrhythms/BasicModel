@@ -490,26 +490,6 @@ def test_parallel_ps_called_once():
         % (N_in, nInput))
 
 
-@pytest.mark.slow
-def test_widening_ps_pi_sized_at_embedded_percept_width():
-    # A widening PartSpace (nInputDim != nOutputDim: MM_20M's 5-wide
-    # raw byte event -> 1024-wide embedded percept) must size ``pi`` -- and
-    # the butterfly cascade -- at the EMBEDDED percept width, and
-    # ``forwardBegin`` must reshape the embedded event to that same width
-    # (``_fold_width``). The legacy nInputDim sizing reshaped the embedded
-    # [B, 8, 1024] slab to width 5 (8192 % 5 != 0): the ``[4, -1, 5]``
-    # reshape crash behind 7 suite failures. Non-widening configs have
-    # nInputDim == nOutputDim, so ``_fold_width == nInputDim`` there (the
-    # legacy sizing, unchanged). (The fold is ``ps.sigma`` post Pi/Sigma
-    # swap, Phase 3.)
-    m = _build("MM_20M_legacy.xml")
-    ps = m.perceptualSpace
-    assert int(ps._fold_width) == int(ps.nOutputDim) == 1024
-    # RE-PINNED (unified fold-width law, Alec 2026-07-16): the cascade is
-    # sized at ONE vector's CONTENT width (nDim == percept_dim minus the
-    # where/when band), the same law as WholeSpace.pi; the band rides
-    # through application sites via fold_content_apply.
-    assert int(ps.butterflyN) == int(ps.nDim) == 1016
 
 
 @pytest.mark.slow

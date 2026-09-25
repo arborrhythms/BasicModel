@@ -91,25 +91,13 @@ def test_meta_is_ordered_pair_over_subsymbols():
     assert len(got) == 2                            # no bias: pair only
 
 
-def test_chain_link_edge_to_rest_link_is_populated():
-    """v3 pin for the FIXED defect: v2's ``so < order`` stratification
-    silently dropped the head link's edge to the REST link whenever the
-    ramsified cap clamped both to the SAME order -- the vine's recursion
-    edge. The untyped square store keeps every sym-constituent edge."""
-    cs = _cs_active(order=1)                # cap clamps every link to order 1
-    A1, _, _ = cs.create_word_object_meta([1], 2, key="w1")
-    A2, _, _ = cs.create_word_object_meta([3], 4, key="w2")
-    A3, _, _ = cs.create_word_object_meta([5], 6, key="w3")
-    head = cs.create_joint_concept([A1, A2, A3], key=("w1", "w2", "w3"))
-    alloc = Spaces._concept_alloc_of(cs)
-    ly = alloc.layer(0)
-    head_row = ly.row_of(("pool", head))
-    rest = [x for (r, x) in alloc.records(head)
-            if r == "part" and isinstance(x, tuple) and x[0] == "sym"][0]
-    rest_row = ly.row_of(("pool", int(rest[1])))
-    assert head_row is not None and rest_row is not None
-    # the chain-link edge lives, via the public read-out
-    assert rest_row in dict(cs.concept_weights(head_row))
+def test_symbolic_order_does_not_admit_a_same_order_edge():
+    cs = _cs_active(order=1)
+    target = cs._csw_concept_row(1, 100)
+    source = cs._csw_concept_row(1, 101)
+    with pytest.raises(ValueError, match='preceding order'):
+        cs.add_concept_edge(target, source, 1.)
+    assert cs.concept_weights(target) == []
 
 
 def test_population_inactive_is_noop():

@@ -215,26 +215,26 @@ subclass; its *forward composition* was in turn superseded by the
 `SparseLayer` substrate itself (edges, COO forward/reverse, `add_edge` /
 `remove_edges`) is unchanged by either rework.
 
-**The forward is TWO PHASES with one terminal cutover.** Phase A -- the
-purely continuous PS/WS$\leftrightarrow$CS pump: `subsymbolicOrder`
-iterations of the 2-stream bind (no symbol leg in the loop, no quantization
-inside the pump). The C$\to$P / C$\to$S handoffs carry the per-tower WINDOWS
-of the MIXED carrier (`combine.views`, the demux feedback): the part-stream
-returns to PS for further $\sigma$ synthesis, the whole-stream to WS for
-further $\pi$ analysis -- the mix goes UP (the next stage's contribution),
-the un-mix goes DOWN. Phase B -- ONE late cutover at the bandwidth seam
-(`cs_symbolic_phase`): each order-0 concept reads its signed feature
-definition: the product of native PartSpace
-percept memberships and WholeSpace property memberships at each occurrence.
-Parts occur within the span; whole properties pervade it. The concept unions
-alternative percept conjunctions, then the subject readout unions occurrences. The
-concept pyramid runs ($K$ = `symbolicOrder` rungs over the
-`ConceptualAttentionLayer`, below) and its outputs feed the SS leg,
-the head-side losses (conceptual SBOW on the settled slab), and the concept
-table -- they are NEVER substituted back into the subsymbolic carrier (the
-`<sparseReplace>` knob is retired; non-replacement is structural).
-Quantization sits exactly at the seam because 0-D symbols lack the bandwidth
-to carry subsymbolic content.
+**The forward is TWO PHASES with one terminal cutover.** Phase A reads
+PartSpace and WholeSpace, then the order-0 conceptual field, on each of at
+most `subsymbolicOrder` passes. PartSpace combines located parts; WholeSpace
+divides the field by primitive properties. Perception has no learned
+sigma/pi fold layers. `subsymbolicLoop` selects which later passes may
+retarget the region or mereological level. The symbolic loop and the serial
+loop over words keep their independent bounds.
+
+**Pass-back scales, never gates (Alec, September 24).** Attribution of the
+current conceptual demand yields a strength `a ∈ [0,1]` for each PartSpace
+slot. Its content is scaled by `0.5 + 0.5*a`: attributed parts approach full
+strength, while unattributed parts retain half their input strength on every
+pass. The where/when band is unchanged. New content within the extent stays
+visible and can form a concept even when existing concepts do not define it.
+
+Phase B symbolizes the terminal field and runs the bounded higher-order
+pyramid. It performs sigma over the preceding order's symbols; no pi edge
+exists in this loop. Codes support similarity and tied reconstruction,
+while the feature definitions supply evidence. The paired field reaches the
+symbol leg and conceptual losses without replacing the native carriers.
 
 **The `ConceptualAttentionLayer` is SYMBOLIC-ONLY and owns BOTH readings of concept
 structure (dual-towers rev 2 -- landed 2026-07-12).** The
@@ -256,16 +256,12 @@ minds, which nothing in the current codebase observes or damps at runtime
 (the diagnostic that used to watch them, `cs_groundedness_probe`, is
 retired -- see below).
 
-The forward is a feedforward concept pyramid (`cs_forward_content`). Its
-order-0 membership read supplies a paired field `[S, batch, extent, 2]`,
-padded only to the bounded store span S. Each rung reads lower orders through a union and
-its negative-channel dual; `conceptualPi` adds a preceding conjunction and
-its dual, including same-order conjunctive readout. The taper ranks the
-stronger symbol pole and admits both together. The retained occurrences are
-united within each extent before composition; extents remain separate until
-the final symbol read. There is no settling recurrence or source
-re-injection. The [current equations and design](#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
-supersede the former tanh hop and signed activation.
+The feedforward concept pyramid (`cs_forward_content`) retains
+`[concept, batch, extent, 2]`. The order-0 membership read composes field
+requirements before encoding; subsequent rungs only union symbol evidence.
+The taper ranks the stronger pole and admits the pair together. Extents
+remain separate. The [current equations](#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
+define independent pole reductions and attribution descent.
 
 `_order_caps()` sizes the per-rung taper. While the sparse concept
 transform is active (`_sparse_active`: `symbolicOrder > 0` in parallel
@@ -306,10 +302,12 @@ keeps orchestration only. Each bounded evidence activation IS a 0-D
 symbol: the once-built SS leg retains the two poles at the row-aligned identity
 (order-0 codes follow their feature definitions; the leg syncs the SS state contract, while the
 activations' GRADIENT path is the conceptual SBOW over the settled slab
-parked at the cutover). Per-pass
-$\sigma$/$\pi$ stacks (canonical, always built; `<subsymbolicNoop>` marks
-identity slots) give the pump DISTINCT layers per pass -- depth IS
-mereological order. Distributed codes serve similarity, retrieval and the
+parked at the cutover). The subsymbolic loop reads the attended percepts
+into the order-0 field; conceptual demand may then retarget perception
+to a region or mereological level. `<subsymbolicLoop>` selects the
+retargeting passes (`all`, `off`, or indices `1..subsymbolicOrder-1`),
+while `subsymbolicOrder` bounds the processing. Perception has no learned
+$\sigma$/$\pi$ fold layers. Distributed codes serve similarity, retrieval and the
 tied reconstruction; they do not determine conceptual presence.
 
 #### Relation-table entry contract
@@ -705,15 +703,15 @@ the principled fix for the MM_20M mean-collapse.
 | Space | Role | Owns | Notes |
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
-| **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface $\to$ row. |
+| **PartSpace** | Bottom-up ordered part synthesis | Radix parts, native codes and `<synthesis>` policy | Recurrence forms parts; codes are max over constituents. Canonical ids and ordered containment determine presence. |
 | **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: membership read + FF concept pyramid, $K$ = `symbolicOrder`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | Top-down ANALYSIS branch over whole-percept properties | one `self.pi` (PiLayer — the intersection fold), one small property codebook (`self.subspace.what`), and the `<analysis>` policy | Stage 0 reads the unity view; its property folds bind with equal PS live locations downstream in CS. It owns no concept, META, taxonomy, or symbol rows. |
+| **WholeSpace** | Top-down division by primitive properties | Property codebook (`self.subspace.what`) and `<analysis>` policy | Max over allowed primitives per position, min pervasion over a run. Readings share the attended field with PS; there is no perceptual pi layer. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
-The cross-space fold contract has changed:
+The native perception and conceptual carrier contract is:
 
 ```
-PS.forward(x):  return self.sigma(x.materialize())
+PS.forward(x):  return native_part_read(x)
 CS.forward(subspace, word_subspace):
     STM[1..7] = STM[0..6];  STM[0] = folded          # newest at slot 0, shift toward higher indices, oldest (slot 7) drops off; mode-dispatched, the pump stays subsymbolic
 # POST-PUMP cutover (sparse-active, once per forward, in _forward_body):
@@ -845,20 +843,10 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    but concepts and symbols remain owned downstream; no feedback value is
    inserted into the WholeSpace property inventory.
 
-   > **Proposed refinement (mereological-order-raising spec).** This single
-   > subsymbolic loop is really **two** moves CS should choose between *per
-   > representation*, by reading the **contiguity of `.where`**: a *contiguous*
-   > extent $\to$ **refine granularity** (chunk finer / tile — drive the radix), same
-   > order; a *discontiguous* extent $\to$ **raise order** (another $\sigma$/$\pi$ fold, lifting
-   > out of `.where`/`.when`); a *zero* `.where` $\to$ null. The number of contiguous
-   > runs in a whole's `.where` *is* its part/whole ratio, so the same read also
-   > routes integrate-vs-disintegrate ($\to$PartSpace $\sigma$ vs $\to$WholeSpace $\pi$) — this is
-   > the three-aspect loop described above. As of 2026-06-16 the contiguity read has its
-   > substrate: `.where` is an **endpoint-sum bracket** `[start, end]`
-   > (`WhereEncoding.decode_span`), so extent and gaps are read directly off a
-   > code (a zero-extent instant vs a span); see [doc/Spaces.md](Spaces.md).
-   > (2026-07-04: `.when` no longer carries the bracket — it is the 4-dim
-   > start ladder; exact times/extents ride the clock side-band.)
+   **Refinement, answered in 11c.** A contiguous extent is refined by pi
+   within the order-0 field; a discontiguous region is combined through
+   sigma over symbols and symbolized at a higher order. Symbols cannot be
+   divided. Field brackets express location, and rank is mereological level.
 
 3. **Symbolic order** (`<symbolicOrder>`) — the symbolic / relational loop
    budget. In serial mode (`<serial>true</serial>`), words are read **one at a
@@ -1048,10 +1036,9 @@ unary (copy-side) or binary (reduce-side):
 - **Butterfly mode on `GrammarLayer`** (Stage 5): all GrammarLayer
   subclasses accept `butterfly=True, N=N` for efficient cross-STM
   pairwise composition via a packed `nn.Parameter[n_levels, N//2, 2D, 2D]`
-  cascade with bit-reversal permutations. Wired into the space folds
-  (`PartSpace.sigma` / `WholeSpace.pi` post the Pi/Sigma swap,
-  rev. 2026-06-09) by default in butterfly-enabled configs. Closes the
-  XOR convergence target.
+  cascade with bit-reversal permutations. These are grammatical operators;
+  native perception has no fold layers. The 11c XOR gate learns located
+  field cases and unions their symbols at order 1.
 
 Parthood (`part`) is the **fundamental** mereological operation, realized
 as clipped cosine projection on symbolic activations. The full suite
@@ -1156,6 +1143,11 @@ is part of the concept code; the symbolic realisation owns the `.when`
 coordinate), the STM holds whole codes, and the reconstruction traversal
 scores whole codes. Where and when re-enter when a concept is realised as
 a symbol or a percept.
+
+All concepts are read within one attentive field; none is individually
+located. Retained occurrence brackets are coordinates of that field beside
+the opaque event. They support level finding and selection of a region of
+interest without adding location coordinates to concept identities.
 
 ### Loop and parameter ownership (tied reconstruction, 2026-09-16)
 
@@ -1667,7 +1659,7 @@ order").
   ([taxonomic access](specs/2026-09-20-accessible-mind-subsystems.md)); the
   concept-level index of [two truths §3.4](specs/2026-09-16-two-truths-ideas-and-relations.md#34-meta-and-the-taxonomy-decided)
   is this structure, and the seal is one of its writers. The pi stage is an
-  optional discriminative extension of the same structure, `<conceptualPi>`,
+  optional discriminative extension in the order-0 field, `<conceptualPi>`,
   off by default: conjunctions with negation, for XOR-type concepts.
 - *Two ways in, and a maxim.* **What co-occurs is a necessary part of the
   whole it forms; what substitutes is a sufficient part of the kind it
@@ -1693,58 +1685,43 @@ order").
   is evidence of a word's part of speech or sense, according to the grain
   of the context; it is never evidence of an object's kind.
 
-**The computation, with the September 23 amendment.** Each concept carries
-independent positive and negative evidence in `[0, 1]`, per occurrence.
-A literal selects that pair, swapping its poles when the part is negated.
-For nonnegative exponents, the optional pi stage and the sigma stage are:
+**The computation (11c, Alec, September 24).** A concept carries
+`(c⁺, c⁻) ∈ [0,1]²`. A negated literal swaps its poles. On each pole
+independently, required evidence uses **min over nonzero contributions**,
+or zero if none; alternatives use **max**. A = `(1,0)` and B = `(0,1)`
+therefore give `(1,1)` for A and B, and `(1,0)` for A and not B.
+`(0,0)` is complete uncertainty and contributes nothing. Negation changes
+the selected pole, never the reducer. A literal's nonnegative exponent
+qualifies its membership as `q**w` for a requirement and
+`1-(1-q)**w` for an alternative. Zero is an unwritten weight.
 
-    conjunction (W_π): p⁺_r = ∏_j (lit⁺_rj)^w_rj
-                       p⁻_r = 1 − ∏_j (1 − lit⁻_rj)^w_rj
-    union       (W_σ): y⁺_r = 1 − (1 − p⁺_r) · ∏_k (1 − q⁺_k)^v_rk
-                       y⁻_r = p⁻_r · ∏_k (q⁻_k)^v_rk
+`W_π` connects order-0 concepts in the field, and only there.
+`W_σ` unions alternatives at order 0, or the preceding order's symbols
+above it. **Symbolization raises order; sigma and pi do not.**
+`conceptualPi` defaults off and enables field conjunctions; it never
+permits a pi edge in the symbolic loop. Sparse gathers and scatter
+min/max evaluate the two poles with the same exponent. The taper ranks
+the stronger pole and keeps the pair together. Repetition cannot inflate
+a union: max(.8, .8) is .8, at any number of positions or alternatives.
 
-The own-pi factor is included only when the row has a positive conjunctive
-exponent. Empty or all-zero definitions assert `(0, 0)`. `q` reads `p` at
-the same order and `y` at lower orders. With `<conceptualPi>` off, only the
-union and its negative-channel dual run. The union is computed as
-`−expm1(Σ · log1p(−·))`, replacing the additive `tanh` hop. A unit-weight
-part's evidence therefore survives successive unions without hop decay.
-Each pole has its own chart transpose. There are two scatter passes per
-rung with pi off, four with pi on; the taper ranks the stronger pole and
-admits the pair together. The perceptual towers' binary folds map N → N/2;
-the pyramid's width per order is the allocated row count under the taper.
+**Why symbols combine but cannot be cut.** A symbol names a region after
+its occurrence readings have been pooled within an extent. Its identity
+has no internal coordinates, although its occurrence is a located percept.
+Union commutes with this pooling: `max_x A(x) ∨ max_x B(x)` equals
+`max_x (A(x) ∨ B(x))`. Intersection does not: A on the left and B on the
+right activate both names without an overlapping region. Pi must return
+to their retained field occurrences. Higher orders therefore contain sigma
+and symbolization, never pi over pooled symbols. A both corner diagnoses
+heterogeneity; it is not itself an intersection or a learned XOR row.
 
-**Negation exists only for concepts, not percepts (or symbols).** A concept
-may include a negated part by addressing that part's negative pole, so a
-conjunction can say *this and not that*. That is XOR's home:
-`(x ∧ ¬y) ∨ (¬x ∧ y)` is two conjunction
-concepts and one union concept over them in conceptual space; it is also a
-concept formed by exclusion, which is what *apoha* says a concept is
-([Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
-From percepts, if the same form is used there, it is **monotone** DNF:
-perceptual space carries no negation, so every part enters as a presence.
-That is the form that keeps parthood.
-
-**Amended (Alec, 2026-09-23): paired presences supersede signed
-exponents.** The earlier computation used signed exponents on
-presence `u = (a + 1)/2`, and that map sends the snap's "no evidence" (0)
-to presence ½, so a kind over inactive parts was measured .75 / .94 / .996
-present with 2 / 4 / 8 parts (item 11 review). Decided instead: every
-concept row carries two positive symbols, `c⁺` and `c⁻`; exponents are
-non-negative; a negated part is an edge to the part's `c⁻`; a composed
-concept's `c⁻` is the De Morgan dual fold of its parts' negative channels
-(a kind's `c⁻` is the conjunction, a whole's the union), never `1 − c⁺`;
-the order-0 read supplies both channels from native memberships (item 11b); rows store the
-pair; both `(1, 1)` is a compositional fact, not a contradiction. Rule and
-checks in
-[two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).
-The projection and calibrated admission used by items 11 and 11a are
-superseded by item 11b's membership read below. Their measured nulls and
-control drift remain in the [item 11](benchmarks/2026-09-23-item11/README.md)
-and [item 11a](benchmarks/2026-09-23-item11a/README.md) receipts. The floor,
-projection maps and calibration harness are deleted. No selected seed or
-tie-break is added. The primitive-input gate now learns the both corner of
-one property; the earlier OR/AND formula remains a composition check.
+**Negation exists only for concepts, not percepts (or symbols).** Present
+percepts supply one-sided memberships. A signed conceptual definition
+sorts them into support and counterevidence. Absence supplies neither;
+`c⁻` is never `1-c⁺`, and there is no De Morgan dual reducer.
+Distributed codes serve similarity, retrieval and tied reconstruction;
+the membership definition supplies the read. The historical measurements
+remain in the [item 11](benchmarks/2026-09-23-item11/README.md) and
+[item 11a](benchmarks/2026-09-23-item11a/README.md) receipts.
 
 **The open points, settled (Alec, 2026-09-22).**
 
@@ -1769,8 +1746,8 @@ one property; the earlier OR/AND formula remains a composition check.
    and the JOINT concept are deleted when item 7 lands.
 
    **1b. One-hot and distributed — keep both, as now (confirmed, Alec
-   2026-09-22).** The *identity* of a concept is its row, and a symbol is
-   that row's activation times the row-aligned identity, so the one-hot
+   2026-09-22).** The *identity* of a concept is its persistent concept id, and a symbol is
+   that concept's activation times its aligned identity, so the one-hot
    symbol comes free with the row. Item 11b's membership read
    (`cs_read_memberships`) supplies the paired presence at the entrance to
    the conceptual layer, and the symbolic readout retains both poles at
@@ -1783,63 +1760,32 @@ one property; the earlier OR/AND formula remains a composition check.
    The DNF operates on the per-row activations, its edges run between rows,
    and it never touches the codes.
 
-2. **Unknown parts start at zero; evidence writes their polarity.** The
-   September 23 amendment replaces signed exponents with nonnegative
-   exponents and an explicit source pole. Zero means the part is unknown
-   to the concept; a wholly unwritten definition asserts neither polarity.
-   Evidence writes positive parts only (Alec, 2026-09-23: parts are
-   percepts; a percept can be absent but has no opposite); a negated part
-   is learned or asserted by the seal, never witnessed; and
-   learning refines its nonnegative magnitude. Negation in conceptual space
-   is literal negation: *not-cat* is the negative symbol of *cat*, and
-   `(0, 0)` is agnostic about catness
-   ([Spaces: complement and negation](Spaces.md#percept-complement),
-   [spec §2.6.2](specs/2026-09-20-accessible-mind-subsystems.md)). On
-   evidence the channels are independent: `c⁻` is never defined as
-   `1 − c⁺`. Attention promotion writes the observed support, normalizing
-   alternative support by the row maximum after updates and at discovery.
-   Edges added without evidence start at zero.
+2. **Unknown weights start at zero; witnessing writes each pole.** A
+   present percept co-active with a concept's positive symbol writes a
+   positive weight; co-active with its negative symbol it writes a negative
+   weight. Nothing is written from absent percepts. Signed weights are
+   stored as a nonnegative exponent and a source pole. Learning refines the
+   magnitude; the seal can assert either pole. Witnessing runs at the sentence
+   boundary over retained position pairs, before the next field is bound.
 
-3. **The switch, and both stages on the COO matrices.** (Alec: "it will
-   be much faster to integrate computation of the DNF with the COO
-   matrix.") Each stage is the substrate's scatter kernel — `index_select`
-   of the sources, a per-edge multiply in the stage's chart, one
-   `index_add_` into the rows — over its own matrix; the pi stage of order
-   `k` reads lower orders, the sigma stage of order `k` reads the
-   conjunctions of order `k` and the activations of lower orders, so an
-   order is one DNF level and `symbolicOrder` counts levels. `<conceptualPi>`
-   (default off until measured) is the switch between sigma only and sigma
-   over pi. The XOR gates run with it on; the reconstruction baseline is
-   taken with it off and on.
+3. **Field conjunctions and symbolic unions.** Both matrices use sparse
+   gathers and reductions. Dependencies within order 0 are evaluated in
+   topological order. Located requirements match their designated brackets
+   inside the subject before the readout union. Above order 0, each row
+   reads only the preceding order's symbols through sigma. `symbolicOrder`
+   bounds symbolizations, independently of the subsymbolic processing bound.
 
-4. **Saturation — compute the union with `log1p` / `expm1`, and let the
-   taper bound it (accepted; Codex's arithmetic).** `log1p(−t)` is exact for
-   weakly present parts and `expm1` for a result near zero, where
-   `1 − exp(Σ v log(1 − t))` loses digits. That is the arithmetic; it does
-   not by itself stop accumulation, and accumulation is the semantics of a
-   union — many weak alternatives *do* raise a concept, as the exemplar
-   models sum evidence. What bounds it is the taper: a concept reads only
-   the rows the top-K per order admitted, so at most K parts per order
-   contribute, and diffuse noise is cut before it is summed. Max remains
-   the fallback if measurement shows concepts saturating under real
-   activity: the test is that a concept with many weak disjunctive parts
-   must not rise above its strongest by more than a stated bound.
+4. **Idempotent union.** Max replaces probabilistic union. Weak repeated
+   evidence stays weak and exact zero stays zero at every scope. No floor,
+   accumulation limit, or extra regularizer is required. The existing
+   definition-sparsity penalty applies to feature and concept weights.
 
-5. **The reverse through a rung is the transpose, many-to-one, and that is
-   right.** The substrate's contract is already "no LDU inverse: the
-   reverse is the transpose", and in the fold charts the transpose divides
-   a whole's log-presence among its parts by weight. It is not bijective —
-   the rung has fewer outputs than inputs — and it need not be (Alec):
-   parts imply a whole, and a whole implies its parts with less certainty.
-   The two stages make the asymmetry exact: a conjunction is implied only
-   when all its parts are present, and when it is present each part is
-   fully implied; a union is implied by any one part, and when it is present
-   each part is only partly implied. Run backwards with each row's exponents
-   normalised by their sum, a present whole gives each disjunctive part
-   `1 − (1 − y)^(1/n)` under equal weights — the presence that, shared
-   equally, would produce `y` — the balanced split of the grammar's
-   generate. This is the union / conjunction distinction of the
-   accessible-mind spec, read backwards.
+5. **Descent is attribution.** With an observed field, intersect a demand
+   with its cases' evidence to select the supported cases. Without a field,
+   choose a case by the existing weighted chooser. Descend through sigma,
+   then attribute order-0 requirements through their native memberships.
+   There is no sigma inverse or balanced probabilistic split. Attention and
+   expectation use this concept-to-percept route.
 
 6. **A pool of unminted concepts, learning all the time, with a gate on
    participation — in place of minting by significance** (Alec, 2026-09-22:
@@ -1850,16 +1796,6 @@ one property; the earlier OR/AND formula remains a composition check.
    as concepts… almost like unassigned vectors in a VQ pool"). Concrete
    form, settled by the September 22 handoff:
 
-   - **What exists.** Attention promotion already keeps a pool of
-     uncommitted candidates on the host: each entry has EWMA member
-     weights, a support count and a last-seen time; an incoming co-active
-     set is matched to the nearest entry by cosine or opens a new one; the
-     pool is capped and the weakest entry by (support, last seen) is
-     evicted; an entry is minted as a row when its learn score crosses a
-     threshold (`promotion_observe`, `_promotion_match_entry`,
-     `_promotion_evict`, `_promotion_learn_score`). That is the VQ pool Alec
-     describes, except that it lives in Python dictionaries, computes
-     nothing, and mints by a threshold.
    - **The pool becomes rows.** Each order keeps `P` provisional concepts
      in the store beside its minted ones (`P` a `model.xml` element). A
      provisional concept computes forward like any concept, but the next
@@ -1944,12 +1880,10 @@ one property; the earlier OR/AND formula remains a composition check.
    - **Cost.** `P` rows per order in the store, dense within the pool's
      edges at first and pruned to the strong edges at minting; the host
      dictionaries go. The forward cost is that of `P` more rows per rung.
-   - **The XOR gate, amended September 23.** The zero-initialized,
-     unseeded learning gates used four and eight conjunction concepts and
-     were recorded as strict expected failures. The declared-part truth
-     table checks composition only. Item 11a introduced the native learning
-     path; item 11b replaces its projection read and asserts the both corner
-     of one property from primitive input.
+   - **The XOR gate.** Four or eight provisional conjunctions observe
+     located primitive-input cases, without seeded selection. A sigma row
+     learns which symbolized cases supply XOR. Its positive pole must match
+     the truth table; a corner read cannot satisfy the gate.
    - **The switch, restated.** `<conceptualPi>` (default off) is whether the
      pyramid discovers wholes from co-presence as well as kinds from
      substitution: off, it is a taxonomy of kinds and every discovered
@@ -1984,7 +1918,7 @@ inside that extent retained.
 **The property basis.** A WholeSpace property is a learned membership over
 the complete set of 256 byte primitives. Its coefficients are bounded in
 `[0, 1]`. For primitive presences `x_b` and memberships `w_rb`, its read is
-the union `q_r = 1 − ∏_b (1 − w_rb x_b)`. On a single observed byte this
+the union `q_r = max_b (w_rb x_b)`. On a single observed byte this
 reduces to reading that primitive's learned coefficient. The implementation
 may gather that coefficient without constructing a dense one-hot tensor;
 there is no fixed byte-tag lookup supplying the answer beside the learned
@@ -2006,7 +1940,7 @@ forward path. Old checkpoint tags are intake evidence for migration only.
 properties to narrow a region. Runs with a constant property signature
 retain the existing segmentation contract; boundary and singleton policies
 continue to be learned separately. PartSpace conjoins the required parts
-of a whole, each at its own position. These are bounded union/product
+of a whole, each at its own position. These are bounded max/min
 operations, not the normalized means proposed in item 10. Changing the
 learned membership folds to those means still requires item 10's separate
 measurement. The reverse of a property read distributes support through
@@ -2016,42 +1950,30 @@ ordered byte witness, as PartSpace already does.
 
 #### Item 11b: membership read and extent truth corners (September 23)
 
-**Alec's formulation.** An order-0 concept is present at a location if the
-product of the towers' feature memberships with its own signed weights says
-so: a weight matrix over memberships with a saturating nonlinearity, the
-existing pi fold with signed exponents. Precision exists only for location
-(`.where`), never at the conceptual level. In location, parts ⊆ concept ⊆
-wholes; in presence, the bounds invert: a present whole entails its part,
-and a present concept entails every required part. This is the
-extension/intension duality described in
-[Where Is Context](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22).
+**Alec's formulation, with the 11c evidence correction.** A concept's
+own signed weights read the towers' feature memberships at occurrences in
+one attentive field. Required evidence uses min independently on each pole,
+ignoring zero contributions; alternatives and readout use max. Precision
+exists only for location (`.where`), never at the conceptual level. In
+location, parts ⊆ concept ⊆ wholes; in presence the entailment runs back
+to the required parts. See [Where Is Context](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22).
 
-**The membership read.** The definition addresses native PartSpace percept
-rows and WholeSpace property rows, whose addresses remain independent.
-Each signed feature weight is stored as a nonnegative exponent on either
-the feature's membership or its complement. The September 24 review
-correction makes the definition sigma over pi at order 0 too: each ordinary
-row supplies a conjunction of percepts, and sigma connections select
-alternative conjunctions. For memberships `m_j` and observed complements
-`m̄_j`, the required computation is:
+**The membership read.** PartSpace and WholeSpace have independent native
+addresses. A present feature contributes its membership raised to the
+weight's magnitude, on the positive pole for a positive weight and the
+negative pole for a negative weight. Each pole reduces its nonzero required
+contributions by min, and returns zero if empty. No numeric complement of an
+absent feature supplies evidence. Alternative definitions use max on each
+pole; there is no dual fold at the seam.
 
-    p⁺_alt(occurrence) = ∏_j m_j(occurrence)^|w_j|
-    p⁻_alt(occurrence) = ∏_j m̄_j(occurrence)^|w_j|
-    c⁺(occurrence) = 1 − ∏_alt (1 − p⁺_alt(occurrence))
-    c⁻(occurrence) = ∏_alt p⁻_alt(occurrence)
-
-A negative weight exchanges `m_j` and `m̄_j`. Empty and all-zero definitions
-assert neither symbol. **Pervasion is necessary for a whole, not a part**
-(Alec, September 24). PartSpace supplies a located part inside the subject's
-extent; containment is evaluated over that extent and shared by its
-positions. Other positions in the subject do not deny a part already
-present there. An absent part supplies its complement only when the
-subject extent is completely observed. WholeSpace supplies a covering property:
-that property must hold throughout the run, or its complement must. Reading
-the complement throughout a run is not the complement of the run's product.
-Missing observations supply neither pole. There is no dual fold at this seam.
-Negation exists only for concepts, not percepts (or symbols): the concept's
-signed definition chooses the complement of a perceptual membership.
+**Pervasion is necessary for a whole, not a part.** PartSpace containment
+is a lookup over the ordered canonical part ids inside the subject extent,
+shared by its positions. WholeSpace first reads its allowed primitive set
+at each observed position, then takes ordinary min across all positions in
+the run. An observed zero rules out pervasion; missing support asserts
+nothing. The pervasion calculation and the conceptual evidence reducer
+have different domains. Negation exists only for concepts, not percepts
+(or symbols).
 
 For a word such as "love", the PS literal is the ordered group of existing
 part ids, with repetition and adjacency retained. A first witness creates
@@ -2065,7 +1987,7 @@ does not aggregate further in that turn: formation stops aggregation.
 The WholeSpace literal is the word-like property pervading the span. A word
 usually has one such part and whole; a concept can have several necessary
 percepts in each of several sufficient alternatives. Witnessing writes
-those conjuncts and alternatives positively. Graded support from incomplete
+those weights on the concept pole co-active with each present percept. Graded support from incomplete
 letter composition belongs to item 10's membership-fold evaluation.
 The meronomic refinement and pruning pass treats each alternative's own
 conjunction separately; accumulated references across different witnesses
@@ -2096,10 +2018,11 @@ regions are empty. Each subject retains its own position evidence: the
 extent's part containment meets each position's property pervasion, then
 the definition reads sigma over its percept conjunctions. The separate
 union at readout ranges over occurrences wholly inside
-the subject's extent, separately for each symbol. This is where both is
-born. Retained position pairs and extent boundaries travel through the
-conceptual field, symbol readout and checkpoints. Composition above order
-0 keeps its existing dual folds and operates within each subject extent.
+the subject's extent, separately for each symbol. Both can arise across these occurrences or from conflicting required
+evidence within one occurrence. Retained pairs and brackets belong to the
+shared field; no concept owns a `.where`. They travel beside the field,
+symbol readout and checkpoints. Above order 0, sigma reads the preceding
+order's symbols, within each subject extent.
 
 **Codes and learning.** `PerceptRead`, its two learned coordinate maps, the
 projection onto atoms, `conceptEvidenceFloor`, its calibration harness and
@@ -2114,41 +2037,45 @@ It does not teach the membership definition through the stored code.
 
 An observed positive definition can offer zero-magnitude candidates from
 its lower-order context, including the opposite source pole. Gradients can
-make a candidate nonzero; co-presence and Hebbian reuse do not write a
-previously unwritten negative. Candidate preparation occurs at the sentence
+make a candidate nonzero. A present feature witnessed with the negative
+symbol can write a negative weight directly. Candidate preparation occurs at the sentence
 boundary beside `promotion_observe`. `getParameters` only reads parameters.
 Sparse growth preserves optimizer ownership and frozen-row gradient barriers.
 Participation remains an EWMA of use, never a gradient parameter.
 
-**The primitive-input XOR gate.** For P = "is a one" over a two-position
-extent, `11` supplies `(1,0)`, `00` supplies `(0,1)`, and `01`/`10` supply
-`(1,1)`. Thus OR is P⁺, AND is the true-only corner P⁺(1−P⁻), and XOR is
-the both corner P⁺P⁻. The learned conjunction reads the two symbols of this
-one constituent. Its ordinary pyramid counterevidence remains governed by
-the dual fold; the retained pair is not replaced by a classical Boolean
-complement. PartSpace's ordered spans retain the difference between `01`
-and `10`. The `(A ∨ B) ∧ ¬(A ∧ B)` formula remains a composition check.
+**The primitive-input XOR gate.** P = "is a one" reads `(1,0)` on
+`11`, `(0,1)` on `00`, and `(1,1)` on `01`/`10`. Those are diagnostic
+corners. The learned XOR row's **positive pole** is the asserted output.
+The retained position pairs let order-0 conjunctions match the two pure
+mixed cases: P⁺ on the left with P⁻ on the right, and the converse.
+All requested located witnesses must occur inside the subject; a missing
+witness is no match, and invents no counterevidence. Ordinary per-pole min
+then reduces their support. Symbolizing those field cases lets an order-1
+sigma row learn their union. Every pi edge remains at order 0.
 
-The gate starts at primitive byte input and tests four conjunction hypotheses
-at pool sizes 4 and 8, three unseeded runs each. The initial witness supplies
-only the positive property; the opposite-pole candidate starts at zero.
-Neither a conceptual activation table nor seed selection can satisfy this
-gate. Primitive memberships and feature definitions receive supervision;
-this does not assert unsupervised discovery. Unrelated-content controls must
-be exactly zero at occurrence, extent and symbol scope: no floor or
-accumulation ceiling can substitute for missing memberships.
+The gate trains from primitive byte input, with four and eight provisional
+conjunctions and three unseeded runs each. All four located cases are offered
+without selecting for XOR. The output alternatives start at zero; the row
+must improve from its initial error and learn the two mixed cases. Tests
+inspect the located pi definitions, prohibit pi in the symbolic loop, and
+require unrelated content to read exactly zero at position, extent and
+symbol scope. `(A ∨ B) ∧ ¬(A ∧ B)` is a composition check in the field,
+not the training target. No selected seed, floor or accumulation ceiling is
+allowed; null results are reported as null.
 
 **Normalization lifetime, accepted.** Post-optimizer maximum normalization
 applies only to assigned provisional disjunctive rows. Discovered and
 seal-written definitions retain their learned exponent scale. This closes
 the 11a normalization residue. The 11a prior memberships and segmentation
-remain unchanged. The [11b receipt](benchmarks/2026-09-23-item11b/README.md)
-records the gate, controls, serial reconstruction against `d4dc385`, and the
-source-matched validation. The [September 24 review correction](benchmarks/2026-09-24-item11b-review/README.md)
+remain unchanged. The [11c receipt](benchmarks/2026-09-24-item11c/README.md)
+records the current learned-row gate, controls, serial reconstruction against
+`d4dc385` without a tolerance gate, and source-matched validation. The
+[11b receipt](benchmarks/2026-09-23-item11b/README.md) preserves the preceding
+membership-read measurements. The [September 24 review correction](benchmarks/2026-09-24-item11b-review/README.md)
 records located parts and alternative percept definitions. Its first-witness
 fusion and permanent order-0 field assignment are superseded by the correction
-above; the landed negative-pole formula, witnessing, location and XOR gate
-remain the 11b contract. The [attended-field correction receipt](benchmarks/2026-09-24-item11b-corrections/README.md)
+above. Item 11c amends the negative-pole formula, witnessing and XOR gate
+as specified here. The [attended-field correction receipt](benchmarks/2026-09-24-item11b-corrections/README.md)
 records recurrent parts, canonical-id containment and per-turn binding.
 The [extent correction receipt](benchmarks/2026-09-24-item11b-extent/README.md)
 records containment at the subject extent, raw spans clipped to observed

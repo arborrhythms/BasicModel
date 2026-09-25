@@ -60,7 +60,7 @@ class PrimitiveProperties(nn.Module):
 
     def from_primitives(self, presences):
         """Union of weighted primitive presences, including diffuse inputs."""
-        return union(presences.unsqueeze(-2) * self.coefficients(), dim=-1)
+        return union(torch.minimum(presences.unsqueeze(-2), self.coefficients()), dim=-1)
 
     def complement(self, byte_ids, observed):
         return (1 - self(byte_ids)) * observed.to(self.members).unsqueeze(-1)
@@ -74,14 +74,11 @@ class PrimitiveProperties(nn.Module):
         weights = self.coefficients()
         if complement:
             weights = 1 - weights
-        base = weights if conjunctive else 1 - weights
-        safe = base + (base.clamp_min(torch.finfo(base.dtype).eps) - base).detach()
-        exponent = counts.to(weights) @ safe.log().t()
-        product = exponent.exp()
-        has_zero = (counts.to(weights) @ (base <= 0).to(weights).t()) > 0
-        exact = torch.where(has_zero, 0., product)
-        product = product + (exact - product).detach()
-        result = product if conjunctive else 1 - product
+        # Counts identify the observed support. Repeating a primitive does
+        # not change its membership or make a long run less of a whole.
+        values = torch.where(counts.to(weights).unsqueeze(-2) > 0, weights,
+                             1. if conjunctive else 0.)
+        result = values.amin(-1) if conjunctive else values.amax(-1)
         return result * (counts.sum(-1, keepdim=True) > 0).to(result)
 
     def reverse(self, evidence):

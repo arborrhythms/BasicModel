@@ -160,10 +160,8 @@
     <l1Lambda>0.0</l1Lambda>
     <discontinuityLambda>0.0</discontinuityLambda>
 
-    <!-- Symbol-partition geometry for subsymbolicOrder > 1.
-         tapered = geometrically narrowing slices (default);
-         uniform = equal-width slices. -->
-    <conceptualWidth>tapered</conceptualWidth>
+    <!-- Passes allowed to retarget perception: all, off, or indices 1..T-1. -->
+    <subsymbolicLoop>all</subsymbolicLoop>
     <maxActivePerLayer>8</maxActivePerLayer>
     <!-- Role-participation category codebook for the role-collapsed grammar.
          Unsettled MetaSymbols accumulate bounded temporary role evidence, then

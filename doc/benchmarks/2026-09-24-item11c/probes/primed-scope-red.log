@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_primed_reading_writes_the_shared_field_scope _______________
+
+    def test_primed_reading_writes_the_shared_field_scope():
+        canonical = SimpleNamespace(_stage0_indices=torch.tensor([[2, 5]]),
+                                    priming_weights=lambda: torch.tensor([1., 1., 1., 1., 1., 6.]))
+        whole = SimpleNamespace(_staged_analysis_spans=torch.tensor([[[0, 5], [6, 11]]]),
+                                _priming_target=lambda: canonical)
+        owner = SimpleNamespace()
+        model = SimpleNamespace(wholeSpaces=[whole], conceptualSpace=owner,
+                                _staged_concepts_in=torch.zeros(1, 1, 16))
+        BasicModel._primed_reading_step(model)
+>       torch.testing.assert_close(owner._passback_scope_where,
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   torch.tensor([[6., 11.]]) / 16)
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_passback_scope_where'
+
+test/test_item11c_review.py:130: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_item11c_review.py::test_primed_reading_writes_the_shared_field_scope
+1 failed in 2.05s

@@ -117,147 +117,44 @@ survive the seal. Dharmakīrti's exclusion of the contradicted cognition
 from valid cognition is untouched by this: a heterogeneous whole is
 perceived, not inferred against itself.
 
-Consequences (decided):
+Consequences (11c, Alec, September 24):
 
-- **Two symbols per concept.** Every concept has a positive symbol `c⁺`
-  (the concept present) and a negative symbol `c⁻` (its negation present),
-  both presences in `[0, 1]`, sharing one concept row: the symbol index is
-  `i ↔ (i⁺, i⁻)` and the concept's distributed code is stored once. The
-  four corners read directly from the pair — `t = c⁺(1 − c⁻)`,
-  `f = c⁻(1 − c⁺)`, `both = c⁺c⁻`, `neither = (1 − c⁺)(1 − c⁻)` — so
-  luminosity (catuṣkoṭi coverage) is measurable per symbol. **What is
-  stored and carried is the evidence pair `(c⁺, c⁻)`, never the derived
-  corners**: `t` and `f` send both `(1, 1)` and neither `(0, 0)` to
-  `(0, 0)` and lose exactly the distinction being added (Codex,
-  2026-09-23). Negation is a
-  presence, so the concept pyramid is monotone over positive presences with
-  non-negative exponents, and a negated part is an edge to `c⁻`
-  ([accessible mind §2.2](2026-09-20-accessible-mind-subsystems.md#22-parallel-conceptual-knowing-zeroth-order);
-  [Architecture, item 11](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
-- **The channels measure presence of supporting evidence among the
-  parts, not the proportion of the whole.** The ball is both black and
-  white whatever the share of each; how much is the meronomy's question
-  (`.where` extents), not the symbol's. So the snap reads each channel by
-  an **evidence fold over slots** of the rectified projection onto the
-  atom (`relu p_n`) and onto its negation (`relu −p_n`): the **union over
-  admitted slots**, `1 − ∏(1 − e_n)`, where a slot is admitted to a
-  channel only above a noise floor `τ`, `e_n = relu(|p_n| − τ)/(1 − τ)`
-  (implemented at `e917d9c`; **confirmed by Alec, 2026-09-23**, with the
-  reservation that a calibrated floor is archaic: the admission should be
-  a regularized weighting over the input space. Note that `relu(p − τ)` is
-  the soft-thresholding operator, the proximal map of an L1 penalty of
-  weight `τ` on the admitted evidence, so the floor already *is* an
-  L1-regularized weighting; what is archaic is that its strength is
-  measured offline. **Decided (Alec, 2026-09-23): keep the calibrated
-  floor** — a rank-based or trained admission was judged more machinery
-  than the objection warrants; `conceptEvidenceFloor` stays a parameter,
-  recalibrated once in the corrected units below. *Superseded by todo item
-  11b (decided, Alec 2026-09-23): order-0 concepts read the towers'
-  feature memberships with their own signed weights. As corrected by Alec
-  on September 24, parts are located within the occurrence and whole
-  properties pervade it; the concept unions alternative percept
-  conjunctions. Unrelated features read zero and no floor exists; the
-  union across occurrences inside the subject is the readout, where both is
-  born, and XOR is the both corner of one property.*) Every rectified fold is
-  biased upward by noise on both channels — noise has a positive and a
-  negative part, and rectification hands one to each — so admission comes
-  first, as the taper does for the pyramid (Architecture, settled point 4);
-  the union is then the existential "some part carries this", the same
-  sigma the pyramid uses, so order 0 and order 1 read alike. Max is
-  withdrawn (Alec): its extreme-value bias grows with the slot count, so
-  the channel with more slots wins from noise, and one spurious slot in the
-  other channel manufactures both. The slot-mean is ruled out: two slots at
-  +1 and −1 average to `(.5, .5)`, a quarter in every corner, which is not
-  both (Codex). `τ` is a `model.xml` parameter set from a measurement, the
-  distribution of projection magnitudes for unrelated content in a trained
-  model (item 10, finding 6), not guessed. The tests state the meaning:
-  slots `+1, −1` → `(1, 1)`, both = 1; all slots inactive → `(0, 0)`,
-  neither = 1; eight slots at .1 under `τ = .2` → `(0, 0)`.
-- **The read is in the field's own chart** (decided, Alec 2026-09-23,
-  from the landing review). A projection in hypercube-diagonal units
-  divides by `√D`, which is right for cube-valued slots of norm up to `√D`
-  and wrong for the unit-ball codes the settled field carries (measured
-  slot norms .16–.97 at `D = 1024`): the presence ceiling for a perfectly
-  aligned slot is then `1/√D = .03`, the union of eight slots at most .22,
-  and the use floor .5 and discovery threshold .8 are unreachable by
-  construction. The read is cosine times slot norm for unit-ball codes,
-  with the `√D` divisor only where slots are cube-valued; the floor `τ`
-  is recalibrated in those units.
-- **An occurrence is an extent, not a tile** (decided, Alec 2026-09-23:
-  "let's see how it pans out in practice"). The field's occurrence axis
-  groups the positions inside one subject's extent — a word's or a
-  whole's `.where` from the towers — with the pair kept per position
-  inside it. Parts of a whole are at different positions of one extent at
-  one time; at a single tile there is one code, so "co-present at a tile"
-  is alternative readings of one code, not parts. Negation is scoped to
-  the extent (pervasion over its parts).
-- **Witnessing writes positive parts only** (Alec, 2026-09-23: "parts are
-  percepts; absence of a percept is possible (0), but the opposite of a
-  percept is not"). Co-presence discovery assigns the concepts present in
-  an extent as parts; it never writes a negated part from counterevidence,
-  since at the percept level there is nothing to witness but presence and
-  absence. A negated part enters a definition only by learning or by
-  testimony (the seal). The zeroth-order `c⁻` remains a computed reading —
-  the definition contradicted by what is present — never a witnessable
-  part.
-- **Concepts that require both poles of one constituent exist, and the
-  pair represents them.** A whole never needs `A` and `¬A` at one
-  position, and a kind over both is a tautology; but across the positions
-  of an extent a definition may require a constituent to be present and
-  absent — striped, spotted, pied, "black and white" — and XOR requires it
-  across its conjuncts. A conjunction addressing both poles of `A` computes
-  `c⁺_A · c⁻_A`, the both corner itself; a union over both poles computes
-  "A has been observed at all", the complement of neither. So the four
-  corners of a constituent are all definable as parts, and heterogeneity
-  can be a defining feature (the soccer ball's black and white; Alec's
-  question of 2026-09-23).
-- **A composed concept's `c⁻` is the De Morgan dual fold, never
-  `1 − c⁺`** (which would erase both and neither). A literal over part `A`
-  is the pair `(c⁺_A, c⁻_A)`, swapped for a negated part. A kind, a union
-  over `W_σ`, has `c⁺ = union of the literals' positive channels` and
-  `c⁻ = conjunction of their negative channels` (`¬(A ∨ B) = ¬A ∧ ¬B`); a
-  whole, a conjunction over `W_π`, has `c⁺ = conjunction` and `c⁻ = union`
-  of the respective channels. The same non-negative exponents serve both
-  channels; only the chart is swapped (`log u` against `log(1 − u)`).
-  Checks: all parts neither → `(0, 0)`; all parts both → `(1, 1)`; in the
-  kind `A ∨ B` with `A` both and `B` absent, `(1, 1)`: the kind is present
-  through `A` and its negation through `¬A ∧ ¬B`. The reverse is the
-  transpose of each fold on its own channel; the taper ranks a row by its
-  evidence `max(c⁺, c⁻)`, so a both-row ranks high; the symbolic readout
-  carries the pair. Cost: two further scatter passes per rung.
-- **All percepts are positive; evidence against comes through the
-  definition** (Alec, 2026-09-23). A zeroth-order concept's atom has
-  positive and negative components over the percept dimensions, and a
-  white code projects negatively onto black's atom, so white at a position
-  is evidence against black there. No negative percept exists. For the
-  ball this reads black present and non-black present, which is the honest
-  report of the presentation, and white counts as non-black without harm.
-- **Evidence against is scoped to the subject's extent.** Read over the
-  whole field, every concept's negative channel is fed by everything else
-  present — the mat is non-cat — so at order 0, where the subject is the
-  presentation itself, "both" is true of every concept that shares the
-  scene and discriminates nothing. Wherever a subject exists, the negative
-  channel is read only within its extent. In the terms of Tibetan debate
-  this is pervasion (*khyab pa*, *vyāpti*): the cat does not pervade "cat
-  and mat" (Alec, 2026-09-23). The corners are the four cases of
-  pervasion over a subject's parts — the predicate pervades (true), its
-  negation pervades (false), neither pervades because the parts differ
-  (both), nothing is known of the parts (neither). A predicate over a whole
-  reads its parts; a conjunction with a negated part in the pyramid reads the
-  negated part at the positions of its positive parts, which is the
-  positional grounding of item 11a. So the pair is kept **per position**
-  through the zeroth-order read and the pyramid's rungs, and the union
-  over positions is taken last, for the symbol's own activation. At the
-  production tile count this is eight evaluations of a store of about
-  fifteen rows, not a cost.
-- **A row stores the pair `(c⁺, c⁻)`.** The stored scalar `t − f` (§3.4,
-  §9 item 2 as first decided) cannot hold both; the corners are derived at
-  read time. Trust stays on the row; the edge still carries none.
-- **"Both" is asserted by composition, never by a sentence alone.** "The
-  ball is black and white" seals as an idea whose object has parts under
-  two predicates; a single assertion "the ball is black" from a source
-  raises `c⁺` with that source's trust and leaves `c⁻` to the parts that
-  differ or to another source.
+- Every concept keeps `(c⁺,c⁻) ∈ [0,1]²`, two positive symbols sharing one
+  persistent identity and one distributed code. The min-based corners are
+  `t=min(c⁺,1-c⁻)`, `f=min(c⁻,1-c⁺)`, `both=min(c⁺,c⁻)`, and
+  `neither=min(1-c⁺,1-c⁻)`. Store the pair, never just the corners or
+  signed collapse, which lose the distinction between both and neither.
+- Native memberships supply the order-0 read. A present percept weighted
+  positively contributes support; weighted negatively, counterevidence.
+  Absence supplies neither. Required evidence uses min over nonzero
+  contributions independently on each pole; alternatives and readout use
+  max. A-true and B-false therefore give both for A and B. Negating B swaps
+  its poles and makes A and not B true-only. Zero is uncertainty on that
+  pole, never a veto. There is no projection read, admission floor,
+  probabilistic accumulation, or De Morgan dual reducer.
+- Pervasion applies to WholeSpace properties over observed positions.
+  PartSpace reads ordered containment over canonical part ids within the
+  subject extent. Runs are positions, words are extents, and max unions
+  the retained occurrence evidence inside each extent. Precision belongs
+  only to location. Concepts share the attentive field; none has its own
+  `.where`.
+- Witness each pole separately: a present percept co-active with the
+  positive symbol writes a positive weight; with the negative symbol it
+  writes a negative weight. Never write from an absent percept.
+- Both can arise across occurrences or from conflicting required evidence
+  within one occurrence. It prompts division at order 0; neither prompts
+  attention. The action policy for those prompts is deferred in
+  [FutureWork](../FutureWork.md#four-corners-as-prompts).
+- Pi intersects located order-0 field readings. Sigma unions those cases
+  or the previous order's symbols; symbolization raises order. Symbols
+  cannot be split. The [Architecture argument](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
+  explains why union commutes with pooling and intersection does not.
+  XOR must be a learned row's positive pole over located mixed cases;
+  reading P's pooled both corner is only a diagnosis.
+- The taper keeps both poles together. Thought, checkpoints, priming and
+  symbol addressing use persistent concept ids, not temporary field rows.
+  Unrelated content must remain exactly zero at all scopes, with no limit
+  on accumulation to calibrate. Trust remains on accepted LTM rows.
 
 ## 2. Collapse versus reference (decided)
 
@@ -467,6 +364,12 @@ object never traverses the taxonomy. The word-keyed binding table
 the taxonomy is for generalisation.
 
 ### 3.5 Object permanence: a word may translate to an earlier occurrence (decided, 2026-09-21)
+
+Word forms may address concepts at several orders. The selected grammar
+resolves particulars, names and pronouns at order 1, kinds at order 2, and
+higher kinds at their symbolization depth. The canonical indexing and
+resolution rule is in [Lexicon](../Lexicon.md#word-forms-and-concept-orders).
+
 
 Translating a word to its object (§3.4) carries a **decision**: the object is
 the type, as `deref(word)` gives it today, or it is a **token** — an earlier

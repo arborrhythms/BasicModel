@@ -285,3 +285,13 @@ belong to the Teacher specification it cites. Moved from the todo on
 - Treat DOI and source date as optional aliases/provenance. FineWeb has neither;
   retain shard SHA-256 and corpus release metadata instead of fabricating them.
 
+
+## Four corners as prompts
+
+Item 11c records the next action-policy work: neither prompts attention;
+both prompts division of the subject into parts on which the predicate has
+a pure reading. Division is pi in the order-0 field. A higher-order symbol
+cannot split; descend to its cases and their field first. Contiguous support
+calls for finer granularity, while a discontiguous union can be symbolized at
+a higher order. The prompts are decided; their autonomous runtime policy is
+not part of 11c. See [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).

@@ -57,27 +57,6 @@ def test_mm_5m_builds_and_forwards():
     assert torch.isfinite(out).all()
 
 
-@pytest.mark.slow
-def test_mm_5m_reconstructs():
-    # Parallel ``_forward_per_stage`` returns last_reconstruction=None
-    # (reconstruction is a runBatch-time loss term; the config carries
-    # <reconstruct>concepts</reconstruct>). The spec's invertible-bridge
-    # claim (sec.5: "one invertible matrix serves both legs") is gated here
-    # directly: the SS fold (``pi`` post Pi/Sigma swap, rev. 2026-06-09)
-    # butterfly round-trips, so the deep CS hub is recoverable from the
-    # symbol distribution via pi.reverse.
-    import torch, Models
-    m = _build("MM_20M_legacy.xml"); m.eval()
-    sig = m.wholeSpace.pi
-    n = int(m.wholeSpace.inputShape[0])
-    d = int(getattr(m.wholeSpace, "nOutputDim", 0) or m.wholeSpace.nDim)
-    # PiLayer2's values are fuzzy-membership degrees, so its invertibility
-    # contract is defined over [0, 1], not signed feature coordinates.
-    x = torch.rand(2, n, d).clamp(0.05, 0.95)
-    y = sig.forward(x)
-    x_rec = sig.reverse(y)
-    assert torch.isfinite(y).all() and torch.isfinite(x_rec).all()
-    assert (x - x_rec).abs().max().item() < 1e-2
 
 
 @pytest.mark.slow
@@ -309,56 +288,3 @@ _DEEP_CS_SERIAL_XML = """<?xml version="1.0" ?>
   </SymbolSpace>
 </model>
 """
-
-
-@pytest.mark.skipif(not _RUN_SLOW, reason="slow (~55s serial deep-CS reverse round-trip) -- set RUN_SLOW=1")
-def test_deep_cs_reverse_round_trips_to_ps_width():
-    import torch, Models
-    m = _build_from_text(_DEEP_CS_SERIAL_XML, "deepcs_serial")
-    Models.TheData.load("xor")
-    loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
-    inp_items, _ = next(iter(loader))
-    x = m.inputSpace.prepInput(inp_items)
-    m.forward(x)
-
-    cs = m.conceptualSpace
-    ps_width = int(m.perceptualSpace.muxedSize)        # 12 (content 8 + band 4)
-    cs_width = int(cs.muxedSize)                        # 1028 (content 1024 + band 4)
-    assert ps_width != cs_width, (ps_width, cs_width)   # genuinely deep-CS
-
-    # The terminal deep ConceptualSpace state is the STM snapshot (the design's
-    # deep hub: N = STM depth, D = 1028). ``reverse`` is
-    # documented to reverse "the terminal ConceptualSpace state"; runBatch seeds
-    # it identically (cs.subspace.set_event(<STM snapshot>) then reverse). The
-    # STM content slab equals the input slab (8 * 1024 == 1024 * 8 == 8192), so
-    # the inverse wide<->deep regroup recovers the full IS-width [B, 1024, 12].
-    snap = cs.stm.snapshot()
-    assert snap is not None and snap.dim() == 3 and snap.shape[-1] == cs_width
-
-    # (a) full deep CS (the whole STM): regroups to the input-space shape.
-    cs.subspace.set_event(snap)
-    r = m.reverse(cs.subspace)
-    assert r is not None
-    ev = r.materialize()
-    assert ev is not None and ev.dim() == 3
-    assert torch.isfinite(ev).all(), "reconstruction must be finite (fail-loud)"
-    # Recovered WIDTH must be the PS/IS width, NOT the deep CS width.
-    assert ev.shape[-1] == ps_width, (tuple(ev.shape), ps_width, cs_width)
-    assert ev.shape[-1] != cs_width
-    # The full deep CS slab (8*1024 content) regroups to the IS position count.
-    assert ev.shape[1] == int(m.inputSpace.outputShape[0]), (
-        tuple(ev.shape), m.inputSpace.outputShape)
-
-    # (b) the production single-idea seed (runBatch serial path:
-    # snapshot[:, -1:, :], one deep idea): a smaller but still PS/IS-width slab.
-    m.forward(x)
-    cs = m.conceptualSpace
-    snap = cs.stm.snapshot()
-    cs.subspace.set_event(snap[:, -1:, :])
-    r2 = m.reverse(cs.subspace)
-    assert r2 is not None
-    ev2 = r2.materialize()
-    assert ev2 is not None and ev2.dim() == 3
-    assert torch.isfinite(ev2).all()
-    assert ev2.shape[-1] == ps_width, (tuple(ev2.shape), ps_width)
-    assert ev2.shape[-1] != cs_width

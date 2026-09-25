@@ -1,0 +1,266 @@
+.......F                                                                 [100%]
+=================================== FAILURES ===================================
+___________ test_ordinary_unary_output_keeps_the_shared_host_inverse ___________
+test/test_generation_catalog.py:223: in test_ordinary_unary_output_keeps_the_shared_host_inverse
+    assert count
+E   assert 0
+=============================== warnings summary ===============================
+test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_generation_catalog.py::test_ordinary_unary_output_keeps_the_shared_host_inverse
+1 failed, 7 passed, 1 warning in 4.68s
+
+.FFF....                                                                 [100%]
+=================================== FAILURES ===================================
+______________________ TestLevelShapes.test_eight_levels _______________________
+test/test_hierarchical.py:61: in test_eight_levels
+    self.assertEqual(shapes[0], (512, 4))
+E   AssertionError: Tuples differ: (1024, 4) != (512, 4)
+E   
+E   First differing element 0:
+E   1024
+E   512
+E   
+E   - (1024, 4)
+E   ?   - -
+E   
+E   + (512, 4)
+E   ?  +
+______________________ TestLevelShapes.test_single_order _______________________
+test/test_hierarchical.py:54: in test_single_order
+    self.assertEqual(shapes[0], (32, 8))
+E   AssertionError: Tuples differ: (64, 8) != (32, 8)
+E   
+E   First differing element 0:
+E   64
+E   32
+E   
+E   - (64, 8)
+E   + (32, 8)
+_______________________ TestLevelShapes.test_two_levels ________________________
+test/test_hierarchical.py:73: in test_two_levels
+    self.assertEqual(shapes, [(4, 4), (2, 4)])
+E   AssertionError: Lists differ: [(8, 4), (8, 4)] != [(4, 4), (2, 4)]
+E   
+E   First differing element 0:
+E   (8, 4)
+E   (4, 4)
+E   
+E   - [(8, 4), (8, 4)]
+E   ?   ^       ^
+E   
+E   + [(4, 4), (2, 4)]
+E   ?   ^       ^
+=============================== warnings summary ===============================
+test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_hierarchical.py::TestLevelShapes::test_eight_levels - Assert...
+FAILED test/test_hierarchical.py::TestLevelShapes::test_single_order - Assert...
+FAILED test/test_hierarchical.py::TestLevelShapes::test_two_levels - Assertio...
+3 failed, 5 passed, 1 warning in 4.01s
+
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+___________ TestPerLevelLayers.test_symbolic_spaces_own_pi_not_sigma ___________
+test/test_hierarchical.py:194: in test_symbolic_spaces_own_pi_not_sigma
+    self.assertIsInstance(
+E   AssertionError: None is not an instance of (<class 'Layers.PiLayer'>, <class 'Layers.MeronymicFoldAdapter'>) : WholeSpace must own a pi.
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 96-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_hierarchical.py::TestPerLevelLayers::test_symbolic_spaces_own_pi_not_sigma
+1 failed, 2 passed, 1 warning in 4.23s
+
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+___________________ test_depth_d_vine_completes_structurally ___________________
+test/test_iterated_symbolic_wave.py:114: in test_depth_d_vine_completes_structurally
+    words, head = _mint_vine(cs, 4)
+                  ^^^^^^^^^^^^^^^^^
+test/test_iterated_symbolic_wave.py:82: in _mint_vine
+    head = cs.create_joint_concept(words, key=tuple(f"w{i}" for i in range(n)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20015: in create_joint_concept
+    J = self.conceptualize_chain([int(a) for a in word_syms],
+bin/Spaces.py:17886: in conceptualize_chain
+    self._populate_concept_weights(link)
+bin/Spaces.py:19078: in _populate_concept_weights
+    self.add_concept_edge(c_row, s_row, weight=1.)  # asserted membership
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:18077: in add_concept_edge
+    raise ValueError('sigma edges require symbols of the preceding order')
+E   ValueError: sigma edges require symbols of the preceding order
+________________________ test_no_self_edge_via_populate ________________________
+test/test_iterated_symbolic_wave.py:144: in test_no_self_edge_via_populate
+    with pytest.raises(ValueError, match="self-edge"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'self-edge'
+E     Actual message: 'sigma edges require symbols of the preceding order'
+=============================== warnings summary ===============================
+test/test_iterated_symbolic_wave.py::test_depth_d_vine_completes_structurally
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_iterated_symbolic_wave.py::test_depth_d_vine_completes_structurally
+FAILED test/test_iterated_symbolic_wave.py::test_no_self_edge_via_populate - ...
+2 failed, 1 passed, 2 warnings in 2.98s
+
+FF....                                                                   [100%]
+=================================== FAILURES ===================================
+__________ test_order0_unions_alternative_percept_conjunctions[False] __________
+test/test_order0_percept_definitions.py:30: in test_order0_unions_alternative_percept_conjunctions
+    torch.testing.assert_close(result[0, 0, 0], expected)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 2 (100.0%)
+E   Greatest absolute difference: 0.13338232040405273 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (1,) (up to 1.3e-06 allowed)
+__________ test_order0_unions_alternative_percept_conjunctions[True] ___________
+test/test_order0_percept_definitions.py:30: in test_order0_unions_alternative_percept_conjunctions
+    torch.testing.assert_close(result[0, 0, 0], expected)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 2 (100.0%)
+E   Greatest absolute difference: 0.13338232040405273 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (1,) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]
+FAILED test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]
+2 failed, 4 passed, 2 warnings in 2.59s
+
+.....F..                                                                 [100%]
+=================================== FAILURES ===================================
+________ test_recall_returns_the_most_recent_sentence_during_ring_fill _________
+test/test_output_synthesis.py:596: in test_recall_returns_the_most_recent_sentence_during_ring_fill
+    assert not torch.equal(d.answer_symbol[:, 0, :width], seen[0][:, :width])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10ab2d3a0>(tensor([[0.0000, 0.0166, 0.0041, 0.0000, 0.0158, 0.0038, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.00...032, 0.0007, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), tensor([[0.0000, 0.0166, 0.0041, 0.0000, 0.0158, 0.0038, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.00...032, 0.0007, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]))
+E    +    where <built-in method equal of type object at 0x10ab2d3a0> = torch.equal
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.029s)
+=============================== warnings summary ===============================
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7908: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4465/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill
+1 failed, 7 passed, 1 warning in 3.88s
+
+....F.                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True] _
+test/test_sparse_compile_boundary.py:186: in test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook
+    model.enable_compiled_step()
+bin/Models.py:8973: in enable_compiled_step
+    self._enable_fullgraph_perception(_compile)
+bin/Models.py:8356: in _enable_fullgraph_perception
+    ps, ws = self.perceptualSpace, self.wholeSpace
+             ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'perceptualSpace'. Did you mean: 'conceptualSpace'?
+=========================== short test summary info ============================
+FAILED test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True]
+1 failed, 5 passed in 3.25s
+
+..F....s                                                                 [100%]
+=================================== FAILURES ===================================
+________________ test_chain_link_edge_to_rest_link_is_populated ________________
+test/test_sparse_concept_e2e.py:103: in test_chain_link_edge_to_rest_link_is_populated
+    head = cs.create_joint_concept([A1, A2, A3], key=("w1", "w2", "w3"))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20015: in create_joint_concept
+    J = self.conceptualize_chain([int(a) for a in word_syms],
+bin/Spaces.py:17886: in conceptualize_chain
+    self._populate_concept_weights(link)
+bin/Spaces.py:19078: in _populate_concept_weights
+    self.add_concept_edge(c_row, s_row, weight=1.)  # asserted membership
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:18077: in add_concept_edge
+    raise ValueError('sigma edges require symbols of the preceding order')
+E   ValueError: sigma edges require symbols of the preceding order
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sparse_concept_e2e.py::test_meta_is_ordered_pair_over_subsymbols
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18976: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18976: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sparse_concept_e2e.py::test_chain_link_edge_to_rest_link_is_populated
+1 failed, 6 passed, 1 skipped, 4 warnings in 3.04s
+
+sF..sss                                                                  [100%]
+=================================== FAILURES ===================================
+_____________ test_swapping_question_positions_changes_the_answer ______________
+test/test_what_training.py:283: in test_swapping_question_positions_changes_the_answer
+    assert not torch.equal(a, b)
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10ee313a0>(tensor([[[0.]],\n\n        [[0.]]]), tensor([[[0.]],\n\n        [[0.]]]))
+E    +    where <built-in method equal of type object at 0x10ee313a0> = torch.equal
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.016s)
+=============================== warnings summary ===============================
+test/test_what_training.py::test_swapping_question_positions_changes_the_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7908: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4514/cfg0/MM_xor_synth.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7908: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4514/cfg1/MM_xor_synth_discourse.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_what_training.py::test_swapping_question_positions_changes_the_answer
+1 failed, 2 passed, 4 skipped, 2 warnings in 3.65s
+

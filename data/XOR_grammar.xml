@@ -16,7 +16,7 @@
        3-rule Boolean grammar at the symbolic tier. -->
   <architecture>
     <subsymbolicOrder>2</subsymbolicOrder>
-    <!-- conceptualWidth=uniform: every conceptual level keeps the
+    <!-- Native passes preserve width: every conceptual level keeps the
          same nVectors width (4+4+4 at order 2). Wide enough at each
          level to accommodate terminals and their negations
          (X1, NOT(X1), X2, NOT(X2)) as a tree-of-rules. The chart's
@@ -24,7 +24,6 @@
          model.xml) forces the OutputLayer to read the chart's
          compositional commitment instead of recombining per-
          position copies via its own nonlinearity. -->
-    <conceptualWidth>uniform</conceptualWidth>
     <data>
       <dataType>embedding</dataType>
     </data>

@@ -209,6 +209,12 @@ compose rule is either an implicit passthrough or the default unary
 
 ## Grammar
 
+Selected grammar roles resolve lexical references at the requested concept
+order. The form-to-identity index, order assignments and missing/ambiguous
+reference rule are defined in [Lexicon](Lexicon.md#word-forms-and-concept-orders).
+The selected program owns those semantic addresses separately from its
+input reconstruction leaves.
+
 `TheGrammar` is the singleton `Grammar` instance. Rules are loaded from
 XML `<SymbolSpace><language><grammar>` blocks or from a configured grammar
 CFG. A `RuleDef` stores:

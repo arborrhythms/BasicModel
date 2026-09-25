@@ -48,7 +48,16 @@ class AnswerProgram:
     # address, or numerical feature.  Older programs remain explicitly
     # unprovenanced rather than guessing a first form.
     lexical_forms: Any = None
-    _tensor_fields = ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state", "concept_ids")
+    # Grammar-selected identities are semantic addresses. Original ids and
+    # leaves retain the tied reconstruction's presented-word provenance.
+    reference_ids: Any = None
+    reference_orders: Any = None
+    @property
+    def _tensor_fields(self):
+        core = ("rows", "word_rows", "activations", "leaves", "actions",
+                "targets", "end_state", "concept_ids")
+        return core + tuple(name for name in ("reference_ids", "reference_orders")
+                            if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
         ids = self.concept_ids
@@ -59,6 +68,15 @@ class AnswerProgram:
                 or bool(((ids <= 0) & (ids != -1)).any())):
             raise ValueError("program concept IDs must be positive native addresses or -1, aligned to leaves")
         object.__setattr__(self, "concept_ids", ids)
+        # Unresolved programs retain no second identity vector. Structural
+        # edits can then change their leaves without carrying stale aliases.
+        refs, orders = self.reference_ids, self.reference_orders
+        if refs is not None and (not torch.is_tensor(refs) or refs.dtype != torch.long
+                or refs.shape != ids.shape or bool(((refs <= 0) & (refs != -1)).any())):
+            raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
+        if orders is not None and (not torch.is_tensor(orders) or orders.dtype != torch.long
+                or orders.shape != ids.shape or bool((orders < -1).any())):
+            raise ValueError("program reference orders must be nonnegative or -1, aligned to leaves")
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())
@@ -77,11 +95,13 @@ class AnswerProgram:
                     "program lexical forms must be grammar-form strings or None")
         object.__setattr__(self, "lexical_forms", forms)
         for name in self._tensor_fields:
-            object.__setattr__(self, name, getattr(self, name).clone())
+            value = getattr(self, name)
+            object.__setattr__(self, name, None if value is None else value.clone())
 
     def detached(self):
         """A durable recall record, without a previous brick's graph."""
-        values = {name: getattr(self, name).detach().to("cpu")
+        values = {name: (None if getattr(self, name) is None else
+                         getattr(self, name).detach().to("cpu"))
                   for name in self._tensor_fields}
         values["lexical_forms"] = self.lexical_forms
         return type(self)(**values)

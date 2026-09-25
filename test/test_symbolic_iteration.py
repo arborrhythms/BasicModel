@@ -5,9 +5,6 @@ doc/plans/2026-06-08-analysis-synthesis-dual-input.md).
 
 Semantics under test (parallel leg, t>0, <codebook>quantize</codebook>):
 
-  * THE CODEBOOK REPLACES PI: the snap stands in for the Pi transform on
-    the CS leg (selection-by-exclusion replaces computed intersection);
-    the parallel fold AND the S-space_role syntactic dispatch are bypassed.
   * ONE SYMBOL AT A TIME, APOHA: the emission frame carries the selected
     symbol's code in exactly ONE slot; the copart is ZEROS EVERYWHERE
     (anyapoha -- the universal appears through the exclusion of the
@@ -119,33 +116,6 @@ def _craft_event(view, W, slot_codes):
         ev[b, n, :W] = c
     view.set_event(ev)
     return ev
-
-
-@pytest.mark.slow
-def test_csleg_pi_bypassed_under_quantize():
-    # THE CODEBOOK REPLACES PI: under quantize the CS-leg forward must
-    # not apply the pi transform -- the snap IS this iteration's
-    # analysis. (The S-space_role syntactic dispatch is bypassed by the same
-    # predicate; the fold is the directly patchable surface.)
-    m = _build("MM_20M_legacy.xml")
-    ws = m.wholeSpace
-    view = _cs_view(m)
-    fold = getattr(ws, "pi", None)
-    if fold is None:
-        pytest.skip("MM_20M SS carries no parallel fold to bypass")
-    real = fold.forward
-    def _boom(*a, **k):
-        raise AssertionError(
-            "pi fold must be BYPASSED on the quantize CS leg "
-            "(the codebook replaces Pi)")
-    fold.forward = _boom
-    try:
-        with torch.no_grad():
-            out = ws.forward(view)
-    finally:
-        fold.forward = real
-    ev = out.materialize()
-    assert ev is not None and torch.isfinite(ev).all()
 
 
 @pytest.mark.slow

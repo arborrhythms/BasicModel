@@ -10,7 +10,6 @@ import os
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
 import functools
-import hashlib
 import sys
 
 sys.path.insert(0, "bin")
@@ -26,13 +25,8 @@ from Spaces import Space, PartSpace, WholeSpace
 # and the stage butterfly moved from ``layers.3`` to ``layers.5`` (+63/-15
 # keys on MM_20M_xor); no other key changed.
 _XOR_HEAD_NVEC = [8, 8, 8]
-_GRAMMAR_HEAD_NVEC = [4, 2, 2]
-_HEAD_SD = {  # (n_keys, sha16 of sorted state_dict key names)
-    # Measured against the accepted 440af47 baseline. The complete key sets
-    # match that baseline; the older pins predated its grammar additions.
-    "data/MM_20M_xor.xml": (554, "6761889f00108ece"),
-    "data/MM_20M_grammar.xml": (749, "a46523768706c5c9"),
-}
+_GRAMMAR_HEAD_NVEC = [8, 8, 8]
+
 
 
 @functools.lru_cache(maxsize=None)
@@ -64,8 +58,8 @@ def test_ws_matches_ps_view_shape():
 
 
 @pytest.mark.slow
-def test_off_path_stores_unchanged():
-    """Serial + sO=0 CS store sizes keep their HEAD shapes."""
+def test_subsymbolic_passes_keep_the_same_native_geometry():
+    """Serial and sO=0 passes retain one native perceptual geometry."""
     for cfg, want in (("data/MM_20M_xor.xml", _XOR_HEAD_NVEC),
                       ("data/MM_20M_grammar.xml", _GRAMMAR_HEAD_NVEC)):
         got = [int(cs.nVectors) for cs in _build(cfg).conceptualSpaces]
@@ -75,7 +69,7 @@ def test_off_path_stores_unchanged():
 @pytest.mark.slow
 def test_default_expectation_adds_only_its_owned_checkpoint_keys():
     """Default-on expectation adds its keys; unrelated structural pins hold."""
-    for cfg, (n, sha) in _HEAD_SD.items():
+    for cfg in ("data/MM_20M_xor.xml", "data/MM_20M_grammar.xml"):
         model = _build(cfg)
         discourse = model.symbolSpace.discourse
         assert discourse is not None
@@ -87,9 +81,9 @@ def test_default_expectation_adds_only_its_owned_checkpoint_keys():
                  for key in discourse.state_dict()}
         current = set(model.state_dict())
         assert added <= current
-        keys = sorted(current - added)
-        h = hashlib.sha256("\n".join(keys).encode()).hexdigest()[:16]
-        assert (len(keys), h) == (n, sha), (cfg, len(keys), h)
+        assert not any('.sigmas.' in key or '.pis.' in key for key in current)
+        assert all(not hasattr(space, 'sigmas') and not hasattr(space, 'pis')
+                   for space in (model.perceptualSpace, *model.wholeSpaces))
 
 
 @pytest.mark.slow

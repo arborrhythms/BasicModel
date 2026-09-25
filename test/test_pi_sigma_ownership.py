@@ -76,29 +76,6 @@ class TestOwnership(unittest.TestCase):
     attribute. The architectural rule is: only PS / CS may own
     SigmaLayer / PiLayer instances."""
 
-    def test_perceptual_sigma_folds(self):
-        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
-        # PS owns a single ``sigma`` (SigmaLayer) -- the bottom-up
-        # synthesis/union fold. The per-order Ramsified ``pi_input`` /
-        # ``pi_concept`` ModuleLists stay retired.
-        model = _make_plain_model()
-        ps = model.perceptualSpace
-        # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
-        self.assertIsInstance(ps.sigma, (SigmaLayer, MeronymicFoldAdapter))
-        if isinstance(ps.sigma, MeronymicFoldAdapter):
-            self.assertEqual(ps.sigma.kind, 'sigma')
-        self.assertFalse(
-            hasattr(ps, 'pi'),
-            "PartSpace.pi moved to WholeSpace (Pi/Sigma swap); "
-            "PS is sigma-only (synthesis).")
-        # 2026-06-04: ConceptualSpace is a pure bookkeeping carrier now --
-        # the per-stage sigma_in / sigma_cs were retired; the symbolic-loop
-        # sigma lives on WholeSpace (see test_symbolic_owns_sigma).
-        cs = model.conceptualSpaces[0]
-        self.assertFalse(
-            hasattr(cs, 'sigma_in'),
-            "ConceptualSpace.sigma_in is retired; CS is a bookkeeping "
-            "carrier.")
 
     def test_conceptual_no_sigma_percept(self):
         # Post-Stage-1.C: CS no longer owns sigma_percept. The atomic
@@ -110,20 +87,6 @@ class TestOwnership(unittest.TestCase):
             "ConceptualSpace.sigma_percept must be retired by "
             "Stage 1.C.")
 
-    def test_symbolic_owns_pi(self):
-        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
-        # WholeSpace OWNS the pi (the top-down analysis/intersection
-        # operator; the binding target for the S-space_role fold rule -- bound
-        # under BOTH the 'pi' rule name and the legacy 'sigma' alias).
-        model = _make_plain_model()
-        # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
-        fold = getattr(model.wholeSpace, 'pi', None)
-        self.assertIsInstance(
-            fold, (PiLayer, MeronymicFoldAdapter),
-            "WholeSpace must own a pi under the corrected "
-            "analysis/synthesis ownership rule.")
-        if isinstance(fold, MeronymicFoldAdapter):
-            self.assertEqual(fold.kind, 'pi')
 
     def test_symbolic_has_no_sigma(self):
         model = _make_plain_model()
@@ -144,18 +107,6 @@ class TestOwnership(unittest.TestCase):
                          "by Stage 1.C. Stage 10's sigma_in / sigma_cs "
                          "are differently named.")
 
-    def test_perceptual_has_sigma(self):
-        # Pi/Sigma swap (rev. 2026-06-09): PS owns a bare ``sigma``
-        # (single-layer instance, not ModuleList). The legacy
-        # ``pi_input`` / ``pi_concept`` ModuleList interface stays
-        # retired.
-        model = _make_plain_model()
-        self.assertTrue(hasattr(model.perceptualSpace, 'sigma'),
-                        "PartSpace must own a bare ``sigma`` "
-                        "(SigmaLayer) post Pi/Sigma swap.")
-        self.assertFalse(hasattr(model.perceptualSpace, 'pi'),
-                         "Pi/Sigma swap: PartSpace.pi moved to "
-                         "WholeSpace.")
 
     def test_output_has_no_pilayer(self):
         model = _make_plain_model()

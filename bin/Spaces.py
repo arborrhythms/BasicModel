@@ -9249,11 +9249,11 @@ class Space(SpaceCarrierMixin, nn.Module):
             # is the identity for a muxed event ([B,N,event] -> [B,-1,event]); it
             # still normalizes flattened / odd-width inputs to [B, N, nInputDim].
             # A widening PartSpace (nOutputDim != nInputDim) exposes
-            # ``_fold_width`` -- the embedded percept width its fold (sigma,
+            # ``_percept_width`` -- the embedded percept width its fold (sigma,
             # post Pi/Sigma swap) consumes -- because by this point the event
             # is the EMBEDDED percept, not the raw nInputDim byte event (see
             # the percept_dim sizing note in PartSpace.__init__).
-            _w = int(getattr(self, "_fold_width", 0) or 0)
+            _w = int(getattr(self, "_percept_width", 0) or 0)
             self._pre_reshape_input = (x.shape[1], x.shape[2])
             x = x.reshape(x.shape[0], -1, _w if _w > 0 else self.nInputDim)
         else:
@@ -9487,8 +9487,8 @@ class Space(SpaceCarrierMixin, nn.Module):
             # transport shape [B, 8, 136]; it must not be forced back through
             # the raw InputSpace width (512) merely because the last forward
             # iteration cached a one-word [1, 136] descriptor.
-            _fold_width = int(getattr(self, "_fold_width", 0) or 0)
-            if _fold_width > 0 and int(y.shape[-1]) == _fold_width:
+            _percept_width = int(getattr(self, "_percept_width", 0) or 0)
+            if _percept_width > 0 and int(y.shape[-1]) == _percept_width:
                 target = self._reverse_target(
                     getattr(self, "_reverse_carrier", None))
                 target.set_event(y)
@@ -11502,135 +11502,15 @@ class PartSpace(Space):
         # curriculum at the XML maskRate) set it explicitly.
         self.decode_blind_rate = None
 
-        # Size the sigma fold at the embedded percept width, not raw byte width.
+        # Native percept events retain their content and location widths.
         percept_dim = int(self.subspace.getEncodedInputSize())
         _nin = int(self.subspace._nInputDim)
         _nout = int(self.subspace._nOutputDim)
         if _nin != -1 and _nout != -1 and _nin != _nout:
             percept_dim = _nout
-        # forwardBegin reshapes embedded events to this fold width.
-        self._fold_width = percept_dim
-        # Monotone folds preserve parthood order when requested.
-        _mono = bool(TheXMLConfig.get("architecture.monotonic",
-                                      default=False))
-        # Global <sigmaPi> selects per-slot, butterfly, or dense fold span.
-        _pi_mode = Space.sigma_pi_mode(
-            TheXMLConfig.space(section, "butterfly", default=None)
-            if TheXMLConfig.space(section, "butterfly", default=None) is not None
-            else TheXMLConfig.get("architecture.sigmaPi", default="butterfly"))
-        _butterfly = (_pi_mode == "butterfly")
-        self.sigma_pi_slab = None  # set only for the "full" dense bridge
-        # PER-VECTOR order-raise: the sigma/pi fold raises EACH word's order
-        # over its own ``percept_dim`` (D) features, independently -- it does
-        # NOT mix across the ``nOutput`` word slots (mereological order-raising
-        # is a per-vector op; the adapter's per-vector _bfly_flatten batches the
-        # slots). Sizing the fold to ``nOutput * D`` (the old value) made every
-        # per-word call pad D up to N*D and, replayed once per word in the
-        # serial loop, cost O(N^2 * D); at ``percept_dim`` the fold width is
-        # constant in the word count and the loop is linear.
-        # Unified fold-width law (2026-07-16): the butterfly folds one
-        # vector's CONTENT columns (self.nDim when the muxed event is wider);
-        # the where/when band rides through at application sites via
-        # fold_content_apply -- same law as WholeSpace.pi, so the PS/WS
-        # fold sizes cannot drift apart.
-        _nd = int(getattr(self, "nDim", 0) or 0)
-        _fold_content = _nd if 0 < _nd < int(percept_dim) else int(percept_dim)
-        _butterfly_total = _fold_content
-        # Degenerate 0/1-element butterfly requests fall back to per-slot mode.
-        _butterfly_built = bool(_butterfly and _butterfly_total >= 2)
-
-        def _mint_sigma():
-            # ONE construction path shared by the base layer and the P4
-            # per-pass stack layers (identical modes/dims).
-            if _butterfly_built:
-                ly = SigmaLayer(
-                    _fold_content, _fold_content,
-                    naive=naive, ergodic=ergodic,
-                    invertible=bool(invertible), nonlinear=nonlinear,
-                    stable=True, monotonic=_mono,
-                    butterfly=True, N=_butterfly_total,
-                )
-            elif _pi_mode == "full":
-                ly = SigmaLayer(
-                    self.sigma_pi_slab, self.sigma_pi_slab,
-                    naive=naive, ergodic=ergodic,
-                    invertible=bool(invertible), nonlinear=nonlinear,
-                    stable=True, monotonic=_mono,
-                )
-            else:
-                # Per-slot fold follows the same unified fold-width law.
-                ly = SigmaLayer(
-                    _fold_content, _fold_content,
-                    naive=naive, ergodic=ergodic,
-                    invertible=bool(invertible), nonlinear=nonlinear,
-                    stable=True, monotonic=_mono,
-                )
-            if meronomy_enabled():
-                from Layers import MeronymicFoldAdapter
-                ly = MeronymicFoldAdapter(
-                    'sigma', ly.nInput, ly.nOutput,
-                    stable=True, ergodic=ergodic, naive=naive,
-                    legacy_N=_butterfly_total,
-                    butterfly=_butterfly_built)
-            return ly
-
-        if _pi_mode == "full" and not _butterfly_built:
-            # Dense full-span mode excludes where/when columns from the bridge.
-            _band = int(sum(canonical_shape(section)))
-            _content = int(percept_dim) - _band
-            if _content < 1:
-                raise ValueError(
-                    "PartSpace <sigmaPi>full</> requires percept_dim "
-                    f"({percept_dim}) > band ({_band})")
-            self.sigma_pi_slab = int(inputShape[0]) * _content
-        # Shared constructor keeps base and stacked sigma layers aligned.
-        self.sigma = _mint_sigma()
-        self.sigma_pi_mode = _pi_mode
-        self.butterfly_enabled = _butterfly_built
-        self.butterflyN = _butterfly_total if _butterfly_built else None
-
-        # <attention> is a reverse-retrieval mode; hasAttention is inert.
+        self._percept_width = percept_dim
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
-        self.params += self.sigma.getParameters()
-        # Per-pass sigma stack (canonical): DISTINCT subsymbolic layers.
-        # Fold index is derivation provenance, not mereological rank. Pass 0
-        # IS the base ``self.sigma``;
-        # ``<subsymbolicNoop>`` slots are the IDENTITY (``None``); noop slots
-        # keep the pass count stable. RNG-NEUTRAL construction (save/restore)
-        # so the t>=1 minting does not shift the init streams downstream --
-        # an order-1 config (the single ``[sigma]`` slot, no minting) is
-        # byte-identical to the pre-stack build.
-        _T = max(1, int(TheXMLConfig.get(
-            "architecture.subsymbolicOrder", default=1) or 1))
-        _noop = _parse_pass_indices(TheXMLConfig.get(
-            "architecture.subsymbolicNoop", default=None))
-        _rng_state = torch.get_rng_state()
-        _stack = []
-        for _t in range(_T):
-            if _t in _noop:
-                _stack.append(None)
-            elif _t == 0:
-                _stack.append(self.sigma)
-            else:
-                _ly = _mint_sigma()
-                self.params += _ly.getParameters()
-                _stack.append(_ly)
-        torch.set_rng_state(_rng_state)
-        self.sigmas = _stack
-        # Canonical meronomy: rung 0 joins by max (fold-ladder plan,
-        # contract 1); legacy front ends keep the membership union.
-        if getattr(self, "_meronomy", False):
-            for _ly in _stack:
-                if _ly is not None and hasattr(_ly, "compute_aggregate_over_set"):
-                    object.__setattr__(_ly, "set_law", "max")
-        # Register the fresh t>=1 layers as SUBMODULES (state_dict /
-        # model-wide .to()); a plain list would silently drop them from
-        # checkpoints and leave them behind on the CPU->device move.
-        # NOT appended to self.layers: the Start/End/Reset cascade stays
-        # exactly the pre-stack set.
-        self._sigma_stack_modules = nn.ModuleList(
-            [ly for ly in _stack[1:] if ly is not None])
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
@@ -12425,12 +12305,11 @@ class PartSpace(Space):
                 event[..., w_idx] = stamp
         return event
 
-    def synthesize_word_parts(self, part_ids, part_mask,
-                              part_offsets=None, *, functional=False):
+    def synthesize_word_parts(self, part_ids, part_mask, part_offsets=None):
         """Synthesize every constituent of one word inside its word tick.
 
         Called from ``BasicModel._per_word_body_step``.  The live codebook
-        gather and the configured sigma set-fold stay inside the word loop,
+        gather and the native max over constituent codes stay inside the word loop,
         so gradients reach every constituent while the sentence-level loop
         advances exactly once. A ``[B,P]`` id slab returns ``[B,1,D]``; eager
         staging may pass ``[B,W,P]`` and receives ``[B,W,D]``. ``P`` may be
@@ -12445,28 +12324,15 @@ class PartSpace(Space):
                 "word-part id/mask shapes do not align: "
                 f"ids={tuple(part_ids.shape)}, mask={tuple(mask.shape)}, "
                 f"events={tuple(events.shape)}")
-        sigma = self._sigma_for_pass()
-        if sigma is None or not hasattr(sigma, "aggregate_over_set"):
-            raise RuntimeError(
-                "serial word synthesis requires a meronymic sigma with "
-                "parameter-free set aggregation; the raw constituents cannot "
-                "be silently summed or truncated")
-        aggregate = (
-            sigma.compute_aggregate_over_set
-            if functional and hasattr(sigma, "compute_aggregate_over_set")
-            else sigma.aggregate_over_set)
-        # Base aggregation operates only on WHAT and deliberately does not run
-        # the learned sigma kernel.  The explicit fold ladder that follows PS
-        # forward owns sigma[0], sigma[1], ... exactly once.  The fixed
-        # where/when band must not inflate a compact percept fold from 128 to
-        # the 136-wide event.  Carry the first active constituent's band
-        # unchanged (the word begins where its first constituent begins; all
-        # members of one word tick share the same temporal context).
-        fold_width = int(getattr(sigma, "nInput", 0) or 0)
-        if 0 < fold_width < int(events.shape[-1]):
-            word_what = aggregate(
-                events[..., :fold_width], mask=mask)
-            band_events = events[..., fold_width:]
+        # The distributed part code is the max of its constituent codes in
+        # the same membership cube. Ordered containment supplies its read.
+        # Location and time follow the first active constituent of the unit.
+        width = min(int(self.nDim), int(events.shape[-1]))
+        values = torch.where(mask[..., None], events[..., :width], 0.)
+        word_what = (values.amax(dim=-2) if values.shape[-2]
+                     else values.sum(dim=-2))
+        if width < int(events.shape[-1]) and events.shape[-2]:
+            band_events = events[..., width:]
             first = mask.to(dtype=torch.long).argmax(dim=-1)
             gather_shape = list(first.shape) + [1, int(band_events.shape[-1])]
             gather_index = first.unsqueeze(-1).unsqueeze(-1).expand(
@@ -12478,30 +12344,11 @@ class PartSpace(Space):
                 any_valid, word_band, torch.zeros_like(word_band))
             word = torch.cat((word_what, word_band), dim=-1)
         else:
-            word = aggregate(events, mask=mask)
+            word = F.pad(word_what, (0, events.shape[-1] - width))
         if word.dim() == 2:
             word = word.unsqueeze(1)
         return word
 
-    def compute_word_fold_sources(self, part_ids, part_mask,
-                                  part_offsets, pass_indices):
-        """Return P0 plus cumulative learned folds without carrier writes.
-
-        ``P0`` remains the parameter-free constituent union used by aligned
-        concept evidence.  The learned ladder consumes the range-railed
-        percept event, exactly as :meth:`forward` followed by
-        :meth:`fold_event_ladder` does on the owning-space path.
-        """
-        base = self.synthesize_word_parts(
-            part_ids, part_mask, part_offsets, functional=True)
-        if base is None:
-            raise RuntimeError(
-                "functional word fold requires staged part ids and mask")
-        percept = self.subspace._apply_normalization(
-            "percepts", base, target="event")
-        folds = self.fold_event_ladder(
-            percept, pass_indices, strict=True)
-        return (base, *folds)
 
     def _embed_radix_word_major(self, upstream_vspace):
         """Eager radix lookup for the serial word-major contract.
@@ -14258,144 +14105,11 @@ class PartSpace(Space):
         # still radix-backed (pending).
         return self._embed_ladder(upstream_vspace)
 
-    def _sigma_for_pass(self, t=None):
-        """The pass-``t`` sigma: the per-pass stack layer (``None`` = the
-        identity no-op slot). ``t`` defaults to the model-stamped recurrent
-        pass index. Falls back to the single ``self.sigma`` if the stack was
-        not built (defensive)."""
-        stack = getattr(self, "sigmas", None)
-        if stack is None:
-            return self.sigma
-        if t is None:
-            ss = getattr(self, 'symbolSpace', None)
-            t = (int(ss.recur_pass) if ss is not None
-                 else int(getattr(self, "_recurrent_pass_idx", 0) or 0))
-        return stack[min(max(0, int(t)), len(stack) - 1)]
 
-    def _synthesize_event(self, ev, t, *, strict=False, functional=False):
-        """Tensor-only application of one sigma stack layer."""
-        stack = getattr(self, "sigmas", None)
-        if stack is None:
-            if strict:
-                raise RuntimeError(
-                    f"PartSpace sigma fold {int(t)} has no fold stack")
-            return ev
-        fold = stack[min(max(0, int(t)), len(stack) - 1)]
-        if fold is None:
-            if strict:
-                raise RuntimeError(
-                    f"PartSpace sigma fold {int(t)} is configured as a no-op")
-            return ev
-        if ev is None or not torch.is_tensor(ev) or ev.dim() < 2:
-            if strict:
-                raise RuntimeError(
-                    f"PartSpace sigma fold {int(t)} received no tensor event")
-            return ev
-        fold_width = int(fold.nInput)
-        flattened_width = int(getattr(fold, "N", 0) or 0)
-        actual_width = int(ev.shape[-1]) * (
-            int(ev.shape[-2]) if ev.dim() >= 3 else 1)
-        apply_fold = (
-            fold.compute_forward
-            if functional and hasattr(fold, "compute_forward")
-            else fold.forward)
-        if flattened_width and actual_width == flattened_width:
-            return apply_fold(ev)
-        if ev.dim() >= 3 and int(ev.shape[-1]) > fold_width:
-            return torch.cat(
-                [apply_fold(ev[..., :fold_width]),
-                 ev[..., fold_width:]], dim=-1)
-        if int(ev.shape[-1]) == fold_width:
-            return apply_fold(ev)
-        if strict:
-            raise RuntimeError(
-                f"PartSpace sigma fold {int(t)} cannot consume event "
-                f"shape {tuple(ev.shape)} (fold width={fold_width}, "
-                f"flattened width={flattened_width or 'per-slot'})")
-        return ev
 
-    def synthesize_feedback(self, sub, t, *, strict=False):
-        """FURTHER σ SYNTHESIS on the C->P part-stream (P4, decisions 7+8):
-        apply the pass-``t`` stack sigma to the demuxed feedback event.
 
-        The legacy tolerant path returns ``sub`` for a no-op or incompatible
-        shape. ``strict=True`` is used by aligned concept formation: every
-        advertised fold must execute, so an identity/no-fit condition raises
-        instead of being silently counted as evidence.
-        """
-        if (sub is None or not hasattr(sub, "is_empty") or sub.is_empty()):
-            if strict:
-                raise RuntimeError(
-                    f"PartSpace sigma fold {int(t)} has no live input")
-            return sub
-        ev = sub.materialize()
-        out = self._synthesize_event(ev, t, strict=strict)
-        if out is ev:
-            return sub
-        fed = SubSpace(inputShape=(1, 1), outputShape=(1, 1),
-                       nInputDim=1, nOutputDim=1)
-        fed.copy_context(sub)
-        fed.set_event(out)
-        return fed
 
-    def fold_ladder(self, sub, pass_indices, *, strict=False):
-        """Return cumulative sigma outputs in the requested pass order.
 
-        If ``pass_indices`` is ``(0, 1, 2)``, result element 0 is
-        ``sigma[0](sub)``, element 1 is ``sigma[1](result[0])``, and element
-        2 is ``sigma[2](result[1])``. Thus each element represents one
-        increasingly deep, explicitly ordered part fold.
-        """
-        current = sub
-        outputs = []
-        for pass_idx in tuple(int(t) for t in pass_indices):
-            current = self.synthesize_feedback(
-                current, pass_idx, strict=strict)
-            outputs.append(current)
-        return tuple(outputs)
-
-    def fold_event_ladder(self, sub, pass_indices, *, strict=False):
-        """Tensor-only cumulative sigma ladder for the serial hot loop."""
-        current = (sub if torch.is_tensor(sub)
-                   else sub.materialize() if sub is not None else None)
-        outputs = []
-        for pass_idx in tuple(int(t) for t in pass_indices):
-            current = self._synthesize_event(
-                current, pass_idx, strict=strict, functional=True)
-            outputs.append(current)
-        return tuple(outputs)
-
-    def synthesize_feedback_where(self, sub, t, sigma_mask, default=None):
-        """Apply pass-``t`` σ only to locally requesting `.where` slots.
-
-        ``sigma_mask`` is the PS-side ``[B,P]`` mask emitted by
-        :class:`WhereTilingLayer`.  Non-requesting slots retain ``default`` so
-        settled objects and π-routed regions continue to cross the callosum.
-        Shape mismatches degrade to the ordinary feedback result rather than
-        silently broadcasting a mask onto unrelated slots.
-        """
-        folded = self.synthesize_feedback(sub, t)
-        if folded is None or sigma_mask is None or default is None:
-            return folded if folded is not None else default
-        f_ev = folded.materialize() if hasattr(folded, "materialize") else None
-        d_ev = default.materialize() if hasattr(default, "materialize") else None
-        if (f_ev is None or d_ev is None or not torch.is_tensor(f_ev)
-                or not torch.is_tensor(d_ev) or f_ev.shape != d_ev.shape
-                or f_ev.dim() != 3):
-            return folded
-        mask = sigma_mask.to(device=f_ev.device, dtype=torch.bool)
-        if mask.dim() == 1:
-            mask = mask.unsqueeze(0)
-        if (int(mask.shape[0]) != int(f_ev.shape[0])
-                or int(mask.shape[1]) != int(f_ev.shape[1])):
-            return folded
-        event = torch.where(mask.unsqueeze(-1), f_ev, d_ev)
-        routed = SubSpace(inputShape=(1, 1), outputShape=(1, 1),
-                          nInputDim=1, nOutputDim=1)
-        routed.copy_context(default)
-        routed.set_event(event)
-        object.__setattr__(routed, "_where_sigma_mask", mask)
-        return routed
 
     def forward(self, in_sub, cs_out=None):
         """Perception: map the atoms view of the input to percepts via ``pi``.
@@ -14534,35 +14248,8 @@ class PartSpace(Space):
                 vspace = self._embed_radix(vspace)
         if getattr(vspace, '_demuxed', False) and vspace._index is not None:
             self.subspace._byte_indices = vspace._index[:, :, 0].long()
-        # Stage 1.A substrate refactor (initial): compose
-        # ``pi(x) + sigma(x)`` on the same materialized input.
-        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        # reentrancy.md): drop the sigma term — PS is pi-only. The
-        # sigma half migrates to ``ConceptualSpace.sigma_in`` per stage
-        # (Ramsified across ``self.conceptualSpaces``). Each PS pi
-        # output is then folded into a stage's ``sigma_in`` inside
-        # ``ConceptualSpace.forward``. The legacy two-input
-        # ``tanh(pi_input(IS) + pi_concept(C_prev))`` shape gating is
-        # also retired (no C-feedback path entering PS at this level).
-        primary = self.forwardBegin(vspace, returnVectors=True)
-        # P4: pass t selects stack layer t (identity when the slot is a
-        # no-op); the single reused ``self.sigma`` when the stack is off.
-        _defer_fold = bool(
-            word_local_parts
-            and getattr(self, "_serial_aligned_fold_ladder", False))
-        _sig = None if _defer_fold else self._sigma_for_pass()
-        # Content-fold + band-passthrough (the unified fold-width law).
-        x = primary if _sig is None else fold_content_apply(
-            _sig.forward, getattr(_sig, "nInput", 0), primary)
-        if os.environ.get("XHEAD_PROBE"):
-            with torch.no_grad():
-                for _nm, _v in (("raw-pre-fold", primary), ("post-fold", x)):
-                    if (torch.is_tensor(_v) and _v.dim() >= 2
-                            and _v.shape[0] >= 2):
-                        _f = _v.reshape(_v.shape[0], -1)[:4]
-                        print(f"=XPI= {_nm} "
-                              f"maxpairdist={torch.cdist(_f, _f).max().item():.4f}",
-                              flush=True)
+        # Reading percepts does not apply a learned conceptual fold.
+        x = self.forwardBegin(vspace, returnVectors=True)
         # The legacy ``QKVAttentionLayer`` pass was removed here (plan
         # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum): the layer
         # was never enlisted in the live forward path, and ``<attention>`` now
@@ -14697,22 +14384,6 @@ class PartSpace(Space):
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.codebook:
             y = object_basis.reverse(y)
-        # Stage 1.A substrate refactor: reverse the single-layer ``pi``
-        # fold (no per-order ModuleList). ``sigma.reverse`` is NOT
-        # applied on the text path: the forward composed ``pi + sigma``
-        # additively, and the codebook snap collapses the sum to a
-        # single prototype slot whose membership is recovered via
-        # ``object_basis.reverse`` above. Mirroring the legacy
-        # text-mode behaviour (which only inverted the primary fold)
-        # keeps this path's recovered-input contract stable.
-        # TODO (revisit in Stage 1.B or later): if downstream numerical
-        # reconstruction needs a paired pi/sigma inverse (e.g. for
-        # masked-LM IR loss tightness), define the inversion contract
-        # explicitly. The current decision parks the asymmetry.
-        if self.invertible and hasattr(self, 'sigma'):
-            if getattr(self.sigma, 'invertible', False):
-                y = fold_content_apply(
-                    self.sigma.reverse, getattr(self.sigma, "nInput", 0), y)
         target = self._reverse_target(vspace)
         stash = self._reverse_stash(vspace)
         target.batch = y.shape[0]
@@ -15244,20 +14915,6 @@ class _ConceptRoleView:
 
     def __repr__(self):
         return repr(dict(self.items()))
-
-
-def _parse_pass_indices(raw):
-    """Parse a ``<subsymbolicNoop>`` value ("0,2", an int, or a list) into a
-    set of pump-pass indices. Empty/None/false-y -> the empty set."""
-    if raw is None or raw is False:
-        return set()
-    if isinstance(raw, (list, tuple, set)):
-        return {int(x) for x in raw}
-    s = str(raw).strip()
-    if not s or s.lower() in ("false", "none"):
-        return set()
-    return {int(tok) for tok in s.replace(";", ",").split(",")
-            if str(tok).strip() != ""}
 
 
 def _concept_rows_exist(host):
@@ -17052,6 +16709,7 @@ class ConceptualSpace(Space):
         # taxonomy, in eager Python, before the reset wipes per-sentence
         # state. Hard reset only (a soft reset is not a sentence boundary).
         if hard and not getattr(self, "_online_learning_frozen", False):
+            self._witness_concept_poles()
             self._commit_utility_counts()
             self._commit_chunk_admissions()
             self._commit_autobind_from_stash()
@@ -18391,20 +18049,32 @@ class ConceptualSpace(Space):
         return got
 
     def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False,
-                         negated=False):
+                         negated=False, locations=None):
         """Add a nonnegative exponent; a negated part addresses its c-minus.
 
-        Concepts share one row inventory. Conjunctive parts read lower
-        orders; a disjunctive part at the same order reads its conjunction.
-        Order-0 sigma edges between percept conjunctions are admitted;
-        order-0 conjunctive edges are rejected. The trailing column is the
-        standing EVERYTHING presence.
+        W_pi intersects order-0 field concepts. Order-0 W_sigma unions
+        alternatives in that field; higher W_sigma reads the preceding
+        order's symbols. The trailing column is the standing EVERYTHING.
         """
         r = int(row)
-        if self._order0_inventory_row(r) and (conjunctive or not self._order0_inventory_row(int(col))):
-            raise ValueError(
-                f"order-0 row {r} accepts only alternatives over "
-                f"order-0 percept conjunctions")
+        order0 = self._order0_inventory_row(r)
+        source0 = self._order0_inventory_row(int(col))
+        if conjunctive and not (order0 and source0):
+            raise ValueError('conjunctive edges require order-0 field concepts')
+        if locations is not None:
+            if not conjunctive:
+                raise ValueError('located literals require an order-0 conjunction')
+            brackets = tuple(sorted(set((int(a), int(b)) for a, b in locations)))
+            if not brackets or any(a < 0 or b <= a for a, b in brackets):
+                raise ValueError('field literal brackets must be nonempty relative extents')
+        if order0 and not source0:
+            raise ValueError('order-0 alternatives require order-0 field concepts')
+        if not order0 and int(col) != int(self.nVectors):
+            target_order = next(k for k in range(1, len(self._order_caps()))
+                                if self.order_slice(k)[0] <= r < self.order_slice(k)[1])
+            lower_start, lower_end = self.order_slice(target_order - 1)
+            if not (source0 if target_order == 1 else lower_start <= int(col) < lower_end):
+                raise ValueError('sigma edges require symbols of the preceding order')
         # Frozen definition: no FORMING of new connections on its row.
         if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
             return None
@@ -18424,6 +18094,8 @@ class ConceptualSpace(Space):
             _c += ly.nOutput + 1
         self._maybe_rebuild_optimizer_for_csw()
         out = ly.add_edge(r, _c, weight=weight)
+        if locations is not None:
+            ly.locations[r, _c] = brackets
         # Values may have regrown: re-arm the frozen-weights grad hook.
         if getattr(self, "_frozen_concepts", None):
             self._refresh_frozen_values_hook()
@@ -18432,8 +18104,8 @@ class ConceptualSpace(Space):
     def add_concept_feature(self, row, tower, feature, weight=0.0, *, negated=False):
         """Write a signed feature weight as a magnitude on a membership pole.
 
-        PS and WS addresses are independent. A negative exponent reads the
-        row's complement; a zero candidate states nothing until learned.
+        PS and WS addresses are independent. A negative weight directs a
+        present membership to counterevidence; zero states nothing until learned.
         """
         row = int(row)
         group = tuple(int(p) for p in feature) if isinstance(feature, (tuple, list)) else ()
@@ -18508,6 +18180,9 @@ class ConceptualSpace(Space):
         view = store.bind(rows.tolist())
         view.conjunctive = store.conjunctive.bind(rows.tolist())
         view.participation = store.participation[rows.clamp_min(0).to(store.participation.device)]
+        defined = self._concept_part_rows(store.features, rows.device)
+        valid = (rows >= 0) & (rows < len(defined))
+        view.feature_defined = defined[rows.clamp(0, len(defined) - 1)] & valid
         return view
 
     @torch.no_grad()
@@ -18533,12 +18208,21 @@ class ConceptualSpace(Space):
                 literal = store.feature_groups.get((row, col), (col // 4,))
                 referenced[edge] = bool(attended_parts.intersection(literal))
         scores = required.new_zeros(store.nOutput).index_add_(0, rows, support * weight) / mass.clamp_min(1e-12)
-        admitted = required.new_zeros(store.nOutput).index_add_(0, rows, referenced * weight) > 0
-        for (target, col), pos in store._index.items():
-            source = col % (store.nOutput + 1)
-            if self._order0_inventory_row(target) and source < store.nOutput and float(store.values[pos]) > 0:
-                admitted[target] |= admitted[source]
-                scores[target] = torch.maximum(scores[target], scores[source])
+        admitted = required.new_zeros(store.nOutput).index_add_(
+            0, rows, referenced * (mass[rows] > 0)) > 0
+        # All reachable field definitions compete for this turn's slots.
+        for _ in range(n0):
+            before = admitted.clone()
+            for parent in (store, store.conjunctive):
+                if parent is store.conjunctive and not self.conceptual_pi:
+                    continue
+                for (target, col), pos in parent._index.items():
+                    source = col % (store.nOutput + 1)
+                    if self._order0_inventory_row(target) and source < store.nOutput and float(parent.values[pos]) > 0:
+                        admitted[target] |= admitted[source]
+                        scores[target] = torch.maximum(scores[target], scores[source])
+            if torch.equal(before, admitted):
+                break
         candidates = [r for r in admitted.nonzero().flatten().tolist() if self._order0_inventory_row(r)]
         candidates.sort(key=lambda r: (-float(scores[r]), r))
         # Stable inventory order within the selected set makes an unchanged
@@ -18558,8 +18242,8 @@ class ConceptualSpace(Space):
     def cs_read_memberships(self, percepts, extents):
         """Located parts and pervading properties, union at extent readout.
 
-        Both poles use the same pi fold. Negative weights swap a feature's
-        membership and complement, never the fold. Part containment is read
+        Positive percepts witness signed conceptual evidence. A negative
+        weight swaps poles; an absent percept supplies neither. Containment is read
         over the subject extent and shared by its positions. WholeSpace
         properties pervade each position; identical brackets count once.
         """
@@ -18567,11 +18251,13 @@ class ConceptualSpace(Space):
         from PerceptProperties import counts_in_spans
         part_ids, part_spans, primitive, raw, whole_spans = percepts
         if raw.shape[0] > 1:
-            fields, bindings, identities, positions, brackets, subjects = [], [], [], [], [], []
+            fields, bindings, identities, positions, brackets, subjects, raw_fields, feature_fields = [], [], [], [], [], [], [], []
             for b in range(raw.shape[0]):
                 field = self.cs_read_memberships((part_ids[b:b+1], part_spans[b:b+1],
                     primitive, raw[b:b+1], whole_spans[b:b+1]), extents[b:b+1])
                 fields.append(field)
+                raw_fields.append(self._cs_order0_raw)
+                feature_fields.append(self._cs_feature_memberships)
                 bindings.append(self._cs_field_rows)
                 identities.append(self._cs_field_concept_ids)
                 positions.append(self._cs_position_evidence)
@@ -18580,6 +18266,8 @@ class ConceptualSpace(Space):
             binding, ids = torch.stack(bindings, 1), torch.stack(identities, 1)
             if torch.equal(binding, binding[:, :1].expand_as(binding)):
                 binding, ids = binding[:, 0], ids[:, 0]
+            object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
+            object.__setattr__(self, '_cs_feature_memberships', torch.cat(feature_fields, 1))
             object.__setattr__(self, '_cs_field_rows', binding)
             object.__setattr__(self, '_cs_field_concept_ids', ids)
             object.__setattr__(self, '_cs_position_evidence', torch.cat(positions, 1))
@@ -18617,20 +18305,30 @@ class ConceptualSpace(Space):
                                                  (matrix._cols[i] // 4,)) for i in ps_edges.tolist()]
             pair = PartSpace.part_memberships(
                 native, literals, part_ids, part_spans, extents, raw.shape[1])
+            # Containment supplies a one-sided percept. Counterevidence
+            # requires a present percept with a negative conceptual weight.
+            pair = torch.stack((pair[..., 0], torch.zeros_like(pair[..., 0])), -1)
             membership = membership.index_copy(0, ps_edges,
                 pair[:, :, :, None, :].expand(-1, -1, -1, P, -1).to(membership))
         ws_edges = (towers == 1).nonzero().flatten()
         if len(ws_edges) and primitive is not None:
             counts = counts_in_spans(raw, spans, observed=raw != 0)
             positive = primitive.on_counts(counts)
-            negative = primitive.on_counts(counts, complement=True)
             complete = counts.sum(-1) == spans[..., 1] - spans[..., 0]
-            pair = torch.stack((positive, negative), -1) * complete[..., None, None]
+            pair = torch.stack((positive, torch.zeros_like(positive)), -1) * complete[..., None, None]
             membership = membership.index_copy(0, ws_edges,
                 pair.index_select(2, features[ws_edges]).permute(2, 0, 1, 3)[:, :, None]
                     .expand(-1, -1, E, -1, -1).to(membership))
         # Extents retain separate copies of their position evidence. Flatten
         # only for the existing sparse fold, then restore the subject axis.
+        contained = ((spans[:, None, :, 0] >= extents[:, :, None, 0])
+                     & (spans[:, None, :, 1] <= extents[:, :, None, 1])
+                     & (spans[:, None, :, 1] > spans[:, None, :, 0]))
+        object.__setattr__(self, '_cs_feature_memberships',
+                           membership[..., 0].detach() * contained[None])
+        object.__setattr__(self, '_cs_witness_feature_refs', tuple(
+            (r, c, store.feature_groups.get((r, c), (c // 4,)))
+            for r, c in zip(matrix._rows, matrix._cols)))
         membership = membership.flatten(2, 3)
         required = torch.where(poles[:, None, None, None].bool(),
                                membership.flip(-1), membership)
@@ -18644,22 +18342,10 @@ class ConceptualSpace(Space):
         start, end = self.order_slice(0)
         conjunctions = torch.stack([
             matrix.fold_presence(prototype, conjunctive=True, start=start, end=end,
-                                 edge_memberships=required[..., pole].reshape(len(columns), B * L))
+                                 edge_memberships=required[..., pole].reshape(len(columns), B * L),
+                                 edge_known=required.any(-1).reshape(len(columns), B * L))
             for pole in (0, 1)], -1)
-        # Each row's percept conjunction is a sufficient alternative. Sigma
-        # links read the other rows' conjunctions at this same occurrence;
-        # their negative channel is the product of complement products.
-        own = self._concept_part_rows(matrix, raw.device)[start:end]
-        positive, negative = conjunctions.unbind(-1)
-        padding = positive.new_zeros(store.nOutput - end, B * L)
-        alternatives = torch.cat((positive, padding, positive.new_ones(1, B * L),
-                                  negative, padding, negative.new_zeros(1, B * L)))
-        positions = torch.stack((
-            store.fold_presence(alternatives, start=start, end=end,
-                                own=positive, own_mask=own),
-            store.fold_presence(alternatives, start=start, end=end,
-                                conjunctive=True, dual=True,
-                                own=negative, own_mask=own)), -1).reshape(end - start, B * E, P, 2)
+        positions = conjunctions.reshape(end - start, B * E, P, 2)
         brackets = spans[:, None].expand(B, E, P, 2).reshape(B * E, P, 2)
         field, retained = in_extents(positions, brackets, extents.reshape(B * E, 1, 2))
         field = field.reshape(end - start, B, E, 2)
@@ -18667,7 +18353,117 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_position_evidence', retained)
         object.__setattr__(self, '_cs_position_spans', spans.detach().clone())
         object.__setattr__(self, '_cs_extents', extents.detach().clone())
-        return field
+        return self._compose_order0(field)
+
+    def _compose_order0(self, field):
+        """Intersect and union predicates of the shared subject before encoding.
+
+        Located literals read retained occurrences before the readout union.
+        Dependencies are evaluated once in topological order, preserving
+        sparse identity; an extent's both corner is only a diagnosis.
+        """
+        store = self._concept_field_store()
+        n0, B, E, _ = field.shape
+        S = store.nOutput
+        working = torch.cat((field, field.new_zeros(S - n0, B, E, 2)))
+        raw = working.clone()
+        deps = {r: set() for r in range(n0)}
+        for matrix in (store, store.conjunctive):
+            if matrix is store.conjunctive and not self.conceptual_pi:
+                continue
+            for (r, c), edge in matrix._index.items():
+                source = c % (S + 1)
+                if (r < n0 and source < n0 and float(matrix.values[edge].detach()) > 0
+                        and not bool(matrix._missing_sources[edge])):
+                    deps[r].add(source)
+        pi_rows = self._concept_part_rows(store.conjunctive, field.device)
+        pending, done = set(range(n0)), set()
+        while pending:
+            ready = sorted(r for r in pending if deps[r] <= done)
+            if not ready:
+                raise ValueError('cyclic order-0 concept definitions')
+            for row in ready:
+                positive, negative = working.unbind(-1)
+                source = torch.cat((positive.reshape(S, B * E), field.new_ones(1, B * E),
+                                    negative.reshape(S, B * E), field.new_zeros(1, B * E)))
+                own = field[row:row+1].reshape(1, B * E, 2)
+                own_mask = store.feature_defined[row:row+1]
+                if self.conceptual_pi and bool(pi_rows[row]):
+                    if any(r == row for r, _ in store.conjunctive.locations):
+                        own = self._located_conjunction(store.conjunctive, row, working, own, own_mask)
+                    else:
+                        own = torch.stack((
+                            store.conjunctive.fold_presence(source, conjunctive=True, start=row, end=row+1,
+                                own=own[..., 0], own_mask=own_mask, own_known=own.any(-1)),
+                            store.conjunctive.fold_presence(source, conjunctive=True, dual=True, start=row, end=row+1,
+                                own=own[..., 1], own_mask=own_mask, own_known=own.any(-1))), -1)
+                    own_mask = torch.ones_like(own_mask)
+                result = torch.stack((
+                    store.fold_presence(source, start=row, end=row+1,
+                        own=own[..., 0], own_mask=own_mask, own_known=own.any(-1)),
+                    store.fold_presence(source, dual=True, start=row, end=row+1,
+                        own=own[..., 1], own_mask=own_mask, own_known=own.any(-1))), -1).reshape(1, B, E, 2)
+                index = torch.tensor([row], device=field.device)
+                raw = raw.index_copy(0, index, result)
+                gate = store.participation[row].clone().to(field)
+                working = working.index_copy(0, index, result * gate)
+                done.add(row)
+                pending.remove(row)
+        object.__setattr__(self, '_cs_order0_raw', raw[:n0].detach())
+        return working[:n0]
+
+    def _located_conjunction(self, matrix, row, field, own, own_mask):
+        """Match a joint located witness before reducing its evidence.
+
+        Brackets are coordinates within the shared subject, never a concept's
+        location. Each requested pole must occur at each designated bracket
+        for the pattern to be present. A missing witness is not a match; it
+        does not manufacture counterevidence. Per-pole min still reduces the
+        observed support and contraindications independently.
+        """
+        S, B, E, _ = field.shape
+        retained = self._cs_position_evidence
+        spans, extents = self._cs_position_spans, self._cs_extents
+        edge_pairs = field.new_zeros(matrix.nnz, B, E, 2)
+        complete = torch.ones(B, E, device=field.device, dtype=torch.bool)
+        for i, (target, col) in enumerate(zip(matrix._rows, matrix._cols)):
+            if target != row:
+                continue
+            source, pole = col % (S + 1), col // (S + 1)
+            if source >= retained.shape[0] or bool(matrix._missing_sources[i]):
+                if float(matrix.values[i].detach()) > 0:
+                    complete &= False
+                continue
+            locations = matrix.locations.get((target, col))
+            if locations is None:
+                pair = field[source]
+            else:
+                witnesses = []
+                for start, end in locations:
+                    a, b = extents[..., 0] + start, extents[..., 0] + end
+                    match = ((spans[:, None, :, 0] == a[..., None])
+                             & (spans[:, None, :, 1] == b[..., None])
+                             & (b <= extents[..., 1])[..., None])
+                    witnesses.append((retained[source] * match[..., None]).amax(-2))
+                pairs = torch.stack(witnesses)
+                # Multiple occurrences of one literal share its exponent.
+                values = pairs.flip(-1) if pole else pairs
+                if float(matrix.values[i].detach()) > 0:
+                    complete &= (values[..., 0] > 0).all(0)
+                known = values > 0
+                pair = torch.where(known, values, 1.).amin(0)
+                pair = torch.where(known.any(0), pair, 0.)
+            if locations is None and pole:
+                pair = pair.flip(-1)
+            edge_pairs[i] = pair
+        prototype = field.new_zeros(0, B * E)
+        reduced = torch.stack([
+            matrix.fold_presence(prototype, conjunctive=True, start=row, end=row+1,
+                edge_memberships=edge_pairs[..., pole].reshape(matrix.nnz, B * E),
+                own=own[..., pole], own_mask=own_mask, own_known=own.any(-1))
+            for pole in (0, 1)], -1)
+        return torch.stack((reduced[..., 0] * complete.reshape(1, B * E),
+                            reduced[..., 1]), -1)
 
     @torch.no_grad()
     def _refresh_feature_codes(self):
@@ -18699,7 +18495,7 @@ class ConceptualSpace(Space):
                     if group:
                         indices = torch.tensor([group], device=source.device)
                         source[local] = space.synthesize_word_parts(
-                            indices, torch.ones_like(indices, dtype=torch.bool), functional=True)[0, 0, :source.shape[-1]]
+                            indices, torch.ones_like(indices, dtype=torch.bool))[0, 0, :source.shape[-1]]
             source = F.pad(source[:, :width], (0, max(0, width - source.shape[1])))
             codes.index_copy_(0, select, source.to(codes))
         weights = matrix.values.to(codes) * torch.where(cols % 2 == 0, 1., -1.)
@@ -18776,7 +18572,7 @@ class ConceptualSpace(Space):
         """Offer zero candidates from the observed lower-order context.
 
         A zero edge states nothing. Only the subsequent gradient can turn
-        it into a negated part; witnessing never supplies that magnitude.
+        it into a part; a co-active pole can also witness that magnitude.
         Wholly unwritten definitions and frozen definitions stay untouched.
         """
         if not self._sparse_active():
@@ -18821,12 +18617,18 @@ class ConceptualSpace(Space):
                 for row, col in candidates:
                     if (row, col) not in matrix._index:
                         matrix.add_edge(row, col, weight=0.)
+                        opposite = (col + offset) % (2 * offset)
+                        locations = getattr(matrix, 'locations', {}).get((row, opposite))
+                        if locations is not None:
+                            matrix.locations[row, col] = locations
                         changed = True
                 for row in sorted({row for row, _ in defined}):
-                    start = next((self.order_slice(k)[0] for k in range(1, len(self._order_caps()))
+                    order = next((k for k in range(1, len(self._order_caps()))
                                   if self.order_slice(k)[0] <= row < self.order_slice(k)[1]), 0)
+                    previous = self.order_slice(order - 1) if order else (0, 0)
                     for source in active:
-                        if (self._order0_inventory_row(source) and start > 0) or source < start:
+                        if ((order == 1 and self._order0_inventory_row(source))
+                                or (order > 1 and previous[0] <= source < previous[1])):
                             for col in (source, source + offset):
                                 if (row, col) not in matrix._index:
                                     matrix.add_edge(row, col, weight=0.)
@@ -18903,7 +18705,7 @@ class ConceptualSpace(Space):
         return lam * total
 
     def _concept_rung_presence(self, field, start, end, *, inventory_rows=None):
-        """Four chart scatters with pi on; each occurrence keeps its scope."""
+        """Sigma over preceding-order symbols; each subject keeps its scope."""
         addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
         if addresses.ndim == 2:
             return torch.cat([self._concept_rung_presence(field[:, b:b+1], start, end,
@@ -18914,21 +18716,9 @@ class ConceptualSpace(Space):
         negative = field[..., 1].reshape(S, B * L)
         x = torch.cat((positive, positive.new_ones(1, B * L),
                        negative, negative.new_zeros(1, B * L)))
-        own, has_pi = None, None
-        if self.conceptual_pi:
-            own = torch.stack((
-                ly.conjunctive.fold_presence(x, conjunctive=True, start=start, end=end),
-                ly.conjunctive.fold_presence(x, dual=True, start=start, end=end)), -1)
-            gates = ly.participation[start:end].clone().to(x)[:, None]
-            rows = torch.arange(start, end, device=x.device)
-            x = x.index_copy(0, rows, own[..., 0] * gates)
-            x = x.index_copy(0, rows + S + 1, own[..., 1] * gates)
-            has_pi = self._concept_part_rows(ly.conjunctive, x.device)[start:end]
         result = torch.stack((
-            ly.fold_presence(x, start=start, end=end,
-                             own=None if own is None else own[..., 0], own_mask=has_pi),
-            ly.fold_presence(x, start=start, end=end, conjunctive=True, dual=True,
-                             own=None if own is None else own[..., 1], own_mask=has_pi)), -1)
+            ly.fold_presence(x, start=start, end=end),
+            ly.fold_presence(x, start=start, end=end, dual=True)), -1)
         return result.reshape(end - start, B, L, 2)
 
     @staticmethod
@@ -18991,8 +18781,6 @@ class ConceptualSpace(Space):
                     for b in range(B):
                         bound = self._concept_field_store(addresses[:, b] if addresses.ndim == 2 else addresses)
                         hop = bound.forward_linear_abs(x[:, b:b+1])
-                        if self.conceptual_pi:
-                            hop = hop + bound.conjunctive.forward_linear_abs(x[:, b:b+1])
                         hops.append(hop)
                     hop = torch.cat(hops, 1)
                     score = p_rel[start:end] + hop[start:end]
@@ -19009,44 +18797,80 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_wave_qe', None)
         return decode(field, self._field_codes(dictionary)), field
 
-    def cs_reverse_presence(self, field, *, inventory_rows=None):
-        """Transpose each pole in its own chart, preserving occurrence scope."""
+    def cs_reverse_presence(self, field, *, observed=None, inventory_rows=None):
+        """Select cases by pi against the field, or choose without a field.
+
+        Higher orders descend through sigma cases. Intersections are expanded
+        only in order 0. The source pole and common extent remain explicit.
+        """
         if field.ndim != 4 or field.shape[-1] != 2:
-            raise ValueError('reverse requires [concept, batch, occurrence, 2]')
+            raise ValueError('reverse requires [concept, batch, extent, 2]')
+        if observed is not None and observed.shape != field.shape:
+            raise ValueError('the observed field must match the requested field')
         addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
         if addresses.ndim == 2:
             return torch.cat([self.cs_reverse_presence(field[:, b:b+1],
+                observed=None if observed is None else observed[:, b:b+1],
                 inventory_rows=addresses[:, b]) for b in range(field.shape[1])], 1)
-        ly = self._concept_field_store(addresses)
-        S, B, L = ly.nOutput, field.shape[1], field.shape[2]
+        store = self._concept_field_store(addresses)
+        S, B, E = store.nOutput, field.shape[1], field.shape[2]
         result = field[:S].clone()
-        for k in range(min(int(self._symbolic_order), len(self._order_caps()) - 1), 0, -1):
-            start, end = self.order_slice(k)
-            own = self._concept_part_rows(ly.conjunctive, field.device) if self.conceptual_pi else None
-            poles = result.reshape(S, B * L, 2)
-            contributions, own_poles = [], []
-            for channel in range(2):
-                part, own_part = ly.reverse_presence(
-                    poles[..., channel], start=start, end=end,
-                    conjunctive=bool(channel), dual=bool(channel), own=own)
-                contributions.append(part)
-                own_poles.append(own_part)
-            combined = 1 - (1 - contributions[0]) * (1 - contributions[1])
-            if self.conceptual_pi:
-                # Same-order disjuncts address their pi result, not another
-                # sigma level. Feed that share and the own conjunct to W_pi.
-                for channel in range(2):
-                    offset = channel * (S + 1)
-                    share = combined[offset:offset + S] * own[:, None]
-                    pi_input = 1 - (1 - own_poles[channel]) * (1 - share)
-                    part, _ = ly.conjunctive.reverse_presence(
-                        pi_input, start=start, end=end,
-                        conjunctive=not bool(channel), dual=bool(channel))
-                    combined = 1 - (1 - combined) * (1 - part)
+        source = None
+        if observed is not None:
+            positive, negative = observed[:S].reshape(S, B * E, 2).unbind(-1)
+            source = torch.cat((positive, field.new_ones(1, B * E),
+                                negative, field.new_zeros(1, B * E)))
+
+        def descend(matrix, value, start, end, conjunctive=False):
+            poles = value.reshape(S, B * E, 2)
+            contributions = [matrix.attribute_presence(poles[..., channel],
+                observed=source, conjunctive=conjunctive, start=start, end=end,
+                dual=bool(channel)) for channel in (0, 1)]
+            combined = torch.maximum(*contributions)
             inferred = torch.stack((combined[:S], combined[S + 1:2 * S + 1]), -1)
-            inferred = inferred.reshape(S, B, L, 2).clamp(0, 1)
-            result = 1 - (1 - result) * (1 - inferred)
+            return torch.maximum(value, inferred.reshape(S, B, E, 2))
+
+        for k in range(len(self._order_caps()) - 1, 0, -1):
+            start, end = self.order_slice(k)
+            result = descend(store, result, start, end)
+        for _ in range(self._order_caps()[0]):
+            previous = result
+            result = descend(store, result, 0, self._order_caps()[0])
+            if self.conceptual_pi:
+                result = descend(store.conjunctive, result, 0,
+                                 self._order_caps()[0], conjunctive=True)
+            if torch.equal(previous, result):
+                break
         return result
+
+    def cs_percept_attribution(self, field, *, observed=None, inventory_rows=None):
+        """Attribute conceptual demand to the native memberships it defines.
+
+        Columns retain the feature inventory's PS/WS identity and pole;
+        returned values are one-sided percept memberships [edge,B,E,P].
+        Field coordinates travel separately. The same path serves attention
+        with observations and expectation without observations.
+        """
+        addresses = self._field_inventory_rows(field.device) if inventory_rows is None else inventory_rows
+        inferred = self.cs_reverse_presence(field, observed=observed, inventory_rows=addresses)
+        features = _concept_alloc_of(self).layer(0).features
+        rows, columns = features._indices(field.device)
+        output = field.new_zeros(len(rows), field.shape[1], field.shape[2], 1)
+        written = (features.values.to(field) > 0 if features.values is not None
+                   else torch.zeros(len(rows), device=field.device, dtype=torch.bool))
+        for b in range(field.shape[1]):
+            bound = addresses[:, b] if addresses.ndim == 2 else addresses
+            inverse = {int(row): slot for slot, row in enumerate(bound.tolist()) if row >= 0}
+            slots = torch.tensor([inverse.get(int(row), -1) for row in rows.tolist()], device=field.device, dtype=torch.long)
+            values = inferred[slots.clamp_min(0), b, :, columns % 2]
+            output[:, b, :, 0] = values * (written & (slots >= 0))[:, None]
+        spans = None
+        if observed is not None:
+            memberships = getattr(self, '_cs_feature_memberships', None)
+            if torch.is_tensor(memberships) and memberships.shape[:3] == output.shape[:3]:
+                output = torch.minimum(output, memberships.to(output))
+                spans = getattr(self, '_cs_position_spans', None)
+        return columns, output, spans
 
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
 
@@ -19155,7 +18979,7 @@ class ConceptualSpace(Space):
                     f"reading (overflow #{n})", RuntimeWarning)
         return row
 
-    def _populate_concept_weights(self, concept_id, *, witness=None):
+    def _populate_concept_weights(self, concept_id, *, witness=None, pole=0, coactive=False):
         """Write witnessed definitions into the shared concept inventory.
 
         Order 0 addresses native PS percepts and WS properties by reference.
@@ -19175,13 +18999,17 @@ class ConceptualSpace(Space):
                         (self.concept_parts(concept_id), self.concept_wholes(concept_id)))
         parts, wholes = list(parts), list(wholes)
         sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
+        # Validate identity before allocating rows or writing any constituent.
+        if any(int(x[1]) == int(concept_id) for x in sym_refs):
+            raise ValueError('self-edge: a concept cannot be its own part')
         n_raw = sum(1 for x in (parts + wholes)
                     if not _is_sym(x) and x not in (_NOTHING, _EVERYTHING))
         n_poles = int(_NOTHING in parts) + int(_EVERYTHING in wholes)
         # Min-support >= 2, EXCEPT minted singletons: the unit-set's single
         # sym edge IS its weighted reading (Alec 2026-07-02).
         if (n_raw + len(sym_refs) + n_poles < 2
-                and int(concept_id) not in alloc.singletons):
+                and int(concept_id) not in alloc.singletons
+                and not (witness is not None and self._csw_row_of(concept_id) is not None)):
             return
         order = self._concept_source_order(concept_id)   # bookkeeping only
         c_row = self._csw_concept_row(order, concept_id)
@@ -19189,7 +19017,7 @@ class ConceptualSpace(Space):
             return                                   # region full (loud above)
         if order == 0:
             # Raw parts and wholes are independent native row addresses.
-            # Witnessing writes positive memberships only.
+            # A present percept writes the observed concept pole, never an absent percept.
             model = getattr(self, '_model', None)
             literals = []
             for tower, refs in (('ps', parts), ('ws', wholes)):
@@ -19209,11 +19037,20 @@ class ConceptualSpace(Space):
             if witness is not None and len(ps_refs) > 1:
                 literals = [('ps', ps_refs)] + [(tower, ref) for tower, ref in literals if tower == 'ws']
             self._canonicalize_part_literals()
+            if coactive:
+                # Re-witness admitted literals in place. A partial observation
+                # must not become a new sufficient alternative to the word.
+                for tower, ref in literals:
+                    index = self.add_concept_feature(c_row, tower, ref, 1., negated=bool(pole))
+                    if index is not None and float(store.features.values[index]) == 0:
+                        store.features.values[index] = 1.
+                return
             wanted = {(tower, (ref,) if isinstance(ref, int) else ref) for tower, ref in literals}
             def written(row):
                 return {('ws' if (col // 2) % 2 else 'ps',
                          store.feature_groups.get((r, col), (col // 4,)))
-                        for r, col in store.features._index if r == row and col % 2 == 0}
+                        for (r, col), i in store.features._index.items()
+                        if r == row and col % 2 == int(pole) and float(store.features.values[i]) > 0}
             own = written(c_row)
             if witness is not None and own and own != wanted:
                 alternatives = [r for r, _weight in self.concept_weights(c_row)]
@@ -19233,7 +19070,7 @@ class ConceptualSpace(Space):
             else:
                 target = c_row
             for tower, ref in literals:
-                self.add_concept_feature(target, tower, ref, 1.)
+                self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
             self._maybe_rebuild_optimizer_for_csw()
             return
         for x in sym_refs:
@@ -19248,7 +19085,42 @@ class ConceptualSpace(Space):
         # optimizer when the weight count changed; no-op pre-training).
         self._maybe_rebuild_optimizer_for_csw()
 
-    def cs_symbolic_phase(self, settled, *, extents=None, percepts=None):
+    @torch.no_grad()
+    def _witness_concept_poles(self):
+        """Write present definition percepts at each co-active concept pole.
+
+        Co-activity is measured at retained occurrences, before extent union.
+        The admitted references bound the association: attention to another
+        percept alone cannot add that percept to every active definition.
+        """
+        refs = getattr(self, '_cs_witness_feature_refs', ())
+        membership = getattr(self, '_cs_feature_memberships', None)
+        evidence = getattr(self, '_cs_position_evidence', None)
+        if not refs or not torch.is_tensor(membership) or not torch.is_tensor(evidence):
+            return
+        object.__setattr__(self, '_cs_witness_feature_refs', ())
+        addresses = self._field_inventory_rows()
+        pending = set()
+        by_row = {}
+        for i, (row, col, group) in enumerate(refs):
+            by_row.setdefault(row, []).append((i, col, group))
+        for b in range(evidence.shape[1]):
+            bound = addresses[:, b] if addresses.ndim == 2 else addresses
+            for slot, row in enumerate(bound[:evidence.shape[0]].tolist()):
+                cid = self.concept_id_at_row(row) if row >= 0 else None
+                if cid is None or self.is_frozen(cid):
+                    continue
+                active = evidence[slot, b] > 0
+                for i, col, group in by_row.get(row, ()):
+                    present = membership[i, b] > 0
+                    for pole in (0, 1):
+                        if bool((present & active[..., pole]).any()):
+                            pending.add((cid, pole, col, group))
+        for cid, pole, col, group in sorted(pending):
+            witness = ((), (col // 4,)) if (col // 2) % 2 else (group, ())
+            self._populate_concept_weights(cid, witness=witness, pole=pole, coactive=True)
+
+    def cs_symbolic_phase(self, settled, *, extents=None, percepts=None, a_0=None):
         """Read native memberships once after the pump, then compose symbols.
 
         The distributed carrier retains its tied reconstruction. Presence
@@ -19265,7 +19137,7 @@ class ConceptualSpace(Space):
             return settled, None
         if percepts is None:
             return settled, None
-        a_0 = self.cs_read_memberships(percepts, extents)
+        a_0 = self.cs_read_memberships(percepts, extents) if a_0 is None else a_0
         if a_0 is None:
             return settled, None
         object.__setattr__(self, "_cs_last_a0", a_0.detach())
@@ -19820,17 +19692,22 @@ class ConceptualSpace(Space):
             return
         ly = _concept_alloc_of(self).layer(0)
         ly.ensure_context()
-        for order in range(1, len(self._order_caps())):
-            start, end = self.order_slice(order)
-            missing = self.concept_pool_size - int(ly.provisional[start:end].sum())
+        for order in range(len(self._order_caps())):
+            if order == 0:
+                if not self.conceptual_pi:
+                    continue
+                start, end = sum(self._order_caps()), int(self.nVectors)
+            else:
+                start, end = self.order_slice(order)
+            missing = self.concept_pool_size - int(ly.provisional[start:min(end, ly.nOutput)].sum())
             for _ in range(max(0, missing)):
                 next_row = start + int(ly._row_next.get(start, 0))
+                if next_row < end:
+                    ly.grow_inventory(max(ly.nOutput, next_row + 1))
                 key = ('provisional', -next_row - 1)
                 row = ly.assign_row(key, capacity=end - start, base=start)
                 if row is None:
-                    warnings.warn(f"concept pool order {order} exhausted: "
-                                  f"cannot reserve {self.concept_pool_size} provisional rows",
-                                  RuntimeWarning)
+                    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
                     break
                 ly.provisional[row] = True
                 ly.managed[row] = True
@@ -19875,10 +19752,11 @@ class ConceptualSpace(Space):
         return out
 
     @torch.no_grad()
-    def _assign_concept_parts(self, order, parts, context, *, conjunctive=False, evidence=None):
+    def _assign_concept_parts(self, order, parts, context, *, conjunctive=False, evidence=None, locations=None):
         """Match definitions or contexts in rows; assignment never mints a copy."""
         ly = _concept_alloc_of(self).layer(0)
-        start, end = self.order_slice(order)
+        start, end = ((sum(self._order_caps()), ly.nOutput) if order == 0
+                      else self.order_slice(order))
         matrix = ly.conjunctive if conjunctive else ly
         offset = ly.nOutput + 1
         desired = torch.zeros(matrix.nInput, device='cpu')
@@ -19890,6 +19768,12 @@ class ConceptualSpace(Space):
             definitions[rr[selected] - start, cc[selected]] = matrix.values.detach().cpu()[selected].clamp_min(0)
         if conjunctive:
             scores = ((definitions > 0) == (desired > 0)).all(-1).float()
+            desired_locations = locations or {}
+            for candidate in range(start, end):
+                actual = {c: v for (r, c), v in matrix.locations.items()
+                          if r == candidate and (r, c) in matrix._index}
+                if actual != desired_locations:
+                    scores[candidate - start] = -1
         else:
             scores = ly.context_similarities(context)[start:end]
         valid = ly.assigned[start:end].cpu() & (definitions > 0).any(-1)
@@ -19908,6 +19792,8 @@ class ConceptualSpace(Space):
             for m in ly.part_matrices():
                 m.remove_edges([(r, c) for r, c in m._index
                                 if r == best or c % offset == best])
+                if hasattr(m, 'locations'):
+                    m.locations = {key: value for key, value in m.locations.items() if key in m._index}
             ly.clear_context(best)
             ly.participation[best] = 0.
             ly.context_seen[best] = 0
@@ -19922,13 +19808,15 @@ class ConceptualSpace(Space):
             support = (float(ly.witness_strength[source]) or 1.) if source < ly.nOutput else 1.
             existed = (best, col) in matrix._index
             pos = self.add_concept_edge(best, source, weight=support,
-                                        conjunctive=conjunctive, negated=negative)
+                                        conjunctive=conjunctive, negated=negative,
+                                        locations=(locations or {}).get(col))
             if pos is not None and existed and evidence is not None:
                 matrix.values[pos].add_((1 - self.concept_use_ewma) * float(evidence[col]))
             cid, part = self.concept_id_at_row(best), self.concept_id_at_row(source)
             if cid is not None and part is not None:
-                _concept_alloc_of(self).add(cid, 'part', ('sym', int(part)))
-        self._normalize_concept_parts(matrix, best)
+                _concept_alloc_of(self).add(cid, 'part', ('field' if conjunctive else 'sym', int(part)))
+        if not conjunctive and bool(ly.provisional[best]):
+            self._normalize_concept_parts(matrix, best)
         self._write_concept_context(best, context)
         return best
 
@@ -19967,9 +19855,9 @@ class ConceptualSpace(Space):
             ly.observation.add_(1)
             tick = int(ly.observation)
             active = sorted(set(selected[:, b].tolist()) & witnessed)
-            active = [r for r in active if float(readings[r, b, 0]) > 1e-3]
+            active = [r for r in active if float(readings[r, b].amax()) > 0]
             field = torch.zeros(N, device='cpu')
-            field[active] = readings[active, b, 0]
+            field[active] = readings[active, b].amax(-1)
             evidence = torch.cat((field, field.new_zeros(1), readings[:, b, 1], field.new_zeros(1)))
             for focal in active:
                 beta = self.concept_use_ewma if int(ly.context_seen[focal]) else 0.
@@ -19992,31 +19880,52 @@ class ConceptualSpace(Space):
                     if float(similarity) >= self.concept_match_cos:
                         self._assign_concept_parts(order + 1, (focal, alternatives[int(index)]), context, evidence=evidence)
             if self.conceptual_pi:
-                # The snap unions positions within a subject extent. Only
-                # positive parts are witnessed; a negated part is learned
-                # or sealed, never assigned from observed counterevidence.
-                for location in range(a.shape[2]):
-                    for order in range(len(self._order_caps()) - 1):
-                        start, end = self.order_slice(order)
-                        parts = [r for r in witnessed if (self._order0_inventory_row(r) if order == 0 else start <= r < end)
-                                 if r in inverse and float(a[inverse[r], b, location, 0]) > self.concept_use_floor]
-                        if len(parts) >= 2:
-                            context = field.clone()
-                            context[[c % offset for c in parts]] = 0
-                            self._assign_concept_parts(order + 1, parts, context,
-                                                       conjunctive=True, evidence=evidence)
+                # Patterns are joint witnesses in the order-0 position field.
+                # Pooling the poles first would discard the matching brackets.
+                position_pairs = getattr(self, '_cs_position_evidence', None)
+                spans, extents = getattr(self, '_cs_position_spans', None), getattr(self, '_cs_extents', None)
+                for location in range(a.shape[2]) if torch.is_tensor(position_pairs) else ():
+                    literals = {}
+                    lo, hi = extents[b, location].tolist()
+                    for r in witnessed:
+                        if not self._order0_inventory_row(r) or r not in inverse:
+                            continue
+                        for position, (start, end) in enumerate(spans[b].tolist()):
+                            if not lo <= start < end <= hi:
+                                continue
+                            for pole in (0, 1):
+                                if float(position_pairs[inverse[r], b, location, position, pole]) > self.concept_use_floor:
+                                    literals.setdefault(r + pole * offset, set()).add((start - lo, end - lo))
+                    if sum(map(len, literals.values())) >= 2:
+                        parts = tuple(sorted(literals))
+                        locations = {col: tuple(sorted(brackets)) for col, brackets in literals.items()}
+                        context = field.clone()
+                        context[[c % offset for c in parts]] = 0
+                        self._assign_concept_parts(0, parts, context, conjunctive=True, evidence=evidence, locations=locations)
             for focal in active:
                 context = field.clone()
                 context[focal] = 0
                 self._write_concept_context(focal, context)
-            self.observe_concept_use(a[:, b:b + 1], inventory_rows=addresses)
+            raw0 = getattr(self, '_cs_order0_raw', None)
+            self.observe_concept_use(a[:, b:b + 1], inventory_rows=addresses,
+                                     raw_order0=None if raw0 is None else raw0[:, b:b+1])
         self._maybe_rebuild_optimizer_for_csw()
 
     @torch.no_grad()
-    def observe_concept_use(self, evidence, *, inventory_rows=None):
+    def observe_concept_use(self, evidence, *, inventory_rows=None, raw_order0=None):
         """Advance participation from raw use, independently of edge learning."""
         from ConceptEvidence import symbols
         ly = _concept_alloc_of(self).layer(0)
+        raw0 = getattr(self, '_cs_order0_raw', None) if raw_order0 is None else raw_order0
+        if torch.is_tensor(raw0):
+            addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
+            for b in range(evidence.shape[1]):
+                bound = addresses[:, b] if addresses.ndim == 2 else addresses
+                for slot, address in enumerate(bound[:self._order_caps()[0]].tolist()):
+                    if address < 0 or not bool(ly.managed[address] & ly.assigned[address]):
+                        continue
+                    use = float(raw0[slot, min(b, raw0.shape[1]-1)].amax() > self.concept_use_floor)
+                    ly.participation[address] = self.concept_use_ewma * ly.participation[address] + (1-self.concept_use_ewma) * use
         for b in range(evidence.shape[1]):
             u = evidence[:, b:b + 1].detach().cpu().clone()
             for order in range(1, len(self._order_caps())):
@@ -20041,18 +19950,19 @@ class ConceptualSpace(Space):
         discovered = []
         for row in (ly.provisional & ly.assigned &
                     (ly.participation >= self.concept_mint_threshold)).nonzero().flatten().tolist():
-            order = next(k for k in range(1, len(self._order_caps()))
-                         if self.order_slice(k)[0] <= row < self.order_slice(k)[1])
+            order = next((k for k in range(1, len(self._order_caps()))
+                         if self.order_slice(k)[0] <= row < self.order_slice(k)[1]), 0)
             if not ConceptualSpace._automatic_concept_admitted(self, 1, reason='used concept'):
                 continue
             for matrix in ly.part_matrices():
                 matrix.remove_edges([(r, col) for (r, col), pos in matrix._index.items()
                                      if r == row and abs(float(matrix.values[pos])) < self.concept_part_floor])
-                self._normalize_concept_parts(matrix, row)
+                if matrix is ly:
+                    self._normalize_concept_parts(matrix, row)
             cid = alloc.new_concept()
             old_key = ly._tensor_row_keys.pop(row)
             ly._tensor_rows.pop(old_key)
-            key = ('pool' if len(self._order_caps()) == 2 else f'o{order}', cid)
+            key = ('snap' if order == 0 else 'pool' if len(self._order_caps()) == 2 else f'o{order}', cid)
             ly._tensor_rows[key] = row
             ly._tensor_row_keys[row] = key
             ly.provisional[row] = False
@@ -20062,7 +19972,7 @@ class ConceptualSpace(Space):
                 for r, col in matrix._index:
                     part = self.concept_id_at_row(col % (ly.nOutput + 1))
                     if r == row and part is not None:
-                        alloc.add(cid, 'part', ('sym', int(part)))
+                        alloc.add(cid, 'part', ('field' if matrix is ly.conjunctive else 'sym', int(part)))
             alloc.placement[cid] = order
             alloc.raised.add(cid)
             # The distributed code is the normalized evidence-weighted part
@@ -20321,6 +20231,8 @@ class ConceptualSpace(Space):
         alloc.settle(C)
         if key is not None:
             wom[key] = (A, B, C)
+            ConceptualSpace.bind_word_concept(self, key, A)
+            ConceptualSpace.bind_word_concept(self, key, B)
         # The word's order-0 definition reads its native PS/WS features.
         # The object remains unwritten until testimony supplies its parts.
         self._populate_concept_weights(A, witness=(word_parts, word_wholes))
@@ -20390,6 +20302,42 @@ class ConceptualSpace(Space):
         o2w = getattr(self, '_object_word_concept', None)
         return None if not o2w else o2w.get(int(cid))
 
+    def bind_word_concept(self, form, concept_id):
+        """Index an observed lexical association by identity, never field row.
+
+        This records a supplied association; it neither forms an individual
+        nor invents a kind. Order remains the concept's number of symbolizations.
+        """
+        alloc = _concept_alloc_of(self)
+        cid = int(concept_id)
+        if cid not in alloc.placement or cid in alloc.retired:
+            raise ValueError("word form requires an existing concept identity")
+        if isinstance(form, bytes):
+            form = form.decode('utf-8', errors='surrogateescape')
+        alloc.word_forms.setdefault(str(form), set()).add(cid)
+
+    def word_concepts(self, form):
+        """All still-live identities associated with the presented form."""
+        if isinstance(form, bytes):
+            form = form.decode('utf-8', errors='surrogateescape')
+        alloc = _concept_alloc_of(self)
+        return tuple(sorted(cid for cid in alloc.word_forms.get(str(form), ())
+                            if cid in alloc.placement and cid not in alloc.retired))
+
+    def resolve_word_concept(self, form, *, order, previous=None):
+        """Select a grammar-requested order; ambiguity remains unresolved.
+
+        A carried referent resolves an otherwise ambiguous order. Missing
+        orders and multiple unbound particulars remain unknown, not a first
+        row or a freshly allocated substitute.
+        """
+        alloc = _concept_alloc_of(self)
+        candidates = tuple(cid for cid in self.word_concepts(form)
+                           if int(alloc.placement[cid]) == int(order))
+        if previous is not None and int(previous) in candidates:
+            return int(previous)
+        return candidates[0] if len(candidates) == 1 else None
+
     def remember_word_surface(self, row, surface, *, object_row, object_id):
         """Retain WORD bytes and an OBJECT row-to-identity index.
 
@@ -20400,6 +20348,7 @@ class ConceptualSpace(Space):
         surfaces.setdefault(int(row), bytes(surface))
         objects = self.__dict__.setdefault('_surface_object_rows', {})
         objects[int(object_row)] = int(object_id)
+        ConceptualSpace.bind_word_concept(self, surface, object_id)
 
     def word_surface_for_row(self, row):
         """Resolve one bounded decoder candidate to WORD-owned bytes.
@@ -24116,138 +24065,6 @@ class WholeSpace(Space):
                 self.semantic_arrangement_weight = 0.0
         self.params = []
         self.layers = nn.ModuleList()
-        _sigma_naive = TheXMLConfig.get("architecture.naive")
-        _sigma_ergodic = TheXMLConfig.get("architecture.ergodic")
-        _sigma_monotonic = bool(
-            TheXMLConfig.get("architecture.monotonic", default=False))
-        # 2026-06-06: sigma operates on the INCOMING CS idea carrier, so it
-        # must be sized at the WS INPUT width (nInputDim), not the OUTPUT
-        # width. For symmetric WS (passthrough: nInputDim == nOutputDim) the
-        # two are equal and behavior is unchanged; for asymmetric WS (e.g.
-        # MM_20M: nInputDim=1024 incoming deep idea, nOutputDim=8 wide-symbol
-        # output) the sigma is correctly square at the carrier width and the
-        # reshape to the output happens at forwardEnd. Falls back to the
-        # output width and then nDim when the input width is unset.
-        _sigma_dim = int(getattr(self, "nInputDim", 0) or 0)
-        if _sigma_dim <= 0:
-            _sigma_dim = int(self.nOutputDim)
-        if _sigma_dim <= 0:
-            _sigma_dim = int(self.nDim)
-        # Global <sigmaPi> selects per-slot, butterfly, or dense Pi span.
-        _sigma_mode = Space.sigma_pi_mode(
-            TheXMLConfig.space(section, "butterfly", default=None)
-            if TheXMLConfig.space(section, "butterfly", default=None) is not None
-            else TheXMLConfig.get("architecture.sigmaPi", default="butterfly"))
-        _sigma_butterfly = (_sigma_mode == "butterfly")
-        self.sigma_pi_slab = None  # set only for the "full" dense bridge
-        # Unified fold-width law (2026-07-16): the butterfly folds one
-        # vector's CONTENT columns (self.nDim when the muxed carrier is
-        # wider); the band rides through the dispatch trim at the
-        # application site -- same law as PartSpace.sigma, so the PS/WS
-        # fold sizes cannot drift apart.
-        _nd_ws = int(getattr(self, "nDim", 0) or 0)
-        _fold_dim = _nd_ws if 0 < _nd_ws < int(_sigma_dim) else int(_sigma_dim)
-        _sigma_butterfly_total = int(inputShape[0]) * int(_fold_dim)
-        _pi_butterfly_built = bool(_sigma_butterfly
-                                   and _sigma_butterfly_total >= 2)
-
-        def _mint_pi():
-            # ONE construction path shared by the base layer and the P4
-            # per-pass stack layers (identical modes/dims).
-            if _pi_butterfly_built:
-                ly = PiLayer(
-                    _fold_dim, _fold_dim,
-                    naive=_sigma_naive, ergodic=_sigma_ergodic,
-                    invertible=True, nonlinear=nonlinear,
-                    stable=True, monotonic=_sigma_monotonic,
-                    butterfly=True, N=_sigma_butterfly_total,
-                )
-            elif _sigma_mode == "full":
-                ly = PiLayer(
-                    self.sigma_pi_slab, self.sigma_pi_slab,
-                    naive=_sigma_naive, ergodic=_sigma_ergodic,
-                    invertible=True, nonlinear=nonlinear,
-                    stable=True, monotonic=_sigma_monotonic,
-                )
-            else:
-                # Per-slot fold follows the same unified fold-width law.
-                ly = PiLayer(
-                    _fold_dim, _fold_dim,
-                    naive=_sigma_naive, ergodic=_sigma_ergodic,
-                    invertible=True, nonlinear=nonlinear,
-                    stable=True, monotonic=_sigma_monotonic,
-                )
-            if meronomy_enabled():
-                from Layers import MeronymicFoldAdapter
-                ly = MeronymicFoldAdapter(
-                    'pi', ly.nInput, ly.nOutput,
-                    stable=True, ergodic=_sigma_ergodic, naive=_sigma_naive,
-                    legacy_N=_sigma_butterfly_total,
-                    butterfly=_sigma_butterfly)
-            return ly
-
-        if _pi_butterfly_built:
-            pass
-        elif _sigma_mode == "full":
-            # full: the dense flattened square Sigma bridge of the flat-
-            # slab invariant -- ONE invertible LDU over the whole
-            # [B, N*content] symbolic slab (the wide WS <-> deep CS
-            # regrouping is a pure reshape; this matrix is the invertible
-            # map). Like PS.pi's full mode, ``content`` EXCLUDES the per-
-            # position .where/.when band (canonical_shape("WholeSpace")
-            # == (2, 2)), which passes through the dense bridge unchanged --
-            # a per-position band cannot be folded across a wide<->deep
-            # position-count change. (Option B keeps the band MUXED on the
-            # per-position butterfly/last paths and inside the
-            # ConceptualCombine, NOT in this flattened wide<->deep bridge.)
-            # The [B,N,D] <-> [B, N*content] reshape routing lives in the
-            # forward path.
-            _band = int(sum(canonical_shape(section)))
-            _content = int(_sigma_dim) - _band
-            if _content < 1:
-                raise ValueError(
-                    "WholeSpace <sigmaPi>full</> requires sigma_dim "
-                    f"({_sigma_dim}) > band ({_band})")
-            self.sigma_pi_slab = int(inputShape[0]) * _content
-        # Construction (all three modes + the Stage-9 membership-native
-        # adapter wrap) lives in _mint_pi, shared verbatim with the P4 stack
-        # so the base path's RNG draws stay order-identical.
-        self.pi = _mint_pi()
-        self.sigma_pi_mode = _sigma_mode
-        self.butterfly_enabled = _sigma_butterfly
-        self.butterflyN = _sigma_butterfly_total if _sigma_butterfly else None
-        self.layers.append(self.pi)
-        self.params += self.pi.getParameters()
-        # Per-pass pis (canonical): DISTINCT per-pass folds. Fold index is
-        # derivation provenance, not mereological rank. Pass 0 IS ``self.pi``;
-        # ``<subsymbolicNoop>``
-        # slots are the IDENTITY (``None``). RNG-NEUTRAL construction
-        # (save/restore) so the t>=1 minting does not shift the init streams
-        # downstream -- an order-1 config (the single ``[pi]`` slot) is
-        # byte-identical to the pre-stack build.
-        _T = max(1, int(TheXMLConfig.get(
-            "architecture.subsymbolicOrder", default=1) or 1))
-        _noop = _parse_pass_indices(TheXMLConfig.get(
-            "architecture.subsymbolicNoop", default=None))
-        _rng_state = torch.get_rng_state()
-        _stack = []
-        for _t in range(_T):
-            if _t in _noop:
-                _stack.append(None)
-            elif _t == 0:
-                _stack.append(self.pi)
-            else:
-                _ly = _mint_pi()
-                self.params += _ly.getParameters()
-                _stack.append(_ly)
-        torch.set_rng_state(_rng_state)
-        self.pis = _stack
-        # Register the fresh t>=1 layers as SUBMODULES (state_dict /
-        # model-wide .to()); see the PS stack note. Not on self.layers:
-        # the Start/End/Reset cascade stays the pre-stack set.
-        self._pi_stack_modules = nn.ModuleList(
-            [ly for ly in _stack[1:] if ly is not None])
-
         # Mereological run-structure measure (the part/whole ratio + the
         # A-isa-B containment test, doc/specs/mereological-order-raising.md).
         # Parameter-free Layer; on self.layers so the Start/End/Reset cascade
@@ -29031,20 +28848,7 @@ class WholeSpace(Space):
             ).reshape(B, N, content)
         return F.pad(narrow, (0, D - content))
 
-    def compute_word_property_fold_sources(
-            self, weights_b_n_p, pass_indices):
-        """Return one word's W0 plus cumulative learned WholeSpace folds."""
-        base = self.compute_word_property_event(weights_b_n_p)
-        folds = self.fold_event_ladder(base, pass_indices, strict=True)
-        return (base, *folds)
 
-    def compute_unity_fold_sources(self, IS_concepts, spans, pass_indices):
-        """Return W0 plus cumulative learned folds without carrier writes."""
-        base, membership = self.compute_stage0_unity_event(
-            IS_concepts, spans)
-        folds = self.fold_event_ladder(
-            base, pass_indices, strict=True)
-        return (base, *folds), membership
 
     # -- The interpret-as-word gate and the serial shift -----------------
     # MeronomySpec §6 (rev 2026-06-11), §10.8/§10.11; MeronomyPlan
@@ -29609,103 +29413,10 @@ class WholeSpace(Space):
         # / disjoint parts+wholes -> sigma/pi refine).
         return ("chunk", None) if hint == 1 else ("refine", None)
 
-    def _pi_for_pass(self, t=None):
-        """The pass-``t`` pi: the per-pass stack layer (``None`` = the
-        identity no-op slot). ``t`` defaults to the pump-stamped pass index
-        (``_pump_pass_idx``). Falls back to the single ``self.pi`` if the
-        stack was not built (defensive)."""
-        stack = getattr(self, "pis", None)
-        if stack is None:
-            return getattr(self, 'pi', None)
-        if t is None:
-            t = int(getattr(self, "_pump_pass_idx", 0) or 0)
-        return stack[min(max(0, int(t)), len(stack) - 1)]
 
-    def _analyze_event(self, ev, t, *, strict=False, functional=False):
-        """Tensor-only application of one pi stack layer."""
-        stack = getattr(self, "pis", None)
-        if stack is None:
-            if strict:
-                raise RuntimeError(
-                    f"WholeSpace pi fold {int(t)} has no fold stack")
-            return ev
-        fold = stack[min(max(0, int(t)), len(stack) - 1)]
-        if fold is None:
-            if strict:
-                raise RuntimeError(
-                    f"WholeSpace pi fold {int(t)} is configured as a no-op")
-            return ev
-        if ev is None or not torch.is_tensor(ev) or ev.dim() < 2:
-            if strict:
-                raise RuntimeError(
-                    f"WholeSpace pi fold {int(t)} received no tensor event")
-            return ev
-        fold_width = int(fold.nInput)
-        flattened_width = int(getattr(fold, "N", 0) or 0)
-        actual_width = int(ev.shape[-1]) * (
-            int(ev.shape[-2]) if ev.dim() >= 3 else 1)
-        apply_fold = (
-            fold.compute_forward
-            if functional and hasattr(fold, "compute_forward")
-            else fold.forward)
-        if flattened_width and actual_width == flattened_width:
-            return apply_fold(ev)
-        if ev.dim() >= 3 and int(ev.shape[-1]) > fold_width:
-            return torch.cat(
-                [apply_fold(ev[..., :fold_width]),
-                 ev[..., fold_width:]], dim=-1)
-        if int(ev.shape[-1]) == fold_width:
-            return apply_fold(ev)
-        if strict:
-            raise RuntimeError(
-                f"WholeSpace pi fold {int(t)} cannot consume event "
-                f"shape {tuple(ev.shape)} (fold width={fold_width}, "
-                f"flattened width={flattened_width or 'per-slot'})")
-        return ev
 
-    def analyze_feedback(self, sub, t, *, strict=False):
-        """Apply one explicit cumulative pi fold to a whole-field carrier.
 
-        This is the WholeSpace counterpart of
-        :meth:`PartSpace.synthesize_feedback`. The ordinary historical path
-        remains shape-tolerant; ``strict=True`` is reserved for aligned
-        concept formation, where a configured fold must really execute.
-        """
-        if (sub is None or not hasattr(sub, "is_empty") or sub.is_empty()):
-            if strict:
-                raise RuntimeError(
-                    f"WholeSpace pi fold {int(t)} has no live input")
-            return sub
-        ev = sub.materialize()
-        out = self._analyze_event(ev, t, strict=strict)
-        if out is ev:
-            return sub
-        analysed = SubSpace(inputShape=(1, 1), outputShape=(1, 1),
-                            nInputDim=1, nOutputDim=1)
-        analysed.copy_context(sub)
-        analysed.set_event(out)
-        return analysed
 
-    def fold_ladder(self, sub, pass_indices, *, strict=False):
-        """Return cumulative pi outputs in the requested pass order."""
-        current = sub
-        outputs = []
-        for pass_idx in tuple(int(t) for t in pass_indices):
-            current = self.analyze_feedback(
-                current, pass_idx, strict=strict)
-            outputs.append(current)
-        return tuple(outputs)
-
-    def fold_event_ladder(self, sub, pass_indices, *, strict=False):
-        """Tensor-only cumulative pi ladder for the serial hot loop."""
-        current = (sub if torch.is_tensor(sub)
-                   else sub.materialize() if sub is not None else None)
-        outputs = []
-        for pass_idx in tuple(int(t) for t in pass_indices):
-            current = self._analyze_event(
-                current, pass_idx, strict=strict, functional=True)
-            outputs.append(current)
-        return tuple(outputs)
 
     def _record_truth_activations(self, act, symbolSpace):
         """Continuous truthCriterion-gated truth recording (one knob, fires
@@ -29950,91 +29661,7 @@ class WholeSpace(Space):
             act = act_pre
         elif (getattr(self, 'syntacticLayer', None) is None
               or (self.overlap_where_tiling and not bool(_serial))):
-            # Parallel-mode WS fold. Post Pi/Sigma swap (Phase 3, rev.
-            # 2026-06-09) the fold is ``self.pi`` -- the top-down ANALYSIS
-            # (product/intersection) operator. It is the cross-slot symbolic
-            # mix that XOR -- and any function that must combine information
-            # across slot positions -- requires at the S space_role, exactly as
-            # PS.sigma provides it at the P space_role (a square per-slot fold
-            # cannot mix the word slots; see __init__). The 2026-05-29
-            # clean-stack read-back turned this into a pass-through
-            # (``act = act_pre``), removing the only per-stage nonlinearity
-            # in parallel mode and leaving the recurrence linear (-> can't
-            # compute XOR). The serial/grammar path uses the SyntacticLayer
-            # (the ``else`` below); this fold IS the parallel substitute for
-            # that syntax. ``_sigma_dim == nInputDim == concept_dim`` so the
-            # fold applies on the concept-width activation here.
-            #
-            # The fold is constructed for the concept-content width
-            # ``_sigma_dim`` (== ``fold.nInput``).  When ``nWhen > 0`` the
-            # muxed event is wider (nOutputDim > _sigma_dim) -- the trim
-            # above gave ``act_pre[..., nOutputDim]`` which may carry extra
-            # .when dims. Apply the fold on the first ``fold.nInput``
-            # columns only and pass the extra band through unchanged so the
-            # shapes stay consistent without resizing the layer.
-            # P4: pass t selects stack layer t (None = identity no-op slot);
-            # the single reused ``self.pi`` when the stack is off.
-            fold = self._pi_for_pass()
-            if fold is None:
-                act = act_pre
-            else:
-                # The fold was sized at construction for ``fold.N =
-                # inputShape[0] * _sigma_dim`` elements total (flattened
-                # across all positions). At runtime, two things can differ:
-                #   (a) nWhen adds extra per-slot dims  → act_pre.shape[-1] > _sigma_dim
-                #   (b) sequence length changes at test  → N_slots != inputShape[0]
-                # Check the flattened total; only apply the fold when it matches.
-                _sd = int(fold.nInput)           # per-slot concept dim
-                _fold_total = int(fold.N)        # construction-time flat total
-                # Compute what the butterfly would see after flatten [B, N, D] -> [B, N*D]
-                _actual_total = int(act_pre.shape[-1])
-                if act_pre.dim() >= 3:
-                    _actual_total *= int(act_pre.shape[-2])
-                if _actual_total == _fold_total:
-                    # Exact match: apply normally.
-                    act = fold.forward(act_pre)
-                elif act_pre.dim() >= 3 and act_pre.shape[-1] > _sd:
-                    # Same N_slots but extra per-slot dims (nWhen band).
-                    # Apply the fold on the concept-content columns only,
-                    # pass the extra band through unchanged.
-                    act_c = fold.forward(act_pre[..., :_sd])
-                    act = torch.cat([act_c, act_pre[..., _sd:]], dim=-1)
-                else:
-                    # Total elements don't match and no simple band trim
-                    # resolves it (e.g. variable-length sequence at test time).
-                    # Fall back to identity -- the fold remains a no-op for
-                    # this batch.  XOR training always uses the construction-
-                    # time sequence length, so XOR accuracy is unaffected.
-                    act = act_pre
-                # Per-.where π routing on the experimental path.  The default
-                # grammar is attached even in parallel mode, which previously
-                # sent every WS carrier through the eager grammar cursor and
-                # left the per-pass pi stack unused.  Here the local tiling is
-                # the selector: only immediate whole children of a 1:N part
-                # take the analysed value; peer σ targets and settled wholes
-                # retain their incoming content.  Pass 0 has no plan and stays
-                # wide-open.
-                if self.overlap_where_tiling:
-                    _plan = self.where_tiling_for_pass(
-                        int(getattr(self, "_pump_pass_idx", 0) or 0))
-                    _mask = (_plan.get("pi_whole")
-                             if isinstance(_plan, dict) else None)
-                    if (torch.is_tensor(_mask) and act is not None
-                            and act_pre is not None and act.shape == act_pre.shape
-                            and act.dim() == 3):
-                        _mask = _mask.to(act.device, torch.bool)
-                        if _mask.dim() == 1:
-                            _mask = _mask.unsqueeze(0)
-                        if int(_mask.shape[0]) == int(act.shape[0]):
-                            if int(_mask.shape[1]) < int(act.shape[1]):
-                                _mask = F.pad(
-                                    _mask,
-                                    (0, int(act.shape[1])
-                                     - int(_mask.shape[1])), value=False)
-                            elif int(_mask.shape[1]) > int(act.shape[1]):
-                                _mask = _mask[:, :int(act.shape[1])]
-                            act = torch.where(
-                                _mask.unsqueeze(-1), act, act_pre)
+            act = act_pre
         else:
             # ---- Eager cursor path: WholeSpace is the single site
             # that drives S-space_role op application. The per-space_role rule list

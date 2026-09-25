@@ -50,6 +50,18 @@ def _mint_row(cs, order, cid):
     return cs._csw_concept_row(order, cid)
 
 
+
+def _mint_field(cs, cid):
+    """Eight existing native predicates before a composed order-0 row."""
+    for i in range(8):
+        row = _mint_row(cs, 0, 10000 + i)
+        cs.add_concept_feature(row, 'ps', 1000 + i, 1.)
+    return _mint_row(cs, 0, cid)
+
+
+def _field_forward(cs, evidence, dictionary):
+    return cs.cs_forward_content(cs._compose_order0(evidence), dictionary)
+
 def test_order_slice_taper_contract():
     """dual-towers rev 2: per-order TAPER caps [base, base>>1, ..], base
     halved until sum(caps) <= nVectors; contiguous cumulative blocks."""
@@ -73,9 +85,9 @@ def test_add_concept_edge_dedup_and_query():
     r1 = cs.add_concept_edge(33, 5, weight=1.5)
     r2 = cs.add_concept_edge(33, 5, weight=9.0)      # repeat -> no-op
     assert r1 == r2
-    cs.add_concept_edge(33, 40, weight=0.5)
+    cs.add_concept_edge(33, 6, weight=0.5)
     got = cs.concept_weights(33)
-    assert (5, 1.5) in got and (40, 0.5) in got
+    assert (5, 1.5) in got and (6, 0.5) in got
     assert cs.concept_weights(34) == []              # different row
 
 
@@ -217,7 +229,7 @@ def test_forward_content_literal_poles_and_standing_bias():
     cs.add_concept_edge(row, 3, 3.)
     cs.add_concept_edge(row, 5, .5, negated=True)
     _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
-    assert float(a[row, 0, 0, 0]) == pytest.approx(1 - .5**3 * .75**.5)
+    assert float(a[row, 0, 0, 0]) == pytest.approx(max(1 - .5**3, 1 - .75**.5))
     cs.add_concept_edge(row, 16, .25)
     _, a = cs.cs_forward_content(a0, torch.randn(16, _D))
     torch.testing.assert_close(a[row, 0, 0], torch.tensor([1., 0.]))

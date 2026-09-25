@@ -1,0 +1,54 @@
+....FF                                                                   [100%]
+=================================== FAILURES ===================================
+________ test_boundary_candidates_keep_located_brackets_and_do_not_veto ________
+
+    def test_boundary_candidates_keep_located_brackets_and_do_not_veto():
+        cs = _cs()
+        cs.conceptual_pi = True
+        _mint_row(cs, 0, 100)
+        row = _mint_row(cs, 0, 101)
+        cs.add_concept_edge(row, 0, 1., conjunctive=True, locations=((0, 1),))
+        # An unwritten source outside the bound field must not veto this pattern.
+        cs.add_concept_edge(row, 60, 0., conjunctive=True, locations=((1, 2),))
+        native, extents = binary_features(cs, torch.tensor([[49, 48]]))
+        before = cs.cs_read_memberships(native, extents)
+>       assert float(before[row, 0, 0, 0]) == 1.
+E       assert 0.0 == 1.0
+E        +  where 0.0 = float(tensor(0., grad_fn=<SelectBackward0>))
+
+test/test_item11c_review.py:96: AssertionError
+________ test_boundary_candidates_stay_in_the_preceding_symbolic_order _________
+
+    def test_boundary_candidates_stay_in_the_preceding_symbolic_order():
+        cs = _cs()
+        _mint_row(cs, 0, 100)
+        one = _mint_row(cs, 1, 101)
+        two = _mint_row(cs, 2, 102)
+        cs.add_concept_edge(one, 0, 1.)
+        cs.add_concept_edge(two, one, 1.)
+        field = torch.zeros(cs._order_caps()[0], 1, 1, 2)
+        field[0, 0, 0, 0] = 1.
+        object.__setattr__(cs, '_cs_last_a0', field)
+        cs._prepare_part_learning()
+        matrix = Spaces._concept_alloc_of(cs).layer()
+>       assert all(col % (matrix.nOutput + 1) != 0
+                   for row, col in matrix._index if row == two)
+E       assert False
+E        +  where False = all(<generator object test_boundary_candidates_stay_in_the_preceding_symbolic_order.<locals>.<genexpr> at 0x125afd3f0>)
+
+test/test_item11c_review.py:117: AssertionError
+=============================== warnings summary ===============================
+test/test_item11c_review.py::test_located_conjunction_matches_requested_poles_before_union
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item11c_review.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item11c_review.py::test_boundary_candidates_keep_located_brackets_and_do_not_veto
+FAILED test/test_item11c_review.py::test_boundary_candidates_stay_in_the_preceding_symbolic_order
+2 failed, 4 passed, 2 warnings in 2.07s

@@ -68,6 +68,37 @@ geometry discussion (PartSpace, ConceptualSpace, WholeSpace).
 > `id_to_bytes` table; see
 > [test_chunk_layer_bpe.py::test_hard_merge_spans_bpe_roundtrip](../test/test_chunk_layer_bpe.py).
 
+## Word forms and concept orders
+
+A form addresses a set of persistent concept ids across orders.
+`ConceptAllocator.word_forms` keeps those associations; `bind_word_concept`
+records an observed association to an existing identity. Word admission and
+surface association write this index, and checkpoints preserve it. There is
+no fixed order per spelling and no permanent attended row identity.
+
+Order counts symbolizations: order 0 is an event in the attentive field;
+order 1 is a particular, named (*Felix*) or unnamed (*the cat*), whose
+identity across events is object permanence; order 2 is the kind (*cat*).
+Higher kinds can occupy further orders. Formation and testimony supply
+these concepts; lexical resolution never invents a missing one.
+
+A selected compose rule can declare `reference="I2:particular"` (the
+shipped determiner `lower`) or `reference="I2:pronoun"` (the shipped
+contextual `bind`). `event`, `name`, `kind`, `generic`, and explicit
+nonnegative orders are also accepted. The declaration names an operand,
+not a token spelling. Proper-name and generic contexts therefore resolve
+through their selected grammar, without capitalization rules or word lists.
+Inner reference phrases retain their choice when an outer rule requests an
+order. A unique association at that order is selected; a carried referent
+can disambiguate it. Missing orders and unresolved competing particulars
+remain unknown.
+
+At program capture the selected identity and order are owned beside the
+original word references. Meaning recovery consumes the resolved identity
+and its conceptual payload. The captured leaves and input concept ids remain
+the tied reconstruction's provenance. Pronouns select particulars, never
+kinds. Symbolizing a particular does not also symbolize its kind.
+
 ## Quick reference
 
 The Lexicon ([`bin/Layers.py`](../bin/Layers.py)) is a learnable

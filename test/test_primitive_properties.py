@@ -3,21 +3,17 @@ import torch
 import Spaces
 import pytest
 
-from test_cs_sparse_weights import _cs, _mint_row
+from test_cs_sparse_weights import _cs, _mint_row, _mint_field
 
 
 def test_different_positions_in_one_extent_supply_the_two_symbols():
     from test_concept_memberships import binary_features
     cs = _cs()
     cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True, negated=True)
     native, _ = binary_features(cs, torch.tensor([[49, 48, 49, 49]]))
     extents = torch.tensor([[[0, 2], [2, 4]]])
     read = cs.cs_read_memberships(native, extents)
-    _, result = cs.cs_forward_content(read, cs.similarity_codebook.getW())
-    torch.testing.assert_close(result[row, 0, :, 0], torch.tensor([1., 0.]))
+    torch.testing.assert_close(read[0, 0], torch.tensor([[1., 1.], [1., 0.]]))
     assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 1, 2, 8, 2)
 
 
@@ -47,7 +43,7 @@ def test_arbitrary_byte_subset_learns_without_a_predefined_name():
     mixture[0, 3] = .4
     mixture[0, 10] = .5
     mixture[1, 4] = 1.
-    torch.testing.assert_close(basis.from_primitives(mixture)[:, 0], torch.tensor([.7, 0.]))
+    torch.testing.assert_close(basis.from_primitives(mixture)[:, 0], torch.tensor([.5, 0.]))
 
 
 def test_complement_requires_an_observation():
@@ -146,7 +142,7 @@ def test_property_priming_projects_direct_surface_rows(tmp_path):
     assert not hasattr(ws, '_pos_kind')
 
 
-def test_copresence_never_writes_a_witnessed_negative_part():
+def test_located_copresence_writes_each_witnessed_pole():
     import Spaces
     from test_attention_promotion import _fixture, _pool_rows
     cs, rows = _fixture(pi=True)
@@ -156,12 +152,17 @@ def test_copresence_never_writes_a_witnessed_negative_part():
     evidence[negative, 0, 0, 1] = 1.
     cs._promo_last_acts = evidence
     cs._cs_level_rows = [torch.arange(cs._order_caps()[0])[:, None]]
+    cs._cs_position_evidence = evidence[:cs._order_caps()[0]].unsqueeze(-2)
+    cs._cs_position_spans = torch.tensor([[[0, 1]]])
+    cs._cs_extents = torch.tensor([[[0, 1]]])
     cs.promotion_observe()
     assigned = _pool_rows(cs)
     assert len(assigned) == 1
-    assert dict(cs.concept_weights(assigned[0], conjunctive=True)) == {a: 1., b: 1.}
     store = Spaces._concept_alloc_of(cs).layer()
-    assert all(column < store.nOutput for _, column in store.conjunctive._index)
+    negative_column = negative + store.nOutput + 1
+    assert dict(cs.concept_weights(assigned[0], conjunctive=True)) == {a: 1., b: 1.}
+    assert dict(cs.concept_weights(assigned[0], conjunctive=True, negated=True)) == {negative: 1.}
+    assert store.conjunctive.locations[assigned[0], negative_column] == ((0, 1),)
 
 
 def test_extent_read_keeps_missing_distinct_from_observed_zero():
@@ -207,30 +208,13 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_positions(tmp_path):
     model.End()
 
 
-def test_zero_candidate_can_learn_negation_but_is_not_witnessed():
-    cs = _cs()
-    cs.conceptual_pi = True
-    row = _mint_row(cs, 1, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    cs._cs_last_a0 = torch.zeros(cs._order_caps()[0], 2, 1, 2)
-    cs._cs_last_a0[:2, :, 0, 0] = torch.tensor([[1., 1.], [0., 1.]])
-    cs._prepare_part_learning()
-    ly = __import__('Spaces')._concept_alloc_of(cs).layer()
-    negative = ly.conjunctive._index[row, 1 + ly.nOutput + 1]
-    assert float(ly.conjunctive.values[negative]) == 0.
-    evidence = cs._cs_last_a0.clone()
-    evidence[1, 0, 0, 1] = 1.
-    _, output = cs.cs_forward_content(evidence, cs.similarity_codebook.getW())
-    output[row, 1, 0, 0].backward()
-    assert float(ly.conjunctive.values.grad[negative]) < 0.
-    assert float(ly.conjunctive.values[negative]) == 0.
 
 
-def test_candidate_growth_keeps_freeze_and_positive_witness_barriers():
+def test_candidate_growth_preserves_frozen_field_definitions():
     import Spaces
     cs = _cs()
-    frozen = _mint_row(cs, 1, 101)
-    live = _mint_row(cs, 1, 102)
+    frozen = _mint_field(cs, 101)
+    live = _mint_field(cs, 102)
     cs.add_concept_edge(frozen, 0, .5, conjunctive=True)
     cs.freeze_concept(101)
     cs.add_concept_edge(live, 0, .5, conjunctive=True)

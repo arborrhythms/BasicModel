@@ -1,0 +1,24 @@
+[collect] 19 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.6s; peak 0.40 GiB
+[worker-000] 2 selectors; limit 1800s, 8.0 GiB
+[worker-001] 2 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 8.0s; peak 3.62 GiB
+[worker-002] 2 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 12.1s; peak 6.36 GiB
+[worker-003] 2 selectors; limit 1800s, 8.0 GiB
+[worker-002] exit 0; 8.3s; peak 3.93 GiB
+[worker-004] 2 selectors; limit 1800s, 8.0 GiB
+[worker-003] exit 0; 7.9s; peak 3.60 GiB
+[worker-005] 2 selectors; limit 1800s, 8.0 GiB
+[worker-005] exit 0; 7.2s; peak 3.67 GiB
+[worker-006] 2 selectors; limit 1800s, 8.0 GiB
+[worker-004] exit 0; 13.5s; peak 7.61 GiB
+[worker-007] 2 selectors; limit 1800s, 8.0 GiB
+[worker-006] exit 0; 10.9s; peak 5.60 GiB
+[worker-008] 2 selectors; limit 1800s, 8.0 GiB
+[worker-007] exit 0; 10.0s; peak 5.31 GiB
+[worker-009] 1 selectors; limit 1800s, 8.0 GiB
+[worker-009] exit 0; 7.4s; peak 3.35 GiB
+[worker-008] exit 0; 10.9s; peak 4.32 GiB
+Result: passed, exit 0; 19/19 cases completed.
+output/item11c-explicit-slow-final/result.json

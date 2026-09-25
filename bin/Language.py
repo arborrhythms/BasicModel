@@ -765,9 +765,9 @@ class Grammar:
         'RuleDef',
         ['space_role', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
          'width_min', 'width_max', 'query', 'thought_family',
-         'thought_permutation'],
+         'thought_permutation', 'reference_orders'],
     )
-    RuleDef.__new__.__defaults__ = (0, 0, False, None, None)
+    RuleDef.__new__.__defaults__ = (0, 0, False, None, None, ())
 
     @dataclass(frozen=True)
     class ThoughtOperationForm:
@@ -1547,12 +1547,14 @@ class Grammar:
                     query_raw = entry.get('query', None)
                     family_raw = entry.get('family', None)
                     permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
                 else:
                     text = str(entry)
                     width_raw = None
                     query_raw = None
                     family_raw = None
                     permutation_raw = None
+                    reference_raw = None
                 if '=' not in text:
                     raise ValueError(
                         f"<rule> requires 'head = body' syntax, got: {text!r}")
@@ -1580,6 +1582,22 @@ class Grammar:
                         family_raw, permutation_raw)
                     rule = rule._replace(
                         thought_family=family, thought_permutation=permutation)
+                if reference_raw is not None:
+                    orders = {'event': 0, 'particular': 1, 'name': 1,
+                              'pronoun': 1, 'kind': 2, 'generic': 2}
+                    references = []
+                    for item in str(reference_raw).split(','):
+                        role, separator, context = item.strip().partition(':')
+                        if (not separator or re.fullmatch(r'I[1-9]\d*', role) is None
+                                or int(role[1:]) > rule.arity):
+                            raise ValueError('reference requires a declared input role and order')
+                        order = orders.get(context)
+                        if order is None and context.isdigit():
+                            order = int(context)
+                        if order is None or any(r == role for r, _ in references):
+                            raise ValueError('reference has an unknown order or repeated role')
+                        references.append((role, order))
+                    rule = rule._replace(reference_orders=tuple(references))
                 target.append(rule)
 
         # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
@@ -15138,6 +15156,46 @@ class LanguageSpace(nn.Module):
         return layers["CS"] if layers is not None and "CS" in layers else None
 
     @torch.compiler.disable
+    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions):
+        """Resolve the selected grammar's reference orders at capture time.
+
+        Operator-role metadata supplies the order, never a token list or a
+        perceptual depth. Inner reference phrases retain their chosen order.
+        Reads only: absent/ambiguous associations stay unknown.
+        """
+        refs = concept_ids.clone()
+        orders = refs.new_full(refs.shape, -1)
+        if owner is None or not callable(getattr(owner, 'resolve_word_concept', None)):
+            return refs, orders
+        stack = []
+        requests = {}
+        for kind, local, word in actions.detach().to('cpu').tolist():
+            if kind < 0:
+                break
+            if kind == 0:
+                if not 0 <= word < refs.numel():
+                    raise ValueError('reference program leaf is out of bounds')
+                stack.append((word,))
+                continue
+            rules = self._compose_binary_rules if kind == 1 else self._compose_unary_rules
+            arity = 2 if kind == 1 else 1
+            if kind not in (1, 2) or not 0 <= local < len(rules) or len(stack) < arity:
+                raise ValueError('reference program has an invalid selected rule')
+            operands = stack[-arity:]
+            del stack[-arity:]
+            for role, order in getattr(rules[local], 'reference_orders', ()):
+                for leaf in operands[int(role[1:]) - 1]:
+                    requests.setdefault(leaf, order)
+            stack.append(tuple(leaf for operand in operands for leaf in operand))
+        for leaf, order in requests.items():
+            surface = owner.word_surface_for_row(int(word_rows[leaf]))
+            if surface is None or not owner.word_concepts(surface):
+                continue
+            cid = owner.resolve_word_concept(surface, order=order, previous=int(refs[leaf]))
+            refs[leaf] = -1 if cid is None else cid
+            orders[leaf] = order
+        return refs, orders
+
     def program_meaning(self, entry, registry):
         """Recover one selected meaning from its owned compose program.
 
@@ -15173,7 +15231,15 @@ class LanguageSpace(nn.Module):
         # Action and address metadata are structural, so the boundary may
         # read their bounded host values.  Leaf payloads remain live tensors.
         action_rows = actions.detach().to("cpu").tolist()
-        native_ids = concept_ids.detach().to("cpu").tolist()
+        references = getattr(entry, 'reference_ids', None)
+        references = concept_ids if references is None else references
+        native_ids = references.detach().to("cpu").tolist()
+        if bool((references != concept_ids).any()):
+            values = list(leaves.unbind(0))
+            for i in (references != concept_ids).nonzero().reshape(-1).tolist():
+                if native_ids[i] > 0:
+                    values[i] = registry._payload(('sym', int(native_ids[i]))).to(leaves)
+            leaves = torch.stack(values)
         lexical_forms = getattr(entry, "lexical_forms", None)
         if lexical_forms is None:
             lexical_forms = (None,) * len(native_ids)
@@ -15409,7 +15475,9 @@ class LanguageSpace(nn.Module):
             # Keeping the entire right subtree preserves nested descriptions,
             # mode and scope instead of reducing every phrase to a noun index.
             if node[0] == "binary":
-                if getattr(node[1], "method_name", None) in ("surface", "preposition"):
+                if (getattr(node[1], "method_name", None) in ("surface", "preposition")
+                        or (getattr(node[1], 'method_name', None) in ('lower', 'bind')
+                            and getattr(node[1], 'reference_orders', ()))):
                     return semantic_tree(node[3])
                 return (node[0], node[1], semantic_tree(node[2]), semantic_tree(node[3]))
             if node[0] == "unary":

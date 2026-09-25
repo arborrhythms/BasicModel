@@ -1,0 +1,22 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+________________________ test_no_self_edge_via_populate ________________________
+test/test_iterated_symbolic_wave.py:69: in test_no_self_edge_via_populate
+    assert _layer(cs).nnz == 0
+E   assert 1 == 0
+E    +  where 1 = ConceptualAttentionLayer(\n  (conjunctive): SparseLayer()\n  (features): SparseLayer()\n).nnz
+E    +    where ConceptualAttentionLayer(\n  (conjunctive): SparseLayer()\n  (features): SparseLayer()\n) = _layer(ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n))
+=============================== warnings summary ===============================
+test/test_iterated_symbolic_wave.py::test_depth_d_sigma_path_completes_in_one_pass
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_iterated_symbolic_wave.py::test_no_self_edge_via_populate - ...
+1 failed, 2 passed, 2 warnings in 2.41s

@@ -1,0 +1,1241 @@
+
+worker-000.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.16s
+
+worker-001.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.14s
+
+worker-002.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_parameter_getter_does_not_offer_new_parts ________________
+test/test_concept_memberships.py:42: in test_parameter_getter_does_not_offer_new_parts
+    cs.add_concept_edge(row, 0, 1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts
+1 failed, 1 warning in 2.31s
+
+worker-003.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_a_located_part_need_not_pervade_but_the_whole_property_must _______
+test/test_concept_memberships.py:65: in test_a_located_part_need_not_pervade_but_the_whole_property_must
+    torch.testing.assert_close(cs._cs_position_evidence[0, :, 0, -1],
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 6 (33.3%)
+E   Greatest absolute difference: 1.0 at index (1, 0) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (1, 0) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must
+1 failed, 1 warning in 2.16s
+
+worker-004.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_part_containment_belongs_to_the_subject_extent[literal0] _________
+test/test_concept_memberships.py:84: in test_part_containment_belongs_to_the_subject_extent
+    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 1.]]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 4 (25.0%)
+E   Greatest absolute difference: 1.0 at index (1, 1) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (1, 1) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]
+1 failed, 1 warning in 2.31s
+
+worker-005.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_part_containment_belongs_to_the_subject_extent[literal1] _________
+test/test_concept_memberships.py:84: in test_part_containment_belongs_to_the_subject_extent
+    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 1.]]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 4 (25.0%)
+E   Greatest absolute difference: 1.0 at index (1, 1) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (1, 1) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]
+1 failed, 1 warning in 2.27s
+
+worker-006.log
+.                                                                        [100%]
+1 passed in 2.13s
+
+worker-007.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_fractional_feature_weights_use_one_product_then_one_extent_union _____
+test/test_concept_memberships.py:126: in test_fractional_feature_weights_use_one_product_then_one_extent_union
+    torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0, :2], occurrence.expand(2, -1))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 4 / 4 (100.0%)
+E   Greatest absolute difference: 0.18000000715255737 at index (0, 0) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.5625000596046448 at index (0, 0) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_fractional_feature_weights_use_one_product_then_one_extent_union
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_fractional_feature_weights_use_one_product_then_one_extent_union
+1 failed, 1 warning in 2.11s
+
+worker-008.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.12s
+
+worker-009.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_sentence_boundary_offers_candidates_and_getter_remains_pure _______
+test/test_concept_memberships.py:153: in test_sentence_boundary_offers_candidates_and_getter_remains_pure
+    cs.add_concept_edge(row, 0, 1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure
+1 failed, 1 warning in 2.29s
+
+worker-010.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.48s
+
+worker-011.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.47s
+
+worker-012.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.20s
+
+worker-013.log
+.                                                                        [100%]
+1 passed in 2.10s
+
+worker-014.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_add_concept_edge_dedup_and_query _____________________
+test/test_cs_sparse_weights.py:76: in test_add_concept_edge_dedup_and_query
+    cs.add_concept_edge(33, 40, weight=0.5)
+bin/Spaces.py:18070: in add_concept_edge
+    raise ValueError('sigma edges require symbols of the preceding order')
+E   ValueError: sigma edges require symbols of the preceding order
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_add_concept_edge_dedup_and_query
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_cs_sparse_weights.py::test_add_concept_edge_dedup_and_query
+1 failed, 1 warning in 2.27s
+
+worker-015.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_shared_untyped_square_store
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_cs_sparse_weights.py::test_shared_untyped_square_store
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 2.13s
+
+worker-016.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_any_edge_on_snap_row_fails_loud
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.12s
+
+worker-017.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_family_values_grow_tail_preserving
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.09s
+
+worker-018.log
+.                                                                        [100%]
+1 passed in 2.16s
+
+worker-019.log
+.                                                                        [100%]
+1 passed in 2.13s
+
+worker-020.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_membership_read_is_input_dependent_and_differentiable
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.13s
+
+worker-021.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_membership_read_never_updates_the_dictionary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.10s
+
+worker-022.log
+.                                                                        [100%]
+1 passed in 2.13s
+
+worker-023.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_shape_and_stacking
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.11s
+
+worker-024.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_forward_content_literal_poles_and_standing_bias _____________
+test/test_cs_sparse_weights.py:220: in test_forward_content_literal_poles_and_standing_bias
+    assert float(a[row, 0, 0, 0]) == pytest.approx(1 - .5**3 * .75**.5)
+E   assert 0.875 == 0.8917468245269452 ± 8.9e-07
+E     
+E     comparison failed
+E     Obtained: 0.875
+E     Expected: 0.8917468245269452 ± 8.9e-07
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_literal_poles_and_standing_bias
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_cs_sparse_weights.py::test_forward_content_literal_poles_and_standing_bias
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_cs_sparse_weights.py::test_forward_content_literal_poles_and_standing_bias
+1 failed, 2 warnings in 2.12s
+
+worker-025.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_activation_is_bounded
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.09s
+
+worker-026.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_empty_store_passes_a0
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.12s
+
+worker-027.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_level_stats_are_report_only
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.09s
+
+worker-028.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_kernels_agree
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.13s
+
+worker-029.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_keeps_two_symbol_rows_per_code
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.10s
+
+worker-030.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_cs_sparse_weights.py::test_forward_content_differentiable
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.11s
+
+worker-031.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_union_holds_one_present_part_across_orders ________________
+test/test_concept_sigma_pi.py:18: in test_union_holds_one_present_part_across_orders
+    cs.add_concept_edge(row, missing, weight=1.)
+bin/Spaces.py:18070: in add_concept_edge
+    raise ValueError('sigma edges require symbols of the preceding order')
+E   ValueError: sigma edges require symbols of the preceding order
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders
+1 failed, 1 warning in 2.29s
+
+worker-032.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_sigma_reads_same_order_conjunction_and_lower_order_parts _________
+test/test_concept_sigma_pi.py:30: in test_sigma_reads_same_order_conjunction_and_lower_order_parts
+    cs.add_concept_edge(p, 0, weight=1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts
+1 failed, 1 warning in 2.28s
+
+worker-033.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_unspecified_exponents_start_at_zero_and_assert_neither
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.06s
+
+worker-034.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_transpose_splits_union_and_implies_conjunctive_parts ___________
+test/test_concept_sigma_pi.py:63: in test_transpose_splits_union_and_implies_conjunctive_parts
+    cs.add_concept_edge(p, col, weight=1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_transpose_splits_union_and_implies_conjunctive_parts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_transpose_splits_union_and_implies_conjunctive_parts
+1 failed, 1 warning in 2.23s
+
+worker-035.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_weak_disjuncts_have_declared_accumulation_bound _____________
+test/test_concept_sigma_pi.py:80: in test_weak_disjuncts_have_declared_accumulation_bound
+    assert presence == pytest.approx(1 - .999 ** 32, abs=2e-6)
+E   assert 0.0010000000474974513 == 0.031508924240473246 ± 2.0e-06
+E     
+E     comparison failed
+E     Obtained: 0.0010000000474974513
+E     Expected: 0.031508924240473246 ± 2.0e-06
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_weak_disjuncts_have_declared_accumulation_bound
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_concept_sigma_pi.py::test_weak_disjuncts_have_declared_accumulation_bound
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_weak_disjuncts_have_declared_accumulation_bound
+1 failed, 2 warnings in 2.09s
+
+worker-036.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_negated_disjunct_and_mixed_parts_on_one_concept _____________
+test/test_concept_sigma_pi.py:88: in test_negated_disjunct_and_mixed_parts_on_one_concept
+    cs.add_concept_edge(row, 0, weight=1., conjunctive=True, negated=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept
+1 failed, 1 warning in 2.28s
+
+worker-037.log
+.                                                                        [100%]
+1 passed in 2.06s
+
+worker-038.log
+.                                                                        [100%]
+1 passed in 2.04s
+
+worker-039.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_unwritten_conjunction_has_no_invented_directional_credit _________
+test/test_concept_sigma_pi.py:135: in test_unwritten_conjunction_has_no_invented_directional_credit
+    cs.add_concept_edge(row, 0, conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit
+1 failed, 1 warning in 2.25s
+
+worker-040.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_frozen_conjunctive_edge_stays_frozen_across_pending_growth ________
+test/test_concept_sigma_pi.py:146: in test_frozen_conjunctive_edge_stays_frozen_across_pending_growth
+    cs.add_concept_edge(row, 0, .5, conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth
+1 failed, 1 warning in 2.21s
+
+worker-041.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_four_conjunctions_represent_xor_with_explicit_pole_edges _________
+test/test_concept_sigma_pi.py:163: in test_four_conjunctions_represent_xor_with_explicit_pole_edges
+    cs.add_concept_edge(row, 0, weight=1., conjunctive=True, negated=not bool(i % 2))
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_sigma_pi.py::test_four_conjunctions_represent_xor_with_explicit_pole_edges
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_sigma_pi.py::test_four_conjunctions_represent_xor_with_explicit_pole_edges
+1 failed, 1 warning in 2.24s
+
+worker-042.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.09s
+
+worker-043.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_production_snap_background_is_neither[2-True] ______________
+test/test_concept_evidence.py:22: in test_production_snap_background_is_neither
+    cs.add_concept_edge(row, part, 1., conjunctive=pi)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]
+1 failed, 1 warning in 2.26s
+
+worker-044.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.05s
+
+worker-045.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_production_snap_background_is_neither[4-True] ______________
+test/test_concept_evidence.py:22: in test_production_snap_background_is_neither
+    cs.add_concept_edge(row, part, 1., conjunctive=pi)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]
+1 failed, 1 warning in 2.24s
+
+worker-046.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.08s
+
+worker-047.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_production_snap_background_is_neither[8-True] ______________
+test/test_concept_evidence.py:22: in test_production_snap_background_is_neither
+    cs.add_concept_edge(row, part, 1., conjunctive=pi)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]
+1 failed, 1 warning in 2.26s
+
+worker-048.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.05s
+
+worker-049.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_dual_folds_preserve_both_and_neither[pair0-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.08s
+
+worker-050.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_dual_folds_preserve_both_and_neither[pair0-True] _____________
+test/test_concept_evidence.py:48: in test_dual_folds_preserve_both_and_neither
+    cs.add_concept_edge(row, col, 1., conjunctive=conjunctive)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_dual_folds_preserve_both_and_neither[pair0-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_dual_folds_preserve_both_and_neither[pair0-True]
+1 failed, 1 warning in 2.23s
+
+worker-051.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_dual_folds_preserve_both_and_neither[pair1-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.07s
+
+worker-052.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_dual_folds_preserve_both_and_neither[pair1-True] _____________
+test/test_concept_evidence.py:48: in test_dual_folds_preserve_both_and_neither
+    cs.add_concept_edge(row, col, 1., conjunctive=conjunctive)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_dual_folds_preserve_both_and_neither[pair1-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_dual_folds_preserve_both_and_neither[pair1-True]
+1 failed, 1 warning in 2.24s
+
+worker-053.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_unknown_definition_is_neither_even_with_zero_edges ____________
+test/test_concept_evidence.py:60: in test_unknown_definition_is_neither_even_with_zero_edges
+    cs.add_concept_edge(rows[2], 0, conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges
+1 failed, 1 warning in 2.28s
+
+worker-054.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.05s
+
+worker-055.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_xor_combination_preserves_occurrence_and_observed_zero __________
+test/test_concept_evidence.py:85: in test_xor_combination_preserves_occurrence_and_observed_zero
+    cs.add_concept_edge(row, 0, 1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_xor_combination_preserves_occurrence_and_observed_zero
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_xor_combination_preserves_occurrence_and_observed_zero
+1 failed, 1 warning in 2.24s
+
+worker-056.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_reverse_keeps_counterevidence_and_its_occurrence _____________
+test/test_concept_evidence.py:103: in test_reverse_keeps_counterevidence_and_its_occurrence
+    cs.add_concept_edge(row, 0, 1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence
+1 failed, 1 warning in 2.24s
+
+worker-057.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_part_values_have_only_one_checkpoint_owner ________________
+test/test_concept_evidence.py:117: in test_part_values_have_only_one_checkpoint_owner
+    cs.add_concept_edge(row, 1, .8, conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner
+1 failed, 1 warning in 2.26s
+
+worker-058.log
+.                                                                        [100%]
+1 passed in 2.06s
+
+worker-059.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.08s
+
+worker-060.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 2.11s
+
+worker-061.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_context_allocation_uses_taper_span_not_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.06s
+
+worker-062.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.06s
+
+worker-063.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_discovered_and_sealed_definitions_keep_learned_exponent_scale
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.05s
+
+worker-064.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_signed_checkpoint_migrates_poles_and_optimizer_first_moments _______
+test/test_concept_evidence.py:233: in test_signed_checkpoint_migrates_poles_and_optimizer_first_moments
+    cs.add_concept_edge(row, 1, .8, conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments
+1 failed, 1 warning in 2.25s
+
+worker-065.log
+.                                                                        [100%]
+1 passed in 2.08s
+
+worker-066.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence _____
+test/test_concept_evidence.py:284: in test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence
+    cs.add_concept_edge(row, 0, 1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence
+1 failed, 1 warning in 2.23s
+
+worker-067.log
+.                                                                        [100%]
+1 passed in 2.10s
+
+worker-068.log
+.                                                                        [100%]
+1 passed in 2.11s
+
+worker-069.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_ws_matches_ps_view_shape
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 4.29s
+
+worker-070.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________________ test_off_path_stores_unchanged ________________________
+test/test_dual_towers.py:72: in test_off_path_stores_unchanged
+    assert got == want, (cfg, got)
+E   AssertionError: ('data/MM_20M_grammar.xml', [8, 8, 8])
+E   assert [8, 8, 8] == [4, 2, 2]
+E     
+E     At index 0 diff: 8 != 4
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_grammar.ckpt, starting fresh
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_off_path_stores_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_off_path_stores_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_off_path_stores_unchanged - AssertionEr...
+1 failed, 2 warnings in 6.57s
+
+worker-071.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_default_expectation_adds_only_its_owned_checkpoint_keys _________
+test/test_dual_towers.py:92: in test_default_expectation_adds_only_its_owned_checkpoint_keys
+    assert (len(keys), h) == (n, sha), (cfg, len(keys), h)
+E   AssertionError: ('data/MM_20M_xor.xml', 435, 'b160ad1e9af28223')
+E   assert (435, 'b160ad1e9af28223') == (554, '6761889f00108ece')
+E     
+E     At index 0 diff: 435 != 554
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys
+1 failed, 1 warning in 4.43s
+
+worker-072.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 4.34s
+
+worker-073.log
+.                                                                        [100%]
+1 passed in 2.13s
+
+worker-074.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 5.03s
+
+worker-075.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_ws_routing_after_serial_migration
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_ws_routing_after_serial_migration
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_dual_towers.py::test_ws_routing_after_serial_migration
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_20M_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 3 warnings in 8.44s
+
+worker-076.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 3 warnings in 5.34s
+
+worker-077.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_pyramid_replaces_wave
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_pyramid_replaces_wave
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 4.94s
+
+worker-078.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_pyramid_taper_topk_selection
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_pyramid_taper_topk_selection
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 4.90s
+
+worker-079.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_pyramid_grads_reach_every_rung
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7902: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_sparse_concept.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_pyramid_grads_reach_every_rung
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 4.85s
+
+worker-080.log
+.                                                                        [100%]
+1 passed in 2.13s
+
+worker-081.log
+.                                                                        [100%]
+1 passed in 2.06s
+
+worker-082.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.07s
+
+worker-083.log
+.                                                                        [100%]
+1 passed in 2.04s
+
+worker-084.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.07s
+
+worker-085.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 3 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 6 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 9 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 12 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 15 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 18 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 21 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 24 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 27 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 30 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 33 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18899: RuntimeWarning: CS relation pool exhausted (4 rows): concept 36 gets records only, no weighted reading (overflow #12)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 2.59s
+
+worker-086.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.11s
+
+worker-087.log
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_unattended_required_concept_cannot_disappear_from_a_conjunction _____
+test/test_order0_attended_field.py:186: in test_unattended_required_concept_cannot_disappear_from_a_conjunction
+    cs.add_concept_edge(row, ar, 1., conjunctive=True)
+bin/Spaces.py:18062: in add_concept_edge
+    raise ValueError('conjunctive edges require order-0 field concepts')
+E   ValueError: conjunctive edges require order-0 field concepts
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_unattended_required_concept_cannot_disappear_from_a_conjunction
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_order0_attended_field.py::test_unattended_required_concept_cannot_disappear_from_a_conjunction
+1 failed, 1 warning in 2.29s
+
+worker-088.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.10s
+
+worker-089.log
+.                                                                        [100%]
+1 passed in 2.05s
+
+worker-090.log
+.                                                                        [100%]
+1 passed in 2.08s
+
+worker-091.log
+.                                                                        [100%]
+1 passed in 3.28s
+
+worker-092.log
+.                                                                        [100%]
+1 passed in 3.29s
+
+worker-093.log
+.                                                                        [100%]
+1 passed in 3.35s
+
+worker-094.log
+.                                                                        [100%]
+1 passed in 3.33s
+
+worker-095.log
+.                                                                        [100%]
+1 passed in 3.36s
+
+worker-096.log
+.                                                                        [100%]
+1 passed in 11.92s
+
+worker-097.log
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_aligned_fold_binding.py::test_meta_fold_support_roundtrips_with_vocab_extras
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1731: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.09s
+
+worker-098.log
+.                                                                        [100%]
+1 passed in 4.70s

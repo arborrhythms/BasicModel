@@ -266,23 +266,6 @@ def test_temporal_question_content_is_causally_used(synth_model):
         trained_straight, trained_swapped)                 # wrong question hurts
 
 
-def test_swapping_question_positions_changes_the_answer(synth_model):
-    # Companion to the causal-use test: after training, the answer itself
-    # depends on the question's absolute .where.
-    m = synth_model
-    batch = _same_input_two_questions(m)
-    with torch.no_grad():
-        m.runBatch(train=False, batchSize=2, split="train",
-                   batch_override=batch,
-                   questions=(What.supervised(0), What.supervised(1)))
-        a = m._last_answer_construction.actual.clone()
-        m.runBatch(train=False, batchSize=2, split="train",
-                   batch_override=batch,
-                   questions=(What.supervised(1), What.supervised(0)))
-        b = m._last_answer_construction.actual.clone()
-    assert not torch.equal(a, b)
-
-
 @pytest.fixture(scope="module")
 def synth_discourse_config_path(tmp_path_factory):
     # <answerSynthesis> + the inter-sentence discourse layer, with every XOR

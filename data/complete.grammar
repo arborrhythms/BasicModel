@@ -152,12 +152,12 @@
       <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
       <rule>verb_O1 = verb.forward(verb_I1, verb_I2)</rule>
       <rule>adverb_O1 = adverb.forward(adverb_I1, adverb_I2)</rule>
-      <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+      <rule reference="I2:particular">lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
 
       <!-- Preposition (PP): refines the NP or VP via a .where relation.
            Bind: contextual missing/controlled-NP resolution (control/raising). -->
       <rule>preposition_O1 = preposition.forward(preposition_I1, preposition_I2)</rule>
-      <rule>bind_O1 = bind.forward(bind_I1, bind_I2)</rule>
+      <rule reference="I2:pronoun">bind_O1 = bind.forward(bind_I1, bind_I2)</rule>
 
       <!-- .when / surface ops: tense (phase rotation of the .when key);
            morphology (surface inflection -> .when). aspect is REPURPOSED as

@@ -1,0 +1,85 @@
+FFFF.F                                                                   [100%]
+=================================== FAILURES ===================================
+______ test_nested_compose_preserves_complete_child_roles_without_a_write ______
+test/test_selected_nested_meaning.py:36: in test_nested_compose_preserves_complete_child_roles_without_a_write
+    _cs, registry, language, entry, leaves = _nested(monkeypatch)
+                                             ^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:26: in _nested
+    entry = replace(entry,
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:14: in __init__
+    ???
+bin/Understanding.py:70: in __post_init__
+    raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
+E   ValueError: program reference IDs must be native addresses or -1, aligned to leaves
+_ test_nested_observation_writers_retain_children_without_certifying_them[eager] _
+test/test_selected_nested_meaning.py:51: in test_nested_observation_writers_retain_children_without_certifying_them
+    _cs, registry, language, entry, leaves = _nested(monkeypatch)
+                                             ^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:26: in _nested
+    entry = replace(entry,
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:14: in __init__
+    ???
+bin/Understanding.py:70: in __post_init__
+    raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
+E   ValueError: program reference IDs must be native addresses or -1, aligned to leaves
+_ test_nested_observation_writers_retain_children_without_certifying_them[pending] _
+test/test_selected_nested_meaning.py:51: in test_nested_observation_writers_retain_children_without_certifying_them
+    _cs, registry, language, entry, leaves = _nested(monkeypatch)
+                                             ^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:26: in _nested
+    entry = replace(entry,
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:14: in __init__
+    ???
+bin/Understanding.py:70: in __post_init__
+    raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
+E   ValueError: program reference IDs must be native addresses or -1, aligned to leaves
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+test/test_selected_nested_meaning.py:51: in test_nested_observation_writers_retain_children_without_certifying_them
+    _cs, registry, language, entry, leaves = _nested(monkeypatch)
+                                             ^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:26: in _nested
+    entry = replace(entry,
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:14: in __init__
+    ???
+bin/Understanding.py:70: in __post_init__
+    raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
+E   ValueError: program reference IDs must be native addresses or -1, aligned to leaves
+_ test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write _
+test/test_selected_nested_meaning.py:86: in test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write
+    _cs, registry, language, entry, _ = _nested(monkeypatch)
+                                        ^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:26: in _nested
+    entry = replace(entry,
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:14: in __init__
+    ???
+bin/Understanding.py:70: in __post_init__
+    raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
+E   ValueError: program reference IDs must be native addresses or -1, aligned to leaves
+=============================== warnings summary ===============================
+test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[eager]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[pending]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+FAILED test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write
+5 failed, 1 passed, 1 warning in 2.74s

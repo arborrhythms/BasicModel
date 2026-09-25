@@ -1,0 +1,248 @@
+[
+  {
+    "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "pool": 4,
+    "primitive_updates": 32,
+    "definition_updates": 32,
+    "concept_updates": 32,
+    "initial_mse": 0.5,
+    "mse": 0.0,
+    "output": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "conjunctions": 4,
+    "gates": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "xor_parts": [
+      [
+        24,
+        0.0
+      ],
+      [
+        25,
+        0.17335030436515808
+      ],
+      [
+        26,
+        0.17335030436515808
+      ],
+      [
+        27,
+        0.0
+      ]
+    ],
+    "located_parts": "{(24, 33): ((0, 1), (0, 2), (1, 2)), (25, 0): ((1, 2),), (25, 33): ((0, 1),), (26, 0): ((0, 1),), (26, 33): ((1, 2),), (27, 0): ((0, 1), (0, 2), (1, 2))}"
+  },
+  {
+    "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "pool": 8,
+    "primitive_updates": 32,
+    "definition_updates": 32,
+    "concept_updates": 32,
+    "initial_mse": 0.5,
+    "mse": 0.0,
+    "output": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "conjunctions": 4,
+    "gates": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "xor_parts": [
+      [
+        48,
+        0.0
+      ],
+      [
+        49,
+        0.17335030436515808
+      ],
+      [
+        50,
+        0.17335030436515808
+      ],
+      [
+        51,
+        0.0
+      ]
+    ],
+    "located_parts": "{(48, 61): ((0, 1), (0, 2), (1, 2)), (49, 0): ((1, 2),), (49, 61): ((0, 1),), (50, 0): ((0, 1),), (50, 61): ((1, 2),), (51, 0): ((0, 1), (0, 2), (1, 2))}"
+  },
+  {
+    "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "pool": 4,
+    "primitive_updates": 32,
+    "definition_updates": 32,
+    "concept_updates": 32,
+    "initial_mse": 0.5,
+    "mse": 0.0,
+    "output": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "conjunctions": 4,
+    "gates": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "xor_parts": [
+      [
+        24,
+        0.0
+      ],
+      [
+        25,
+        0.17335030436515808
+      ],
+      [
+        26,
+        0.17335030436515808
+      ],
+      [
+        27,
+        0.0
+      ]
+    ],
+    "located_parts": "{(24, 33): ((0, 1), (0, 2), (1, 2)), (25, 0): ((1, 2),), (25, 33): ((0, 1),), (26, 0): ((0, 1),), (26, 33): ((1, 2),), (27, 0): ((0, 1), (0, 2), (1, 2))}"
+  },
+  {
+    "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "pool": 8,
+    "primitive_updates": 32,
+    "definition_updates": 32,
+    "concept_updates": 32,
+    "initial_mse": 0.5,
+    "mse": 0.0,
+    "output": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "conjunctions": 4,
+    "gates": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "xor_parts": [
+      [
+        48,
+        0.0
+      ],
+      [
+        49,
+        0.17335030436515808
+      ],
+      [
+        50,
+        0.17335030436515808
+      ],
+      [
+        51,
+        0.0
+      ]
+    ],
+    "located_parts": "{(48, 61): ((0, 1), (0, 2), (1, 2)), (49, 0): ((1, 2),), (49, 61): ((0, 1),), (50, 0): ((0, 1),), (50, 61): ((1, 2),), (51, 0): ((0, 1), (0, 2), (1, 2))}"
+  },
+  {
+    "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "pool": 4,
+    "primitive_updates": 32,
+    "definition_updates": 32,
+    "concept_updates": 32,
+    "initial_mse": 0.5,
+    "mse": 0.0,
+    "output": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "conjunctions": 4,
+    "gates": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "xor_parts": [
+      [
+        24,
+        0.0
+      ],
+      [
+        25,
+        0.17335030436515808
+      ],
+      [
+        26,
+        0.17335030436515808
+      ],
+      [
+        27,
+        0.0
+      ]
+    ],
+    "located_parts": "{(24, 33): ((0, 1), (0, 2), (1, 2)), (25, 0): ((1, 2),), (25, 33): ((0, 1),), (26, 0): ((0, 1),), (26, 33): ((1, 2),), (27, 0): ((0, 1), (0, 2), (1, 2))}"
+  },
+  {
+    "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+    "pool": 8,
+    "primitive_updates": 32,
+    "definition_updates": 32,
+    "concept_updates": 32,
+    "initial_mse": 0.5,
+    "mse": 0.0,
+    "output": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "conjunctions": 4,
+    "gates": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "xor_parts": [
+      [
+        48,
+        0.0
+      ],
+      [
+        49,
+        0.17335030436515808
+      ],
+      [
+        50,
+        0.17335030436515808
+      ],
+      [
+        51,
+        0.0
+      ]
+    ],
+    "located_parts": "{(48, 61): ((0, 1), (0, 2), (1, 2)), (49, 0): ((1, 2),), (49, 61): ((0, 1),), (50, 0): ((0, 1),), (50, 61): ((1, 2),), (51, 0): ((0, 1), (0, 2), (1, 2))}"
+  }
+]

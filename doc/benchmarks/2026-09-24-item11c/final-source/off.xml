@@ -1,0 +1,157 @@
+<?xml version='1.0' encoding='utf-8'?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
+  
+  <architecture>
+    
+    <serial>true</serial>
+    <subsymbolicOrder>4</subsymbolicOrder>
+    
+    <conceptBinding>aligned</conceptBinding>
+    <symbolicOrder>4</symbolicOrder>
+    
+    <syntacticOrder>0</syntacticOrder>
+
+    <mereologyRaise>true</mereologyRaise>
+    
+    <serialObjectMeta>true</serialObjectMeta>
+    
+    <sentenceProtocol>false</sentenceProtocol>
+    <serialWordCapacity>8</serialWordCapacity>
+    <serialWordBuckets>8</serialWordBuckets>
+    
+    <serialResidualPartCapacity>64</serialResidualPartCapacity>
+    <sigmaPi>butterfly</sigmaPi>
+    <l1Lambda>0.01</l1Lambda>
+
+    
+    <transformChooser>mlp</transformChooser>
+    
+    <answerSynthesis>true</answerSynthesis>
+    <synthesisBindings>4</synthesisBindings>
+    <categoryCodebook>true</categoryCodebook>
+    
+    <stmReduceTau>0.75</stmReduceTau>
+    
+    <learning>false</learning>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>math</dataset>
+      <mathStage>0</mathStage>
+      <mathRange>16</mathRange>
+      <mathOperators>succ</mathOperators>
+      <mathProblems>256</mathProblems>
+      <mathSeed>0</mathSeed>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <seed>42</seed>
+      
+      <batchSize>8</batchSize>
+      <packSentences>false</packSentences>
+      
+      <numWorkers>2</numWorkers>
+      <learningRate>0.001</learningRate>
+
+      
+      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
+      <conceptualContextNegatives>4</conceptualContextNegatives>
+
+      
+      <reconstructionScale>0.1</reconstructionScale>
+      
+      
+      <forwardGrammarWeight>0.0</forwardGrammarWeight>
+
+      
+      <sentenceExpectation>false</sentenceExpectation>
+      <armaScale>0.0</armaScale>
+      <intraLossWeight>0.0</intraLossWeight>
+      <interLossWeight>0.0</interLossWeight>
+      <interContrastiveWeight>0.0</interContrastiveWeight>
+      <interContrastiveTemp>0.1</interContrastiveTemp>
+
+      <autoload>false</autoload>
+      <autosave>true</autosave>
+      <checkpointEveryBatches>100</checkpointEveryBatches>
+    </training>
+    
+    <weightsPath>BasicModel.ckpt</weightsPath>
+  <conceptualPi>false</conceptualPi></architecture>
+
+  
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>136</nDim>
+  </InputSpace>
+
+  
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>136</nInputDim>
+    <nVectors>4096</nVectors>
+    
+    <maxVectors>1048576</maxVectors>
+    <nDim>136</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>136</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <ConceptualSpace>
+    
+    <conceptReadoutL1>0.01</conceptReadoutL1>
+    <nInput>8</nInput>
+    
+    <nInputDim>136</nInputDim>
+    
+    <nVectors>4096</nVectors>
+    
+    <activeVectors>4096</activeVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>136</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>136</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  
+  <WholeSpace>
+    <propertyBasis>true</propertyBasis>
+    <digitWholes>true</digitWholes>
+    <whitespaceUnits>true</whitespaceUnits>
+    <analysis>meronomy</analysis>
+    
+    <butterfly>true</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>136</nInputDim>
+    <nVectors>4096</nVectors>
+    <nDim>136</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>136</nOutputDim>
+
+    <invertible>true</invertible>
+  </WholeSpace>
+
+  
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>136</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>16</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <grammar>ladder.grammar</grammar>
+    </language>
+  </SymbolSpace>
+</model>

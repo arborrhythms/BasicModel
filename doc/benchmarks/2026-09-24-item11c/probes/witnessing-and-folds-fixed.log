@@ -1,0 +1,61 @@
+........................................                                 [100%]
+=============================== warnings summary ===============================
+test/test_item11c_review.py::test_located_conjunction_matches_requested_poles_before_union
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item11c_review.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 3 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 6 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 9 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 12 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 15 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 18 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 21 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 24 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 27 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 30 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 33 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18969: RuntimeWarning: CS relation pool exhausted (4 rows): concept 36 gets records only, no weighted reading (overflow #12)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+40 passed, 14 warnings in 3.34s

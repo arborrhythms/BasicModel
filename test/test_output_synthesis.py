@@ -577,6 +577,10 @@ def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discours
     orig = m._observe_discourse
 
     def spy(disc, sentence, mask=None, **kwargs):
+        # Give the chronology regression distinct observations. Repeating the
+        # same input need not change its code merely because Adam ran once.
+        sentence = sentence.detach().clone()
+        sentence[..., 0] = .25 * (len(seen) + 1)
         seen.append(disc._pool_sentence_rep(sentence).detach().clone())
         return orig(disc, sentence, mask=mask, **kwargs)
 

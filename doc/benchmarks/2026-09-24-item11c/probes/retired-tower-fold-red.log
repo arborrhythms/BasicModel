@@ -1,0 +1,65 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_xor_exact_slots_keep_butterfly_under_meronomy ______________
+
+    def test_xor_exact_slots_keep_butterfly_under_meronomy():
+        """The cutover sites build the cascade adapter and keep
+        butterfly_enabled=True for butterfly-built slots."""
+        import Models
+        import Language
+        from Layers import MeronymicFoldAdapter, meronomy_enabled
+        from util import init_config
+        init_config(path=os.path.join(_PROJECT, "data", "XOR_exact.xml"),
+                    defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            Models.TheData.load("xor")
+            m, _ = Models.BaseModel.from_config(
+                os.path.join(_PROJECT, "data", "XOR_exact.xml"),
+                data=Models.TheData)
+        assert meronomy_enabled()
+        ps, ws = m.perceptualSpace, m.wholeSpace
+>       assert isinstance(ps.sigma, MeronymicFoldAdapter)
+                          ^^^^^^^^
+
+test/test_meronymic_butterfly.py:389: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PartSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Embedding(
+      (...parsityRegLayer()
+  (chunk_layer): ChunkLayer()
+  (_bpe_gpu_layer): BPEGpuLayer()
+  (_mphf_gpu_layer): MPHFGpuLayer()
+)
+name = 'sigma'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'PartSpace' object has no attribute 'sigma'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 8-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=========================== short test summary info ============================
+FAILED test/test_meronymic_butterfly.py::test_xor_exact_slots_keep_butterfly_under_meronomy
+1 failed in 2.04s

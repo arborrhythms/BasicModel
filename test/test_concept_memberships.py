@@ -4,7 +4,7 @@ import torch
 
 import Spaces
 from PerceptProperties import PrimitiveProperties
-from test_cs_sparse_weights import _cs, _mint_row
+from test_cs_sparse_weights import _cs, _mint_row, _mint_field
 
 
 def binary_features(cs, raw):
@@ -38,7 +38,7 @@ def test_unrelated_memberships_stay_exactly_zero_at_every_scope():
 
 def test_parameter_getter_does_not_offer_new_parts():
     cs = _cs()
-    row = _mint_row(cs, 1, 100)
+    row = _mint_field(cs, 100)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
     matrix = Spaces._concept_alloc_of(cs).layer().conjunctive
     before = tuple(matrix._index)
@@ -61,9 +61,10 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     whole = torch.tensor([[[0, 2]]]).expand(3, -1, -1)
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
     # The part at [0,1] suffices at [0,2]; the property must hold at both
-    # positions. Inspect this occurrence before the extent readout union.
+    # positions. A missing property adds no counterevidence to the present part.
+    # Inspect this occurrence before the extent readout union.
     torch.testing.assert_close(cs._cs_position_evidence[0, :, 0, -1],
-                               torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
+                               torch.tensor([[1., 0.], [1., 0.], [0., 0.]]))
     # A missing byte supplies neither pole, including a missing complement.
     raw[2, 1] = 0
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
@@ -81,10 +82,10 @@ def test_part_containment_belongs_to_the_subject_extent(literal):
     extents = torch.tensor([[[0, 4], [4, 8]]])
     actual = cs.cs_read_memberships((ids, positions, None, raw, positions), extents)
     # Other positions inside a subject do not deny its present part.
-    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 1.]]))
+    torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 0.]]))
     assert cs._cs_position_evidence[0, 0, 0, :, 1].count_nonzero() == 0
     assert cs._cs_position_evidence[0, 0, 1, :, 0].count_nonzero() == 0
-    # Absence still requires complete observation of that subject.
+    # Absent parts supply neither pole, even in a completely observed subject.
     missing = cs.cs_read_memberships((ids[:, :6], positions[:, :6], None,
                                       raw, positions), extents)
     assert missing[0, 0, 1].count_nonzero() == 0
@@ -111,7 +112,7 @@ def test_raw_analysis_layout_clips_regions_to_observed_input():
     torch.testing.assert_close(extents[:, 0], torch.tensor([[0, 11], [0, 3], [0, 0], [0, 600]]))
 
 
-def test_fractional_feature_weights_use_one_product_then_one_extent_union():
+def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     cs = _cs()
     primitive = PrimitiveProperties(2)
     with torch.no_grad():
@@ -122,9 +123,9 @@ def test_fractional_feature_weights_use_one_product_then_one_extent_union():
     spans = torch.tensor([[[0, 1], [1, 2]]])
     extent = torch.tensor([[[0, 2]]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), extent)
-    occurrence = torch.tensor([.25 ** .5 * .64, .75 ** .5 * .36])
+    occurrence = torch.tensor([.25 ** .5, .36])
     torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0, :2], occurrence.expand(2, -1))
-    torch.testing.assert_close(read[0, 0, 0], 1 - (1 - occurrence).square())
+    torch.testing.assert_close(read[0, 0, 0], occurrence)
 
 
 def test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar():
@@ -149,7 +150,7 @@ def test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar():
 
 def test_sentence_boundary_offers_candidates_and_getter_remains_pure():
     cs = _cs()
-    row = _mint_row(cs, 1, 100)
+    row = _mint_field(cs, 100)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
     cs.add_concept_feature(0, 'ws', 7, 1.)
     store = Spaces._concept_alloc_of(cs).layer()

@@ -200,22 +200,6 @@ def test_long_unit_presents_every_atom(ladder):
     assert not bool(m.inputSpace._ar_word_truncated_mask.any())
 
 
-def test_rung_zero_is_the_max_over_atoms(ladder):
-    from Layers import MeronymicFoldAdapter
-    sigma = m_sigma = ladder.perceptualSpace.sigmas[0]
-    assert getattr(sigma, "set_law", None) == "max"
-    codes = torch.tensor([[[0.2, 0.9, 0.0], [0.7, 0.1, 0.0], [0.5, 0.5, 0.5]]])
-    mask = torch.tensor([[True, True, False]])
-    out = sigma.compute_aggregate_over_set(codes, mask=mask)
-    assert torch.allclose(out, torch.tensor([[0.7, 0.9, 0.0]]))
-    # Idempotent: a repeated part does not strengthen the whole.
-    twice = sigma.compute_aggregate_over_set(codes[:, [0, 0]], mask=torch.tensor([[True, True]]))
-    assert torch.allclose(twice, codes[:, 0])
-    # The legacy law is untouched for non-meronomy adapters.
-    legacy = MeronymicFoldAdapter.__new__(MeronymicFoldAdapter)
-    assert getattr(legacy, "set_law", "union") == "union"
-
-
 # -- Phase 1, step D-0: rung-0 admission by recurrence --------------------------
 
 def test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse():

@@ -1492,7 +1492,12 @@ class XMLConfig:
         see basicmodel/doc/Training.md).  Emits a single deprecation
         warning per affected file so test churn stays bounded.
         """
-        training = (data.get("architecture", {}) or {}).get("training", {})
+        architecture = data.get("architecture", {}) or {}
+        for retired in ('subsymbolicNoop', 'conceptualWidth'):
+            if retired in architecture:
+                raise ValueError(f'{source_path}: <{retired}> is retired; '
+                                 'subsymbolicLoop selects attention passes without perceptual folds')
+        training = architecture.get("training", {})
         if not isinstance(training, dict):
             return
         if "reverseScale" in training and "reconstructionScale" not in training:

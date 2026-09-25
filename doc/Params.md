@@ -61,7 +61,7 @@ sub-elements `<training>` and `<data>` (see below).
 |-----------|------|---------|-------------|
 | `data/dataType` | string | `"numeric"` | The data space-role (was the retired architecture-level `modelType`), set under `<data>`: `embedding` (LM / chat with sequence processing — PartSpace owns the byte/word lexicon) or `numeric` (dense slab, e.g. MNIST pixels). The old `simple`+`passthrough` collapsed to `numeric`; `vq` was dropped (0 configs). |
 | `reconstruct` | — | — | RETIRED (A1, 2026-06-09): the `reconstructEnum` / `<reconstruct>` element no longer exists. Reconstruction is concepts-seeded; stream binding is governed separately by `conceptBinding` (`aligned` does not allocate `ConceptualCombine`, while `mixing` is the parallel learned-matrix option). There is no selectable `none` / `symbols` / `both` mode. |
-| `subsymbolicOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. On serial `conceptBinding=aligned`, order $T$ denotes one base level plus $T-1$ cumulative folds on each of PS and WS; the resulting $2(T-1)$ sources form one concept, not $T$ STM insertions. Only the separate sparse-parallel symbolic path partitions rows by order; aligned serial concepts carry order as metadata in one namespace. |
+| `subsymbolicOrder` | int | `1` | Maximum subsymbolic passes over native percepts and the order-0 field. Passes may retarget region or mereological level through subsymbolicLoop; they do not raise conceptual order or apply perceptual fold layers. |
 | `conceptBinding` | string | `"mixing"` | PS/WS concept-formation mode. `aligned` preserves location and fuses every non-raw cumulative fold from both towers; BasicModel uses order 4, hence three PS plus three WS sources. Exact ordered paths and actual concept order ride on the concept and persist on minted META concepts. `mixing` retains the learned `ConceptualCombine` matrix as a parallel-path alternative; BasicModel's serial path is aligned. |
 | `wherePeriod` | int | `8192` | The `.where` quadrature period in input BYTES (2026-07-04 encoding pass; decoupled from the retired implicit $\Sigma$ nVectors period). The build seam raise-to-fits for longer inputs, warning once — never silent aliasing. |
 | `whenPeriod` | int | `1000000` | The `.when` v2 LF horizon in clock ticks (the LTM event-addressing range). The band is the SIMILARITY channel; absolute addressing rides the exact long-int clock (`when_time`). |
@@ -71,8 +71,8 @@ sub-elements `<training>` and `<data>` (see below).
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
 | `serial` | bool | derived | Forward-dispatch mode. `true` = serial / grammatical (per-word `[B, 1, D]` body); `false` = parallel (whole-slab `[B, N, D]` body). If omitted, legacy configs derive it from `symbolicOrder > 0`; new configs should set it explicitly. |
-| `symbolicOrder` | int | `0` | Number of conceptual rungs at the parallel cutover. Each rung reads lower-order parts by union; `conceptualPi` adds the preceding conjunction pass and same-order conjunctive readout. Each concept carries positive and negative evidence per occurrence; its two symbols share one stored code. `0` disables the pyramid; serial grammar dispatch is independent. |
-| `conceptualPi` | bool | `false` | Compute conjunctive parts in `W_pi` before disjunctive parts in `W_sigma`. Also permits the pool to discover co-present wholes, with every observed part necessary. |
+| `symbolicOrder` | int | `0` | Bound on symbolizations in the symbolic loop. Higher rows union the preceding order's symbols; pi edges exist only within the order-0 field. Two poles share one code. 0 disables the parallel pyramid; serial grammar dispatch is independent. |
+| `conceptualPi` | bool | `false` | Enable conjunctive parts in the order-0 field before max over alternatives. The pool may discover located co-present patterns there. Pi edges above order 0 are rejected. |
 | `attentionPromotion` | bool | `false` | Enable witnessed-context discovery in the conceptual row pool at the parallel sentence boundary. Independent of `truthCriterion`. |
 | `conceptPoolSize` | positive int | `1` | Provisional rows reserved per conceptual order, replenished after discovery, within the fixed inventory. Exhaustion is reported; discovered rows are never recycled. |
 | `conceptUseEWMA` | decimal | `0.9` | Previous-value coefficient for context, part support and participation updates; must be less than one. |
@@ -81,7 +81,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `conceptRecycleThreshold` | decimal | `0.2` | Reassign the least-used provisional row below this value when no free row remains. Must be below the discovery threshold. |
 | `conceptMatchCos` | decimal | `0.8` | Minimum cosine between witnessed context weights for substitution. A conjunction reuses only its complete observed part set. |
 | `conceptPartFloor` | decimal | `0.001` | Prune exponents weaker in magnitude than this floor when a provisional concept is discovered. |
-| `subsymbolicNoop` | string | (empty) | Pass indices whose per-pass stack layer is the IDENTITY pass-through, e.g. `"0,2"` — the slot still occupies its pass so the pump always runs to `subsymbolicOrder`. The P4 sigma/pi stacks (distinct per-pass layers: PS `sigmas[t]`, WS `pis[t]`) are canonical and always built. Fold index/depth records derivation and is not identical to mereological rank or part of speech. `conceptBinding=aligned` is strict and rejects a requested no-op rather than pretending it contributed a fold. |
+| `subsymbolicLoop` | string | `all` | Passes on which conceptual demand may retarget perception to a region or mereological level: `all`, `off`, or comma-separated indices in `1..subsymbolicOrder-1`, e.g. `"1,3"`. Pass 0 reads the initial attended field. This selector keeps `subsymbolicOrder` as the processing bound; it adds no perceptual fold layers or identity slots. |
 | `sparseReplace` | — | — | RETIRED (2026-07-02 P3 two-phase forward): phase separation makes non-replacement structural — the symbolic phase's outputs feed the SS leg, the head-side losses, and the concept table, never substituting the subsymbolic advance. Parsed only to emit a `DeprecationWarning`. |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
 | `learning` | bool | `false` | Two-pass soft-superposition training for the grammar chooser. When true, each TRAINING batch runs twice as two trials: pass A at superposition temperature 0 (sharp, recorded) and pass B at `exploreTemperature` (flatter exploration, trimmed from the batch error). The chooser is in the gradient path directly. Default off $\to$ one ordinary forward (byte-identical). See [Language.md $\to$ Soft-superposition route](Language.md). |
@@ -109,7 +109,6 @@ sub-elements `<training>` and `<data>` (see below).
 | `loadBalanceWeight` | float | `0.0` | Sparse-MoE load-balance loss weight. Currently **inert / no-op**: the knob is read (`Models.py`) but has no consumer — the chart's sparse-MoE load-balance bookkeeping was retired with the chart itself, and the knob stands by for any future signal-router rule load-balancing. (`chartTopK` is itself retired.) |
 | `l1Lambda` | decimal | `0.0` | Architecture-wide L1 penalty hook. Most configs leave this at `0` and use `WholeSpace.l1Lambda` instead. |
 | `discontinuityLambda` | decimal | `0.0` | Architecture-wide discontinuity penalty hook (legacy). |
-| `conceptualWidth` | string | `"tapered"` | Symbol-partition geometry for `subsymbolicOrder > 1`. `tapered` = geometrically narrowing slices; `uniform` = equal-width slices. |
 | `maxActivePerLayer` | int | `8` | Maximum active nodes per layer for reverse / mereological walks. |
 | `codebookRetire` | bool | `false` | Retire codebook path where supported. Mostly a migration hook. |
 | `symbolLearning.enabled` | bool | `false` | Enables runtime symbol-learning hooks. Disabled by default. |
@@ -393,13 +392,11 @@ META, taxonomy, or symbol-prototype inventory. See
 | `truthCriterion` | unitInterval | `1.0` | Single continuous truth bar for recording accepted conceptual assertions and admitting learned relative-sentence relations. At `1` nothing is recorded/learned; at `0` everything is. Truth and learned relations are ConceptualSpace/SymbolSpace state, never WholeSpace property rows. Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `trust` | unitInterval | `1.0` | **Architecture-level only** — read as `architecture.trust` (`Models.py`); a `<WholeSpace><trust>` element is not read. Model-level multiplier for incoming assertions/testimony. Runtime `store_truths` entries and static `<truthSet>` rows use `effective_trust = trust * incoming_trust` (clamped to `[-1, 1]`) before they enter the TruthLayer/LTM; persisted STM descriptions also use it, with absolute rows storing event trust and relative rows storing `trust * (t - f)`. The existing `truthCriterion` and TruthSet factors still decide whether testimony is strong enough to support learned relations. |
 
-WholeSpace owns one square invertible
-`PiLayer` at `self.pi` — the top-down analysis (product/intersection)
-fold — bridging the C $\leftrightarrow$ S boundary in both directions
-via its exact inverse (the Pi/Sigma swap, rev. 2026-06-09; SS owned a
-SigmaLayer at `self.sigma` before the corrected orientation). Consumers
-use `model.wholeSpace.pi` directly; the grammar rule binding registers
-it under both the `pi` rule name and the legacy `sigma` alias.
+WholeSpace owns primitive property memberships and the native analysis
+policy. It allows primitives by max and computes pervasion by min over
+observed positions. It has no `PiLayer` or inverse fold. Conceptual pi
+is restricted to the order-0 attentive field; grammatical operators own
+their parameters independently of either perceptual tower.
 
 ### `<OutputSpace>`
 

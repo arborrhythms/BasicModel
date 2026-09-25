@@ -1,0 +1,80 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+________ test_located_conjunction_matches_requested_poles_before_union _________
+
+    def test_located_conjunction_matches_requested_poles_before_union():
+        cs = _cs()
+        cs.conceptual_pi = True
+        assert _mint_row(cs, 0, 100) == 0
+        row = _mint_row(cs, 0, 101)
+>       cs.add_concept_edge(row, 0, 1., conjunctive=True, locations=((0, 1),))
+E       TypeError: ConceptualSpace.add_concept_edge() got an unexpected keyword argument 'locations'
+
+test/test_item11c_review.py:17: TypeError
+_________ test_passback_scales_unknown_parts_without_erasing_location __________
+
+    def test_passback_scales_unknown_parts_without_erasing_location():
+        cs = SimpleNamespace(_order_caps=lambda: (2,), cs_percept_attribution=lambda *a, **k:
+            (torch.tensor([0]), torch.tensor([[[[1., 0.]]]]),
+             torch.tensor([[[0, 1], [1, 2]]])))
+        model = SimpleNamespace(subsymbolic_loop={1}, conceptualSpaces=[cs],
+            conceptualSpace=cs, _subsymbolic_field=torch.zeros(2, 1, 1, 2),
+            perceptualSpace=SimpleNamespace(nWhat=2, _forward_input={
+                'part_spans': torch.tensor([[[0, 1], [1, 2]]])}),
+            _staged_concepts_in=torch.tensor([[[65, 66]]]))
+        sub = Spaces.SubSpace(inputShape=(2, 4), outputShape=(2, 4), nInputDim=4, nOutputDim=4)
+        event = torch.tensor([[[.4, .8, -.2, .6], [.8, .4, .6, -.2]]])
+        sub.set_event(event)
+        result = BasicModel._passback_scope_ps(model, 1, sub, None).materialize()
+>       assert bool((result[..., :2] > 0).all())
+E       assert False
+E        +  where False = bool(tensor(False))
+E        +    where tensor(False) = <built-in method all of Tensor object at 0x11ed309b0>()
+E        +      where <built-in method all of Tensor object at 0x11ed309b0> = tensor([[[0.4000, 0.8000],\n         [0.0000, 0.0000]]]) > 0.all
+
+test/test_item11c_review.py:47: AssertionError
+__________ test_bound_field_can_include_unwritten_inventory_addresses __________
+
+    def test_bound_field_can_include_unwritten_inventory_addresses():
+        cs = _cs(nS=128, order=2)
+        store = Spaces._concept_alloc_of(cs).layer()
+        # A definition-free feature store may precede the expanded inventory.
+        store.grow_inventory(128)
+        store.features.nOutput = 112
+>       view = cs._concept_field_store(torch.tensor([0, 112, 127, -1]))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item11c_review.py:60: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Spaces.py:18174: in _concept_field_store
+    view.feature_defined = self._concept_part_rows(store.features, rows.device)[rows.clamp_min(0)] & (rows >= 0)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10c72c230>
+func = <slot wrapper '__getitem__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([False, False, False, False, False, False, False, False, False, False,
+        False, False, False, False, Fal...e, False, False, False, False, False, False, False, False, False,
+        False, False]), tensor([  0, 112, 127,   0]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: index 112 is out of bounds for dimension 0 with size 112
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+=============================== warnings summary ===============================
+test/test_item11c_review.py::test_located_conjunction_matches_requested_poles_before_union
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item11c_review.py::test_located_conjunction_matches_requested_poles_before_union
+FAILED test/test_item11c_review.py::test_passback_scales_unknown_parts_without_erasing_location
+FAILED test/test_item11c_review.py::test_bound_field_can_include_unwritten_inventory_addresses
+3 failed, 1 warning in 2.40s

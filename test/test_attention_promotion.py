@@ -67,6 +67,11 @@ def _observe(cs, active, B_rows=None):
     snap = torch.arange(cs._order_caps()[0]).unsqueeze(-1)
     object.__setattr__(cs, "_promo_last_acts", a)
     object.__setattr__(cs, "_cs_level_rows", [snap])
+    if cs.conceptual_pi:
+        n0 = cs._order_caps()[0]
+        cs._cs_position_evidence = a[:n0].unsqueeze(-2)
+        cs._cs_position_spans = torch.tensor([[[0, 1]]])
+        cs._cs_extents = torch.tensor([[[0, 1]]])
     cs.promotion_observe()
 
 
@@ -146,24 +151,6 @@ def test_nonrecurring_row_decays_and_is_recycled():
     assert _pool_rows(cs) == [old]
     assert set(dict(cs.concept_weights(old))) == {d, e}
     assert cs.concept_id_at_row(old) is None
-
-
-def test_switch_on_copresence_needs_every_part():
-    cs, rows = _fixture(pi=True)
-    parts = [r for _, r in rows[:3]]
-    _observe(cs, {r: 1. for r in parts})
-    ly = Spaces._concept_alloc_of(cs).layer()
-    r = _pool_rows(cs)[0]
-    assert set(dict(cs.concept_weights(r, conjunctive=True))) == set(parts)
-    assert cs.concept_weights(r) == []
-    a0 = torch.zeros(cs._order_caps()[0], 4)
-    a0[parts, 0] = 1.
-    for i in range(3):
-        a0[parts, i + 1] = 1.
-        a0[parts[i], i + 1] = 0.
-    ly.participation[r] = 1.
-    _, result = cs.cs_forward_content(_evidence(a0), torch.randn(128, 8))
-    torch.testing.assert_close(result[r, :, 0, 0], torch.tensor([1., 0., 0., 0.]), atol=3e-6, rtol=0)
 
 
 def test_objects_never_acquire_witnessed_kinds():
@@ -253,8 +240,7 @@ def test_registered_pool_checkpoint_has_one_sidecar_restore(tmp_path):
     torch.testing.assert_close(before.conjunctive.values, after.conjunctive.values)
 
 
-@pytest.mark.parametrize('pi', [False, True])
-def test_row_pool_prunes_weak_edges_when_use_discovers_it(pi):
+def test_row_pool_prunes_weak_edges_when_use_discovers_it():
     cs, rows = _fixture()
     a, b, c = [r for _, r in rows[:3]]
     _observe(cs, {a: 1., c: 1.})
@@ -265,19 +251,11 @@ def test_row_pool_prunes_weak_edges_when_use_discovers_it(pi):
     frozen = Spaces._concept_alloc_of(cs).new_concept()
     frozen_row = cs._csw_concept_row(1, frozen)
     cs.add_concept_edge(frozen_row, a, weight=.4)
-    if pi:
-        cs.add_concept_edge(r, rows[4][1], weight=.0001, conjunctive=True)
-        cs.add_concept_edge(frozen_row, b, weight=.4, conjunctive=True)
-    cs.conceptual_pi = pi
     cs.freeze_concept(frozen)
     ly.participation[r] = .9
     assert cs.promotion_pass()
     assert rows[3][1] not in dict(cs.concept_weights(r))
-    if pi:
-        assert rows[4][1] not in dict(cs.concept_weights(r, conjunctive=True))
     _, activation = cs.cs_forward_content(
         _evidence(torch.full((cs._order_caps()[0], 1), .25)), torch.zeros(128, _D))
     activation[frozen_row].sum().backward()
     assert ly.values.grad[ly._index[(frozen_row, a)]] == 0
-    if pi:
-        assert ly.conjunctive.values.grad[ly.conjunctive._index[(frozen_row, b)]] == 0

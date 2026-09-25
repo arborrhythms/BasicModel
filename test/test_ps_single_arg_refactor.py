@@ -75,23 +75,6 @@ class TestPSOwnsSingleLayers(unittest.TestCase):
     """PartSpace owns ``self.pi`` directly, not a ``ModuleList``
     container. Stage 10 retired ``self.sigma`` from PS."""
 
-    def test_ps_has_sigma_attribute(self):
-        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
-        # PS owns the synthesis fold ``sigma``.
-        model = _make_plain_model()
-        ps = model.perceptualSpace
-        self.assertTrue(hasattr(ps, 'sigma'),
-                        "PartSpace must own a ``sigma`` attribute "
-                        "post Pi/Sigma swap.")
-        # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
-        self.assertIsInstance(ps.sigma, (SigmaLayer, MeronymicFoldAdapter),
-                              "PartSpace.sigma must be a single "
-                              "fold layer (not a ModuleList).")
-        if isinstance(ps.sigma, MeronymicFoldAdapter):
-            self.assertEqual(ps.sigma.kind, 'sigma')
-        self.assertNotIsInstance(ps.sigma, torch.nn.ModuleList,
-                                 "PartSpace.sigma must NOT be a "
-                                 "ModuleList (single-layer contract).")
 
     def test_ps_pi_attribute_retired(self):
         """Pi/Sigma swap (rev. 2026-06-09): ``self.pi`` on
@@ -173,14 +156,6 @@ class TestPSFoldShapes(unittest.TestCase):
     application sites via ``fold_content_apply`` -- the same law as
     ``WholeSpace.pi``."""
 
-    def test_fold_input_output_dims(self):
-        model = _make_plain_model()
-        ps = model.perceptualSpace
-        content = int(ps.nDim)
-        self.assertEqual(int(ps.sigma.nInput), content,
-                         "sigma.nInput must equal PS content width (nDim).")
-        self.assertEqual(int(ps.sigma.nOutput), content,
-                         "sigma.nOutput must equal PS content width (nDim).")
 
 
 class TestPSLegacyAttributesGone(unittest.TestCase):

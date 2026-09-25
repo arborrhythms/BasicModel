@@ -73,7 +73,7 @@ Do not remove unused reasoning methods without Alec's review.
    recommendation for Alec — adopt (then the tanh/atanh path is deleted: no
    two permanent modes), adopt for memberships only, or drop.
    Retain item 11a's historical [256-position false-support limit](doc/benchmarks/2026-09-23-item11a/README.md#measurements)
-   in the union comparison alongside item 11b's exact-zero membership controls;
+   in the union comparison alongside item 11c’s max/min choice and item 11b's exact-zero membership controls;
    the membership read has no such accumulation limit.
 - **9. Expectation learning gates.** The negative-image mechanism and residual
    query credit are in (`7d7dc4f`,
@@ -214,6 +214,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- Item 11c: native perception, located XOR, per-pole witnessing, nonzero focus and grammatical reference across orders ([receipt](doc/benchmarks/2026-09-24-item11c/README.md)).
 - `15c9bde` Item 11b extent correction: containment at the subject extent, observed raw spans and the restored positive-only `MM_sparse_concept` smoke ([receipt](doc/benchmarks/2026-09-24-item11b-extent/README.md)).
 - `aa235d2` Item 11b accepted-review corrections: recurrent parts, containment over canonical ids, and order-0 fields bound per turn with persistent concept identity ([receipt](doc/benchmarks/2026-09-24-item11b-corrections/README.md)).
 - `db73581` Item 11b: native membership definitions, located fused parts and pervading wholes, with alternatives preserved through refinement; normalization residue closed ([review receipt](doc/benchmarks/2026-09-24-item11b-review/README.md), [design](doc/Architecture.md#item-11b-membership-read-and-extent-truth-corners-september-23)).

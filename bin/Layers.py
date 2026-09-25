@@ -5513,14 +5513,22 @@ class SparseLayer(Layer):
             object.__setattr__(view, 'values', self.values.index_select(0, index))
         view._inventory_edges = selected
         view._missing_sources = torch.tensor(missing, dtype=torch.bool)
+        view._paired_sources = paired
+        view.locations = {(rows[i], cols[i]): self.locations[self._rows[pos], self._cols[pos]]
+                          for i, pos in enumerate(selected)
+                          if (self._rows[pos], self._cols[pos]) in getattr(self, 'locations', {})}
         return view
 
     def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
-                      own=None, own_mask=None, dual=False, edge_memberships=None):
-        """Scatter nonnegative exponents; polarity is a source column.
+                      own=None, own_mask=None, own_known=None, dual=False,
+                      edge_memberships=None, edge_known=None):
+        """Reduce weighted memberships by min/max; polarity is a source column.
 
-        A dual pass swaps the two source blocks and the fold chart. Empty
+        A dual pass swaps the two source blocks, retaining the same fold. Empty
         definitions, including all-zero exponents, assert neither polarity.
+        Each pole reduces its nonzero contributions independently; a zero
+        pole supplies no evidence and cannot veto evidence on that pole.
+        Exponents qualify individual memberships, never count witnesses.
         Finite log floors preserve gradients without moving Boolean rails.
         """
         end = self.nOutput if end is None else int(end)
@@ -5529,9 +5537,9 @@ class SparseLayer(Layer):
         rows, cols = rows[select], cols[select]
         if dual:
             cols = (cols + self.nInput // 2) % self.nInput
-        out = u.new_zeros((end - int(start), u.shape[-1]))
+        out = u.new_full((end - int(start), u.shape[-1]), 1. if conjunctive else 0.)
         mass = u.new_zeros(end - int(start))
-        rail = torch.zeros_like(out)
+        seen = torch.zeros_like(out, dtype=torch.bool)
         if self.values is not None:
             raw = self.values.clone().to(u.device)[select]
             # Zero is the unwritten magnitude. Once a definition has an
@@ -5542,9 +5550,14 @@ class SparseLayer(Layer):
             # gathers only the written edges, using this same pi scatter.
             v = (u.index_select(0, cols) if edge_memberships is None
                  else edge_memberships[select]).clamp(0, 1)
+            if edge_known is not None:
+                known = edge_known[select]
+            else:
+                known = torch.ones_like(v, dtype=torch.bool)
+            known = known & (v > 0)
             missing = getattr(self, '_missing_sources', None)
             if missing is not None:
-                v = v.masked_fill(missing.to(v.device)[select, None], 0.)
+                known = known & ~missing.to(v.device)[select, None]
             eps = torch.finfo(v.dtype).eps
             if conjunctive:
                 vp = v + (v.clamp_min(eps) - v).detach()
@@ -5554,63 +5567,80 @@ class SparseLayer(Layer):
                 vp = v + (v.clamp_max(1 - eps) - v).detach()
                 chart = torch.log1p(-vp)
                 hit = v == 1
-            out = out.index_add(0, rows - int(start), w[:, None] * chart)
+            powered = (w[:, None] * chart).exp() if conjunctive else -torch.expm1(w[:, None] * chart)
+            exact = torch.where(hit & (w[:, None] > 0), 0. if conjunctive else 1., powered)
+            powered = powered + (exact - powered).detach()
+            if conjunctive:
+                # A zero exponent is an unwritten edge, not q**0 evidence.
+                # Straight-through incidence permits inserting and removing
+                # an edge even at a crisp membership rail. Its magnitude
+                # still qualifies the membership through the power above.
+                written = (w > 0).to(w)
+                insertion = written + w - w.detach()
+                candidate = powered * insertion[:, None]
+                neutral = torch.where(w[:, None] > 0, candidate, 1.)
+                powered = candidate + (neutral - candidate).detach()
+            # Sorting is per pole. Opposite evidence is retained by the
+            # other pass; it never erases the support reduced by this one.
+            powered = torch.where(known, powered, 1. if conjunctive else 0.)
+            out = out.scatter_reduce(0, (rows - int(start))[:, None].expand_as(powered),
+                                     powered, reduce='amin' if conjunctive else 'amax',
+                                     include_self=False)
+            seen = seen.scatter_reduce(0, (rows - int(start))[:, None].expand_as(known),
+                                       known & (w[:, None] > 0), reduce='amax')
             mass = mass.index_add(0, rows - int(start), w)
-            rail = rail.index_add(0, rows - int(start),
-                                  (hit & (w[:, None] > 0)).to(out.dtype))
         if own is not None:
-            eps = torch.finfo(out.dtype).eps
-            mask = own_mask.to(out.dtype)[:, None]
-            bounded = own.clamp_min(eps) if conjunctive else own.clamp_max(1 - eps)
-            safe = own + (bounded - own).detach()
-            out = out + mask * (safe.log() if conjunctive else torch.log1p(-safe))
+            present = own_mask[:, None] if own_known is None else own_mask[:, None] & own_known
+            present = present & (own > 0)
+            neutral = torch.where(present, own, 1. if conjunctive else 0.)
+            other = own + (neutral - own).detach()
+            out = torch.minimum(out, other) if conjunctive else torch.maximum(out, other)
             mass = mass + own_mask.to(mass)
-            rail = rail + mask * ((own == 0) if conjunctive else (own == 1)).to(out.dtype)
-        result = out.exp() if conjunctive else -torch.expm1(out)
-        exact = torch.where(rail > 0, torch.zeros_like(result) if conjunctive
-                            else torch.ones_like(result), result)
-        result = result + (exact - result).detach()
-        return result * (mass > 0)[:, None]
+            seen = seen | present
+        # Forward unknown is exactly zero. Preserve the exponent derivative
+        # for a zero candidate on a present witness, so either pole can learn.
+        exact = torch.where(seen, out, 0.)
+        result = out + (exact - out).detach()
+        return result * (mass > 0)[:, None] if conjunctive else result
 
-    def reverse_presence(self, y, *, conjunctive=False, start=0, end=None,
-                         own=None, dual=False):
-        """Row-normalized chart transpose, sharing evidence among parts.
+    def attribute_presence(self, y, *, observed=None, conjunctive=False,
+                           start=0, end=None, dual=False):
+        """Intersect a request with present cases, or choose when imagining.
 
-        The implicit own conjunct has exponent one in the union. Return
-        its share separately so the next transpose can read W_pi.
+        With no field, a disjunction selects its strongest written case;
+        ties use sparse insertion order. A conjunction attributes every
+        required part. No union transpose or division of support is used.
         """
         end = self.nOutput if end is None else int(end)
+        result = y.new_zeros(self.nInput, y.shape[-1])
+        if self.values is None:
+            return result
         rows, cols = self._indices(y.device)
-        selected = (rows >= int(start)) & (rows < end)
-        rows, cols = rows[selected], cols[selected]
-        if dual:
-            cols = (cols + self.nInput // 2) % self.nInput
-        weights = (y.new_zeros((0,)) if self.values is None else
-                   self.values.clone().to(y.device)[selected])
-        magnitude = weights.clamp_min(0)
-        denominator = y.new_zeros(self.nOutput).index_add(0, rows, magnitude)
-        if own is not None:
-            denominator = denominator + own.to(y.dtype)
-        share = magnitude / denominator.index_select(0, rows).clamp_min(1e-12)
-        eps = torch.finfo(y.dtype).eps
-        chart = (y.clamp_min(eps).log() if conjunctive else
-                 torch.log1p(-y.clamp_max(1 - eps)))
-        evidence = chart.index_select(0, rows) * share[:, None] * (y.index_select(0, rows) > 0)
-        result = y.new_zeros((self.nInput, y.shape[-1]))
-        mask = magnitude > 0
+        weights = self.values.to(y).clamp_min(0)
+        selected = (rows >= int(start)) & (rows < end) & (weights > 0)
         missing = getattr(self, '_missing_sources', None)
         if missing is not None:
-            mask &= ~missing.to(mask.device)[selected]
-        acc = result.index_add(0, cols[mask], evidence[mask])
-        hit = result.index_add(0, cols[mask],
-                               (y.index_select(0, rows[mask]) > 0).to(y.dtype))
-        result = (acc.exp() if conjunctive else -torch.expm1(acc)) * (hit > 0)
-        own_share = None
-        if own is not None:
-            share_chart = chart / denominator.clamp_min(1e-12)[:, None]
-            own_share = share_chart.exp() if conjunctive else -torch.expm1(share_chart)
-            own_share = own_share * own[:, None] * (y > 0)
-        return result, own_share
+            selected &= ~missing.to(selected.device)
+        rows, cols, weights = rows[selected], cols[selected], weights[selected]
+        if dual:
+            cols = (cols + self.nInput // 2) % self.nInput
+        if not len(rows):
+            return result
+        request = y.index_select(0, rows)
+        if observed is not None:
+            contribution = torch.minimum(request, observed.index_select(0, cols))
+        elif conjunctive:
+            contribution = request
+        else:
+            # Case choice is explicit. Existing learned exponents provide
+            # its priorities; the selected case receives the whole request.
+            chosen = torch.zeros_like(weights, dtype=torch.bool)
+            for row in rows.unique().tolist():
+                candidates = (rows == row).nonzero().flatten()
+                chosen[candidates[weights[candidates].argmax()]] = True
+            contribution = request * chosen[:, None]
+        return result.scatter_reduce(0, cols[:, None].expand_as(contribution),
+                                     contribution, reduce='amax', include_self=True)
 
 
 class ConceptualAttentionLayer(SparseLayer):
@@ -5636,6 +5666,7 @@ class ConceptualAttentionLayer(SparseLayer):
 
         self.conjunctive = SparseLayer(nInput, nOutput, nonlinear=False,
                                       device=device, forbid_self_edges=True)
+        self.conjunctive.locations = {}  # edge -> required brackets relative to the shared extent
         # Feature addresses interleave PS/WS and membership/complement:
         # 4*row + 2*tower + pole. No distributed coordinate is an address.
         self.features = SparseLayer(1, nOutput, nonlinear=False, device=device)
@@ -5711,6 +5742,10 @@ class ConceptualAttentionLayer(SparseLayer):
         if size <= old:
             return
         for matrix in self.part_matrices():
+            if hasattr(matrix, 'locations'):
+                matrix.locations = {(r, (c % (old + 1) if c % (old + 1) != old else size)
+                                      + (c // (old + 1)) * (size + 1)): spans
+                                    for (r, c), spans in matrix.locations.items()}
             matrix._cols = [(c % (old + 1) if c % (old + 1) != old else size)
                             + (c // (old + 1)) * (size + 1) for c in matrix._cols]
             matrix._index = {pair: i for i, pair in enumerate(zip(matrix._rows, matrix._cols))}
@@ -5765,7 +5800,7 @@ class ConceptualAttentionLayer(SparseLayer):
         return self.fold_presence(presence)
 
     def reverse(self, presence):
-        return self.reverse_presence(presence)[0]
+        return self.attribute_presence(presence)
 
     def parts_extras(self):
         """Checkpoint both parts matrices and row-aligned discovery state."""
@@ -5773,7 +5808,9 @@ class ConceptualAttentionLayer(SparseLayer):
         for name, matrix in (('conjunctive', self.conjunctive), ('features', self.features)):
             matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
                                   nInput=matrix.nInput,
-                                  values=None if matrix.values is None else matrix.values.detach().cpu().clone())
+                                  values=None if matrix.values is None else matrix.values.detach().cpu().clone(),
+                                  locations={k: v for k, v in getattr(matrix, 'locations', {}).items()
+                                             if k in matrix._index})
         return dict(version=4, matrices=matrices, where=self.where.clone(),
                     feature_groups=dict(self.feature_groups),
                     buffers={name: value.detach().cpu().clone()
@@ -5805,6 +5842,10 @@ class ConceptualAttentionLayer(SparseLayer):
             if name == 'features':
                 matrix.nInput = int(blob['nInput'])
             rows, cols, values = blob['rows'], blob['cols'], blob['values']
+            matrix.locations = dict(blob.get('locations', {}))
+            if old_size is not None:
+                matrix.locations = {(r, c % (old_span + 1) + (c // (old_span + 1)) * (self.nOutput + 1)): v
+                                    for (r, c), v in matrix.locations.items()}
             if name != 'features' and saved['version'] == 1:
                 cols = [(self.nOutput if c == old_span else c) +
                         (self.nOutput + 1 if values is not None and values[i] < 0 else 0)
@@ -6025,6 +6066,7 @@ class ConceptAllocator:
         self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
         self.chain_idx = {}              # ("chain", tuple) -> cid
         self.word_obj_meta = {}          # surface key -> (A, B, C)
+        self.word_forms = {}             # surface -> set of persistent concept ids
         self.joint = {}                  # word-tuple key -> J
         self._layers = {}                # {0: THE shared square layer}
         self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
@@ -6132,6 +6174,8 @@ class ConceptAllocator:
         if o is not None:
             self.layer(o).pop_row_key(cid)
         self.retired.add(cid)
+        for ids in self.word_forms.values():
+            ids.discard(cid)
         for k in [k for k, v in self.relate_idx.items() if int(v) == cid]:
             self.relate_idx.pop(k, None)
 

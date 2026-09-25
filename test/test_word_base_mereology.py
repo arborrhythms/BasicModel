@@ -119,107 +119,15 @@ def test_base_set_aggregation_never_executes_learned_kernel(
     assert all(parameter.grad is None for parameter in fold.parameters())
 
 
-def test_partspace_word_synthesis_selects_parameter_free_base_surface():
-    class _Sigma:
-        nInput = 4
 
-        def __init__(self):
-            self.calls = 0
-
-        def aggregate_over_set(self, values, mask=None):
-            self.calls += 1
-            complement = torch.where(
-                mask.unsqueeze(-1), 1.0 - values,
-                torch.ones_like(values))
-            return 1.0 - complement.prod(dim=-2)
-
-        def synthesize_over_set(self, *_args, **_kwargs):
-            raise AssertionError("word base used the learned set-fold surface")
-
-    class _PartHost:
-        def __init__(self, events, sigma):
-            self.events = events
-            self.sigma = sigma
-
-        def _radix_part_events(self, _part_ids, _part_offsets):
-            return self.events
-
-        def _sigma_for_pass(self):
-            return self.sigma
-
-    sigma = _Sigma()
-    events = torch.tensor([[[0.1, 0.2, 0.3, 0.4, 0.25, -0.5],
-                            [0.2, 0.3, 0.4, 0.5, -0.5, 0.25],
-                            [0.5, 0.6, 0.7, 0.8, 0.75, 0.5]]])
-    mask = torch.tensor([[True, False, True]])
-    host = _PartHost(events, sigma)
-    ids = torch.tensor([[0, 1, 2]])
-
-    out = PartSpace.synthesize_word_parts(host, ids, mask)
-    assert sigma.calls == 1
-    assert torch.allclose(
-        out[..., :4], torch.tensor([[[0.55, 0.68, 0.79, 0.88]]]))
-    # The positional band comes from the first active constituent only.
-    assert torch.equal(out[..., 4:], torch.tensor([[[0.25, -0.5]]]))
-
-
-def test_word_base_then_three_learned_sigma_rungs_execute_once_each():
-    class _CountingSigma(torch.nn.Module):
-        nInput = 4
-        N = 0
-
-        def __init__(self, scale):
-            super().__init__()
-            self.scale = torch.nn.Parameter(torch.tensor(float(scale)))
-            self.aggregate_calls = 0
-            self.forward_calls = 0
-
-        def aggregate_over_set(self, values, mask=None):
-            self.aggregate_calls += 1
-            # Deliberately parameter-free: ``scale`` belongs only to forward.
-            complement = torch.where(
-                mask.unsqueeze(-1), 1.0 - values,
-                torch.ones_like(values))
-            return 1.0 - complement.prod(dim=-2)
-
-        def forward(self, values):
-            self.forward_calls += 1
-            # A differentiable membership-preserving stand-in for a learned
-            # sigma rung; the test is about call ownership, not kernel math.
-            return 1.0 - (1.0 - values).clamp(1e-6, 1.0).pow(self.scale)
-
-    class _PartHost:
-        _synthesize_event = PartSpace._synthesize_event
-
-        def __init__(self, events, sigmas):
-            self.events = events
-            self.sigmas = sigmas
-
-        def _radix_part_events(self, _part_ids, _part_offsets):
-            return self.events
-
-        def _sigma_for_pass(self):
-            return self.sigmas[0]
-
-    sigmas = [_CountingSigma(1.1 + 0.1 * i) for i in range(4)]
-    events = torch.tensor([[[0.1, 0.2, 0.3, 0.4, 0.25, -0.5],
-                            [0.5, 0.6, 0.7, 0.8, 0.75, 0.5]]])
+def test_partspace_word_code_is_max_and_anagrams_share_it():
+    from types import SimpleNamespace
+    events = torch.tensor([[[.1, .7, .25, -.5], [.8, .3, .75, .5]]])
+    host = SimpleNamespace(nDim=2, _radix_part_events=lambda ids, offsets: events[:, ids[0]])
     mask = torch.tensor([[True, True]])
-    host = _PartHost(events, sigmas)
-
-    base = PartSpace.synthesize_word_parts(
-        host, torch.tensor([[0, 1]]), mask)
-    folds = PartSpace.fold_event_ladder(
-        host, base, (0, 1, 2), strict=True)
-    folds[-1].square().sum().backward()
-
-    assert [fold.aggregate_calls for fold in sigmas] == [1, 0, 0, 0]
-    assert [fold.forward_calls for fold in sigmas] == [1, 1, 1, 0]
-    assert torch.all((folds[-1][..., :4] >= 0.0)
-                     & (folds[-1][..., :4] <= 1.0))
-    assert all(fold.scale.grad is not None
-               and bool((fold.scale.grad != 0).all())
-               for fold in sigmas[:3])
-    # Rung 3 remains registered for checkpoint compatibility, but T=4's
-    # aligned base-plus-three-fold path does not advertise or execute it.
-    assert sigmas[3].scale.grad is None
+    forward = PartSpace.synthesize_word_parts(host, torch.tensor([[0, 1]]), mask)
+    backward = PartSpace.synthesize_word_parts(host, torch.tensor([[1, 0]]), mask)
+    torch.testing.assert_close(forward[..., :2], torch.tensor([[[.8, .7]]]))
+    torch.testing.assert_close(forward[..., :2], backward[..., :2])
+    torch.testing.assert_close(forward[..., 2:], events[:, :1, 2:])
+    torch.testing.assert_close(backward[..., 2:], events[:, 1:, 2:])

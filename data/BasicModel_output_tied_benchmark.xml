@@ -5,7 +5,6 @@
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
     <conceptBinding>aligned</conceptBinding>
-    <conceptualWidth>uniform</conceptualWidth>
     <symbolicOrder>4</symbolicOrder>
     <syntacticOrder>0</syntacticOrder>
     <mereologyRaise>true</mereologyRaise>

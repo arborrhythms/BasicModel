@@ -1811,61 +1811,25 @@ class BaseModel(Mereology, nn.Module):
     # -- Hierarchical Epistemic Architecture --------------------------
 
     @staticmethod
-    def _conceptual_width_mode():
-        """Read ``architecture.conceptualWidth`` from XML; default
-        ``tapered``. Accepts ``tapered`` (geometric halving per
-        conceptual order, the historical behavior) or ``uniform``
-        (every level keeps the same n_vectors).
-        """
+    def _subsymbolic_loop_passes(raw, limit):
+        """Passes 1..T-1 on which conceptual demand can retarget perception."""
+        value = str(raw).strip().lower()
+        if value == 'all':
+            return frozenset(range(1, max(1, int(limit))))
+        if value in ('off', 'none', '') or raw is False:
+            return frozenset()
         try:
-            value = TheXMLConfig.get("architecture.conceptualWidth", "tapered")
-            value = str(value).strip().lower() if value is not None else "tapered"
-        except Exception:
-            value = "tapered"
-        if value not in ("tapered", "uniform"):
-            value = "tapered"
-        return value
+            chosen = frozenset(int(part.strip()) for part in value.split(','))
+        except ValueError as error:
+            raise ValueError('subsymbolicLoop requires all, off, or comma-separated pass indices') from error
+        if any(t < 1 or t >= int(limit) for t in chosen):
+            raise ValueError('subsymbolicLoop pass indices must be within 1..subsymbolicOrder-1')
+        return chosen
 
     @staticmethod
-    def _level_shapes(n_vectors, dim, subsymbolic_order, width_mode="tapered"):
-        """Per-level (N_t, D_t) shapes across the conceptual-order stack.
-
-        Two width modes (set via XML ``architecture.conceptualWidth``):
-
-        ``tapered`` (default, historical) -- D stays constant; N halves
-            per level. Biological analogue: increasing receptive field
-            (V1->V2->V4->IT). Requires ``n_vectors`` to be divisible by
-            ``2^subsymbolic_order``.
-
-                percepts:  (N, D)
-                level 0:   (N/2, D)
-                level 1:   (N/4, D)
-                ...
-                level k:   (N/(2^(k+1)), D)
-
-        ``uniform`` -- N stays constant at every level. Useful when the
-            grammar is the only compositional structure (e.g.
-            XOR_grammar) and the per-level geometric reduction would
-            otherwise let downstream layers memorize the task without
-            using the chart's rule choices. Each level keeps the same
-            ``n_vectors`` width:
-
-                percepts:  (N, D)
-                level 0:   (N, D)
-                level 1:   (N, D)
-                ...
-                level k:   (N, D)
-        """
-        if width_mode == "uniform":
-            return [(int(n_vectors), int(dim)) for _ in range(subsymbolic_order)]
-        # Default: tapered (geometric halving).
-        shapes = []
-        for t in range(subsymbolic_order):
-            n = n_vectors // (2 ** (t + 1))
-            assert n > 0, \
-                f"Level {t}: n_vectors={n_vectors} not divisible by 2^{t+1}"
-            shapes.append((n, dim))
-        return shapes
+    def _level_shapes(n_vectors, dim, subsymbolic_order):
+        """Perceptual passes preserve the attended width and content cube."""
+        return [(int(n_vectors), int(dim)) for _ in range(subsymbolic_order)]
 
     @staticmethod
     def from_config(config_path=None, model_type=None, data=None):
@@ -1994,12 +1958,6 @@ class BaseModel(Mereology, nn.Module):
             where_scale=_t("whereScale"),
             when_scale=_t("whenScale"),
         )
-        if (self.concept_binding == "aligned"
-                and int(getattr(self, "subsymbolicOrder", 0)) < 2):
-            raise ValueError(
-                "<conceptBinding>aligned</conceptBinding> requires "
-                "<subsymbolicOrder> >= 2: order T denotes one base level "
-                "plus T-1 folds per PS/WS tower.")
 
         # IR mask rate: Bernoulli probability that a P-space_role position is
         # replaced by NULL_PERCEPT for masked reconstruction. Default
@@ -2190,9 +2148,8 @@ class BaseModel(Mereology, nn.Module):
 
         # Reading attention (doc/specs/reading-attention.md "(A) Reading
         # attention"). When on, a learned `.where` producer runs at each t>0
-        # subsymbolic pass and writes ``_passback_scope_where`` on the stage-0
-        # WholeSpace -- the producer of the scope the <mereologyRaise> handoff
-        # already consumes. The producer is a small dimension-agnostic MLP over
+        # subsymbolic pass and writes ``_passback_scope_where`` on the shared
+        # conceptual field. Native perception consumes its normalized scope. The producer is a small dimension-agnostic MLP over
         # detached cosine-retrieval + span-geometry features (its widths are
         # not needed, so it is built here, AFTER ``self.create``). Registered
         # as a submodule (rides the state_dict); its readout params are added
@@ -2586,9 +2543,6 @@ class BaseModel(Mereology, nn.Module):
                 _ps = getattr(self, 'perceptualSpace', None)
                 if _ps is not None:
                     object.__setattr__(_ps, '_serial_object_meta', True)
-                    object.__setattr__(
-                        _ps, '_serial_aligned_fold_ladder',
-                        self.concept_binding == "aligned")
                     object.__setattr__(_ps,
                                        '_serial_word_capacity', _word_capacity)
                     object.__setattr__(
@@ -4632,7 +4586,7 @@ class BaseModel(Mereology, nn.Module):
         """
         alloc_fields = (
             "placement", "raised", "singletons", "retired", "identity",
-            "relate_idx", "chain_idx", "word_obj_meta", "joint",
+            "relate_idx", "chain_idx", "word_obj_meta", "word_forms", "joint",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4789,7 +4743,7 @@ class BaseModel(Mereology, nn.Module):
 
         fields = (
             "placement", "raised", "singletons", "retired", "identity",
-            "relate_idx", "chain_idx", "word_obj_meta", "joint",
+            "relate_idx", "chain_idx", "word_obj_meta", "word_forms", "joint",
         )
         for name in fields:
             if name not in saved:
@@ -4911,6 +4865,11 @@ class BaseModel(Mereology, nn.Module):
 
             layer.load_parts_extras(blob.get("parts"),
                                     old_size=saved_n_output if square_expansion else None)
+            if getattr(cs, '_sparse_active', lambda: False)() and any(
+                    not cs._order0_inventory_row(r)
+                    or not cs._order0_inventory_row(c % (layer.nOutput + 1))
+                    for r, c in layer.conjunctive._index):
+                raise ValueError('checkpoint pi edges require order-0 field concepts')
 
         object.__setattr__(cs, "_word_obj_meta", alloc.word_obj_meta)
         object.__setattr__(cs, "_joint_concepts", alloc.joint)
@@ -7415,8 +7374,8 @@ class BasicModel(BaseModel):
         stem's staging (ws0); the slot->row selections and the heat come
         from the CANONICAL priming surface (the terminal WS codebook, Alec
         2026-07-12) -- only canonical-stamp rows may index it. Writes
-        ``wholeSpaces[0]._passback_scope_where`` (the learned producer's
-        contract). Silent no-op when spans / stamp / surface are dark or
+        ``conceptualSpace._passback_scope_where`` as normalized coordinates
+        of the shared attentive field. Silent no-op when spans / stamp / surface are dark or
         the canonical stamp is not slot-aligned with the staged spans."""
         ws0 = (self.wholeSpaces[0]
                if getattr(self, "wholeSpaces", None) else None)
@@ -7436,7 +7395,12 @@ class BasicModel(BaseModel):
         heat = b.to(rows.device)[rows]                   # [B, k_slots]
         k_star = heat.argmax(dim=1)                      # [B]
         scope = spans[torch.arange(B, device=spans.device), k_star]
-        object.__setattr__(ws0, "_passback_scope_where", scope.float())
+        raw = getattr(self, '_staged_concepts_in', None)
+        if not torch.is_tensor(raw):
+            return
+        width = max(1, int(raw.shape[-1]))
+        object.__setattr__(self.conceptualSpace, "_passback_scope_where",
+                           scope.float() / width)
 
     @torch.no_grad()
     def _assemble_relevance_priority(self, cut_cs, stage, last_cs, settled):
@@ -8387,34 +8351,13 @@ class BasicModel(BaseModel):
                 "terminal ConceptualSpace to share one physical codebook")
         return sparse
 
-    def _aligned_part_fold_ladder(self, event):
-        """Fullgraph numerical PS ladder for one canonical word tick."""
-        passes = tuple(range(int(self.subsymbolicOrder) - 1))
-        return self.perceptualSpace.fold_event_ladder(
-            event, passes, strict=True)
-
-    def _aligned_whole_fold_ladder(self, event):
-        """Fullgraph numerical WS ladder for one canonical word tick."""
-        passes = tuple(range(int(self.subsymbolicOrder) - 1))
-        return self.wholeSpace.fold_event_ladder(
-            event, passes, strict=True)
-
-    def _enable_fullgraph_fold_ladders(self, compile_fn):
-        """Compile the complete numerical PS and WS ladders.
-
-        This is the useful fullgraph boundary for the canonical recurrence:
-        each graph contains all three learned folds and their backward path,
-        while excluding the stateful carrier, sparse lookup, STM, and host
-        grammar machinery that make a whole word tick impractically large for
-        MPS.  It replaces six tiny compile dispatches per word with two
-        fullgraph calls on every supported compiler backend.
-        """
-        os.environ.setdefault("BASICMODEL_MPS_IOBUF", "12")
-        os.environ.setdefault("BASICMODEL_MPS_FUSE", "32")
-        self._compiled_part_fold_ladder = compile_fn(
-            self._aligned_part_fold_ladder, verbose=True, fullgraph=True)
-        self._compiled_whole_fold_ladder = compile_fn(
-            self._aligned_whole_fold_ladder, verbose=True, fullgraph=True)
+    def _enable_fullgraph_perception(self, compile_fn):
+        """Compile the native word reads at their tensor-only boundaries."""
+        ps, ws = self.perceptualSpace, self.wholeSpace
+        object.__setattr__(ps, 'synthesize_word_parts', compile_fn(
+            ps.synthesize_word_parts, verbose=True, fullgraph=True))
+        object.__setattr__(ws, 'compute_word_property_event', compile_fn(
+            ws.compute_word_property_event, verbose=True, fullgraph=True))
 
     def _configure_lazy_fullgraph_word_loops(self, compile_fn, buckets):
         """Install, but do not lower, one fullgraph sentence loop per capacity.
@@ -8906,12 +8849,10 @@ class BasicModel(BaseModel):
         # an environment lookup or constructs a SubSpaceView while captured.
         self._debug_peer_mutation = (
             os.environ.get("BASICMODEL_DEBUG_PEER_MUTATION", "0") == "1")
-        self._compiled_part_fold_ladder = None
-        self._compiled_whole_fold_ladder = None
         self._compiled_word_loop_compile = None
         self._compiled_word_loop_fullgraph = False
         _compiled_device_type = str(TheDevice.get()).split(":", 1)[0]
-        _mps_fullgraph_ladder_boundary = (
+        _mps_word_boundary = (
             _aligned_serial_stage_bodies
             and _compiled_device_type == "mps")
         _cuda_fullgraph_word_loop_boundary = (
@@ -8943,7 +8884,7 @@ class BasicModel(BaseModel):
             _mps_word_loop = False
             _mps_word_cell = False
             _cuda_fullgraph_word_loop_boundary = False
-        if ((_mps_fullgraph_ladder_boundary and _mps_word_loop)
+        if ((_mps_word_boundary and _mps_word_loop)
                 or _cuda_fullgraph_word_loop_boundary):
             # The primary production boundary: one fullgraph encompasses the
             # dynamic tensor word loop, both dependency legs, and backward.
@@ -8955,7 +8896,7 @@ class BasicModel(BaseModel):
             # keeps its native Inductor/Triton fusion policy and, with a
             # CUDAGraph-bearing compile mode, captures eligible fixed-shape
             # body partitions for replay.
-            if _mps_fullgraph_ladder_boundary:
+            if _mps_word_boundary:
                 os.environ.setdefault("BASICMODEL_MPS_IOBUF", "8")
                 os.environ.setdefault("BASICMODEL_MPS_FUSE", "16")
                 os.environ.setdefault("BASICMODEL_MPS_REALIZE", "4")
@@ -8965,7 +8906,7 @@ class BasicModel(BaseModel):
                 "Canonical fullgraph compile: lazy fused tensor word-loop "
                 f"lowering on {_compiled_device_type} with fixed capacity "
                 "and residual-part axes")
-        elif _mps_fullgraph_ladder_boundary and _mps_word_cell:
+        elif _mps_word_boundary and _mps_word_cell:
             # Fullgraph training kernel for the actual recurrent word tick.
             # The fixed residual-part bucket below removes the old 3..8192
             # symbolic P range, which was the dominant source of the earlier
@@ -8992,19 +8933,16 @@ class BasicModel(BaseModel):
                 "Canonical MPS fullgraph compile: reusable K="
                 f"{_mps_chunk_width} word cell with fixed residual-part "
                 "buckets")
-        elif _mps_fullgraph_ladder_boundary:
-            # Two fullgraph numerical ladders replace the previous six tiny
-            # fold calls per word. Capturing the whole K=1/K=2 word cell also
-            # captures carrier mutation, sparse lookup, STM, and grammar
-            # state; MPS spends minutes lowering that AOT backward before the
-            # first batch. The ladders retain the actual learned PS/WS work in
-            # fullgraph=True graphs and leave only those stateful boundaries
-            # eager.
+        elif _mps_word_boundary:
+            # Compile native PS synthesis and WS property reads separately.
+            # The whole word cell also mutates carriers, performs sparse
+            # lookup, and advances STM and grammar state; those boundaries
+            # remain eager while the numerical reads use fullgraph capture.
             self._compiled_word_steps = {}
-            self._enable_fullgraph_fold_ladders(_compile)
+            self._enable_fullgraph_perception(_compile)
             self._compiled_step = self.forward
             TheMessage(
-                "Canonical MPS compile: PS and WS fold ladders "
+                "Canonical MPS compile: native PS and WS reads "
                 "fullgraph=True with eager state adapter")
         elif _canonical_word_chunk:
             # Compile one reusable, fixed K=2 word cell.  The sentence shell
@@ -9029,7 +8967,7 @@ class BasicModel(BaseModel):
             # independent numerical bodies. MPS takes the W-loop branch above,
             # where the same fixed FIFO is part of the fullgraph.
             if _aligned_serial_stage_bodies:
-                self._enable_fullgraph_fold_ladders(_compile)
+                self._enable_fullgraph_perception(_compile)
             self._compiled_step = self.forward
             TheMessage(
                 "Peer pipeline: static PS/WS stage bodies compiled separately; "
@@ -11844,8 +11782,6 @@ class BasicModel(BaseModel):
         # with a CUDAGraph-bearing Inductor mode.
         self._brick_compiled = False
         self._brick_cuda_graph_mode = None
-        self._compiled_part_fold_ladder = None
-        self._compiled_whole_fold_ladder = None
         self._compiled_word_loop_compile = None
         self._compiled_word_loop_fullgraph = False
         object.__setattr__(self, "_compiled_word_step_sources", {})
@@ -11987,13 +11923,9 @@ class BasicModel(BaseModel):
         reference_codes = [[[-1] * 8 for _ in range(W)] for _ in range(B)]
         reference_roles = [[[-1] * 8 for _ in range(W)] for _ in range(B)]
         pending = []
-        # One base presentation plus T-1 cumulative native folds. The concept
-        # activation reads the completed native fields while retaining the
-        # full fold ladders, so final depth is its actual subsymbolic order.
-        actual_order = max(0, int(getattr(self, "subsymbolicOrder", 1)) - 1)
-        fold_passes = tuple(range(actual_order))
-        fold_support = owner._ordered_fold_support(
-            fold_passes, fold_passes)
+        # Perceptual passes change attention, not conceptual order. Native
+        # word definitions are order 0; only symbolization raises an object.
+        fold_support = owner._ordered_fold_support((), ())
         wom = getattr(alloc, "word_obj_meta", {}) if alloc is not None else {}
         language = getattr(self, "languageSpace", None)
         if language is None:
@@ -12096,7 +12028,7 @@ class BasicModel(BaseModel):
                     owner.propose_utility_observation(
                         A, sorted(current_parts) + [10_000_000 + w for w in sorted(current_wholes)])
                 record = owner.record_concept_fold_support(
-                    A, fold_support, actual_order)
+                    A, fold_support, owner._concept_source_order(A))
                 order_host[b][p] = int(record["actual_order"])
                 object_row_host[b][p] = int(object_row)
                 object_cid_host[b][p] = object_id
@@ -13428,15 +13360,26 @@ class BasicModel(BaseModel):
             selected_forms = tuple(
                 source_forms[index] if 0 <= index < len(source_forms) else None
                 for index in pos.detach().to("cpu").tolist())
+            selected_words = word_rows[b].index_select(0, pos.to(word_rows.device))
+            selected_ids = (concept_ids[b].index_select(0, pos.to(concept_ids.device))
+                            if torch.is_tensor(concept_ids) else None)
+            reference_ids = reference_orders = None
+            resolve = getattr(getattr(self, 'languageSpace', None),
+                              'resolve_lexical_references', None)
+            owner = getattr(self, '_concept_owner', None)
+            if callable(resolve) and callable(owner) and selected_ids is not None:
+                reference_ids, reference_orders = resolve(
+                    owner(), selected_words, selected_ids, acts[:L])
+                if not bool((reference_orders >= 0).any()):
+                    reference_ids = reference_orders = None
             entry = AnswerProgram(
                 rows=rows[b].index_select(0, pos.to(rows.device)),
                 word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
                 activations=activations[b].index_select(0, pos.to(activations.device)),
                 leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
                 actions=acts[:L], targets=targets[b], end_state=end_state[b],
-                concept_ids=(concept_ids[b].index_select(0, pos.to(concept_ids.device))
-                             if torch.is_tensor(concept_ids) else None),
-                lexical_forms=selected_forms)
+                concept_ids=selected_ids, reference_ids=reference_ids,
+                reference_orders=reference_orders, lexical_forms=selected_forms)
             entries.append(entry)
         return tuple(entries)
 
@@ -16878,6 +16821,9 @@ class BasicModel(BaseModel):
         self.wholePropertyBasis = bool(TheXMLConfig.space(
             "WholeSpace", "propertyBasis", default=False))
         self.subsymbolicOrder = subsymbolicOrder
+        self.subsymbolic_loop = self._subsymbolic_loop_passes(
+            TheXMLConfig.get('architecture.subsymbolicLoop', default='all'),
+            int(self.subsymbolicOrder))
 
         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
         # flag; when True, invertible SigmaLayers use NonNegativeInvertibleLinearLayer.
@@ -17127,8 +17073,7 @@ class BasicModel(BaseModel):
         if self.useGrammar == "all":
             n_stages = self.subsymbolicOrder
             self._level_shapes_list = self._level_shapes(
-                nPercepts, percept_dim + obj_percept, n_stages,
-                width_mode=self._conceptual_width_mode())
+                nPercepts, percept_dim + obj_percept, n_stages)
         else:
             n_stages = self.subsymbolicOrder
             self._level_shapes_list = None
@@ -17193,49 +17138,8 @@ class BasicModel(BaseModel):
         for t in range(T):
             is_last = (t == T - 1)
             if self.useGrammar == "all":
-                # Grammar path. Tapered width halves N between stages;
-                # uniform width keeps the canonical instantaneous field
-                # unchanged at every order. `_level_shapes` has long exposed
-                # both modes, but construction historically ignored the
-                # uniform result and unconditionally shifted N -- making an
-                # eight-wide, order-4 field collapse 8->4->2->1 despite the
-                # explicit setting.
-                #
-                # Width contract (H3, 2026-05-18): the per-stage
-                # ConceptualSpace input is the true upstream percept
-                # width ``percept_dim + obj_percept`` (``cs_in``), and
-                # its output is the conceptual content width
-                # ``concept_dim`` (``cs_out``). Pre Stage 1.C the
-                # ``sigma_percept`` SigmaLayer did the per-stage
-                # percept→concept *lift* here; Stage 1.C retired that
-                # atomic fold (see ConceptualSpace docstring) so the
-                # per-stage shapes still describe input/output widths
-                # for the CS recurrent cell but the lift itself is now
-                # the signal-router's responsibility (Stage 3).
-                # ``concept_dim`` is the BARE ``<ConceptualSpace><nDim>``
-                # content width.  Per the modality re-architecture, CS
-                # CARRIES the event where/when (mux at PS->CS): the CS output
-                # muxed width is ``concept_dim + obj_concept`` so ``SubSpace``
-                # derives ``nWhat == concept_dim`` (= nDim) with where/when as
-                # the added tail (``muxedSize == concept_dim + nWhere +
-                # nWhen``); WS is demuxed back to the bare ``concept_dim`` (the
-                # CS->WS materialize trim, Spaces.py ~14730).  Preserving the
-                # bare content width is what the C->P feedback
-                # gate (``PartSpace.pi_concept.nInput ==
-                # <ConceptualSpace><nDim>``), the Phase-2A.5 symbol
-                # snap (``WholeSpace.subspace.what.W`` width ==
-                # ``symbol_dim``), and ``WholeSpace.forward``'s
-                # ``[B, N, concept_dim]`` pass-through contract
-                # (validate_config: ``effective_concept_dim ==
-                # symbol_dim``) all require.  For configs where
-                # ``concept_dim == percept_dim + obj_percept`` (e.g.
-                # MM_xor: 10 == 10) this is identical to the prior
-                # width-preserving shapes (no-op); for MM_20M it
-                # activates the previously-dropped C->P feedback +
-                # snap (1024 vs the old 10).
-                _uniform_width = (
-                    self._conceptual_width_mode() == "uniform")
-                n_t = nPercepts if _uniform_width else (nPercepts >> t)
+                # A pass changes attention, not the perceptual dimension.
+                n_t = nPercepts
                 # In the aligned serial model PS/WS recurse at their native
                 # widths, then each rung's sigma/codebook read emits a
                 # conceptual-width activation. CS receives that activation;
@@ -17250,9 +17154,7 @@ class BasicModel(BaseModel):
                 # muxed traces, not codebook rows.
                 d_out = concept_dim + obj_concept
                 cs_in = [n_t, d_in]
-                cs_out = ([n_t, d_out]
-                          if is_last or _uniform_width
-                          else [n_t >> 1, d_out])
+                cs_out = [n_t, d_out]
                 # WS is BARE concept_dim (the demux target; canonical WS=(0,0)).
                 # WS slot count is the PRE-merge stage input ``n_t`` -- NOT the
                 # post-merge ``cs_out[0]`` (= ``n_t >> 1`` for non-last stages).
@@ -17410,39 +17312,6 @@ class BasicModel(BaseModel):
         # above are the sole structural owners.
         object.__setattr__(self, 'conceptualSpace', self.conceptualSpaces[-1])
         object.__setattr__(self, 'wholeSpace', self.wholeSpaces[-1])
-
-        # Per-tower fold-width law (2026-07-16): every sigma/pi slot fold is
-        # sized at its OWN space's CONTENT width (nDim). Dense "full" slab
-        # folds (nInput == sigma_pi_slab) are the one exemption: their content
-        # law is the flattened N*content slab. PS and WS are peer perceptual
-        # towers and therefore retain one shared native width. Their sparse
-        # sigma/codebook activations are already conceptual-width when they
-        # reach CS; neither peer is widened here and there is no PS->WS edge.
-        _law_folds = []
-        if getattr(self, 'perceptualSpace', None) is not None:
-            _law_folds.append(("PartSpace.sigma", self.perceptualSpace,
-                               getattr(self.perceptualSpace, 'sigma', None)))
-        for _t, _lw in enumerate(self.wholeSpaces):
-            _law_folds.append((f"WholeSpace[{_t}].pi", _lw,
-                               getattr(_lw, 'pi', None)))
-        _law_widths = {}
-        for _nm, _sp, _fold in _law_folds:
-            _fw = int(getattr(_fold, 'nInput', 0) or 0)
-            _nd = int(getattr(_sp, 'nDim', 0) or 0)
-            if _fw <= 0 or _nd <= 0:
-                continue
-            if _fw == int(getattr(_sp, 'sigma_pi_slab', 0) or 0):
-                continue
-            assert _fw == _nd, (
-                f"unified fold-width law violated: {_nm}.nInput={_fw} != "
-                f"nDim={_nd} of its space; slot folds are sized at the "
-                f"space's content width (one parameter).")
-            _law_widths[_nm] = _fw
-        assert len(set(_law_widths.values())) <= 1, (
-            f"unified fold-width law violated across spaces: {_law_widths}; "
-            "PS/WS slot folds must share one native content width. The "
-            "conceptual dimension increase belongs to each source's sparse "
-            "sigma/codebook activation, not to either perceptual tower.")
 
         # §6d reference-partitioned codebook update law (GrammarOpsPass;
         # author 2026-06-11): percepts are shaped by the parallel pass,
@@ -17909,8 +17778,6 @@ class BasicModel(BaseModel):
         # ownership diagnostics as an explicitly compiled model.
         self._debug_peer_mutation = (
             os.environ.get("BASICMODEL_DEBUG_PEER_MUTATION", "0") == "1")
-        self._compiled_part_fold_ladder = None
-        self._compiled_whole_fold_ladder = None
         self._pending_stm_end_state = None
         self._current_discourse_s = None
         # Fullgraph sentence products consumed by the eager loss/diagnostic
@@ -18013,40 +17880,10 @@ class BasicModel(BaseModel):
         # ``symbol_cache`` and the reverse-pass reconstruction loss
         # consumer were migrated to read from those canonical owners.
 
-        # Determine initial_n per stage for the N-halving GrammarMergeGlue.
-        try:
-            base_n = int(self.perceptualSpace.subspace.inputShape[0])
-        except Exception:
-            base_n = int(getattr(self, "nPercepts", 0))
-
-        # Per-stage body: ModuleList of ModuleDicts, driven by an
-        # explicit for-loop in ``_forward_body`` / ``_reverse_body``.
-        # Replaces ``_body_inner = nn.Sequential(*body_modules)``; the
-        # adapter classes (FlattenKWrapper, ReverseAdapter, CachePoint)
-        # that existed only to fit Sequential's one-arg contract go
-        # away. Each stage's dict contains:
-        #   "cs":      ConceptualSpace   (required)
-        #   "merge":   GrammarMergeGlue  (optional, useGrammar=="all")
-        #   "ws":      WholeSpace     (required)
-        # The legacy ``"reparse": ChartCompose`` entry was retired
-        # 2026-05-12 alongside chart-at-stem -- the chart now fires
-        # uniformly at C-space_role inside ``_forward_body`` for every stage.
-        self.body_stages = nn.ModuleList()
-        for t in range(T):
-            merge = None
-            if use_grammar_merge:
-                stage_n = base_n // (2 ** t)
-                merge = GrammarMergeGlue(
-                    stage_idx=t, initial_n=stage_n,
-                    is_last=(t == T - 1))
-            self.body_stages.append(
-                _BodyStage(
-                    self.conceptualSpaces[t],
-                    self.wholeSpaces[t],
-                    merge=merge,
-                )
-            )
-
+        # Subsymbolic passes retain the same attended geometry.
+        self.body_stages = nn.ModuleList([
+            _BodyStage(self.conceptualSpaces[t], self.wholeSpaces[t])
+            for t in range(T)])
 
         # --- A4 (2026-06-06 parallel-conceptual-recurrence): per-stage
         # ConceptualCombine modules. One SQUARE augment-threaded invertible
@@ -18255,6 +18092,42 @@ class BasicModel(BaseModel):
         # mismatches a CUDA model (``cuda:0 vs cpu`` on metalbaby).
         return ws.commit_from(
             ctx_sub, torch.zeros(B, N, D, device=dev, dtype=dt))
+
+    def _read_subsymbolic_field(self, part_ids, part_spans, pass_idx):
+        """Read the shared attentive extent at this perceptual pass."""
+        owner = self.conceptualSpaces[0]
+        if not owner._sparse_active():
+            return None
+        ws, raw = self.wholeSpaces[0], self._staged_concepts_in
+        positions, extents = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
+        from PerceptProperties import uniform_spans
+        if part_ids is None:
+            part_ids = torch.empty(raw.shape[0], 0, device=raw.device, dtype=torch.long)
+        if part_spans is None:
+            part_spans = uniform_spans(raw.shape[0], raw.shape[-1],
+                                       part_ids.shape[1], device=raw.device)
+        if pass_idx == 0:
+            object.__setattr__(self, '_subsymbolic_scope', None)
+        elif pass_idx in self.subsymbolic_loop:
+            scope = getattr(self.conceptualSpace, '_passback_scope_where', None)
+            if torch.is_tensor(scope):
+                object.__setattr__(self, '_subsymbolic_scope', scope.detach())
+        scope = getattr(self, '_subsymbolic_scope', None)
+        if torch.is_tensor(scope):
+            scope = scope.to(extents.device).reshape(-1, 2).expand(raw.shape[0], -1).clamp(0, 1)
+            lo = (scope[:, 0] * raw.shape[-1]).floor().long()[:, None]
+            hi = (scope[:, 1] * raw.shape[-1]).ceil().long()[:, None]
+            start = torch.maximum(extents[..., 0], lo)
+            end = torch.minimum(extents[..., 1], hi)
+            extents = torch.stack((start, end), -1)
+            extents = torch.where((end > start)[..., None], extents, 0)
+        primitive = getattr(ws.subspace.what, 'primitive_properties', None)
+        percepts = (part_ids, part_spans, primitive, raw, positions)
+        field = owner.cs_read_memberships(percepts, extents)
+        object.__setattr__(owner, '_cs_last_a0', field.detach())
+        object.__setattr__(self, '_subsymbolic_field', field)
+        object.__setattr__(self, '_subsymbolic_percepts', percepts)
+        return field
 
     def _forward_body(self, in_sub, *, return_sentence_state=False):
         """Recurrent cell: IS→PS→CS→OS with CS→PS and CS→WS loops.
@@ -18521,7 +18394,7 @@ class BasicModel(BaseModel):
                 # reverse, with ``carriers`` kept as a test/verification
                 # handle.
                 ps_t = PS_sub_stage0
-                if (getattr(self, "relevance_on", False) and t > 0
+                if (getattr(self, "relevance_on", False) and t in self.subsymbolic_loop
                         and getattr(self, "reading_attention", None) is None):
                     # Hard-coded readingAttention over the priming surface
                     # (sec C, simplified law): the reading scope is the span
@@ -18529,10 +18402,10 @@ class BasicModel(BaseModel):
                     # as the learned producer; no-op without spans/surface.
                     self._primed_reading_step()
                 if (getattr(self, "reading_attention", None) is not None
-                        and t > 0):
+                        and t in self.subsymbolic_loop):
                     # Reading attention (doc/specs/reading-attention.md
                     # "(A) Reading attention"): the learned `.where` producer
-                    # writes ``wholeSpaces[0]._passback_scope_where`` for the
+                    # writes ``conceptualSpace._passback_scope_where`` for the
                     # handoff below to consume + adds the next-word CE loss to
                     # CS_sub.errors. Runs BEFORE _passback_scope_ps so the
                     # "scoped" branch picks up the freshly-produced scope.
@@ -18545,8 +18418,7 @@ class BasicModel(BaseModel):
                     # STM / LTM / codebook); parks the typed `.where` + soft-read
                     # on _global_attention_obs. Dark (parked, not fed back).
                     self._global_attention_step(prevCS_forSS, PS_sub_stage0)
-                if (getattr(self, "mereology_raise", False)
-                        and t > 0 and not prevCS_forSS.is_empty()):
+                if t in self.subsymbolic_loop and not prevCS_forSS.is_empty():
                     # Top-down attention handoff (doc/specs/mereological-order-
                     # raising.md "the top-down attention handoff"): the stage-0
                     # WholeSpace passes back a scoped chunk/.where that scopes
@@ -18559,21 +18431,6 @@ class BasicModel(BaseModel):
                     ps_t = self._passback_scope_ps(
                         t, PS_sub_stage0, prevCS_forSS,
                         prevPS_forPS=_prev_ps_fb)
-                if (t > 0 and cs._sparse_active()
-                        and ps_t is PS_sub_stage0
-                        and prev_cs_stage is not None):
-                    # P3 demux feedback (decision 7): the pump's PS bind leg
-                    # at t>0 is the prior stage's UNBOUND part-stream (the
-                    # C->P handoff carries the un-mix down for further σ
-                    # synthesis) -- not the stage-0 percept re-fed. Scope
-                    # attention, when it fired above, takes precedence.
-                    # P4: the pass-t stack sigma applies to the feedback
-                    # (identity at a no-op slot).
-                    _ps_fb = getattr(prev_cs_stage, "_subspaceForPS", None)
-                    if (_ps_fb is not None and hasattr(_ps_fb, "is_empty")
-                            and not _ps_fb.is_empty()):
-                        ps_t = self.perceptualSpace.synthesize_feedback(
-                            _ps_fb, t)
                 # Slice C: the SS (symbol) bind leg comes from
                 # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
                 # ``.forward()``-mediated CS->SS transform (the dataflow rule:
@@ -18630,6 +18487,7 @@ class BasicModel(BaseModel):
             # terminal symbolic state lives on
             # ``self.wholeSpace.subspace`` (written by
             # ``ws.forward(...)``); ``symbol_cache`` resolves there.
+            self._read_subsymbolic_field(_part_ids, _part_spans, t)
             last_cs = CS_sub
             # Cascade: this stage's (symbolically generalized) output
             # becomes the next stage's contribution -- the MIX goes UP
@@ -18658,22 +18516,10 @@ class BasicModel(BaseModel):
             _prio = self._assemble_relevance_priority(
                 _cut_cs, prev_cs_stage, last_cs, _settled)
             object.__setattr__(_cut_cs, "_relevance_priority", _prio)
-            # WholeSpace's input brackets identify subjects and positions;
-            # independent tower code indices cannot supply this alignment.
-            _layout_ws = self.wholeSpaces[0]
-            _raw = self._staged_concepts_in
-            _positions, _extents = _layout_ws.concept_evidence_layout(
-                _raw, int(_layout_ws.inputShape[0]))
-            from PerceptProperties import uniform_spans
-            if _part_ids is None:
-                _part_ids = torch.empty(_raw.shape[0], 0, device=_raw.device, dtype=torch.long)
-            if _part_spans is None:
-                _part_spans = uniform_spans(_raw.shape[0], _raw.shape[-1],
-                                            _part_ids.shape[1], device=_raw.device)
-            _primitive = getattr(_layout_ws.subspace.what, 'primitive_properties', None)
-            _percepts = (_part_ids, _part_spans, _primitive, _raw, _positions)
+            _percepts = getattr(self, '_subsymbolic_percepts', None)
             _content, _acts = _cut_cs.cs_symbolic_phase(
-                _settled, extents=_extents, percepts=_percepts)
+                _settled, extents=getattr(_cut_cs, '_cs_extents', None),
+                percepts=_percepts, a_0=getattr(self, '_subsymbolic_field', None))
             # SEEN write moved to ``_prime_seen_step`` (unconditional, once
             # per batch, both paths) -- awareness primes (simplified law).
             assert _acts is None or (
@@ -20615,9 +20461,6 @@ class BasicModel(BaseModel):
         aligned_fold_binding = bool(
             word_commit_mode
             and getattr(self, "concept_binding", "mixing") == "aligned")
-        fold_passes = (
-            tuple(range(int(self.subsymbolicOrder) - 1))
-            if aligned_fold_binding else ())
 
         # Capture the prior CS lane events only for masked owner commits below.
         # PS and WS are InputSpace peers; neither receives a conceptual carrier
@@ -20672,21 +20515,7 @@ class BasicModel(BaseModel):
                 ws.forward(_unity)
                 if _unity is not None
                 else self._zero_symbol_subspace(ws, word_sub))
-        part_folds = None
-        if aligned_fold_binding:
-            part_event = PS_base.materialize()
-            compiled_part_ladder = getattr(
-                self, "_compiled_part_fold_ladder", None)
-            if (compiled_part_ladder is not None
-                    and not torch.compiler.is_compiling()):
-                part_folds = compiled_part_ladder(part_event)
-            else:
-                part_folds = ps.fold_event_ladder(
-                    part_event, fold_passes, strict=True)
-            PS_base.set_event(part_folds[-1])
-            PS_sub = PS_base
-        else:
-            PS_sub = PS_base
+        PS_sub = PS_base
         # Retain one PartSpace result per word so post-loop loss/reverse
         # readers see a word-aligned slab instead of only the last iteration.
         if word_major and PS_sub is not None:
@@ -20699,30 +20528,8 @@ class BasicModel(BaseModel):
                 _ps_slots[p] = torch.where(
                     gate_b_1, _ps_event[:, 0, :],
                     torch.zeros_like(_ps_event[:, 0, :]))
-        # Universe every pump (the carrier arrives as cs_out feedback);
-        # the earlier bootstrap-only law reacted to a misdiagnosed
-        # flatline (valid_mask collapse -- exec notes item 36).
-        # Preserve W0 before the cumulative pi ladder replaces WS_base's live
-        # event with W3. W0 is the whole-side peer of the parameter-free P0
-        # word union. The entire processed field is kept beside the addressed
-        # concept readout; no fold is collapsed to RMS evidence.
-        whole_base_event = (
-            WS_base.materialize() if aligned_fold_binding else None)
-        whole_folds = None
-        if aligned_fold_binding:
-            whole_event = WS_base.materialize()
-            compiled_whole_ladder = getattr(
-                self, "_compiled_whole_fold_ladder", None)
-            if (compiled_whole_ladder is not None
-                    and not torch.compiler.is_compiling()):
-                whole_folds = compiled_whole_ladder(whole_event)
-            else:
-                whole_folds = ws.fold_event_ladder(
-                    whole_event, fold_passes, strict=True)
-            WS_base.set_event(whole_folds[-1])
-            WS_sub = WS_base
-        else:
-            WS_sub = WS_base
+        whole_base_event = WS_base.materialize() if aligned_fold_binding else None
+        WS_sub = WS_base
         # ``serialObjectMeta`` makes the grammar loop word-grained even when
         # the radix store still spells an unfamiliar word with several
         # percepts.  Predict/perceive only at the word's final percept: the
@@ -20760,13 +20567,13 @@ class BasicModel(BaseModel):
                     PS_base, "_word_local_base_event", None)
                 if torch.is_tensor(base_event):
                     base_parts = (base_event,)
-            native_parts = tuple(part_folds)
+            native_parts = ()
             base_wholes = ()
             if torch.is_tensor(whole_base_event):
                 base_wholes = (whole_base_event,)
-            native_wholes = tuple(whole_folds)
-            native_part_sources = base_parts + native_parts
-            native_whole_sources = base_wholes + native_wholes
+            native_wholes = ()
+            native_part_sources = base_parts or (PS_base.materialize(),)
+            native_whole_sources = base_wholes or (WS_base.materialize(),)
             native_sources = native_part_sources + native_whole_sources
             if not native_sources:
                 raise RuntimeError(
@@ -20871,7 +20678,7 @@ class BasicModel(BaseModel):
                     reference_codes=reference_codes, reference_roles=reference_roles,
                     evidence=evidence, evidence_mask=evidence_mask, target=CS_sub,
                     active_rows=active_rows)
-                support = cs._ordered_fold_support(fold_passes, fold_passes)
+                support = cs._ordered_fold_support((), ())
                 support["source_count"] = len(native_sources)
                 support["includes_base_fields"] = True
                 object.__setattr__(CS_sub, "_fold_support", support)
@@ -21592,7 +21399,6 @@ class BasicModel(BaseModel):
         B = int(words.shape[0])
         capacity = int(stm.capacity)
         concept_dim = int(stm.concept_dim)
-        fold_passes = tuple(range(max(0, int(self.subsymbolicOrder) - 1)))
         symbolic_passes = tuple(range(max(0, int(self.symbolicOrder))))
 
         part_ids = isp._ar_word_part_ids
@@ -21764,8 +21570,8 @@ class BasicModel(BaseModel):
             zero_concept,                 # published CSSub lane
             zero_percept_words,
             zero_whole,                   # terminal WS fold
-            words.new_zeros(B, len(fold_passes) + 1, 1, percept_dim),
-            words.new_zeros(B, len(fold_passes) + 1, whole_locations, whole_dim),
+            words.new_zeros(B, 1, 1, percept_dim),
+            words.new_zeros(B, 1, whole_locations, whole_dim),
             torch.full((B, 8), -1, dtype=torch.long, device=words.device),
             torch.full((B, 8), -1, dtype=torch.long, device=words.device),
             words.new_zeros(B, n_locations, 8),
@@ -21858,10 +21664,8 @@ class BasicModel(BaseModel):
                 B, concept_dim)
             commit = _gather_word(commit_mask, index).reshape(B, 1)
             commit = torch.logical_and(commit, row_gate)
-            part_sources = ps.compute_word_fold_sources(
-                local_ids, local_mask, local_offsets, fold_passes)
-            whole_sources = ws.compute_word_property_fold_sources(
-                local_properties, fold_passes)
+            part_sources = (ps.synthesize_word_parts(local_ids, local_mask, local_offsets),)
+            whole_sources = (ws.compute_word_property_event(local_properties),)
             local_codes = _gather_word(reference_codes, index).reshape(B, 8)
             local_roles = _gather_word(reference_roles, index).reshape(B, 8)
             local_coefficients = _gather_word(readout_coefficients, index).reshape(B, 9)
@@ -23296,7 +23100,7 @@ class BasicModel(BaseModel):
         """Run the reading-attention producer for a ``t>0`` subsymbolic pass
         (doc/specs/reading-attention.md "(A) Reading attention").
 
-        Writes the next reading scope to ``wholeSpaces[0]._passback_scope_where``
+        Writes the next reading scope to ``conceptualSpace._passback_scope_where``
         (the producer of the ``.where`` the ``<mereologyRaise>`` handoff
         consumes) and -- in text mode (``dataType`` embedding) training -- adds
         the next-word cross-entropy term to ``cs_sub.errors``. Teacher forcing:
@@ -23658,93 +23462,48 @@ class BasicModel(BaseModel):
 
     def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS,
                            prevPS_forPS=None):
-        """Apply the WS->PS top-down pass-back to choose PartSpace's input for a
-        ``t>0`` subsymbolic pass (doc/specs/mereological-order-raising.md "the
-        top-down attention handoff").
+        """Retarget native perception through conceptual membership attribution.
 
-        Reads the 4-case action off the STAGE-0 WholeSpace
-        (``wholeSpaces[0].passback_action``) and returns the scoped PS input:
-
-          * ``"noop"``   -> ``ps_default`` (the stage-0 percept re-fed) --
-            byte-identical; the default when no scope, no words-category
-            attention, or no parked run-structure observation;
-          * ``"refine"`` / ``"chunk"`` -> hand the prior symbols
-            (``prevCS_forSS``) back to PartSpace so its SigmaLayer (re)analyses
-            them (the wide<->deep CS-symbol regroup runs inside
-            ``PartSpace.forward``);
-          * ``"scoped"`` -> additionally thread the nth word's ``.where`` as a
-            read-only PartSpace forward-local (the
-            ``.where``-on-the-second-argument scope) before the re-feed.
-
-        Gated ``<mereologyRaise>`` (only reached under that flag). The pass-back
-        sits on the multi-stage carrier the sO=3 combine fix restored."""
-        wss = getattr(self, "wholeSpaces", None)
-        ws0 = wss[0] if wss is not None and len(wss) > 0 else None
-        if ws0 is None or not hasattr(ws0, "passback_action"):
+        The request addresses native percept identities, which choose the
+        mereological units, and field brackets, which choose the region.
+        The source carrier is read-only; reconstruction retains that carrier.
+        """
+        if pass_idx not in self.subsymbolic_loop:
             return ps_default
-        feedback = prevPS_forPS
-        if (feedback is None or not hasattr(feedback, "is_empty")
-                or feedback.is_empty()):
-            feedback = prevCS_forSS
-        # R2: read the CS-owned reading scope and hand it to the WS->PS passback
-        # (CS is the home of the .where-producer; WS still owns the run-structure
-        # route_hint that passback_action also consults).
-        cs_scope = (getattr(self.conceptualSpace, "_passback_scope_where", None)
-                    if self.conceptualSpace is not None else None)
-        action, where = ws0.passback_action(pass_idx, scope=cs_scope)
-        if action == "scoped" and where is not None:
-            # null-content + the nth word's `.where`: re-analyse the prior
-            # symbols, then FOCUS the percept to that span -- zero the slots
-            # outside the decoded normalized [start, end] bracket (the
-            # `.where`-on-the-second-argument scope). Read-only; falls back to
-            # the unfocused re-feed when the span is degenerate.
-            ps = self.perceptualSpace.synthesize_feedback(
-                feedback, pass_idx)
-            ev = ps.materialize() if ps is not None else None
-            if ev is not None and torch.is_tensor(ev) and ev.dim() == 3:
-                # Support one shared [2] bracket and row-local [B,2]
-                # brackets.  The latter is required by local tiling/reading;
-                # the old reshape(-1) accidentally used row 0 for the batch.
-                w = where.to(ev.device, torch.float32)
-                if w.dim() == 1:
-                    w = w[:2].view(1, 2).expand(int(ev.shape[0]), -1)
-                elif w.dim() >= 2:
-                    w = w.reshape(-1, 2)
-                    if int(w.shape[0]) == 1 and int(ev.shape[0]) > 1:
-                        w = w.expand(int(ev.shape[0]), -1)
-                if (w.dim() == 2 and int(w.shape[0]) == int(ev.shape[0])
-                        and int(w.shape[1]) >= 2):
-                    start = w[:, 0].clamp(0.0, 1.0)
-                    end = w[:, 1].clamp(0.0, 1.0)
-                    N = int(ev.shape[1])
-                    pos = ((torch.arange(N, device=ev.device).float() + 0.5)
-                           / max(N, 1)).view(1, N)
-                    keep = ((pos >= start.unsqueeze(-1))
-                            & (pos <= end.unsqueeze(-1))
-                            & (end >= start).unsqueeze(-1)).unsqueeze(-1)
-                    ps.set_event(torch.where(keep, ev, torch.zeros_like(ev)))
-            return ps
-        # Experimental overlap path: every local family routes in parallel.
-        # The PS part-stream gets σ only at slots marked by the observation;
-        # WS.forward has already applied the pass-t π stack to its peer stream.
-        # ReadingAttention's explicit scope above remains the higher-priority
-        # serial override.
-        tiling = (ws0.where_tiling_for_pass(pass_idx)
-                  if hasattr(ws0, "where_tiling_for_pass") else None)
-        if isinstance(tiling, dict):
-            source = prevPS_forPS
-            if (source is None or not hasattr(source, "is_empty")
-                    or source.is_empty()):
-                source = prevCS_forSS
-            return self.perceptualSpace.synthesize_feedback_where(
-                source, pass_idx, tiling.get("sigma_part"),
-                default=ps_default)
-        if action in (None, "noop"):
+        owner = self.conceptualSpaces[0]
+        field = getattr(self, '_subsymbolic_field', None)
+        event = ps_default.materialize() if ps_default is not None else None
+        if not torch.is_tensor(field) or not torch.is_tensor(event):
             return ps_default
-        if action in ("refine", "chunk"):
-            return self.perceptualSpace.synthesize_feedback(
-                feedback, pass_idx)
-        return ps_default
+        size = sum(owner._order_caps())
+        query = torch.cat((field, field.new_zeros(size - len(field), *field.shape[1:])))
+        columns, attributed, spans = owner.cs_percept_attribution(query, observed=query)
+        active = attributed.amax(dim=(1, 2, 3)) > 0
+        if not bool(active.any()) or spans is None:
+            return ps_default
+        evidence = attributed.amax(dim=(0, 2))
+        parts = (getattr(self.perceptualSpace, '_forward_input', None) or {}).get('part_spans')
+        if not torch.is_tensor(parts) or parts.shape[:2] != event.shape[:2]:
+            return ps_default
+        overlap = ((spans[:, None, :, 0] < parts[:, :, None, 1])
+                   & (spans[:, None, :, 1] > parts[:, :, None, 0]))
+        strength = (evidence[:, None] * overlap).amax(-1)
+        scope = getattr(self.conceptualSpace, '_passback_scope_where', None)
+        if torch.is_tensor(scope):
+            bounds = scope.to(parts.device).reshape(-1, 2).expand(parts.shape[0], -1).clamp(0, 1)
+            width = max(1, int(self._staged_concepts_in.shape[-1]))
+            inside = ((parts[..., 0] >= (bounds[:, :1] * width).floor())
+                      & (parts[..., 1] <= (bounds[:, 1:] * width).ceil()))
+            strength = strength * inside
+        focused = SubSpace(inputShape=(1, 1), outputShape=(1, 1), nInputDim=1, nOutputDim=1)
+        focused.copy_context(ps_default)
+        # Attention changes salience, never visibility. A half-strength floor
+        # preserves novel percepts; attributed units approach full strength.
+        scale = .5 + .5 * strength.clamp(0, 1).to(event)
+        width = int(self.perceptualSpace.nWhat)
+        focused.set_event(torch.cat((event[..., :width] * scale[..., None],
+                                      event[..., width:]), -1))
+        return focused
 
     def _reverse_body(self, sub):
         """Per-stage body reverse, mirroring ``_forward_body`` order.

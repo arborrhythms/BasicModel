@@ -22,7 +22,6 @@
   <architecture>
     <serial>true</serial>
     <subsymbolicOrder>4</subsymbolicOrder>
-    <conceptualWidth>uniform</conceptualWidth>
     <symbolicOrder>4</symbolicOrder>
     <syntacticOrder>0</syntacticOrder>
 

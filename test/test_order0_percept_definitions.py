@@ -20,16 +20,22 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     cs.add_concept_feature(0, 'ws', 1, .5)
     cs.add_concept_feature(1, 'ws', 2, .5)
     cs.add_concept_feature(1, 'ws', 3, 1.)
+    cs.add_concept_feature(0, 'ws', 2, 1., negated=True)
+    cs.add_concept_feature(0, 'ws', 3, .5, negated=True)
+    cs.add_concept_feature(1, 'ws', 0, .5, negated=True)
+    cs.add_concept_feature(1, 'ws', 1, 1., negated=True)
     cs.add_concept_edge(0, 1, 1.)
     raw = torch.tensor([[65]])
     spans = torch.tensor([[[0, 1]]])
     result = cs.cs_read_memberships((raw, spans, primitive, raw, spans), spans)
-    pi = torch.tensor([.25 * .36 ** .5, .81 ** .5 * .49])
-    complement = torch.tensor([.75 * .64 ** .5, .19 ** .5 * .51])
-    expected = torch.stack((1 - (1 - pi).prod(), complement.prod()))
+    # Each signed definition folds its witnessed memberships independently;
+    # a negative literal contributes to counterevidence, not 1-membership.
+    positive = torch.tensor([min(.25, .36 ** .5), min(.81 ** .5, .49)])
+    negative = torch.tensor([min(.81, .49 ** .5), min(.25 ** .5, .36)])
+    expected = torch.stack((positive.max(), negative.max()))
     torch.testing.assert_close(result[0, 0, 0], expected)
     # The alternative is an ordinary concept on the same row inventory.
-    torch.testing.assert_close(result[1, 0, 0], torch.stack((pi[1], complement[1])))
+    torch.testing.assert_close(result[1, 0, 0], torch.stack((positive[1], negative[1])))
 
 
 def test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids():

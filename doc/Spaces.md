@@ -80,76 +80,17 @@
 > learnable property row is the low-frequency atom; the basis enforces
 > the coarseness.
 
-> **2026-06-11 update (meronomy cutover — MeronomySpec/MeronomyPlan,
-> Stage 9).** With `<architecture><meronomy>on</meronomy>` (now the
-> `model.xml` default) the meronymic slots bind the membership
-> kernels: `PartSpace.sigma` $\to$ `SigmaLayer2` and
-> `WholeSpace.pi` $\to$ `PiLayer2`, each through the K3-wire
-> `MeronymicFoldAdapter` ($\chi$ at the boundary; the wire keeps carrying
-> signed scalars; the fold computes on memberships, near-identity at
-> init). Additions this page should be read with:
->
-> * **CS encoding**: stored reference rows are gauge-signed unit
->   directions (semantic embedding only); certainty is activation
->   magnitude, polarity activation sign; gauge fixed at mint
->   (`Spaces.gauge_orient`). Reference-half lookup is the pole
->   quotient (`embed._pole_aligned_score`); token/form codebooks keep
->   full-vector lookup.
-> * **The callosum**: percepts cross NAMELESS and FACTORED
->   (`ConceptualSpace.factor_percept` — content selects the row,
->   evidence sets the SIGNED $a \in [-1, +1]$, 2026-07-06 correction:
->   the percept input stays non-negative, but the match against a
->   CONCEPT row is un-clamped abs-argmax, so an anti-aligned row — a
->   "known false" exclusion — is reachable); `conceptBinding=mixing` is
->   the learned `2N` matrix, while `conceptBinding=aligned` preserves
->   locations and fuses every non-raw cumulative PS/WS fold inside the
->   word loop.
-> * **Two percept inventories, then concepts**: PS stores part-percepts and WS
->   stores whole-percept properties. Equal live locations from their fold
->   towers are bound downstream in ConceptualSpace, which owns the resulting
->   concepts, META relations, and taxonomy. SymbolSpace then names concepts by
->   reference. No concept or symbol row is stored in either perceptual tower.
+> **Perception after 11c (September 24).** PartSpace combines ordered
+> parts; WholeSpace divides the field by primitive properties. Neither owns
+> a sigma/pi fold layer. Native codes stay in the same `[0,1]^D` cube;
+> rank is mereological level, not a change of dimensional space. Sigma and
+> pi are conceptual and grammatical operations. Concept presence keeps two
+> nonnegative poles; negation exists only for concepts, not percepts (or
+> symbols). The membership read is independent of distributed codes.
 
-> **2026-06-09 update (analysis/synthesis orientation — supersedes the
-> ownership notes below).** The corrected orientation
-> (rev. 2026-06-09; see [Philosophy.md](Philosophy.md)):
->
-> * **InputSpace emits the DUAL VIEW**: `forward(x) -> (percepts_in,
->   concepts_in)` — the atom view (content `[B, N, 1]`) for the
->   perceptual branch and the unity view (`[B, 1, N]`) for the symbolic
->   branch.
-> * **PS = bottom-up SYNTHESIS**: owns ONE `SigmaLayer` (`self.sigma`,
->   additive/union; the Pi/Sigma swap) and the `<synthesis>` front ends
->   (radix/bpe/byte/lexicon/mphf — was `<chunking>`).
-> * **WS = top-down ANALYSIS**: owns ONE `PiLayer` (`self.pi`,
->   multiplicative/intersection), the `<analysis>` division knob
->   (`byte`/`word`/`raw`/`sentence`/`grammatical`/`meronomy`). Stage 0
->   consumes the unity view as perceptual evidence and selects from the
->   property codebook.
-> * The meronymic analyzer (`bin/perceptual_analyzer.py`) is WS-side
->   analysis machinery now; PS `<synthesis>analyse` was removed.
->
-> Sections below that predate this orientation are marked or should be
-> read against it.
-
-> **2026-06-02 update (subsymbolic analyzer).** New `IdeaSubSpace`
-> (`bin/Language.py`) -- the PS-meronymic carrier analogue of
-> `SymbolSubSpace` (spans, parent/child links, route ids, marker-route
-> replay fields). Historical WholeSpace-hosted grammar/operator state from
-> this phase migrated downstream with the 2026-07-20 property-basis cutover.
-> The PS
-> meronymic analyzer lives in `bin/perceptual_analyzer.py`.
-
-> **Historical status (2026-05-27; ownership superseded 2026-07-20):** PS is a
-> single-arg input processor (`self.pi` + `self.sigma`). CS is an STM
-> container + grammatical CPU; no atomic forward fold. The then-SS-owned
-> paired word codebook has since been removed from WholeSpace ownership.
-> Grammar dispatch lives on the signal router (`LanguageLayer`) at
-> `SymbolSubSpace.languageLayer`; the CKY `Chart` and STM shift-reduce
-> parsers are retired. `LiftLayer` / `LowerLayer` are binary
-> `GrammarLayer` subclasses with internal Sigma / Pi (no longer
-> substrate-borrowing). `GrammarLayer` gains an optional butterfly
-> cascade mode.
+> Grammar dispatch lives on `SymbolSubSpace.languageLayer`. `LiftLayer`
+> and `LowerLayer` own their grammatical operations; perceptual towers do
+> not supply their parameters.
 
 ## Overview
 
@@ -302,23 +243,23 @@ compute brick --- see [Architecture.md](Architecture.md)).
 
 ---
 
-## Sigma / Pi ownership (Pi/Sigma swap, rev. 2026-06-09) {#sigma-pi-ownership}
+## Perceptual and conceptual ownership {#sigma-pi-ownership}
 
-History: the 2026-05-13 rebalance described "each space owns one
-operator"; the 2026-05-27 substrate refactor gave PS both folds; Stage 10
-made PS pi-only. The **corrected analysis/synthesis orientation
-(2026-06-09) swaps the folds to their proper sides**: Sigma (sum/union)
-is synthesis and belongs to the bottom-up PartSpace; Pi
-(product/intersection) is analysis and belongs to the top-down
-WholeSpace. CS remains an STM bookkeeper with **no atomic forward
-operator**; Lift / Lower stay **binary `GrammarLayer` subclasses** with
-internal Sigma / Pi (no substrate-borrowing).
+Perception is analysis and synthesis of what is present. PartSpace combines
+ordered parts with AND; WholeSpace divides allowed primitive sets with OR
+and reads their pervasion with min over positions. Sigma and pi are
+conceptual operations: pi within the order-0 field, sigma there and over
+previous-order symbols, with symbolization raising order.
 
-| Space | Owns | Forward signature |
+| Space | Owns | Forward |
 |---|---|---|
-| **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(in_sub, cs_out=None)` (dual-towers rev 2). `in_sub` is PS's view of the input (the atoms); `cs_out` is PS's own conceptual feedback, stashed as `self._cs_feedback` (not yet folded on the PS leg). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
-| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass) + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the symbolic transform (snap + FF pyramid) fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, and one property-percept codebook | `WS.forward(in_sub, cs_out=None)` — symmetric signature with PS. A raw unity tensor (`[B, 1, N]`) routes universe-primary and is analysed against WS properties. Conceptual feedback may condition analysis, but it does not make WS an owner of concepts or symbols. |
+| PartSpace | native percept inventory, radix ids and ordered witnesses | synthesize located parts; code = max of constituent codes |
+| ConceptualSpace | persistent definitions, transient attended rows, codes and STM | read memberships, compose field pi/sigma, then symbolize and union |
+| WholeSpace | primitive property memberships and analysis spans | read allowed sets per position and pervasion over runs |
+
+The two perceptual `forward(in_sub, cs_out=None)` signatures remain.
+Subsymbolic passes can change attention or level but apply no learned fold
+inside a tower. There is no perceptual layer stack kept beside this route.
 
 **Composition (per-mode):**
 
@@ -437,10 +378,10 @@ subclass identity only matters for the non-butterfly forward/reverse
 math.
 
 Parameter savings: `O(N · log N)` scalars per cascade vs `O(N² · D²)`
-for a single big matrix. Wired into the space folds (`PartSpace.sigma` /
-`WholeSpace.pi` post the Pi/Sigma swap) by the global `<sigmaPi>`
-mode (default butterfly). Closes the XOR convergence target
-(`test_mm_xor.py`).
+for a single big matrix. The `<sigmaPi>` mode selects the grammatical
+layers' implementation. Perceptual passes do not allocate these layers.
+The primitive XOR gate uses located conceptual definitions and sigma over
+their symbols; see [Testing](Testing.md#item-11c-located-xor-and-native-perception-2026-09-24).
 
 ---
 
@@ -572,53 +513,41 @@ The meronymic fold/split operators form a bounded lattice:
 | sigma | synthesis / union | `0`: `x union empty = x` | `1`: `x union everything = everything` |
 | pi | analysis / intersection | `1`: `x intersection everything = x` | `0`: `x intersection empty = empty` |
 
-The log-space fold floors `0` because nothing absorbs multiplication and
-`log(0)` is unbounded. The membership value zero and the operator identity are
-different roles: zero is sigma's identity but pi's absorber.
+These are set-membership roles, distinct from evidence on two conceptual
+poles. A membership zero rules out pervasion at an observed position;
+conceptual `(0,0)` is uncertainty and adds no evidence.
 
-These lattice roles are not the same thing as the `SigmaLayer`/`PiLayer`
-butterfly ownership described above. The membership operators constrain
-mereological presence; the butterfly folds carry higher-order transformations.
+### The Fold Ladder (2026-09-10, updated 11c) {#fold-ladder}
 
-### The Fold Ladder (2026-09-10) {#fold-ladder}
+WholeSpace's constant-signature runs supply positions and word units supply
+extents. The ordered canonical PartSpace ids, masks and brackets retain the
+surface witness. Recurrence admits composite parts at the boundary, and a
+part formed in a turn does not aggregate again in that turn. Higher rank
+means a larger part or a finer whole, in the same membership cube. It is not
+a sequence of learned perceptual transforms.
 
-Under the canonical `<synthesis>meronomy</synthesis>` (doc/plans/
-2026-09-10-meronomy-fold-ladder.md) PartSpace no longer spells a word
-through a radix trie. The serial loop's **units** are the wholes of the
-analysis tiling (`WholeSpace.stage_analysis_spans` stages the four-class
-type runs with the digit singleton; the model hands them to PartSpace
-transiently), and a unit's **atoms** are its bytes: the one-byte rows of
-the percept store, in surface order with exact spans. That ordered record
-(ids, mask, offsets, part spans) is the **witness**; input reconstruction
-replays it byte-exactly. **Rung 0** is the max over the unit's atom rows
-(`MeronymicFoldAdapter.set_law = "max"`, the idempotent lattice join: a
-category does not count its parts); the learned sigma rungs raise order
-above it. A unit that recurs `chunkPromotionThreshold` times is
-**admitted**: it gets a row seeded with its rung-0 code, queued and
-committed at the boundary flush, never while online learning is frozen.
-Digits cut as wholes are separate units, so `12` is never fused below the
-grammar. The WholeSpace value of a whole is the **meet** of its positions'
-property activations (min over positions), so the two towers are a max
-join from nothing and a min meet from everything; negation enters first
-at the conceptual level.
+A word's distributed code is the **coordinatewise max of its constituent
+codes**. Repeated constituents are idempotent. **Anagrams share this code**;
+only the ordered containment read and retained witness distinguish them.
+The code is useful for similarity and reconstruction but cannot be the
+word's presence test. WholeSpace properties are max over allowed primitive
+memberships, then min over every observed position in a run. The 11a priors
+and segmentation are unchanged.
 
 ### Percept-to-Concept Seam {#percept-concept-seam}
 
-The percept origin and the concept origin have different readings:
+The order-0 definition addresses PartSpace percept rows and WholeSpace
+property rows. A present feature contributes to the pole selected by its
+signed conceptual weight. Required evidence is min over nonzero
+contributions on each pole; alternative definitions are max. Missing
+percepts assert neither. No projection onto codes or evidence floor occurs
+at the seam. Pi edges above this membership read intersect order-0 field
+readings, retaining designated occurrence brackets before the extent union.
 
-- percept `0` is observed absence;
-- concept activation `0` is uncertainty or no assertion.
-
-At the percept level, absence contributes no positive evidence. Presence enters
-the order-0 concept snap as a non-negative source term; it is not re-centered or
-injected as a concept vector. `PerceptDim` and `ConceptDim` remain decoupled.
-The sparse conceptual feedforward pyramid grows signed structure through
-learned weights and activations. Negative conceptual content therefore comes from
-concept operations and signed relations, not from negative percept coordinates.
-
-The signed-to-membership chart `chi(a) = (1+a)/2` and its inverse belong at the
-truth/catuskoti boundary (`Ops.eval_chart` / `eval_chart_inv`), not at the
-percept-to-concept seam.
+Concept ids persist; order-0 field rows bind per turn. The field is common
+to all concepts, and precision belongs only to location. Max over occurrences
+inside the subject keeps both poles. Symbolization raises order; subsequent
+rows use sigma over the preceding symbols, never pi edges.
 
 ### Geometry Split {#percept-geometry-split}
 
@@ -805,7 +734,7 @@ $\|x\|^2$ add, and the cdist autograd plumbing.
 > metric (used by the substitutability / SBOW *situating* signal), NOT the
 > forward concept-production path. When the sparse transform is
 > active, a paired field is produced by the snap and the concept pyramid,
-> using dual presence folds and a per-batch taper. Its two symbols scale
+> using independent min/max reductions per pole and a per-batch taper. Its two symbols scale
 > opposite directions of one stored concept code. Dictionary identity and
 > evidence are separate. See **ConceptualSpace → The symbolic phase**.
 
@@ -841,35 +770,19 @@ unit-norm; rank by dot product".
 
 ---
 
-## Ramsification table (per-code fold record)
+## Mereological rank and conceptual order
 
-The Pi / Sigma folds carry a reference onto sortable mereological space
-but do **not** preserve their own *ramsification* — the record of how the
-code was produced — so a folded code cannot, on its own, be reconstituted.
-`Codebook.ramsification` is the small adjacent table that fixes this: a
-`[V, max_order]` `uint8` sidecar, index-aligned with the codebook rows
-(both perceptual codebooks — `PartSpace.subspace.what` and
-`WholeSpace.subspace.what`), recording for each code which fold it was
-routed through at each subsymbolic pass — `FOLD_NEITHER` / `FOLD_SIGMA`
-/ `FOLD_PI`. `invert_ramsified(code, row, sigma, pi)` walks that sequence
-in reverse pass order, applying `sigma.reverse` / `pi.reverse` per
-recorded fold, landing back at the codebook row that produced the code.
+Native PartSpace and WholeSpace codes remain in the same cube as their
+rank changes. Rank describes the size of a part or the fineness of a whole
+cut. There is no perceptual fold sequence to invert.
 
-The table is an **opt-in additive sidecar** (`enable_ramsification`; a
-plain attr like `part_parents` / `category_ids`, not a Parameter or
-buffer) — it adds no state_dict keys and cannot move a pinned basin; it
-resizes with the codebook (`grow_to`). Live per-pass stamping in the
-subsymbolic pump loop is the deliberate cutover seam (call `record_fold`
-where `PartSpace.sigma` / `WholeSpace.pi` fire).
-
-**Word abstraction order.** A code's `abstraction_order` is its fold count
-(non-`NEITHER` passes), and words are subsymbolic at several abstraction
-levels: a **proper noun** (prototype / token) matches raw at **order 0**;
-a **regular noun** (type) at **order 1**; a **count noun** (concrete only
-under a determiner) at **order 2**; higher orders are more abstract. Words
-need not be nouns, but all benefit from an abstract / discontiguous
-spatial representation. This connects to the ramsified order hierarchy in
-`Language.Taxonomy` and the order-typed STM plan.
+Conceptual order counts symbolizations: observations are order 0,
+particulars are order 1, kinds are order 2. The persistent allocator records
+the order by concept id. One word form can address concepts at several
+orders; selected grammar roles resolve that reference, as specified in
+[Lexicon](Lexicon.md#word-forms-and-concept-orders). A proper name selects
+a particular, not an order-0 event. Order-0 field slots are rebound each
+turn and do not define concept identity.
 
 ## Codebook Uniqueness Contract
 
@@ -1161,94 +1074,18 @@ for the ARMA(p, q) design.
 
 ## PartSpace
 
-**Role.** Single-arg input processor — the bottom-up SYNTHESIS branch
-(Pi/Sigma swap, rev. 2026-06-09). Applies `self.sigma` (the additive/
-union fold) to its argument (the atom-view stem after the synthesis
-front end embeds). Owns the surface-keyed Lexicon (`self.vocabulary`)
-and the MPHF + index table for per-word surface $\to$ row lookup.
+**Role.** Synthesize parts in their designated order and extent. Native
+percept ids come from the canonical radix tiling; a first witness keeps the
+ordered group, and recurrence forms a row at the boundary. Membership reads
+containment by ids, without re-expanding and re-matching bytes.
 
-**Owned state:**
-
-- `self.sigma`: a single `SigmaLayer` (`percept_dim -> percept_dim`,
-  where `percept_dim` is the EMBEDDED percept width — `_fold_width`;
-  a widening PS sizes the fold at `nOutputDim`, not the raw
-  `nInputDim`). Inherits from `GrammarLayer`; accepts
-  `butterfly=True, N=N` for cross-position cascade mode. (The PiLayer
-  PS used to own moved to WholeSpace — Pi is analysis.)
-- `self.vocabulary`: the Lexicon (`Embedding`), keyed by MPHF over
-  surface bytes. Per-word vectors are `nDim`-wide (CS-space-dim per the
-  flat-slab invariant).
-- `self._mphf_gpu_layer`: MPHF infrastructure for fast surface lookup.
-- `self.chunk_layer`: BPE machinery (the `ChunkLayer` from `bin/Layers.py`).
-- `self.percept_store` (there is no `self.radix_layer` attribute; `percept_store`
-  is a `Space` property that forwards to `self.subspace.percept_store`,
-  [`bin/Spaces.py`](../bin/Spaces.py)): when `<synthesis>radix</synthesis>`,
-  the input lookup routes through `RadixLayer` (radix trie + inverse table +
-  learned codebook + byte fallback). `RadixLayer` is a first-class `Layer`
-  subclass in `bin/Layers.py` (formerly the standalone
-  `PerceptStore`). `PartSpace.reverse` invokes
-  `RadixLayer.reverse` for the structural decode (chunk-id $\to$ bytes $\to$
-  slot). Promotion knobs default to `threshold=4, min_length=2`.
-
-The legacy `pi_input` / `pi_concept` ModuleLists are retired, as is the
-sigma_percept-style additive fold on CS.
-
-**Forward (`PS.forward(in_sub, cs_out=None)`):**
-
-```python
-def forward(self, in_sub, cs_out=None):
-    # Dual-towers rev 2: PS's own conceptual feedback is stashed, not yet
-    # folded (self._cs_feedback = cs_out).
-    x_subspace = in_sub
-    self._cs_feedback = cs_out
-    # synthesis front end embeds (lexicon/bpe/byte/radix/mphf), then:
-    primary = self.forwardBegin(x_subspace, returnVectors=True)
-    # Unified fold-width law (fold_content_apply, bin/Spaces.py): the sigma
-    # fold is sized to the CONTENT columns only (Space.nDim); a wider event
-    # carries the trailing where/when band, which rides through unchanged.
-    return fold_content_apply(self.sigma.forward, self.sigma.nInput, primary)
-```
-
-`in_sub` is the atom-view stem (PS runs ONCE at stage 0 — the
-single-pass subsymbolic decision; the per-stage recurrence advances
-through the ConceptualCombine, not repeated PS calls). `cs_out` is PS's
-symmetric counterpart to the `cs_out` WholeSpace also now accepts (the
-dual-towers rev 2 signature).
-
-**Math (the sigma fold — PS's synthesis operator):**
-
-```
-sigma(x) = tanh(W_sigma @ atanh(x) + b_sigma)   # additive/union, log-domain
-```
-
-(The multiplicative pi math — `pi(x) = tanh(W_pi @ atanh-domain + b)`
-in the `(1+x)/(1-x)` log embedding — now lives on **WholeSpace** as
-the analysis fold; see the orientation banner.)
-
-**Reverse.** `PS.reverse` applies `self.sigma.reverse` on the text path
-(LDU inverse via `InvertibleLinearLayer`); structural recovery goes
-through `object_basis.reverse` and (in radix mode) the
-`RadixLayer.reverse` chunk-id $\to$ bytes decode.
-
-**Butterfly mode (Stage 5):** when `<PartSpace><butterfly>true</butterfly>`,
-the fold is constructed with `butterfly=True`. The cascade length `N` is
-auto-derived from the space shape (`nInput * nInputDim`, internally padded
-to the next power of two); there is no `<butterflyN>` knob (it was retired
-2026-06-05). `<butterfly>` itself is a deprecated alias for the
-architecture-level `<sigmaPi>` (new configs should use that). Internal
-storage becomes the per-node LDU triplet `butterfly_L` / `butterfly_d` /
-`butterfly_U` (`nn.Parameter`s over the flattened SCALAR element axis, not
-a packed per-pair matrix — see **Butterfly mode on `GrammarLayer`** above)
-plus a `butterfly_perms` bit-reversal buffer. Closes the XOR convergence
-target. PartSpace
-is subsymbolic and takes no `<codebook>` element (it was retired; PS is
-fixed to `none`); butterfly weight gradient flow therefore flows through the
-continuous `.event` passthrough on PS. STE-through-snap (for spaces that do
-quantize) is a known follow-up.
-
-**Range.** Vectors live in `[-1, 1]^d` (tanh-bounded). No negation
-operator — percepts represent feature magnitudes with sign indicating
-direction.
+PartSpace owns the percept store and the configured synthesis front end.
+`synthesize_word_parts` takes the max of active constituent codes in `.what`
+and retains the first active constituent's position band. There is no
+`sigma`, per-pass fold stack or learned transformation of the native cube.
+The ordered witness supplies the exact reverse. `forward(in_sub, cs_out=None)`
+keeps the shared perceptual interface, and conceptual pass-back scales
+attention with a strictly positive floor; it cannot hide novel content.
 
 ---
 
@@ -1258,14 +1095,13 @@ direction.
 `symbolicOrder > 0` in parallel mode, the post-pump snap produces paired
 positive/negative evidence per occurrence. A feedforward pyramid composes
 that field over the bounded taper span S. `W_sigma` stores disjunctive parts;
-`conceptualPi` additionally reads conjunctive parts in `W_pi`. Both poles
-share each part's nonnegative exponent, with dual fold charts. Two symbols
+`conceptualPi` additionally reads conjunctive parts in `W_pi` within order 0. Both poles
+share each part's nonnegative exponent, reducing each pole independently. Two symbols
 share one stored concept code. The field feeds the symbol leg and conceptual
 losses, without replacing the subsymbolic carrier. `CS.forward` itself
 performs STM bookkeeping; the pyramid runs once at `_forward_body`'s cutover.
 The [settled design](Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
-and [calibration](benchmarks/2026-09-23-item11/README.md) define the current
-representation and its measured limits.
+define the current representation.
 
 **Aligned serial geometry.** The BasicModel path is distinct from the
 sparse-parallel phase described below. PS and WS each expose eight live
@@ -1289,81 +1125,40 @@ with the concept), not from a stored signed unit direction. (The legacy
 "named unit-norm direction + `argmax` retrieval" view is retired on the
 forward path.)
 
-**Owned layer (2026-05-13 rebalance $\to$ 2026-05-29 clean-stack $\to$ RETIRED).**
-ConceptualSpace owns **no parameterised fold layer**. The historical
-`self.sigma_in` / `self.sigma_cs` SigmaLayers below were RETIRED — they are
-no longer constructed, and `CS.reverse` no longer applies them (see the
-**Reverse** note). The table records the pre-retirement Stage-10 design:
-
-| Layer (RETIRED) | Direction | Math | Notes |
-|-------|-----------|------|-------|
-| `self.sigma_in` | incoming-contribution fold | per-stage SigmaLayer (Ramsified across stages) | Stage 10 (2026-05-27 plan). **Bypassed on forward under clean-stack STM (2026-05-29)** — `folded = primary` at stage 0, `folded = sym` at k > 0; then removed entirely. |
-| `self.sigma_cs` | residual-CS iteration kernel for stages k > 0 | per-stage SigmaLayer | Same Stage 10 / clean-stack story as `sigma_in`; removed entirely. |
-
-**Clean-stack STM (2026-05-29 experiment).** The Stage-10 additive
-composition
-
-```
-folded = sigma_in(combined) + sigma_cs(prev)
-```
-
-is replaced with per-stage space-role attribution:
-
-```
-stage 0      folded = primary    (PS event from subspace.materialize())
-stage k > 0  folded = sym        (SS event from word_subspace.materialize())
-```
-
-No additive mixing across space-roles; no residual lift; trivially invertible
-(read-back, no inverse-Sigma needed). The `STM_k = STM_{k-1} + SS_k`
-carry-forward variant was tested and reverted — the pure clean-stack
-form is the landing point.
-
-Because `sigma_in` / `sigma_cs` were dead-weight on the forward path (no
-gradient — they never fired) while `CS.reverse` applied `sigma_in.reverse`
-unconditionally, the round-trip carried an UNMATCHED inverse fold (the
-source of garbage XOR_exact recon tokens). That forward / reverse semantic
-mismatch was RESOLVED by retiring the layers entirely: with the sparse
-transform OFF, CS is a pure bookkeeping carrier (forward push / reverse
-read-back) with no fold to invert, and the symbolic generalization operator
-moved to WholeSpace (inverted upstream of `CS.reverse` on the reconstruction
-path, in `BasicModel._reverse_body`). Convergence on MM_xor continues via the
-PiLayer butterfly cascade. (When the sparse transform is ON, CS DOES
-own a parameterised forward transform — the `ConceptualAttentionLayer`'s edge values
-and the concept dictionary — see **The symbolic phase** below.)
-
-**Reverse.** `CS.reverse` is a thin pass-through (no fold layer to
-invert). The reverse chain operates on the terminal STM contents; per
-the master plan, no per-stage caches. The sparse-coding reconstruction is
-referential — the untyped edge lists ARE the concept's decomposition —
-rather than an inverse fold.
+**Owned definitions and carrier.** The conceptual inventory owns sparse
+feature references, order-0 conjunctive and disjunctive edges, and higher-order
+disjunctive edges. The clean-stack STM retains the incoming event and its
+reconstruction witness. Conceptual presence is computed separately from
+native memberships; a distributed code is used for retrieval and tied
+reconstruction. Reverse conceptual demand descends through cases and then
+attributes their percept memberships, using observed evidence when present
+and a case choice when imagining.
 
 **The symbolic phase.** With `symbolicOrder > 0` and `serial=false`,
 `BasicModel._forward_body` runs the continuous perceptual pump and then
 `cs_symbolic_phase` on the settled terminal field:
 
 ```text
-a0 = cs_snap_order0(settled)              # [order-zero rows, batch, occurrence, 2]
-a  = pad_concept_axis(a0, sum(caps))      # store span S, independent of inventory
+a0 = cs_read_memberships(percepts, extents) # native definitions, pi/sigma at order 0
+a  = pad_concept_axis(a0, sum(caps))
 for order in 1..K:
-    candidate = compose_dual_folds(a)    # pi then sigma when conceptualPi is on
+    candidate = sigma_previous_order(a)    # max independently on each pole
     candidate *= detached_use_gate
     rank = max_pole(union_occurrences(candidate))
     a[order_slice(order)] = admit_pairs(candidate, top_k(rank, caps[order]))
-pair = union_occurrences(a)              # [S, batch, 2]; both stays distinct
+pair = union_occurrences(a)                # max; both stays distinct
 symbols[2*i]   =  pair[i, :, 0] * code[i]
 symbols[2*i+1] = -pair[i, :, 1] * code[i]
 ```
 
-Each rung uses two scatter passes with pi off and four with pi on. The
-positive sigma channel is `-expm1(sum(w * log1p(-presence)))`; its negative
-channel is the conjunction of the literals' negative poles. Pi uses the dual
-charts. A negated part swaps source poles; empty and all-zero definitions
-assert neither. Exact Boolean rails coexist with finite log floors for
-backward. Relevance can boost ranking but does not alter the field's polarity.
-The transpose distributes each pole in its own chart and retains occurrence
-scope. The final symbol read unions across occurrences; the dictionary is
-stored once, with no signed scalar collapsing both into neither.
+A negated literal swaps source poles. Requirements reduce nonzero
+contributions by min separately on each pole; alternatives use max.
+An empty pole asserts zero. Exponents qualify individual memberships;
+there is no product or probabilistic union across inputs. Located pi
+patterns must match each requested pole at its field bracket before
+readout. Pi edges exist only at order 0. Exact forward rails use bounded
+log charts for gradients. The dictionary is stored once, and a signed
+scalar never collapses both into neither in the field.
 
 `_order_caps()` allocates a tile-based taper `[base, base>>1, ..., 1]`,
 shrinking it to fit the dictionary. Only its span S is materialized.
@@ -1470,17 +1265,6 @@ chain of end-states — is in the dedicated [STM.md](STM.md) chapter.
 
 ### Lift / Lower as binary GrammarLayer subclasses
 
-(Pre-2026-05-27, Lift / Lower were "substrate-borrowing" — they reached
-into `PartSpace.sigma` and `ConceptualSpace.pi` for their math.
-That pattern is retired in Stage 4 of the substrate refactor.
-`PartSpace.sigma` itself remains LIVE — PartSpace owns and uses a single
-`SigmaLayer` (`self.sigma`), allocated in `__init__` and applied in its
-forward fold (the Pi/Sigma swap, rev. 2026-06-09, put Sigma/synthesis on
-PartSpace). The per-stage `ConceptualSpace.sigma_in` that once carried the
-two-loop pi-sigma additive math on CS has since been RETIRED (the 2026-05-29
-clean-stack STM experiment bypassed it on the forward path; it was later
-removed entirely — CS owns no fold).)
-
 `LiftLayer` and `LowerLayer` are now first-class **binary GrammarLayer
 subclasses**, each owning its own internal sub-layer for the pairwise
 math:
@@ -1537,7 +1321,8 @@ It is perceptual and therefore strictly upstream of concepts and symbols.
 - `self.subspace.what` is the one canonical whole-percept/property codebook at
   width `nDim`. BasicModel initially contains roughly eight ASCII-class
   properties. There is no second `analysis_store` codebook.
-- `self.pi` and the `<analysis>` policy apply and fold those property percepts.
+- The `<analysis>` policy reads primitive memberships and partitions the field.
+  There is no `PiLayer` in WholeSpace.
 - Dynamic property learning may add rows to this inventory. Its allocator and
   checkpoint policy are independent of ConceptualSpace capacity.
 
@@ -1549,10 +1334,11 @@ tensor sized like the conceptual inventory merely because aligned binding is
 enabled.
 
 **Whole-percept presence.** Each property records graded presence in `[0, 1]`.
-For a signed carrier, `presence = (activation + 1) / 2`.
+A property allows primitive alternatives by max and pervades an observed
+run by min over positions. Absence supplies no conceptual counterevidence.
 
-**Alignment.** At concept formation, a PS fold and WS fold bind only when they
-have the same live location. This is an alignment of the transient `nOutput`
+**Alignment.** At concept formation, native PS and WS readings bind within
+the same attentive field. This is an alignment of the transient `nOutput`
 axis, not equality of the two codebook inventories. PS, WS, and CS may therefore
 have different `nVectors` values.
 
