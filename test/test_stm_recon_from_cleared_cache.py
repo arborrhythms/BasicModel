@@ -227,17 +227,27 @@ def _topk_decode(W, recon, k=TOPK):
 
 def _topk_overlap(fwd_idx, topk_idx):
     """Fraction of forward positions whose forward index is among the
-    top-k recovered indices at that position (common position prefix)."""
+    top-k recovered indices at that position; all rows/positions must exist."""
     if fwd_idx is None or topk_idx is None:
         return None
-    Bk = min(fwd_idx.shape[0], topk_idx.shape[0])
-    Nk = min(fwd_idx.shape[1], topk_idx.shape[1])
-    f = fwd_idx[:Bk, :Nk].unsqueeze(-1)               # [B, N, 1]
-    t = topk_idx[:Bk, :Nk, :]                          # [B, N, k]
-    return (t == f).any(dim=-1).float().mean().item()
+    if fwd_idx.shape != topk_idx.shape[:2]:
+        return 0.0
+    f = fwd_idx.unsqueeze(-1)                       # [B, N, 1]
+    return (topk_idx == f).any(dim=-1).float().mean().item()
 
 
 # -- assertions that DO hold today -----------------------------------------
+
+@pytest.mark.parametrize('forward, recovered, expected', [
+    ([[7, 11]], [[[7, 1, 2]]], 0.0),
+    ([[7]], [[[7, 1, 2], [11, 1, 2]]], 0.0),
+    ([[7], [11]], [[[7, 1, 2]]], 0.0),
+    ([[7, 11]], [[[7, 1, 2], [11, 1, 2]]], 1.0),
+    ([[7, 11]], [[[7, 1, 2], [0, 1, 2]]], 0.5),
+])
+def test_topk_overlap_requires_every_forward_position(forward, recovered, expected):
+    assert _topk_overlap(torch.tensor(forward), torch.tensor(recovered)) == expected
+
 
 def test_forward_produces_single_S_and_targets():
     """The per-word forward yields the held idea S [B, D_c] and the

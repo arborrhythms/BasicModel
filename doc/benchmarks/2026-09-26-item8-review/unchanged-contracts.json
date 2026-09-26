@@ -1,0 +1,12 @@
+{
+  "base": "074093ec528ae38f99ee2b495174ae4da0f94d1b",
+  "unchanged_files": {
+    "test/test_peer_pipeline.py": "d8bcdd29f1cea3e64b3039130fa9cb2d9565fe17b147dad3022f0f013f4ee94d",
+    "test/test_explicit_dimensions.py": "7dc6fe7d1d5fa1a47f62cefdb09ec57d3ca71224a642bdc6f23bedfcdfdd4805",
+    "data/XOR_grammar.xml": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d",
+    "data/MM_grammar.xml": "a7a880cdc8b07fc2081e37d1ae2e37a2d8db99f73036d30c9345b02434e62386",
+    "pytest.ini": "fd2c736dc663af060e6a62112524794e709b01ca240da47480f1262344cf1dc1"
+  },
+  "overlap_assertion_and_marker_ast_identical": true,
+  "overlap_tolerance": 0.2
+}

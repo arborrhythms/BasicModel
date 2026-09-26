@@ -1,0 +1,116 @@
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -14854,11 +14854,7 @@
+ 
+         marginal = routing["reduce_marginal_op"][:, 0, :]
+         flags = getattr(reducer, 'structural_ops', None)
+-        # Existing adapters may supply an already committed marginal. Only a
+-        # mixed catalog needs the new exact-score tie order.
+-        scores = (routing['reduce_score'][:, 0, :] if flags and any(flags)
+-                  and not all(flags) else marginal)
+-        local_op = structural_argmax(scores, flags)
++        local_op = structural_argmax(marginal, flags)
+         trace_valid = can
+         if not (occupancy_pressure or demand):
+             trace_valid = torch.logical_and(
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -18805,9 +18805,7 @@
+             from GrammarPreference import structural_argmax
+             reducer = self._stm_reducer()
+             flags = getattr(reducer, 'structural_ops', None)
+-            scores = (routing['reduce_score'] if flags and any(flags)
+-                      and not all(flags) else marginal)
+-            local = structural_argmax(scores[:, 0, :], flags)
++            local = structural_argmax(marginal[:, 0, :], flags)
+         else:
+             action_op = routing.get("action_op")
+             if not (torch.is_tensor(action_op) and action_op.dim() >= 2
+--- a/test/test_structural_preference.py
++++ b/test/test_structural_preference.py
+@@ -152,3 +152,49 @@
+     later['corpus'] = 'changed'
+     with pytest.raises(ValueError, match='same ordered corpus'):
+         compare_coverage([base, later], [{}, {}])
++
++
++@pytest.mark.parametrize('path', ['functional', 'trace'])
++@pytest.mark.parametrize('flags, expected', [
++    ((False, True), [0, 1, 1]),
++    ((True, True), [0, 0, 1]),
++    ((False, False), [0, 0, 1]),
++])
++def test_committed_marginal_controls_selection_for_every_catalog(path, flags, expected):
++    from types import SimpleNamespace as NS
++    from Language import _FunctionalLanguageChooser, ReconstructionStack
++    from Models import BasicModel
++
++    class CommittedReducer(nn.Module):
++        structural_ops = flags
++
++        def forward(self, window):
++            parent = window.sum(dim=1, keepdim=True)
++            routing = dict(chosen_reduced=parent,
++                copy_score=window.new_zeros(3, 2, 1),
++                # Adapters may publish a committed marginal distinct from
++                # their scoring workspace. Catalog kind must not switch it.
++                reduce_score=window.new_tensor([[[-1, 1]], [[1, -1]], [[1, -1]]]),
++                reduce_marginal_op=window.new_tensor([[[.8, .2]], [[.5, .5]], [[.2, .8]]]),
++                action_kind=torch.ones(3, 1, dtype=torch.long),
++                src_left=torch.full((3, 1), -1, dtype=torch.long))
++            return parent, parent, routing
++
++    reducer = CommittedReducer()
++    window = torch.ones(3, 2, 4)
++    if path == 'functional':
++        state = (window, torch.full((3,), 2), None, None, None, None)
++        choice = _FunctionalLanguageChooser.choose_binary(
++            state, reducer, torch.ones(3, dtype=torch.bool), base_tau=.75)
++        assert choice[2].tolist() == expected
++    else:
++        trace = ReconstructionStack(batch=3, max_depth=4)
++        trace.prepare_choices(3, 1, device='cpu', binary_rule_ids=(17, 23))
++        owner = NS(_reconstruction_stack=lambda: trace, _stm_reducer=lambda: reducer)
++        routing = reducer(window)[2]
++        BasicModel._record_reconstruction_choice(owner, 0, routing,
++            torch.ones(3, dtype=torch.bool), arity=2)
++        ids, arities, active = trace.choices()
++        assert ids[:, 0].tolist() == [[17, 23][i] for i in expected]
++        assert arities[:, 0].tolist() == [2, 2, 2]
++        assert active[:, 0].tolist() == [True, True, True]
+--- a/test/test_stm_recon_from_cleared_cache.py
++++ b/test/test_stm_recon_from_cleared_cache.py
+@@ -227,17 +227,27 @@
+ 
+ def _topk_overlap(fwd_idx, topk_idx):
+     """Fraction of forward positions whose forward index is among the
+-    top-k recovered indices at that position (common position prefix)."""
++    top-k recovered indices at that position; all rows/positions must exist."""
+     if fwd_idx is None or topk_idx is None:
+         return None
+-    Bk = min(fwd_idx.shape[0], topk_idx.shape[0])
+-    Nk = min(fwd_idx.shape[1], topk_idx.shape[1])
+-    f = fwd_idx[:Bk, :Nk].unsqueeze(-1)               # [B, N, 1]
+-    t = topk_idx[:Bk, :Nk, :]                          # [B, N, k]
+-    return (t == f).any(dim=-1).float().mean().item()
++    if fwd_idx.shape != topk_idx.shape[:2]:
++        return 0.0
++    f = fwd_idx.unsqueeze(-1)                       # [B, N, 1]
++    return (topk_idx == f).any(dim=-1).float().mean().item()
+ 
+ 
+ # -- assertions that DO hold today -----------------------------------------
++
++@pytest.mark.parametrize('forward, recovered, expected', [
++    ([[7, 11]], [[[7, 1, 2]]], 0.0),
++    ([[7]], [[[7, 1, 2], [11, 1, 2]]], 0.0),
++    ([[7], [11]], [[[7, 1, 2]]], 0.0),
++    ([[7, 11]], [[[7, 1, 2], [11, 1, 2]]], 1.0),
++    ([[7, 11]], [[[7, 1, 2], [0, 1, 2]]], 0.5),
++])
++def test_topk_overlap_requires_every_forward_position(forward, recovered, expected):
++    assert _topk_overlap(torch.tensor(forward), torch.tensor(recovered)) == expected
++
+ 
+ def test_forward_produces_single_S_and_targets():
+     """The per-word forward yields the held idea S [B, D_c] and the

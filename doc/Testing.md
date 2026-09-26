@@ -2215,3 +2215,90 @@ Implementation `8bc710a` [matches all 669 reviewed source blobs](benchmarks/2026
 Claude's review and Alec's publication approval close the item 9b implementation.
 Item 8 is next; the item 9 mature-checkpoint learning gate remains deferred.
 Publication documentation-link verification also passes **101/101**.
+
+### Item 8 structural preference and evidence candidate (September 26)
+
+The [uncommitted item-8 candidate](benchmarks/2026-09-26-item8/README.md)
+starts at `074093ec`. Ordinary grammar selection prefers structural operators
+on exact learned-score ties; better opaque scores and the existing soft and
+sampled distributions are preserved. Boundary measurements count committed
+grammar operations and sentences using opaque operations. The measured catalog
+contains no opaque candidate: its zero shares do not demonstrate declining use.
+The [predeclared protocol](benchmarks/2026-09-26-item8/PROTOCOL.md) fixes the
+held-out direct-answer and equal-actual-work comparisons across seeds 0/1/2,
+retains reconstruction/discrimination and renamed-vocabulary controls, and
+reuses the million-sentence FineWeb qualification requirement. Those qualified
+comparisons remain pending; learned utility remains unproven.
+
+The unchanged reviewed 9b serial baseline matches exactly at
+.10059066489338875 / .09482414424419403 / .09287650510668755. Packed and single
+artifacts also match exactly at .6839025616645813 mean byte reconstruction.
+The warmed serial observation is .55197 sentences/second with post-batch
+routing reads and concurrent CPU work; it is not an isolated speed comparison.
+
+W=6 now preserves every stage and feedback delay in the existing static
+scheduler. Both unchanged XOR_grammar CLI gates reach the next failure during
+the first epoch's reset/autobind: legacy word/META allocation exhausts the
+six-row WholeSpace inventory. The historical unseeded MM loss failure is not
+resolved by the new diagnostic. All declared seeds were attempted once: 0 and
+2 complete 900 updates below the inherited .20 bar; seed 1 stops at the 8 GiB
+guard without a numerical completion record. No seed, capacity or assertion
+was substituted or weakened.
+
+The final affected correction passes 108/108 checks, including unconditional
+arithmetic poison probes, native-reference/vocabulary renaming and a real
+optimizer update. The earlier 207-case affected selection had 204 passes,
+two opt-in skips and one retired-context fixture failure; the final fixture
+port resolves that failure. Explicit final gates retain two CLI failures and
+three quality skips for unavailable qualifying checkpoint evidence.
+The single full default sweep completes **4,968 unique cases: 4,641 passed,
+326 skipped and one strict XPASS**. It exits 1: the unchanged expected-failure
+word-overlap test unexpectedly satisfies its assertion. Its marker and
+threshold remain intact, and this unseeded result has not been rerun to change
+the outcome. The overlap helper only scores the common position prefix;
+the implications need review before making a reconstruction-quality claim.
+
+The full, final affected and explicit gate receipts match all **673 source
+files**, SHA-256
+`20e335f9dfa6bfb0e08d63af2e723e635dd0df39e061be3d328d76a7e56dbd73`.
+Measurements match runtime/config sources and precede only the final arithmetic
+test fixture's context port; that test-source delta is archived explicitly.
+The full sweep takes 1,419.71 seconds and peaks at 4.82 GiB per worker under
+8 GiB per worker / 24 GiB total, with no memory stops or compile-cache retries.
+The initial candidate was left uncommitted for Claude's review, with no green
+full-sweep claim. Its documentation-link verification is recorded in the linked
+item-8 receipt's validation summary.
+
+### Item 8 review corrections (September 26)
+
+The [review correction receipt](benchmarks/2026-09-26-item8-review/README.md)
+removes the catalog-dependent scoring-tensor switch: functional selection and
+the reconstruction trace both apply structural tie preference to the committed
+marginal. The cleared-cache overlap helper requires matching batch/position
+counts, so a correct prefix cannot satisfy a per-position reconstruction
+criterion. Five deterministic probes fail before the fixes; all eleven new
+probe cases then pass. The peer-pipeline fixture, strict expected-failure
+marker, overlap threshold and XOR assertions/configurations remain unchanged.
+
+Affected checks complete 140 cases: **124 passed, 15 opt-in skips and one
+expected failure**. The single corrected-source full sweep passes **4,980
+unique cases: 4,653 passed, 326 skipped and one expected failure**, with no
+unexpected failures. The overlap gate scores zero against the original .8
+threshold. The sweep takes 1,417.84 seconds and peaks at 7.19 GiB per worker,
+under the unchanged 8 GiB per-worker / 24 GiB aggregate limits, with no memory
+stops or compile-cache retries.
+
+Affected/full/explicit gate receipts and repeated reconstruction measurements
+match all **673 source files**, SHA-256
+`aa88d5d6c5c898c6b9aab8e549bdf61bba6c4849ab51699fc0a8874892eba9c1`.
+Serial reconstruction remains exactly .10059066489338875 / .09482414424419403 /
+.09287650510668755, and packed/single artifacts exactly match at
+.6839025616645813 byte cost. Warmed serial throughput is .49777 sentences/second
+with concurrent CPU work and routing reads; no isolated speed claim follows.
+
+The two explicit XOR capacity failures and three missing-qualified-checkpoint
+skips remain visible. The initial seed diagnostics, including the seed-1
+memory stop, are retained without rerunning or replacing them. Learned utility
+and decreasing opaque routing remain unproven. These review corrections are
+validated for the requested commit; documentation-link verification is recorded
+in the new receipt's validation summary.

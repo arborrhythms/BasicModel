@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "before_training": 0.10059066489338875,
+    "training": 0.09482414424419403,
+    "after_training": 0.09287650510668755
+  },
+  "exact": true,
+  "parity": {
+    "initial_parameters_sha256": true,
+    "initial_dictionary_sha256": true,
+    "sentences": true,
+    "mean_sentence_byte_cost": true
+  },
+  "byte_cost": 0.6839025616645813,
+  "training_sentences_per_second": 0.5519687793586644
+}

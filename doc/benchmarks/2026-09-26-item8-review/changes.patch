@@ -1,0 +1,761 @@
+diff --git a/bin/Language.py b/bin/Language.py
+index 35fe8fe9..e5e6fabb 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -8,6 +8,7 @@ import torch
+ from Layers import bounded_atanh as _bounded_atanh
+ import torch.nn as nn
+ import torch.nn.functional as F
++from GrammarPreference import operator_is_structural, structural_argmax, require_opaque_mlp
+ import random
+ try:
+     from torchviz import make_dot
+@@ -5127,6 +5128,11 @@ GRAMMAR_LAYER_CLASSES = {
+     # Revive by moving the class back to Layers.py and re-adding it here.
+ }
+ 
++# These shipped implementations have explicit grammatical contracts. An
++# extension must declare its own kind; merely borrowing a name is insufficient.
++for _structural_class in (*GRAMMAR_LAYER_CLASSES.values(), PiLayer, SigmaLayer):
++    _structural_class.routing_kind = 'structural'
++
+ 
+ # ----------------------------------------------------------------------
+ # Corpus-scale connective supervision (Phase R5)
+@@ -7328,6 +7334,7 @@ def binary_tiling_soft_dp(
+ def binary_tiling_viterbi(
+     copy_score: torch.Tensor,
+     reduce_score: torch.Tensor,
++    *, structural=None,
+ ):
+     """Argmax legal COPY/REDUCE tiling, multi-op.
+ 
+@@ -7361,6 +7368,8 @@ def binary_tiling_viterbi(
+     c_best, c_argop = copy_score.max(dim=-1)              # [B, N], [B, N]
+     if R_reduce > 0 and N > 1:
+         r_best, r_argop = reduce_score.max(dim=-1)
++        if structural is not None:
++            r_argop = structural_argmax(reduce_score, structural)
+     else:
+         r_best = copy_score.new_full((B, max(N - 1, 0)), NEG_INF)
+         r_argop = torch.zeros(B, max(N - 1, 0), device=device, dtype=torch.long)
+@@ -7896,7 +7905,8 @@ class SelectedThoughtChooser(nn.Module):
+         features[:, 1] = concludes.to(features)
+         return self.mlp(torch.cat((contexts, features), dim=-1)).squeeze(-1)
+ 
+-    def choose(self, contexts, concludes, *, sample=False, temperature=1.0):
++    def choose(self, contexts, concludes, *, sample=False, temperature=1.0,
++               structural=None):
+         """Return a hard action index and its live policy log probability."""
+         logits = self.logits(contexts, concludes)
+         if logits.numel() == 0:
+@@ -7906,7 +7916,7 @@ class SelectedThoughtChooser(nn.Module):
+         if sample and logits.numel() > 1:
+             index = int(torch.multinomial(log_probs.detach().exp(), 1).item())
+         else:
+-            index = int(torch.argmax(logits.detach()).item())
++            index = int(structural_argmax(logits.detach(), structural).item())
+         return index, log_probs[index]
+ 
+ 
+@@ -8390,6 +8400,8 @@ class BinaryStructuredReductionLayer(nn.Module):
+         self.d_model = int(d_model)
+         self.ops = nn.ModuleList(list(ops))
+         self.r_reduce = len(self.ops)
++        require_opaque_mlp(self.ops, chooser)
++        self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
+         self.r_copy = int(r_copy)
+         self.context_net = context_net if context_net is not None else _IdentityContext()
+         # Anchor-based scoring (Stern et al. 2017 / Vaswani et al. 2017
+@@ -8637,7 +8649,8 @@ class BinaryStructuredReductionLayer(nn.Module):
+         else:
+             cs_dp, rs_dp = copy_score, reduce_score
+         soft = binary_tiling_soft_dp(cs_dp, rs_dp)
+-        hard = binary_tiling_viterbi(copy_score, reduce_score)
++        hard = binary_tiling_viterbi(copy_score, reduce_score,
++                                    structural=self.structural_ops)
+ 
+         if hard["reduce_mask"].numel() > 0:
+             reduce_op_per_pair = hard["reduce_mask"].argmax(-1)  # [B, N-1]
+@@ -8661,7 +8674,8 @@ class BinaryStructuredReductionLayer(nn.Module):
+             else:
+                 op_soft = _masked_softmax_lastdim(reduce_score)     # [B, N-1, R]
+                 op_hard = F.one_hot(
+-                    op_soft.argmax(-1), num_classes=op_soft.shape[-1]
++                    structural_argmax(reduce_score, self.structural_ops),
++                    num_classes=op_soft.shape[-1]
+                 ).to(op_soft.dtype)
+                 op_weights = op_hard + op_soft - op_soft.detach()
+             chosen_reduced = (op_weights.unsqueeze(-1) * stacked_reduced).sum(dim=2)
+@@ -8777,6 +8791,8 @@ class UnaryStructuredLayer(nn.Module):
+         self.d_model = int(d_model)
+         self.ops = nn.ModuleList(list(ops))
+         self.r_apply = len(self.ops)
++        require_opaque_mlp(self.ops, chooser)
++        self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
+         self.r_copy = int(r_copy)
+         self.temperature = float(temperature)
+         self.context_net = context_net if context_net is not None else _IdentityContext()
+@@ -8924,7 +8940,9 @@ class UnaryStructuredLayer(nn.Module):
+             # Hardened: forward uses argmax one-hot, backward gets the
+             # softmax gradient via straight-through.
+             action_hard = F.one_hot(
+-                action_soft.argmax(-1), num_classes=action_soft.shape[-1]
++                structural_argmax(torch.cat([copy_score, apply_score], dim=-1),
++                                  (True,) * self.r_copy + self.structural_ops),
++                num_classes=action_soft.shape[-1]
+             ).to(action_soft.dtype)
+             action_probs = action_hard + action_soft - action_soft.detach()
+ 
+@@ -8942,8 +8960,8 @@ class UnaryStructuredLayer(nn.Module):
+         # At t=1 superposition_scale is 0, which would zero action_logits and
+         # collapse the argmax to all-copy; argmax is invariant to the positive
+         # 1/temperature factor, so this is byte-identical on the default path.
+-        action_id = torch.cat(
+-            [copy_score, apply_score], dim=-1).argmax(dim=-1)   # [B, N]
++        action_id = structural_argmax(torch.cat([copy_score, apply_score], dim=-1),
++                                     (True,) * self.r_copy + self.structural_ops)
+         is_copy = action_id < self.r_copy
+         gather_idx = action_id.unsqueeze(-1).unsqueeze(-1).expand(B, N, 1, D)
+         hard_slab = branches.gather(dim=2, index=gather_idx).squeeze(2)
+@@ -13814,6 +13832,9 @@ class SymbolSubSpace(SubSpace):
+         router.transform_chooser = str(TheXMLConfig.get(
+             "architecture.transformChooser", default="anchordot"))
+         for arity, bucket in sorted(by_arity.items()):
++            if (router.transform_chooser != 'mlp'
++                    and any(not operator_is_structural(op) for op in bucket['ops'])):
++                raise ValueError('opaque grammar operators require the ordinary mlp chooser')
+             if arity == 1:
+                 router.attach_unary_ops(
+                     ops=bucket["ops"], rule_ids=bucket["rule_ids"],
+@@ -14832,7 +14853,8 @@ class _FunctionalLanguageChooser:
+                 action_kind == 0, source_left >= 0)
+ 
+         marginal = routing["reduce_marginal_op"][:, 0, :]
+-        local_op = marginal.argmax(dim=-1)
++        flags = getattr(reducer, 'structural_ops', None)
++        local_op = structural_argmax(marginal, flags)
+         trace_valid = can
+         if not (occupancy_pressure or demand):
+             trace_valid = torch.logical_and(
+@@ -15138,6 +15160,14 @@ class LanguageSpace(nn.Module):
+         picked = logp.gather(1, target.clamp(0, n - 1).reshape(-1, 1)).reshape(-1)
+         return torch.where(valid, -picked, torch.zeros_like(picked))
+ 
++    def choose_generate(self, logits):
++        """The existing generate policy's hard decision, with the same tie rule."""
++        if logits.shape[-1] == 1:
++            return logits.argmax(dim=-1)  # A disabled output policy only has STOP.
++        flags = tuple(operator_is_structural(op) for op in
++                      (*self._generate_binary_ops, *self._generate_unary_ops)) + (True,)
++        return structural_argmax(logits, flags)
++
+     @property
+     def language_layer(self):
+         return self._language_layer_ref
+diff --git a/bin/Models.py b/bin/Models.py
+index 6127bee9..c48f5e8c 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -509,7 +509,10 @@ class StaticPeerPipeline:
+     # explicit serial-word staging capacities. Keeping all of them peer
+     # scheduled avoids silently reverting older grammar fixtures to the
+     # pre-pipeline PS->CS->WS loop.
+-    WIDTHS = (8, 16, 32, 64, 128, 256, 512, 1024)
++    # XOR_grammar retains its six-word capacity. This static schedule needs
++    # no power-of-two arithmetic; admit that existing compatibility bucket
++    # without padding away words or increasing the model's capacity.
++    WIDTHS = (6, 8, 16, 32, 64, 128, 256, 512, 1024)
+ 
+     def __init__(self, width):
+         width = int(width)
+@@ -6793,7 +6796,13 @@ class BasicModel(BaseModel):
+         anticipating = getattr(self, "_anticipating_expectation_row", None) == row
+         weight = getattr(self, "expectation_policy_weight" if anticipating else "selected_thought_policy_weight", 0.)
+         concludes = tuple(action is None for action in actions)
++        from GrammarPreference import operator_is_structural
++        from Language import GRAMMAR_LAYER_CLASSES
++        structural = tuple(action is None or all(operator_is_structural(
++            GRAMMAR_LAYER_CLASSES.get(form.structural_id))
++            for form in action.operation.forms) for action in actions)
+         index, log_prob = chooser.choose(context, concludes,
++                                         structural=structural,
+                                          sample=(self._anticipation_training if anticipating else bool(self.training)) and weight > 0.)
+         if anticipating and weight > 0.:
+             # Keep data, not an autograd graph across the arriving input or
+@@ -13615,7 +13624,7 @@ class BasicModel(BaseModel):
+             logits = language.generate_policy_logits(
+                 top_vec.detach() if sample_actions else top_vec)
+             unstamped = has_top & ~is_rule
+-            choice = logits.argmax(dim=-1)
++            choice = language.choose_generate(logits)
+             if sample_actions:
+                 draw = draws.gather(
+                     1, t.clamp(0, T - 1).reshape(1, 1).expand(B, 1))
+@@ -18793,7 +18802,10 @@ class BasicModel(BaseModel):
+             if not (torch.is_tensor(marginal) and marginal.dim() == 3
+                     and int(marginal.shape[-1]) == int(rule_map.numel())):
+                 return
+-            local = marginal[:, 0, :].argmax(dim=-1)
++            from GrammarPreference import structural_argmax
++            reducer = self._stm_reducer()
++            flags = getattr(reducer, 'structural_ops', None)
++            local = structural_argmax(marginal[:, 0, :], flags)
+         else:
+             action_op = routing.get("action_op")
+             if not (torch.is_tensor(action_op) and action_op.dim() >= 2
+diff --git a/test/test_stm_recon_from_cleared_cache.py b/test/test_stm_recon_from_cleared_cache.py
+index 69ad0e9b..e30aded5 100644
+--- a/test/test_stm_recon_from_cleared_cache.py
++++ b/test/test_stm_recon_from_cleared_cache.py
+@@ -227,18 +227,28 @@ def _topk_decode(W, recon, k=TOPK):
+ 
+ def _topk_overlap(fwd_idx, topk_idx):
+     """Fraction of forward positions whose forward index is among the
+-    top-k recovered indices at that position (common position prefix)."""
++    top-k recovered indices at that position; all rows/positions must exist."""
+     if fwd_idx is None or topk_idx is None:
+         return None
+-    Bk = min(fwd_idx.shape[0], topk_idx.shape[0])
+-    Nk = min(fwd_idx.shape[1], topk_idx.shape[1])
+-    f = fwd_idx[:Bk, :Nk].unsqueeze(-1)               # [B, N, 1]
+-    t = topk_idx[:Bk, :Nk, :]                          # [B, N, k]
+-    return (t == f).any(dim=-1).float().mean().item()
++    if fwd_idx.shape != topk_idx.shape[:2]:
++        return 0.0
++    f = fwd_idx.unsqueeze(-1)                       # [B, N, 1]
++    return (topk_idx == f).any(dim=-1).float().mean().item()
+ 
+ 
+ # -- assertions that DO hold today -----------------------------------------
+ 
++@pytest.mark.parametrize('forward, recovered, expected', [
++    ([[7, 11]], [[[7, 1, 2]]], 0.0),
++    ([[7]], [[[7, 1, 2], [11, 1, 2]]], 0.0),
++    ([[7], [11]], [[[7, 1, 2]]], 0.0),
++    ([[7, 11]], [[[7, 1, 2], [11, 1, 2]]], 1.0),
++    ([[7, 11]], [[[7, 1, 2], [0, 1, 2]]], 0.5),
++])
++def test_topk_overlap_requires_every_forward_position(forward, recovered, expected):
++    assert _topk_overlap(torch.tensor(forward), torch.tensor(recovered)) == expected
++
++
+ def test_forward_produces_single_S_and_targets():
+     """The per-word forward yields the held idea S [B, D_c] and the
+     per-position forward word indices the recon is graded against."""
+diff --git a/bin/GrammarPreference.py b/bin/GrammarPreference.py
+new file mode 100644
+index 00000000..3822ace0
+--- /dev/null
++++ b/bin/GrammarPreference.py
+@@ -0,0 +1,42 @@
++"""Interpretability is a tie order, never an answer signal or a second policy."""
++import torch
++
++
++def operator_is_structural(operator):
++    """Adapters preserve their implementation's contract; names prove nothing."""
++    implementation = getattr(operator, 'gl', operator)
++    kind = getattr(implementation, 'routing_kind', 'opaque')
++    if kind not in ('structural', 'opaque'):
++        raise ValueError(f'invalid grammar routing kind: {kind!r}')
++    return kind == 'structural'
++
++
++def structural_argmax(scores, structural=None):
++    """Highest score first, structural face on EXACT ties, then catalog order.
++
++    No epsilon can overturn a better score. All-structural legacy catalogs
++    use the original argmax without changing tensors or checkpoint state.
++    Soft probabilities/gradients and training exploration are unchanged.
++    """
++    if structural is None:
++        return scores.argmax(dim=-1)
++    flags = tuple(structural)
++    if len(flags) != scores.shape[-1] or any(type(x) is not bool for x in flags):
++        raise ValueError('one structural flag is required per grammar candidate')
++    if not any(flags) or all(flags):
++        return scores.argmax(dim=-1)
++    tied = scores == scores.amax(dim=-1, keepdim=True)
++    preferred = tied & torch.tensor(flags, device=scores.device, dtype=torch.bool)
++    eligible = torch.where(preferred.any(dim=-1, keepdim=True), preferred, tied)
++    return eligible.to(torch.long).argmax(dim=-1)
++
++
++def require_opaque_mlp(ops, chooser):
++    """Explicit opaque extensions cannot bypass the ordinary grammar MLP.
++
++    Unlabelled standalone tensor fixtures predate the catalog and retain their
++    compatibility scorer. Production registration checks every implementation.
++    """
++    if any(getattr(getattr(op, 'gl', op), 'routing_kind', None) == 'opaque'
++           for op in ops) and chooser != 'mlp':
++        raise ValueError('opaque grammar operators require the ordinary mlp chooser')
+diff --git a/bin/GrammarEvidence.py b/bin/GrammarEvidence.py
+new file mode 100644
+index 00000000..397a1164
+--- /dev/null
++++ b/bin/GrammarEvidence.py
+@@ -0,0 +1,113 @@
++"""Boundary-only routing measurements from committed programs, not candidates.
++
++These diagnostics never enter grammar features, training credit or answer
++construction. A descriptive zero is not evidence of learned utility.
++"""
++from collections import Counter
++import hashlib
++import json
++
++from GrammarPreference import operator_is_structural
++from LearningEvaluation import fineweb_readiness
++
++
++def digest(value):
++    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
++
++
++class RoutingCoverage:
++    def __init__(self, language, *, corpus, stage):
++        if not corpus or not stage:
++            raise ValueError('routing evidence requires a corpus identity and stage')
++        self.corpus, self.stage = corpus, stage
++        self.catalog = {}
++        for kind, arity, label in ((1, 2, 'binary'), (2, 1, 'unary')):
++            rules = getattr(language, f'_compose_{label}_rules')
++            layer = language._tree_layer(arity)
++            ops = () if layer is None else layer.ops
++            if len(rules) != len(ops):
++                raise ValueError('routing measurement requires the owned grammar catalog')
++            self.catalog[kind] = [dict(name=rule.method_name,
++                structural=operator_is_structural(op)) for rule, op in zip(rules, ops)]
++        self.rows = []
++        self._ids = set()
++
++    def record(self, program, *, sentence_id):
++        if not isinstance(sentence_id, str) or not sentence_id or sentence_id in self._ids:
++            raise ValueError('routing sentence IDs must be unique nonempty strings')
++        if program is None or len(program.leaves) == 0:
++            raise ValueError('missing/empty sentence program is not a zero opaque count')
++        actions = program.actions.detach().cpu()
++        if actions.ndim != 2 or actions.shape[1] != 3:
++            raise ValueError('invalid committed grammar actions')
++        counts, opaque, shifted, padded = Counter(), 0, [], False
++        for kind, local, word in actions.tolist():
++            if kind < 0:
++                padded = True
++                continue
++            if padded:
++                raise ValueError('non-padding action follows terminal padding')
++            if kind == 0:
++                shifted.append(word)
++                continue
++            if kind not in self.catalog or not 0 <= local < len(self.catalog[kind]):
++                raise ValueError('unknown committed rule cannot disappear from coverage')
++            rule = self.catalog[kind][local]
++            counts[rule['name']] += 1
++            opaque += not rule['structural']
++        if shifted != list(range(len(program.leaves))):
++            raise ValueError('routing program does not own every sentence leaf exactly once')
++        self._ids.add(sentence_id)
++        self.rows.append(dict(sentence_id=sentence_id, operations=sum(counts.values()),
++            opaque_operations=opaque, rules=dict(counts)))
++
++    def report(self):
++        n = len(self.rows)
++        operations = sum(r['operations'] for r in self.rows)
++        opaque = sum(r['opaque_operations'] for r in self.rows)
++        opaque_sentences = sum(r['opaque_operations'] > 0 for r in self.rows)
++        return dict(corpus=self.corpus, stage=self.stage, catalog=self.catalog,
++            catalog_sha256=digest(self.catalog), sentences=n, operations=operations,
++            opaque_operations=opaque, opaque_sentences=opaque_sentences,
++            no_operation_sentences=sum(r['operations'] == 0 for r in self.rows),
++            sentence_opaque_share=opaque_sentences / n if n else None,
++            operation_opaque_share=opaque / operations if operations else None,
++            rows=list(self.rows), learned_utility='unproven')
++
++
++def compare_coverage(stages, training_states):
++    """Validate a same-corpus, growing-catalog comparison before claiming decline.
++
++    This tests only routing decline, never the separate causal quality gate.
++    Readiness reuses item 9's million-sentence prerequisite with no override.
++    """
++    if len(stages) < 2 or len(stages) != len(training_states):
++        raise ValueError('coverage comparison needs aligned stages and checkpoints')
++    identities = [r['sentence_id'] for r in stages[0]['rows']]
++    if not identities:
++        raise ValueError('coverage comparison requires held-out sentences')
++    previous, opaque_catalog = None, None
++    for stage in stages:
++        if (stage['corpus'] != stages[0]['corpus'] or
++                [r['sentence_id'] for r in stage['rows']] != identities):
++            raise ValueError('coverage comparisons require the same ordered corpus')
++        structured = {(str(kind), r['name']) for kind, rules in stage['catalog'].items()
++                      for r in rules if r['structural']}
++        opaque = {(str(kind), r['name']) for kind, rules in stage['catalog'].items()
++                  for r in rules if not r['structural']}
++        if previous is not None and not previous < structured:
++            raise ValueError('structural coverage must grow by strict catalog inclusion')
++        if opaque_catalog is not None and opaque_catalog != opaque:
++            raise ValueError('the opaque candidate inventory must stay fixed')
++        previous, opaque_catalog = structured, opaque
++    ready = [fineweb_readiness(state) for state in training_states]
++    if not all(r.eligible for r in ready):
++        return dict(status='skipped', reasons=[r.reason for r in ready if not r.eligible],
++                    learned_utility='unproven')
++    if not opaque_catalog:
++        return dict(status='unavailable', reason='no opaque candidate in the catalog',
++                    learned_utility='unproven')
++    shares = [sum(r['opaque_operations'] > 0 for r in s['rows']) / len(identities)
++              for s in stages]
++    return dict(status='passed' if shares[-1] < shares[0] else 'failed',
++                sentence_opaque_shares=shares, learned_utility='unproven')
+diff --git a/test/test_structural_preference.py b/test/test_structural_preference.py
+new file mode 100644
+index 00000000..742cf625
+--- /dev/null
++++ b/test/test_structural_preference.py
+@@ -0,0 +1,200 @@
++"""Exact score ties use grammar structure; unequal scores still decide."""
++import pytest
++import torch
++from torch import nn
++
++from Language import BinaryStructuredReductionLayer, SelectedThoughtChooser
++from Models import StaticPeerPipeline
++from GrammarPreference import structural_argmax
++
++
++class _Candidate(nn.Module):
++    def __init__(self, kind):
++        super().__init__()
++        self.routing_kind = kind
++
++    def forward(self, left, right):
++        return (left + right) / 2
++
++
++def test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp():
++    layer = BinaryStructuredReductionLayer(d_model=4, chooser='mlp',
++        ops=[_Candidate('opaque'), _Candidate('structural')])
++    with torch.no_grad():
++        for parameter in layer.chooser.parameters():
++            parameter.zero_()
++    _, _, routing = layer(torch.randn(2, 2, 4))
++    assert routing['reduce_mask'][:, 0, 1].tolist() == [1., 1.]
++    assert routing['reduce_mask'][:, 0, 0].tolist() == [0., 0.]
++
++
++def test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit():
++    chooser = SelectedThoughtChooser(context_dim=4)
++    index, logp = chooser.choose(torch.randn(2, 4), [False, False],
++                                structural=(False, True))
++    assert index == 1
++    assert logp.requires_grad
++
++
++def test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay():
++    seen = []
++    def stage_b(value, index, feedback):
++        seen.append((index, feedback))
++        return value
++    trace = StaticPeerPipeline(6).run(list(range(6)), lambda word, i: word,
++        stage_b, lambda word, i: ('grammar', i))
++    assert [p for stage, p in trace if stage == 'C'] == list(range(6))
++    assert seen == [(0, None), (1, None)] + [
++        (i, ('grammar', i - 2)) for i in range(2, 6)]
++
++
++@pytest.mark.parametrize('dtype', [torch.float32, torch.float64, torch.bfloat16])
++def test_preference_never_overturns_a_better_score_or_unmasks_a_rule(dtype):
++    scores = torch.tensor([[2, 2], [3, 2], [-2, -2], [0, -torch.inf]], dtype=dtype)
++    assert structural_argmax(scores, (False, True)).tolist() == [1, 0, 1, 0]
++    assert structural_argmax(scores, (True, True)).tolist() == scores.argmax(-1).tolist()
++    # The smallest representable improvement still wins; no epsilon window.
++    close = torch.ones(2, dtype=dtype)
++    close[0] = torch.nextafter(close[0], torch.tensor(torch.inf, dtype=dtype))
++    assert int(structural_argmax(close, (False, True))) == 0
++
++
++def test_opaque_candidates_cannot_select_an_anchor_only_scorer():
++    with pytest.raises(ValueError, match='ordinary mlp'):
++        BinaryStructuredReductionLayer(d_model=4, chooser='anchordot',
++            ops=[_Candidate('opaque'), _Candidate('structural')])
++
++
++def test_unary_and_generate_use_the_same_exact_tie_order():
++    from Language import UnaryStructuredLayer, LanguageSpace
++    from types import SimpleNamespace as NS
++    class Unary(_Candidate):
++        def forward(self, x):
++            return x
++    ops = [Unary('opaque'), Unary('structural')]
++    layer = UnaryStructuredLayer(d_model=4, chooser='mlp', ops=ops)
++    with torch.no_grad():
++        for p in layer.chooser.parameters():
++            p.zero_()
++        # Real MLP: the copy tool scores below the two exactly tied operators.
++        layer.chooser.tool_embedding[0, 0] = -1
++        layer.chooser.mlp[0].weight[0, 8] = 1
++        layer.chooser.mlp[-1].weight[0, 0] = 1
++    _, _, routing = layer(torch.randn(2, 1, 4))
++    assert routing['action_op'].reshape(-1).tolist() == [1, 1]
++    owner = NS(_generate_binary_ops=(), _generate_unary_ops=ops)
++    scores = torch.tensor([[2., 2., -1.], [3., 2., -1.]])
++    assert LanguageSpace.choose_generate(owner, scores).tolist() == [1, 0]
++
++
++def test_preference_compiles_fullgraph_without_host_reads():
++    def choose(scores):
++        return structural_argmax(scores, (False, True, False))
++    scores = torch.tensor([[1., 1., 0.], [0., 2., 3.]])
++    captured = torch.compile(choose, backend='eager', fullgraph=True)
++    assert captured(scores).tolist() == [1, 2]
++
++
++def test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout():
++    layer = BinaryStructuredReductionLayer(d_model=4, chooser='mlp',
++        ops=[_Candidate('opaque'), _Candidate('structural')])
++    keys = set(layer.state_dict())
++    with torch.no_grad():
++        layer.chooser.mlp[-1].weight.zero_()
++        layer.chooser.mlp[-1].bias.zero_()
++    x = torch.randn(2, 2, 4)
++    _, _, routing = layer(x)
++    scores = routing['reduce_score']
++    scores.retain_grad()
++    loss = -scores.log_softmax(-1)[..., 1].sum()
++    loss.backward()
++    assert bool((scores.grad[..., 0] > 0).all())
++    assert bool((scores.grad[..., 1] < 0).all())
++    assert set(layer.state_dict()) == keys
++
++
++def test_coverage_counts_only_committed_rules_and_refuses_missing_evidence():
++    from types import SimpleNamespace as NS
++    from GrammarEvidence import RoutingCoverage
++    language = NS(_compose_binary_rules=[NS(method_name='blackbox'), NS(method_name='part')],
++                  _compose_unary_rules=[], _tree_layer=lambda arity:
++                  NS(ops=[_Candidate('opaque'), _Candidate('structural')]) if arity == 2 else None)
++    coverage = RoutingCoverage(language, corpus='frozen-corpus-sha256', stage='base')
++    program = NS(leaves=torch.randn(2, 4), actions=torch.tensor([
++        [0, -1, 0], [0, -1, 1], [1, 1, -1], [-1, -1, -1]]))
++    coverage.record(program, sentence_id='first')
++    program.actions[2, 1] = 0
++    coverage.record(program, sentence_id='second')
++    report = coverage.report()
++    assert report['sentences'] == report['operations'] == 2
++    assert report['sentence_opaque_share'] == report['operation_opaque_share'] == .5
++    assert report['learned_utility'] == 'unproven'
++    with pytest.raises(ValueError, match='missing/empty'):
++        coverage.record(None, sentence_id='missing')
++    with pytest.raises(ValueError, match='unique'):
++        coverage.record(program, sentence_id='first')
++    program.actions[2, 1] = 42
++    with pytest.raises(ValueError, match='unknown committed'):
++        coverage.record(program, sentence_id='unknown')
++
++
++def test_coverage_comparison_reuses_maturity_and_matches_corpus_before_quality():
++    from copy import deepcopy
++    from GrammarEvidence import compare_coverage
++    base = dict(corpus='same', catalog={1: [dict(name='part', structural=True),
++        dict(name='opaque', structural=False)]}, rows=[dict(sentence_id='a', opaque_operations=1)])
++    later = deepcopy(base)
++    later['catalog'][1].append(dict(name='whole', structural=True))
++    later['rows'][0]['opaque_operations'] = 0
++    report = compare_coverage([base, later], [{}, {}])
++    assert report['status'] == 'skipped'
++    assert report['learned_utility'] == 'unproven'
++    later['corpus'] = 'changed'
++    with pytest.raises(ValueError, match='same ordered corpus'):
++        compare_coverage([base, later], [{}, {}])
++
++
++@pytest.mark.parametrize('path', ['functional', 'trace'])
++@pytest.mark.parametrize('flags, expected', [
++    ((False, True), [0, 1, 1]),
++    ((True, True), [0, 0, 1]),
++    ((False, False), [0, 0, 1]),
++])
++def test_committed_marginal_controls_selection_for_every_catalog(path, flags, expected):
++    from types import SimpleNamespace as NS
++    from Language import _FunctionalLanguageChooser, ReconstructionStack
++    from Models import BasicModel
++
++    class CommittedReducer(nn.Module):
++        structural_ops = flags
++
++        def forward(self, window):
++            parent = window.sum(dim=1, keepdim=True)
++            routing = dict(chosen_reduced=parent,
++                copy_score=window.new_zeros(3, 2, 1),
++                # Adapters may publish a committed marginal distinct from
++                # their scoring workspace. Catalog kind must not switch it.
++                reduce_score=window.new_tensor([[[-1, 1]], [[1, -1]], [[1, -1]]]),
++                reduce_marginal_op=window.new_tensor([[[.8, .2]], [[.5, .5]], [[.2, .8]]]),
++                action_kind=torch.ones(3, 1, dtype=torch.long),
++                src_left=torch.full((3, 1), -1, dtype=torch.long))
++            return parent, parent, routing
++
++    reducer = CommittedReducer()
++    window = torch.ones(3, 2, 4)
++    if path == 'functional':
++        state = (window, torch.full((3,), 2), None, None, None, None)
++        choice = _FunctionalLanguageChooser.choose_binary(
++            state, reducer, torch.ones(3, dtype=torch.bool), base_tau=.75)
++        assert choice[2].tolist() == expected
++    else:
++        trace = ReconstructionStack(batch=3, max_depth=4)
++        trace.prepare_choices(3, 1, device='cpu', binary_rule_ids=(17, 23))
++        owner = NS(_reconstruction_stack=lambda: trace, _stm_reducer=lambda: reducer)
++        routing = reducer(window)[2]
++        BasicModel._record_reconstruction_choice(owner, 0, routing,
++            torch.ones(3, dtype=torch.bool), arity=2)
++        ids, arities, active = trace.choices()
++        assert ids[:, 0].tolist() == [[17, 23][i] for i in expected]
++        assert arities[:, 0].tolist() == [2, 2, 2]
++        assert active[:, 0].tolist() == [True, True, True]
+diff --git a/test/test_arithmetic_isolation.py b/test/test_arithmetic_isolation.py
+new file mode 100644
+index 00000000..f8392f01
+--- /dev/null
++++ b/test/test_arithmetic_isolation.py
+@@ -0,0 +1,137 @@
++"""Preserved September 17 poison boundaries, on the current native owners.
++
++These are unconditional correctness checks, not arithmetic-learning claims.
++The original source is retained in the item-8 receipt.
++"""
++from dataclasses import replace
++import pytest
++import torch
++
++from What import What
++from test_output_path_supervised import _native_answer_model
++from test_output_walk import _capture_program_probe, _stop
++
++
++def _poison_oracles(monkeypatch):
++    import exact
++    def forbidden(*args, **kwargs):
++        pytest.fail('oracle arithmetic reached from the learner')
++    for name in ('eval_expr', 'linearize', 'numeral_code', 'referent_code'):
++        # Removed helpers stay trapped if an old call is ever resurrected.
++        monkeypatch.setattr(exact, name, forbidden, raising=False)
++    for name in ('from_surface', 'lookup', 'evaluate', 'bind', 'substitute',
++                 'constrain', 'execute'):
++        monkeypatch.setattr(exact.ExactState, name, forbidden, raising=False)
++    monkeypatch.setattr(exact.ExactLexer, 'lex', forbidden)
++
++
++def test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic(monkeypatch):
++    from test_normal_thought_controller import _catalog_world
++    model, registry, _, part, whole = _catalog_world()
++    question = registry.form('part', part, whole, bindings={'x': part})
++    renamed = replace(question, role_refs=(('sym', 901), ('sym', 337), ('sym', 29)),
++                      bindings={'x': ('sym', 901)})
++    _poison_oracles(monkeypatch)
++    feature = lambda q: model._selected_thought_context(q, level=0, pressure=0)
++    torch.testing.assert_close(feature(question), feature(renamed), rtol=0, atol=0)
++    with model._query_boundary_scope((0,)):
++        forward = model.run_selected_thought(question, work_budget=128)
++    assert forward.result.support_true == 1
++    model._end_finished_selected_thought_episodes()
++    with model._query_boundary_scope((0,)):
++        reverse = model.run_selected_thought(registry.form('part', whole, part), work_budget=128)
++    assert reverse.result.support_true == 0
++    model._end_finished_selected_thought_episodes()
++
++
++def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatch):
++    from types import SimpleNamespace
++    from Language import Grammar
++    from Queries import (GrammaticalThoughtRegistry, ThoughtGrammarContext,
++                         ThoughtConceptualCapability, ThoughtTaxonomyCapability)
++    from QueryWork import QueryWorkBudget
++    from test_cs_symbol_table import _cs
++    def world(prefix, names):
++        cs = _cs()
++        for _ in range(prefix):
++            cs.new_concept()
++        grammar = Grammar()
++        grammar.load_from_grammar_file('complete.grammar')
++        registry = GrammaticalThoughtRegistry.install(cs, grammar)
++        base = cs.new_concept()
++        part = ('sym', cs.synthesize_higher_order([('sym', base)]))
++        whole = ('sym', cs.new_concept())
++        for ref, name in zip((part, whole), names):
++            cs._csw_concept_row(0, ref[1])
++            cs.bind_word_concept(name.encode(), ref[1])
++        cs.add_whole(part[1], whole)
++        context = ThoughtGrammarContext(word_stream=(),
++            conceptual_space=ThoughtConceptualCapability(
++                cs, lambda left, right: float(torch.allclose(left, right))),
++            primed_symbols=(), ltm=object(), taxonomy=ThoughtTaxonomyCapability(cs),
++            work=QueryWorkBudget(128), continuation=None, boundary=lambda _row: None)
++        return cs, registry, part, whole, context
++    first, second = world(0, ('one', 'two')), world(11, ('cedar', 'birch'))
++    x = first[1].form('part', first[2], first[3])
++    y = second[1].form('part', second[2], second[3])
++    assert all(a != b for a, b in zip(x.role_refs, y.role_refs))
++    with torch.no_grad():
++        for value, ref in zip(x.roles, y.role_refs):
++            row = second[0]._csw_concept_row(0, ref[1])
++            second[0].similarity_codebook.getW()[row].copy_(value)
++    y = second[1].form('part', second[2], second[3])
++    torch.testing.assert_close(x.roles, y.roles)
++    _poison_oracles(monkeypatch)
++    a, b = first[1].execute(x, first[4]), second[1].execute(y, second[4])
++    assert a.support_true == b.support_true == 1
++    assert a.support_false == b.support_false == 0
++    reverse = second[1].execute(second[1].form('part', second[3], second[2]), second[4])
++    assert reverse.support_true == 0
++
++
++@pytest.mark.parametrize('texts', [('1 plus 2', '3 plus 4'),
++                                  ('cedar joins birch', 'maple joins oak')])
++def test_numeric_and_renamed_sentence_paths_keep_oracles_out(tmp_path, monkeypatch, texts):
++    model = _native_answer_model(tmp_path, True)
++    _poison_oracles(monkeypatch)
++    model.eval()
++    _stop(model)
++    try:
++        with torch.no_grad():
++            understood = _capture_program_probe(model, list(texts))
++            reconstructed = model.reverseReconstruct(understood)
++            resolved = model.resolveAnswer(understood, (What.supervised(0), What.supervised(1)))
++            answer = model.reverseOutput(understood, resolved)
++        assert all(p is not None for p in understood.answer_program)
++        assert bool(torch.isfinite(answer.actual).all())
++        assert not torch.equal(answer.concepts[0], answer.concepts[1])
++        assert reconstructed is not None
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++        torch._dynamo.reset()
++
++
++def test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes(tmp_path, monkeypatch):
++    model = _native_answer_model(tmp_path, True)
++    _poison_oracles(monkeypatch)
++    optimizer = model.getOptimizer(lr=1e-3)
++    steps = []
++    real_step = optimizer.step
++    def step(*args, **kwargs):
++        steps.append(1)
++        return real_step(*args, **kwargs)
++    monkeypatch.setattr(optimizer, 'step', step)
++    try:
++        batch = (model.inputSpace.prepInput(['1 plus 2', '3 plus 4']),
++                 torch.zeros(2, 1, 1))
++        result, _ = model.runBatch(train=True, batchSize=2, split='train',
++            optimizer=optimizer, batch_override=batch,
++            questions=(What.supervised(0), What.supervised(1)))
++        assert steps == [1]
++        assert bool(torch.isfinite(result.lossOut))
++        assert model._last_answer_mask.tolist() == [True, True]
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++        torch._dynamo.reset()

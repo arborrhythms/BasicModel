@@ -509,7 +509,10 @@ class StaticPeerPipeline:
     # explicit serial-word staging capacities. Keeping all of them peer
     # scheduled avoids silently reverting older grammar fixtures to the
     # pre-pipeline PS->CS->WS loop.
-    WIDTHS = (8, 16, 32, 64, 128, 256, 512, 1024)
+    # XOR_grammar retains its six-word capacity. This static schedule needs
+    # no power-of-two arithmetic; admit that existing compatibility bucket
+    # without padding away words or increasing the model's capacity.
+    WIDTHS = (6, 8, 16, 32, 64, 128, 256, 512, 1024)
 
     def __init__(self, width):
         width = int(width)
@@ -6793,7 +6796,13 @@ class BasicModel(BaseModel):
         anticipating = getattr(self, "_anticipating_expectation_row", None) == row
         weight = getattr(self, "expectation_policy_weight" if anticipating else "selected_thought_policy_weight", 0.)
         concludes = tuple(action is None for action in actions)
+        from GrammarPreference import operator_is_structural
+        from Language import GRAMMAR_LAYER_CLASSES
+        structural = tuple(action is None or all(operator_is_structural(
+            GRAMMAR_LAYER_CLASSES.get(form.structural_id))
+            for form in action.operation.forms) for action in actions)
         index, log_prob = chooser.choose(context, concludes,
+                                         structural=structural,
                                          sample=(self._anticipation_training if anticipating else bool(self.training)) and weight > 0.)
         if anticipating and weight > 0.:
             # Keep data, not an autograd graph across the arriving input or
@@ -13615,7 +13624,7 @@ class BasicModel(BaseModel):
             logits = language.generate_policy_logits(
                 top_vec.detach() if sample_actions else top_vec)
             unstamped = has_top & ~is_rule
-            choice = logits.argmax(dim=-1)
+            choice = language.choose_generate(logits)
             if sample_actions:
                 draw = draws.gather(
                     1, t.clamp(0, T - 1).reshape(1, 1).expand(B, 1))
@@ -18793,7 +18802,10 @@ class BasicModel(BaseModel):
             if not (torch.is_tensor(marginal) and marginal.dim() == 3
                     and int(marginal.shape[-1]) == int(rule_map.numel())):
                 return
-            local = marginal[:, 0, :].argmax(dim=-1)
+            from GrammarPreference import structural_argmax
+            reducer = self._stm_reducer()
+            flags = getattr(reducer, 'structural_ops', None)
+            local = structural_argmax(marginal[:, 0, :], flags)
         else:
             action_op = routing.get("action_op")
             if not (torch.is_tensor(action_op) and action_op.dim() >= 2

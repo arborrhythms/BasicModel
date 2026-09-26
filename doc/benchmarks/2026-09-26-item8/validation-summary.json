@@ -1,0 +1,540 @@
+{
+  "diagnostics/red-xor": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 3,
+    "completed": 3,
+    "unique_completed": 3,
+    "counts": {
+      "failed": 2,
+      "passed": 1
+    },
+    "seconds": 136.25393820810132,
+    "limits": {
+      "memory_bytes": 25769803776,
+      "aggregate_memory_bytes": 25769803776,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 3,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "source_delta": {
+      "bin/GrammarEvidence.py": {
+        "measured": null,
+        "current": "34b7a35b04013468ddacb13afb6e3442632737b78c9ac95c2a8197f11e539b8c"
+      },
+      "bin/GrammarPreference.py": {
+        "measured": null,
+        "current": "797caf13ec9f95e9ea920d0f917a933f228a484c70cc5ebf8a1791cb301a28c9"
+      },
+      "bin/Language.py": {
+        "measured": "46350d017576447c5ffdbe1d32aec1afb4419b53ee7f7c76dc4f0d565742ba4b",
+        "current": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332"
+      },
+      "bin/Models.py": {
+        "measured": "f7de1341d4c3f137ac0bfd797149e1d766a6bdea0f553d806a6911dd1d323b90",
+        "current": "cf1b6031cbb7abf42db105673c3bc2684c3bcd75c6bdb1760b338d75dbc56ed7"
+      },
+      "test/test_arithmetic_isolation.py": {
+        "measured": null,
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      },
+      "test/test_structural_preference.py": {
+        "measured": null,
+        "current": "ef0d7dee9075740c367da6aeafaea87fb918bc74e77539d9f257f82db3871057"
+      }
+    },
+    "failures": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25842: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25949: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3938: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11410: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16722: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14554: in runBatch\n    return self._run_batch_once(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14989: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9601: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11103: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9301: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9113: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24621: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18318: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22567: in _forward_body_per_word\n    last_cs = self._run_peer_word_pipeline(out_slot, _n_trips)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22267: in _run_peer_word_pipeline\n    raise ValueError(\nE   ValueError: peer word pipeline requires one of (8, 16, 32, 64, 128, 256, 512, 1024), got W=6"
+      },
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25842: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25949: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3938: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11410: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16722: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14554: in runBatch\n    return self._run_batch_once(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14989: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9601: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11103: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9301: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9113: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24621: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18318: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22567: in _forward_body_per_word\n    last_cs = self._run_peer_word_pipeline(out_slot, _n_trips)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22267: in _run_peer_word_pipeline\n    raise ValueError(\nE   ValueError: peer word pipeline requires one of (8, 16, 32, 64, 128, 256, 512, 1024), got W=6"
+      }
+    ],
+    "peak_worker_bytes": 5228958400,
+    "compile_cache_retries": []
+  },
+  "diagnostics/red-preference": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 3,
+    "completed": 3,
+    "unique_completed": 3,
+    "counts": {
+      "failed": 3
+    },
+    "seconds": 7.540713832946494,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {
+      "bin/GrammarEvidence.py": {
+        "measured": null,
+        "current": "34b7a35b04013468ddacb13afb6e3442632737b78c9ac95c2a8197f11e539b8c"
+      },
+      "bin/GrammarPreference.py": {
+        "measured": null,
+        "current": "797caf13ec9f95e9ea920d0f917a933f228a484c70cc5ebf8a1791cb301a28c9"
+      },
+      "bin/Language.py": {
+        "measured": "46350d017576447c5ffdbe1d32aec1afb4419b53ee7f7c76dc4f0d565742ba4b",
+        "current": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332"
+      },
+      "bin/Models.py": {
+        "measured": "f7de1341d4c3f137ac0bfd797149e1d766a6bdea0f553d806a6911dd1d323b90",
+        "current": "cf1b6031cbb7abf42db105673c3bc2684c3bcd75c6bdb1760b338d75dbc56ed7"
+      },
+      "test/test_arithmetic_isolation.py": {
+        "measured": null,
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      },
+      "test/test_structural_preference.py": {
+        "measured": "abef8c4ea5bdd7e1a9431010bc490f0ad543287bf882909b5e4efa748ea013c7",
+        "current": "ef0d7dee9075740c367da6aeafaea87fb918bc74e77539d9f257f82db3871057"
+      }
+    },
+    "failures": [
+      {
+        "nodeid": "test/test_structural_preference.py::test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp",
+        "phase": "call",
+        "message": "test/test_structural_preference.py:26: in test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp\n    assert routing['reduce_mask'][:, 0, 1].tolist() == [1., 1.]\nE   assert [0.0, 0.0] == [1.0, 1.0]\nE     \nE     At index 0 diff: 0.0 != 1.0\nE     Use -v to get more diff"
+      },
+      {
+        "nodeid": "test/test_structural_preference.py::test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit",
+        "phase": "call",
+        "message": "test/test_structural_preference.py:32: in test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit\n    index, logp = chooser.choose(torch.randn(2, 4), [False, False],\nE   TypeError: SelectedThoughtChooser.choose() got an unexpected keyword argument 'structural'"
+      },
+      {
+        "nodeid": "test/test_structural_preference.py::test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay",
+        "phase": "call",
+        "message": "test/test_structural_preference.py:43: in test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay\n    trace = StaticPeerPipeline(6).run(list(range(6)), lambda word, i: word,\n            ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:517: in __init__\n    raise ValueError(f\"pipeline width must be one of {self.WIDTHS}, got {width}\")\nE   ValueError: pipeline width must be one of (8, 16, 32, 64, 128, 256, 512, 1024), got 6"
+      }
+    ],
+    "peak_worker_bytes": 539133152,
+    "compile_cache_retries": []
+  },
+  "diagnostics/preference-fixed": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 3,
+    "completed": 3,
+    "unique_completed": 3,
+    "counts": {
+      "passed": 3
+    },
+    "seconds": 7.420578832970932,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {
+      "bin/GrammarEvidence.py": {
+        "measured": null,
+        "current": "34b7a35b04013468ddacb13afb6e3442632737b78c9ac95c2a8197f11e539b8c"
+      },
+      "bin/Language.py": {
+        "measured": "56d0a29556280ec5edda4dfebe41e5f3da42d6d61087740afbf1fb1e4a9cddb3",
+        "current": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332"
+      },
+      "bin/Models.py": {
+        "measured": "9746843e7fe6d343bfe4ff2740e657dfe7f5c0990ab0734f94ed11f2863cd051",
+        "current": "cf1b6031cbb7abf42db105673c3bc2684c3bcd75c6bdb1760b338d75dbc56ed7"
+      },
+      "test/test_arithmetic_isolation.py": {
+        "measured": null,
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      },
+      "test/test_structural_preference.py": {
+        "measured": "abef8c4ea5bdd7e1a9431010bc490f0ad543287bf882909b5e4efa748ea013c7",
+        "current": "ef0d7dee9075740c367da6aeafaea87fb918bc74e77539d9f257f82db3871057"
+      }
+    },
+    "failures": [],
+    "peak_worker_bytes": 430228800,
+    "compile_cache_retries": []
+  },
+  "diagnostics/affected-first": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 163,
+    "completed": 163,
+    "unique_completed": 163,
+    "counts": {
+      "passed": 160,
+      "failed": 1,
+      "skipped": 2
+    },
+    "seconds": 103.60763891600072,
+    "limits": {
+      "memory_bytes": 25769803776,
+      "aggregate_memory_bytes": 25769803776,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 3,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {
+      "bin/Language.py": {
+        "measured": "c391ae2d7be292bfd0036370662a8c9bddd36e0d4da04392ec3ae50af32aa57b",
+        "current": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332"
+      },
+      "bin/Models.py": {
+        "measured": "5332a7743d45f3bab43171e71127a2a23a1511ff37e9c34940912d39ae9c29e4",
+        "current": "cf1b6031cbb7abf42db105673c3bc2684c3bcd75c6bdb1760b338d75dbc56ed7"
+      },
+      "test/test_arithmetic_isolation.py": {
+        "measured": "fcb2e71df34456801eaf2e38b3482aa29e268790feaf0d1bbf04e38441611815",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      },
+      "test/test_structural_preference.py": {
+        "measured": "b66fe681b050af50e65e5c85f711f79523b414f1a5ff6b17a803f8ebb373c141",
+        "current": "ef0d7dee9075740c367da6aeafaea87fb918bc74e77539d9f257f82db3871057"
+      }
+    },
+    "failures": [
+      {
+        "nodeid": "test/test_peer_pipeline.py::test_language_chooses_and_conceptual_space_alone_applies_stm_update",
+        "phase": "call",
+        "message": "test/test_peer_pipeline.py:126: in test_language_chooses_and_conceptual_space_alone_applies_stm_update\n    torch.testing.assert_close(binary_op, torch.tensor([1, 1]))\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 1 at index (0,)\nE   Greatest relative difference: 1.0 at index (0,)"
+      }
+    ],
+    "peak_worker_bytes": 4441674504,
+    "compile_cache_retries": []
+  },
+  "diagnostics/affected-correction": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 35,
+    "completed": 35,
+    "unique_completed": 35,
+    "counts": {
+      "passed": 35
+    },
+    "seconds": 25.75756379100494,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {
+      "bin/Language.py": {
+        "measured": "2f77acdf36490edd5da9e6a618d1ffb70a3cb685e4d2cf2e74ead77dec5f7984",
+        "current": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332"
+      },
+      "test/test_arithmetic_isolation.py": {
+        "measured": "fcb2e71df34456801eaf2e38b3482aa29e268790feaf0d1bbf04e38441611815",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      }
+    },
+    "failures": [],
+    "peak_worker_bytes": 558876064,
+    "compile_cache_retries": []
+  },
+  "diagnostics/xor-width-fixed": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 2,
+    "completed": 2,
+    "unique_completed": 2,
+    "counts": {
+      "failed": 2
+    },
+    "seconds": 8.308980542002246,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "source_delta": {
+      "bin/Language.py": {
+        "measured": "2f77acdf36490edd5da9e6a618d1ffb70a3cb685e4d2cf2e74ead77dec5f7984",
+        "current": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332"
+      },
+      "test/test_arithmetic_isolation.py": {
+        "measured": "fcb2e71df34456801eaf2e38b3482aa29e268790feaf0d1bbf04e38441611815",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      }
+    },
+    "failures": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25856: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25963: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3941: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11419: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16796: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16016: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16549: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16668: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:17032: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25878: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:25001: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+      },
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25856: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25963: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3941: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11419: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16796: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16016: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16549: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16668: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:17032: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25878: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:25001: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+      }
+    ],
+    "peak_worker_bytes": 669140504,
+    "compile_cache_retries": []
+  },
+  "diagnostics/collection-path-error": {
+    "exit_code": 4,
+    "reason": "collection_exit",
+    "selected": 0,
+    "completed": 0,
+    "unique_completed": 0,
+    "counts": {},
+    "seconds": 1.389772708993405,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {
+      "test/test_arithmetic_isolation.py": {
+        "measured": "de6bd09de664e12caed540ffbe2f43a5708a850d554a6a017ee61438f04954c5",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      }
+    },
+    "failures": [],
+    "peak_worker_bytes": 0,
+    "compile_cache_retries": []
+  },
+  "diagnostics/affected-context-error": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 207,
+    "completed": 207,
+    "unique_completed": 207,
+    "counts": {
+      "passed": 204,
+      "failed": 1,
+      "skipped": 2
+    },
+    "seconds": 236.28465687506832,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {
+      "test/test_arithmetic_isolation.py": {
+        "measured": "de6bd09de664e12caed540ffbe2f43a5708a850d554a6a017ee61438f04954c5",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      }
+    },
+    "failures": [
+      {
+        "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+        "phase": "call",
+        "message": "test/test_arithmetic_isolation.py:80: in test_renamed_native_vocabulary_preserves_checked_relation_answers\n    a, b = first[1].execute(x, first[4]), second[1].execute(y, second[4])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:2262: in execute\n    raise TypeError('thought execution requires a ThoughtGrammarContext')\nE   TypeError: thought execution requires a ThoughtGrammarContext"
+      }
+    ],
+    "peak_worker_bytes": 4521399240,
+    "compile_cache_retries": []
+  },
+  "diagnostics/context-candidate": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 1,
+    "completed": 1,
+    "unique_completed": 1,
+    "counts": {
+      "passed": 1
+    },
+    "seconds": 7.617049208027311,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {
+      "test/test_arithmetic_isolation.py": {
+        "measured": "de6bd09de664e12caed540ffbe2f43a5708a850d554a6a017ee61438f04954c5",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      }
+    },
+    "failures": [],
+    "peak_worker_bytes": 434357472,
+    "compile_cache_retries": []
+  },
+  "affected": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 108,
+    "completed": 108,
+    "unique_completed": 108,
+    "counts": {
+      "passed": 108
+    },
+    "seconds": 47.070361083955504,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [],
+    "peak_worker_bytes": 4117910088,
+    "compile_cache_retries": []
+  },
+  "xor-gates": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 5,
+    "completed": 5,
+    "unique_completed": 5,
+    "counts": {
+      "failed": 2,
+      "skipped": 3
+    },
+    "seconds": 27.563493708963506,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25856: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25963: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3941: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11419: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16796: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16016: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16549: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16668: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:17032: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25878: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:25001: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+      },
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25856: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25963: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3941: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11419: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16796: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16016: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16549: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16668: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:17032: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25878: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:25001: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+      }
+    ],
+    "peak_worker_bytes": 665765376,
+    "compile_cache_retries": []
+  },
+  "full": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 4968,
+    "completed": 4968,
+    "unique_completed": 4968,
+    "counts": {
+      "passed": 4641,
+      "skipped": 326,
+      "strict_xpassed": 1
+    },
+    "seconds": 1419.7132782910485,
+    "limits": {
+      "memory_bytes": 25769803776,
+      "aggregate_memory_bytes": 25769803776,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 3,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 7200.0,
+      "batch_size": 32,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [
+      {
+        "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+        "phase": "call",
+        "message": "[XPASS(strict)] PLAN RECON CRITERION still blocked -- but now ONLY by the per-op reverse identity stubs (out of scope: '_reverse_from_S' does NOT author per-op reverse math). FINDING A (forward STM NaN) and FINDING B (perceptual reverse NaN) are FIXED (the PiLayer log-domain guard), so the recon is now FINITE -- but SyntacticLayer.reverse is an identity stub, so _reverse_from_S returns a position-COLLAPSED [B,1,D_c] surface (no per-position fan-out vs the N>1 forward positions). The top-k recovered-word overlap is therefore 0.0, below atol=2e-1. NOT a cache-clear fault and NOT a NaN. Remove this xfail once the per-op reverses reconstruct [B,N,D_c]."
+      }
+    ],
+    "peak_worker_bytes": 5172138760,
+    "compile_cache_retries": []
+  },
+  "documentation": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 103,
+    "completed": 103,
+    "unique_completed": 103,
+    "counts": {
+      "passed": 103
+    },
+    "seconds": 16.149521915940568,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 32,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [],
+    "peak_worker_bytes": 430064984,
+    "compile_cache_retries": []
+  },
+  "measurements": {
+    "source_delta": {
+      "test/test_arithmetic_isolation.py": {
+        "measured": "de6bd09de664e12caed540ffbe2f43a5708a850d554a6a017ee61438f04954c5",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      }
+    }
+  },
+  "baseline": {
+    "source_delta": {
+      "test/test_arithmetic_isolation.py": {
+        "measured": "de6bd09de664e12caed540ffbe2f43a5708a850d554a6a017ee61438f04954c5",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      }
+    }
+  },
+  "source_files": 673,
+  "source_sha256": "20e335f9dfa6bfb0e08d63af2e723e635dd0df39e061be3d328d76a7e56dbd73",
+  "learned_utility": "unproven"
+}

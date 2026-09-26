@@ -8,6 +8,7 @@ import torch
 from Layers import bounded_atanh as _bounded_atanh
 import torch.nn as nn
 import torch.nn.functional as F
+from GrammarPreference import operator_is_structural, structural_argmax, require_opaque_mlp
 import random
 try:
     from torchviz import make_dot
@@ -5127,6 +5128,11 @@ GRAMMAR_LAYER_CLASSES = {
     # Revive by moving the class back to Layers.py and re-adding it here.
 }
 
+# These shipped implementations have explicit grammatical contracts. An
+# extension must declare its own kind; merely borrowing a name is insufficient.
+for _structural_class in (*GRAMMAR_LAYER_CLASSES.values(), PiLayer, SigmaLayer):
+    _structural_class.routing_kind = 'structural'
+
 
 # ----------------------------------------------------------------------
 # Corpus-scale connective supervision (Phase R5)
@@ -7328,6 +7334,7 @@ def binary_tiling_soft_dp(
 def binary_tiling_viterbi(
     copy_score: torch.Tensor,
     reduce_score: torch.Tensor,
+    *, structural=None,
 ):
     """Argmax legal COPY/REDUCE tiling, multi-op.
 
@@ -7361,6 +7368,8 @@ def binary_tiling_viterbi(
     c_best, c_argop = copy_score.max(dim=-1)              # [B, N], [B, N]
     if R_reduce > 0 and N > 1:
         r_best, r_argop = reduce_score.max(dim=-1)
+        if structural is not None:
+            r_argop = structural_argmax(reduce_score, structural)
     else:
         r_best = copy_score.new_full((B, max(N - 1, 0)), NEG_INF)
         r_argop = torch.zeros(B, max(N - 1, 0), device=device, dtype=torch.long)
@@ -7896,7 +7905,8 @@ class SelectedThoughtChooser(nn.Module):
         features[:, 1] = concludes.to(features)
         return self.mlp(torch.cat((contexts, features), dim=-1)).squeeze(-1)
 
-    def choose(self, contexts, concludes, *, sample=False, temperature=1.0):
+    def choose(self, contexts, concludes, *, sample=False, temperature=1.0,
+               structural=None):
         """Return a hard action index and its live policy log probability."""
         logits = self.logits(contexts, concludes)
         if logits.numel() == 0:
@@ -7906,7 +7916,7 @@ class SelectedThoughtChooser(nn.Module):
         if sample and logits.numel() > 1:
             index = int(torch.multinomial(log_probs.detach().exp(), 1).item())
         else:
-            index = int(torch.argmax(logits.detach()).item())
+            index = int(structural_argmax(logits.detach(), structural).item())
         return index, log_probs[index]
 
 
@@ -8390,6 +8400,8 @@ class BinaryStructuredReductionLayer(nn.Module):
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(list(ops))
         self.r_reduce = len(self.ops)
+        require_opaque_mlp(self.ops, chooser)
+        self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
         self.r_copy = int(r_copy)
         self.context_net = context_net if context_net is not None else _IdentityContext()
         # Anchor-based scoring (Stern et al. 2017 / Vaswani et al. 2017
@@ -8637,7 +8649,8 @@ class BinaryStructuredReductionLayer(nn.Module):
         else:
             cs_dp, rs_dp = copy_score, reduce_score
         soft = binary_tiling_soft_dp(cs_dp, rs_dp)
-        hard = binary_tiling_viterbi(copy_score, reduce_score)
+        hard = binary_tiling_viterbi(copy_score, reduce_score,
+                                    structural=self.structural_ops)
 
         if hard["reduce_mask"].numel() > 0:
             reduce_op_per_pair = hard["reduce_mask"].argmax(-1)  # [B, N-1]
@@ -8661,7 +8674,8 @@ class BinaryStructuredReductionLayer(nn.Module):
             else:
                 op_soft = _masked_softmax_lastdim(reduce_score)     # [B, N-1, R]
                 op_hard = F.one_hot(
-                    op_soft.argmax(-1), num_classes=op_soft.shape[-1]
+                    structural_argmax(reduce_score, self.structural_ops),
+                    num_classes=op_soft.shape[-1]
                 ).to(op_soft.dtype)
                 op_weights = op_hard + op_soft - op_soft.detach()
             chosen_reduced = (op_weights.unsqueeze(-1) * stacked_reduced).sum(dim=2)
@@ -8777,6 +8791,8 @@ class UnaryStructuredLayer(nn.Module):
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(list(ops))
         self.r_apply = len(self.ops)
+        require_opaque_mlp(self.ops, chooser)
+        self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
         self.r_copy = int(r_copy)
         self.temperature = float(temperature)
         self.context_net = context_net if context_net is not None else _IdentityContext()
@@ -8924,7 +8940,9 @@ class UnaryStructuredLayer(nn.Module):
             # Hardened: forward uses argmax one-hot, backward gets the
             # softmax gradient via straight-through.
             action_hard = F.one_hot(
-                action_soft.argmax(-1), num_classes=action_soft.shape[-1]
+                structural_argmax(torch.cat([copy_score, apply_score], dim=-1),
+                                  (True,) * self.r_copy + self.structural_ops),
+                num_classes=action_soft.shape[-1]
             ).to(action_soft.dtype)
             action_probs = action_hard + action_soft - action_soft.detach()
 
@@ -8942,8 +8960,8 @@ class UnaryStructuredLayer(nn.Module):
         # At t=1 superposition_scale is 0, which would zero action_logits and
         # collapse the argmax to all-copy; argmax is invariant to the positive
         # 1/temperature factor, so this is byte-identical on the default path.
-        action_id = torch.cat(
-            [copy_score, apply_score], dim=-1).argmax(dim=-1)   # [B, N]
+        action_id = structural_argmax(torch.cat([copy_score, apply_score], dim=-1),
+                                     (True,) * self.r_copy + self.structural_ops)
         is_copy = action_id < self.r_copy
         gather_idx = action_id.unsqueeze(-1).unsqueeze(-1).expand(B, N, 1, D)
         hard_slab = branches.gather(dim=2, index=gather_idx).squeeze(2)
@@ -13814,6 +13832,9 @@ class SymbolSubSpace(SubSpace):
         router.transform_chooser = str(TheXMLConfig.get(
             "architecture.transformChooser", default="anchordot"))
         for arity, bucket in sorted(by_arity.items()):
+            if (router.transform_chooser != 'mlp'
+                    and any(not operator_is_structural(op) for op in bucket['ops'])):
+                raise ValueError('opaque grammar operators require the ordinary mlp chooser')
             if arity == 1:
                 router.attach_unary_ops(
                     ops=bucket["ops"], rule_ids=bucket["rule_ids"],
@@ -14832,7 +14853,8 @@ class _FunctionalLanguageChooser:
                 action_kind == 0, source_left >= 0)
 
         marginal = routing["reduce_marginal_op"][:, 0, :]
-        local_op = marginal.argmax(dim=-1)
+        flags = getattr(reducer, 'structural_ops', None)
+        local_op = structural_argmax(marginal, flags)
         trace_valid = can
         if not (occupancy_pressure or demand):
             trace_valid = torch.logical_and(
@@ -15137,6 +15159,14 @@ class LanguageSpace(nn.Module):
         logp = torch.log_softmax(logits, dim=-1)
         picked = logp.gather(1, target.clamp(0, n - 1).reshape(-1, 1)).reshape(-1)
         return torch.where(valid, -picked, torch.zeros_like(picked))
+
+    def choose_generate(self, logits):
+        """The existing generate policy's hard decision, with the same tie rule."""
+        if logits.shape[-1] == 1:
+            return logits.argmax(dim=-1)  # A disabled output policy only has STOP.
+        flags = tuple(operator_is_structural(op) for op in
+                      (*self._generate_binary_ops, *self._generate_unary_ops)) + (True,)
+        return structural_argmax(logits, flags)
 
     @property
     def language_layer(self):

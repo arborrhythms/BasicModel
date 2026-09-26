@@ -74,9 +74,9 @@ generation is expected at this stage and is recorded, not tuned away.
    preserved arbitrary-symbol poison probes and renamed-vocabulary controls.
    Numerical values or symbol IDs never supply learner arithmetic or answer
    seeds. Learned utility stays explicitly unproven until these comparisons
-   pass. The seed audit of `d4dc385` leaves the unseeded MM-grammar XOR gate
+   pass. The seed audit of `d4dc385` left the unseeded MM-grammar XOR gate
    failing (.21757 after 900 epochs, bar <.20), and the two `XOR_grammar.xml`
-   CLI gates stop before training at unsupported W=6. Keep these failures
+   CLI gates stopped before training at unsupported W=6. Keep these failures
    visible; no passing-seed selection or expected-failure waiver
    ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
    *Compatibility:* `XOR_grammar.xml` composes `not` / `conjunction` /
@@ -87,6 +87,22 @@ generation is expected at this stage and is recorded, not tuned away.
    packed/single byte reconstruction .6839025617 with exact parity. Learning
    quality gates follow the million-sentence prerequisite in item 9; mechanism
    and regression checks remain unconditional.
+   The [item-8 implementation](doc/benchmarks/2026-09-26-item8-review/README.md) implements
+   exact-score tie preference and committed-program routing measurements;
+   its [protocol](doc/benchmarks/2026-09-26-item8/PROTOCOL.md) predeclares the
+   qualified causal study. Learned utility and declining opaque routing remain
+   unproven. W=6 scheduling now reaches the next unchanged
+   CLI blocker: the six-row symbol inventory exhausts during the first epoch's
+   reset/autobind, after batch execution. Keep both CLI assertions and the
+   historical MM failing-seed result visible. All three declared diagnostic
+   seeds were attempted; seed 1 hit the 8 GiB guard and remains incomplete.
+   The initial 4,968-case full sweep exits 1 on an unchanged strict-XPASS
+   reconstruction marker. Claude's [review corrections](doc/benchmarks/2026-09-26-item8-review/README.md)
+   use the marginal uniformly and require complete reconstructed positions;
+   the marker and threshold remain intact. The corrected source passes its
+   single 4,980-case full sweep: 4,653 passed, 326 skipped and one expected
+   failure. Reconstruction exactly matches reviewed 9b. The review corrections
+   are validated for the requested commit; item 8's empirical gates remain open.
 - **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
    new session. One S = one LTM row: an absolute S fuses to one point and
    writes an idea row with derivation and `refs`; a relative S (generic

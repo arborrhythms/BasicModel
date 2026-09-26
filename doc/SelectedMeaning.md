@@ -177,14 +177,35 @@ development failures, the normal training smoke, the explicit slow language
 run and the full default receipt. The slow case is retained for reproduction;
 the preference measurements below need not become artificial passing tests.
 
-The preference goal is to use understandable structural operators whenever
-they carry the meaning. Any opaque operator competes through the ordinary
-grammar MLP, with structural choices preferred at equal fit. Measure the share
-of sentences routed through opaque operations, and require it to fall as
-structural coverage grows on the same corpus. This landing does not implement
-a preference guarantee or report that routing study; those remain explicit
-goals rather than synthetic passing tests.
+The item-8 implementation prefers a structural face on an **exact learned-score
+tie** in ordinary compose, thought and generate selection. This is a declared
+tie order, not proof that equal scores imply equal semantic quality. Higher
+opaque scores still win; no epsilon bonus, extra policy or answer target enters
+selection. Soft credit and sampled exploration retain their existing
+distributions. Existing structural catalogs retain their selection order and
+checkpoint parameters. Explicit opaque compose extensions require the grammar
+MLP; an unknown production implementation cannot use the anchor-only path.
+The functional choice and its reconstruction record apply that order to the
+committed marginal for every catalog.
+Because the thought chooser's output layer starts at zero, all candidates tie
+initially and deterministic untrained choices follow this order, with conclude
+counted as structural.
 
-The matched-compute, multi-seed direct-answer/no-subgoal comparison remains
-item 4 and gates every claim of learned utility, even when these mechanisms
-and the full regression suite pass.
+Classification belongs to the operator implementation, including through its
+adapter, not its spelling or a native symbol's numeric ID. The shipped named
+operators and their Pi/Sigma host implementations have structural contracts;
+learned parameters alone do not make them opaque. Unclassified extensions are
+counted as opaque. Copy/stop and padding are not executed grammar operations.
+`GrammarEvidence.RoutingCoverage` reads completed sentence programs at a
+measurement boundary and reports both sentence and operation opaque shares.
+Missing programs and unknown selected rules are errors, not descriptive zeros.
+
+The [item-8 protocol](benchmarks/2026-09-26-item8/PROTOCOL.md) declares the
+same-corpus growing-coverage study and held-out direct-answer/equal-compute
+comparisons across seeds 0/1/2, including reconstruction/discrimination and
+renamed-vocabulary controls. A catalog without an opaque candidate can only
+report a descriptive zero; it cannot establish declining use. The existing
+million-sentence FineWeb exposure prerequisite applies to learning quality,
+while correctness and poison checks remain unconditional. The qualified
+comparisons remain item 8 and gate every learned-utility claim. See the
+[review correction receipt](benchmarks/2026-09-26-item8-review/README.md) for measured limits.

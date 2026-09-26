@@ -1,0 +1,11 @@
+{
+  "doc/benchmarks/2026-09-26-item8/PROTOCOL.md": "59e20230f1c25181f2ad048de0dfbd000b4f598a5927a28e19aed21087ad29de",
+  "doc/benchmarks/2026-09-26-item8/run_baseline.py": "e4adebea19c1b459cc4ac0bb5da63863d3bf1f9f139a6f961746ca8439673684",
+  "doc/benchmarks/2026-09-26-item8/measure.py": "6d22c4f7cdd6f3d94d2b67ac5bebf1919d9ed8b0995704bea78ef7c9c84c4699",
+  "doc/benchmarks/2026-09-26-item8/archived-arithmetic-isolation-probes.py": "b39b809a2748c88038b5b83fff1c7a53122c985f1ece43f7fabb738822d15586",
+  "doc/benchmarks/2026-09-26-item8/package_receipt.py": "20cc74d036cf7c4ab1f20f3394de60bad44857c68a5ea8dc88310ac8b608e279",
+  "doc/benchmarks/2026-09-26-item8/run_measurements.py": "edfac9ac38d3c13868819d1c35206795598343ba7474cf329ccb2425aa680b97",
+  "doc/benchmarks/2026-09-21-item10/probe.py": "5c7382e9106ecf14fc6607674d0e60906c0b03b376de8f712719e0147aad0cc2",
+  "doc/benchmarks/2026-09-21-item10/parity.py": "2d8eb7b0e70f60cc534b84e25697571be238b0f34665ec6b756ee5bcf4903222",
+  "doc/benchmarks/2026-09-26-item9b-corrections/measurements/parity.xml": "52a0f956ab0b964354cacfd547c7e387909ca0fe4642752da13bd8437fb5cb61"
+}

@@ -1,0 +1,346 @@
+{
+  "red": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 11,
+    "completed": 11,
+    "unique_completed": 11,
+    "counts": {
+      "failed": 5,
+      "passed": 6
+    },
+    "seconds": 11.05895791691728,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 32,
+      "max_files": 1
+    },
+    "source_delta": {
+      "bin/Language.py": {
+        "measured": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332",
+        "current": "a04a3bfaf3eb5c59b4929f8705e8d0066347693be3b09c8c0305abef8500f71e"
+      },
+      "bin/Models.py": {
+        "measured": "cf1b6031cbb7abf42db105673c3bc2684c3bcd75c6bdb1760b338d75dbc56ed7",
+        "current": "18d2be23a605d2e287a163a235e991e85522787415c732dc2c1c40176e2c51e7"
+      },
+      "test/test_stm_recon_from_cleared_cache.py": {
+        "measured": "a6a1582cf0e652a467f09d6d59ce038f79e71814ec48826239cce3ac9198ad46",
+        "current": "69248342f221e88095581d9778669a84dad1dd9e90d9304ba7bc65d846106086"
+      }
+    },
+    "failures": [
+      {
+        "nodeid": "test/test_structural_preference.py::test_committed_marginal_controls_selection_for_every_catalog[flags0-expected0-functional]",
+        "phase": "call",
+        "message": "test/test_structural_preference.py:189: in test_committed_marginal_controls_selection_for_every_catalog\n    assert choice[2].tolist() == expected\nE   assert [1, 0, 0] == [0, 1, 1]\nE     \nE     At index 0 diff: 1 != 0\nE     Use -v to get more diff"
+      },
+      {
+        "nodeid": "test/test_structural_preference.py::test_committed_marginal_controls_selection_for_every_catalog[flags0-expected0-trace]",
+        "phase": "call",
+        "message": "test/test_structural_preference.py:198: in test_committed_marginal_controls_selection_for_every_catalog\n    assert ids[:, 0].tolist() == [[17, 23][i] for i in expected]\nE   assert [23, 17, 17] == [17, 23, 23]\nE     \nE     At index 0 diff: 23 != 17\nE     Use -v to get more diff"
+      },
+      {
+        "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+        "phase": "call",
+        "message": "test/test_stm_recon_from_cleared_cache.py:250: in test_topk_overlap_requires_every_forward_position\n    assert _topk_overlap(torch.tensor(forward), torch.tensor(recovered)) == expected\nE   assert 1.0 == 0.0\nE    +  where 1.0 = _topk_overlap(tensor([[ 7, 11]]), tensor([[[7, 1, 2]]]))\nE    +    where tensor([[ 7, 11]]) = <built-in method tensor of type object at 0x10ebd13a0>([[7, 11]])\nE    +      where <built-in method tensor of type object at 0x10ebd13a0> = torch.tensor\nE    +    and   tensor([[[7, 1, 2]]]) = <built-in method tensor of type object at 0x10ebd13a0>([[[7, 1, 2]]])\nE    +      where <built-in method tensor of type object at 0x10ebd13a0> = torch.tensor"
+      },
+      {
+        "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+        "phase": "call",
+        "message": "test/test_stm_recon_from_cleared_cache.py:250: in test_topk_overlap_requires_every_forward_position\n    assert _topk_overlap(torch.tensor(forward), torch.tensor(recovered)) == expected\nE   assert 1.0 == 0.0\nE    +  where 1.0 = _topk_overlap(tensor([[7]]), tensor([[[ 7,  1,  2],\\n         [11,  1,  2]]]))\nE    +    where tensor([[7]]) = <built-in method tensor of type object at 0x10ebd13a0>([[7]])\nE    +      where <built-in method tensor of type object at 0x10ebd13a0> = torch.tensor\nE    +    and   tensor([[[ 7,  1,  2],\\n         [11,  1,  2]]]) = <built-in method tensor of type object at 0x10ebd13a0>([[[7, 1, 2], [11, 1, 2]]])\nE    +      where <built-in method tensor of type object at 0x10ebd13a0> = torch.tensor"
+      },
+      {
+        "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+        "phase": "call",
+        "message": "test/test_stm_recon_from_cleared_cache.py:250: in test_topk_overlap_requires_every_forward_position\n    assert _topk_overlap(torch.tensor(forward), torch.tensor(recovered)) == expected\nE   assert 1.0 == 0.0\nE    +  where 1.0 = _topk_overlap(tensor([[ 7],\\n        [11]]), tensor([[[7, 1, 2]]]))\nE    +    where tensor([[ 7],\\n        [11]]) = <built-in method tensor of type object at 0x10ebd13a0>([[7], [11]])\nE    +      where <built-in method tensor of type object at 0x10ebd13a0> = torch.tensor\nE    +    and   tensor([[[7, 1, 2]]]) = <built-in method tensor of type object at 0x10ebd13a0>([[[7, 1, 2]]])\nE    +      where <built-in method tensor of type object at 0x10ebd13a0> = torch.tensor"
+      }
+    ],
+    "peak_worker_bytes": 436192552,
+    "compile_cache_retries": []
+  },
+  "selector-error": {
+    "exit_code": 4,
+    "reason": "collection_exit",
+    "selected": 0,
+    "completed": 0,
+    "unique_completed": 0,
+    "counts": {},
+    "seconds": 1.3754542500246316,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 16,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [],
+    "peak_worker_bytes": 0,
+    "compile_cache_retries": []
+  },
+  "affected": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 140,
+    "completed": 140,
+    "unique_completed": 140,
+    "counts": {
+      "passed": 124,
+      "xfailed": 1,
+      "skipped": 15
+    },
+    "seconds": 147.71623100002762,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 16,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [],
+    "peak_worker_bytes": 4509733664,
+    "compile_cache_retries": []
+  },
+  "xor-gates": {
+    "exit_code": 1,
+    "reason": "test_failure",
+    "selected": 5,
+    "completed": 5,
+    "unique_completed": 5,
+    "counts": {
+      "failed": 2,
+      "skipped": 3
+    },
+    "seconds": 25.813098208978772,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25854: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25961: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3941: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11419: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16796: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16016: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16549: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16668: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:17032: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25878: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:25001: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+      },
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "phase": "call",
+        "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25854: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25961: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3941: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11419: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16796: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16016: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16549: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16668: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:17032: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25878: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:25001: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+      }
+    ],
+    "peak_worker_bytes": 661947856,
+    "compile_cache_retries": []
+  },
+  "full": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 4980,
+    "completed": 4980,
+    "unique_completed": 4980,
+    "counts": {
+      "passed": 4653,
+      "skipped": 326,
+      "xfailed": 1
+    },
+    "seconds": 1417.8377766250633,
+    "limits": {
+      "memory_bytes": 25769803776,
+      "aggregate_memory_bytes": 25769803776,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 3,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 7200.0,
+      "batch_size": 32,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [],
+    "peak_worker_bytes": 7723637120,
+    "compile_cache_retries": []
+  },
+  "documentation": {
+    "exit_code": 0,
+    "reason": "passed",
+    "selected": 104,
+    "completed": 104,
+    "unique_completed": 104,
+    "counts": {
+      "passed": 104
+    },
+    "seconds": 16.21777300001122,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 32,
+      "max_files": 1
+    },
+    "source_delta": {},
+    "failures": [],
+    "peak_worker_bytes": 429720968,
+    "compile_cache_retries": []
+  },
+  "measurements": {
+    "source_delta": {},
+    "processes": {
+      "serial_baseline": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item8/measure.py",
+          "baseline",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/serial-baseline.json"
+        ],
+        "pid": 74790,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4230320640,
+        "elapsed_seconds": 45.34141108300537,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/serial-baseline.log"
+      },
+      "packed": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item9b-corrections/measurements/parity.xml",
+          "--parity",
+          "packed",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-parity/packed.json"
+        ],
+        "pid": 75167,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4907815328,
+        "elapsed_seconds": 49.80342912499327,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-parity/packed.log"
+      },
+      "single": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item9b-corrections/measurements/parity.xml",
+          "--parity",
+          "single",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-parity/single.json"
+        ],
+        "pid": 75245,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4907946472,
+        "elapsed_seconds": 49.574345333036035,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-parity/single.log"
+      }
+    },
+    "initial_import_failures": {
+      "serial-baseline": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item8/measure.py",
+          "baseline",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/serial-baseline.json"
+        ],
+        "pid": 74790,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4230320640,
+        "elapsed_seconds": 45.34141108300537,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/serial-baseline.log"
+      },
+      "packed": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item9b-corrections/measurements/parity.xml",
+          "--parity",
+          "packed",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/packed.json"
+        ],
+        "pid": 74929,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 156123904,
+        "elapsed_seconds": 1.7930642920546234,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/packed.log"
+      },
+      "single": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item9b-corrections/measurements/parity.xml",
+          "--parity",
+          "single",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/single.json"
+        ],
+        "pid": 74933,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 127107864,
+        "elapsed_seconds": 1.5312602919293568,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item8-review-measurements/single.log"
+      }
+    }
+  },
+  "retained_seed_diagnostics": {
+    "receipt": "../2026-09-26-item8/xor-summary.json",
+    "rerun": false,
+    "source_delta": {
+      "bin/Language.py": {
+        "measured": "e7e5bc2edc8c9540926bd4372b108180954fdae4ce1def0612732bf10ab85332",
+        "current": "a04a3bfaf3eb5c59b4929f8705e8d0066347693be3b09c8c0305abef8500f71e"
+      },
+      "bin/Models.py": {
+        "measured": "cf1b6031cbb7abf42db105673c3bc2684c3bcd75c6bdb1760b338d75dbc56ed7",
+        "current": "18d2be23a605d2e287a163a235e991e85522787415c732dc2c1c40176e2c51e7"
+      },
+      "test/test_arithmetic_isolation.py": {
+        "measured": "de6bd09de664e12caed540ffbe2f43a5708a850d554a6a017ee61438f04954c5",
+        "current": "43b317409d1d3d7c756de65c4f61b6a87870c2c234897d87a9220ebd7fb1ecc9"
+      },
+      "test/test_stm_recon_from_cleared_cache.py": {
+        "measured": "a8ef04debddfa06d0d8d3bed548ca352672cbf9440cd962b35c453a96d1ec412",
+        "current": "69248342f221e88095581d9778669a84dad1dd9e90d9304ba7bc65d846106086"
+      },
+      "test/test_structural_preference.py": {
+        "measured": "ef0d7dee9075740c367da6aeafaea87fb918bc74e77539d9f257f82db3871057",
+        "current": "72bc412443ff68047b36dc2bc30682d5c10b51d754f44fd76f3ebccdff064f02"
+      }
+    },
+    "seed_1": "incomplete: original 8 GiB memory stop, not replaced"
+  },
+  "source_files": 673,
+  "source_sha256": "aa88d5d6c5c898c6b9aab8e549bdf61bba6c4849ab51699fc0a8874892eba9c1",
+  "learned_utility": "unproven",
+  "opaque_routing_decline": "unproven"
+}

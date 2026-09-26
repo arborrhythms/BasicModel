@@ -1,0 +1,45 @@
+[
+  {
+    "seed": 0,
+    "updates": 900,
+    "initial": 0.25002917647361755,
+    "final": 0.014360625296831131,
+    "minimum": 0.014349101111292839,
+    "inherited_bar": 0.2,
+    "below_bar": true,
+    "learned_utility": "unproven"
+  },
+  {
+    "seed": 1,
+    "updates": null,
+    "status": "incomplete",
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item8/measure.py",
+        "xor",
+        "--seed",
+        "1",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item8-measurements/xor-1.json"
+      ],
+      "pid": 68147,
+      "exit_code": 137,
+      "reason": "memory",
+      "peak_memory_bytes": 8593677296,
+      "elapsed_seconds": 215.40524300001562,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item8-measurements/xor-1.log"
+    },
+    "learned_utility": "unproven"
+  },
+  {
+    "seed": 2,
+    "updates": 900,
+    "initial": 0.25050097703933716,
+    "final": 0.00025620177621021867,
+    "minimum": 1.4654943925052066e-14,
+    "inherited_bar": 0.2,
+    "below_bar": true,
+    "learned_utility": "unproven"
+  }
+]
