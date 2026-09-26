@@ -102,7 +102,7 @@ def _build_text_pair(nInput):
     inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
                             [nInput, _idim + _iobj], model_type="embedding")
     psp = Models.PartSpace([nInput, _idim + _iobj],
-                                 [nInput, _pdim],
+                                 [256, _pdim],
                                  [nInput, _pdim + _pobj],
                                  model_type="embedding")
     # Wire the peer reference BasicModel.create_from_config normally installs.
@@ -1769,7 +1769,7 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         emb = Models.Embedding()
         emb.create(
             nInput=8,
-            nVectors=8,
+            nVectors=256,
             nDim=10,
             embedding_path=None,
             source=["the dog barks"],
@@ -1794,7 +1794,7 @@ class TestMaskCodebookEntry(unittest.TestCase):
         """get_mask_embedding() returns a zero vector; [MASK] is not in vocab."""
         _populate_test_config(nWhere=0, nWhen=0)
         emb = Models.Embedding()
-        emb.create(nInput=10, nVectors=2, nDim=10, embedding_path=None)
+        emb.create(nInput=10, nVectors=256, nDim=10, embedding_path=None)
         self.assertNotIn("[MASK]", emb.pretrain.key_to_index)
         mask_vec = emb.get_mask_embedding()
         self.assertTrue(torch.all(mask_vec == 0.0))
@@ -1822,7 +1822,7 @@ class TestEmbeddingErgodicForward(unittest.TestCase):
     def _make_embedding(self, text="the dog"):
         _populate_test_config(nWhere=0, nWhen=0)
         emb = Models.Embedding()
-        emb.create(nInput=8, nVectors=8, nDim=10, embedding_path=None, source=[text])
+        emb.create(nInput=8, nVectors=256, nDim=10, embedding_path=None, source=[text])
         return emb
 
     def _seed_sigma(self, emb, word):
@@ -2366,8 +2366,12 @@ class TestVocabSaveRestore(unittest.TestCase):
             emb2 = m2._get_embedding()
             self.assertNotEqual(len(emb2.pretrain.index_to_key), len(vocab_before))
 
-            # Single-artifact load: state_dict + vocab_extras + bpe_extras.
+            parameter = emb2.wv._vectors
+            optimizer = emb2.pretrain.optimizer
+            # Single-artifact load preserves the declared physical owner.
             self.assertTrue(m2.load_weights(ckpt_path))
+            self.assertIs(emb2.wv._vectors, parameter)
+            self.assertIs(optimizer.param_groups[0]['params'][0], parameter)
             emb2 = m2._get_embedding()
             self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
             # Embedding shapes / values must match.

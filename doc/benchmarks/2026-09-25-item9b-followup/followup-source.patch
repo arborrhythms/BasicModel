@@ -1,0 +1,1415 @@
+--- /dev/null
++++ b/bin/CategoricalDiscrimination.py
+@@ -0,0 +1,45 @@
++"""Descriptive logger metrics over the fixed item 9b probe set.
++
++The caller supplies readings already collected at a logging interval. This
++module does no model execution, training, admission, or symbol read-back.
++"""
++import json
++from pathlib import Path
++
++import torch
++
++
++FIXED_PROBES = json.loads((Path(__file__).resolve().parents[1] /
++    'data/categorical_discrimination_probes.json').read_text())['sets']
++
++
++@torch.no_grad()
++def categorical_discrimination(readings, labels):
++    """Return between-minus-within L2, counting each unordered pair once.
++
++    Logging owns the host copy. A single pairwise kernel replaces the old
++    per-pair device-to-host conversions; neither value is a pass threshold.
++    """
++    values = (readings if torch.is_tensor(readings) else torch.stack(readings))
++    if values.ndim < 2 or values.shape[0] != len(labels):
++        raise ValueError('one reading is required for every fixed probe')
++    values = values.detach().to(device='cpu', dtype=torch.float32).flatten(1)
++    within = torch.tensor([labels[i] == labels[j]
++                           for i in range(len(labels))
++                           for j in range(i + 1, len(labels))], device='cpu')
++    nw = int(within.sum())
++    nb = len(within) - nw
++    if min(nw, nb) == 0:
++        raise ValueError('discrimination requires within- and between-category pairs')
++    distances = torch.pdist(values)
++    dw, db = torch.stack((distances[within].mean(), distances[~within].mean())).tolist()
++    return dict(cp=db-dw, within=dw, between=db, within_pairs=nw, between_pairs=nb)
++
++
++def fixed_probe_discrimination(readings):
++    """One JSON-ready logger field; zero/unknown probe readings stay included."""
++    if set(readings) != set(FIXED_PROBES):
++        raise ValueError('fixed probe readings must include xor and fineweb')
++    return {'categorical_discrimination': {
++        name: categorical_discrimination(readings[name], probes['labels'])
++        for name, probes in FIXED_PROBES.items()}}
+--- a/bin/ModeSchedule.py
++++ b/bin/ModeSchedule.py
+@@ -1,8 +1,33 @@
+ """Alternate complete passes over the same sentences in one model inventory."""
+ from contextlib import contextmanager
++from functools import wraps
++import inspect
+ import re
+ 
+-import torch
++
++def scheduled_epoch(method):
++    """Keep a training continuation independent of an evaluation cursor."""
++    @wraps(method)
++    def run(model, *args, **kwargs):
++        schedule = getattr(model, 'mode_schedule', None)
++        if schedule is None or not schedule.every:
++            return method(model, *args, **kwargs)
++        call = inspect.signature(method).bind(model, *args, **kwargs)
++        call.apply_defaults()
++        evaluation = call.arguments['optimizer'] is None
++        resuming = (call.arguments.get('split', 'train') == 'train'
++                    and bool(getattr(model, '_resume_batches_to_skip', 0)))
++        pending = schedule.pending
++        if evaluation or not resuming:
++            # A fresh epoch starts its own cursor. An actual mid-epoch
++            # training resume keeps the unread prefix restored with it.
++            schedule.pending = []
++        try:
++            return method(model, *args, **kwargs)
++        finally:
++            if evaluation:
++                schedule.pending = pending
++    return run
+ 
+ 
+ class ModeSchedule:
+@@ -20,15 +45,46 @@
+     def serial(self):
+         return self.value != 'parallel'
+ 
+-    def append(self, sentences):
+-        if not self.every:
+-            return []
+-        self.pending.extend(sentences)
+-        groups = []
+-        while len(self.pending) >= self.every:
+-            groups.append(tuple(self.pending[:self.every]))
+-            del self.pending[:self.every]
+-        return groups
++    def context_for(self, sentences, context=None):
++        """Validate a serial prefix against its already-read native group."""
++        sentences = tuple(sentences)
++        if not sentences:
++            raise ValueError('interleave requires complete nonempty sentence groups')
++        if self.pending:
++            if context is not None:
++                raise ValueError('interleave context was already read for the pending group')
++            group = tuple(self.pending)
++        else:
++            group = tuple(sentences if context is None else context)
++            if not 1 <= len(group) <= self.every:
++                raise ValueError('interleave context must contain at most N complete sentences')
++            if context is None and len(group) != self.every:
++                raise ValueError('interleave needs look-ahead: supply schedule_context for the coming group')
++        if sentences != group[:len(sentences)]:
++            raise ValueError('serial sentences do not match the pending interleave context')
++        return None if self.pending else group
++
++    def state_dict(self):
++        return dict(version=2, value=self.value, pending=list(self.pending),
++                    completed_parallel=self.completed_parallel)
++
++    def load_state_dict(self, state):
++        pending = list(state.get('pending', ()))
++        if state.get('version') != 2 and pending:
++            raise ValueError('cannot resume serial-first interleave state; finish that group on its original runtime')
++        if pending and state.get('value') != self.value:
++            raise ValueError('cannot change modeSchedule with an unfinished interleave group')
++        if len(pending) > self.every or not all(isinstance(s, str) for s in pending):
++            raise ValueError('invalid pending interleave sentences')
++        self.pending = pending
++        self.completed_parallel = int(state.get('completed_parallel', 0))
++
++    def validate_resume(self, state):
++        """A changed grouping would make saved cursor ticks mean other rows."""
++        saved = (state or {}).get('value', '')
++        if self.every or saved.startswith('interleave:'):
++            if not state or state.get('version') != 2 or saved != self.value:
++                raise ValueError('mid-epoch interleave resume requires the same parallel-first modeSchedule')
+ 
+     @contextmanager
+     def parallel_pass(self, model):
+@@ -54,37 +110,52 @@
+             for owner, name, value in reversed(saved):
+                 object.__setattr__(owner, name, value)
+ 
+-    def resymbolize(self, model, word_ids, *, training=False):
+-        """Reverse pi of each recorded word against this pass's native field."""
+-        cs = model.conceptualSpaces[0]
+-        field = getattr(model, '_combine_last_cs_sub', None)
+-        evidence = getattr(field, '_concept_activations', None)
+-        if evidence is None:
+-            raise RuntimeError('re-symbolization requires the completed native field')
+-        addresses = field._concept_inventory_rows
+-        ids = field._concept_ids
+-        selected = torch.zeros_like(evidence)
+-        for batch, words in enumerate(word_ids):
+-            column = ids[:, batch] if ids.ndim == 2 else ids
+-            for word in words:
+-                # Interpret's reverse owns the label identity. The existing
+-                # native word row is the reverse-pi query; no spelling is read.
+-                from Spaces import _concept_alloc_of
+-                record = _concept_alloc_of(cs).interpretations.get((int(word), 1))
+-                if record is None:
+-                    raise RuntimeError('re-symbolization requires the serial word interpretation')
+-                label = cs.interpret.reverse(record[0])
+-                selected[:, batch] = torch.where((column == label)[:, None, None],
+-                                                  evidence[:, batch], selected[:, batch])
+-        feedback = cs.cs_reverse_presence(selected, observed=evidence,
+-                                          inventory_rows=addresses)
+-        cs._label_feedback = feedback.detach()
+-        # Read-back selects the witnessed support of these labels. Publish
+-        # that selection as knowing, so the same pass's reconstruction and
+-        # learning consume it, rather than leaving it as a diagnostic tensor.
+-        field._concept_activations = feedback
+-        if training:
+-            cs._cs_order0_raw = feedback[:cs._field_caps()[0]].detach()
+-            cs._witness_concept_poles()
+-        model.symbolSpace.forward_concept_to_symbol(field)
+-        return feedback
++
++class InterleaveCursor:
++    """Stage N whole sentences, then yield serial batches without crossing groups.
++
++    Staging reads host corpus records, including their targets and source ids.
++    It does no model work. A short final group is emitted in full. Resume can
++    replay this deterministic cursor while skipping completed serial batches.
++    """
++    def __init__(self, source, *, every, batch_size):
++        self.inputs, self.outputs = source.inputs, source.outputs
++        if (not isinstance(self.inputs, (list, tuple)) or not self.inputs
++                or not all(isinstance(s, str) for s in self.inputs)):
++            raise ValueError('interleave requires a corpus of complete text sentences')
++        self.document_ids = getattr(source, 'document_ids', None)
++        self.every = int(every)
++        self.num_streams = min(int(batch_size), self.every, len(self.inputs))
++        if min(self.every, self.num_streams) < 1:
++            raise ValueError('interleave requires positive group and batch sizes')
++        self.position = self.group_end = 0
++        self.last_source_indices = None
++        self.context_sentences = None
++
++    def all_done(self):
++        return self.position >= len(self.inputs)
++
++    def progress(self):
++        return self.position / len(self.inputs)
++
++    def next_tick(self):
++        if self.all_done():
++            raise StopIteration
++        self.context_sentences = None
++        if self.position == self.group_end:
++            self.group_end = min(self.position + self.every, len(self.inputs))
++            self.context_sentences = tuple(self.inputs[self.position:self.group_end])
++        end = min(self.position + self.num_streams, self.group_end)
++        indices = list(range(self.position, end))
++        inputs = [self.inputs[i] for i in indices]
++        outputs = (None if self.outputs is None else
++                   [self.outputs[i] for i in indices])
++        self.position = end
++        self.last_source_indices = indices
++        remaining = (self.group_end - end if end < self.group_end else
++                     min(self.every, len(self.inputs) - end))
++        next_size = min(self.num_streams, remaining)
++        hard = [self.document_ids is None or next_size != len(indices)
++                or self.document_ids[i] != self.document_ids[end + b]
++                for b, i in enumerate(indices)]
++        return inputs, outputs, hard
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -55,6 +55,7 @@
+ import torch.optim as optim
+ from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
+ from functools import partial, wraps
++from ModeSchedule import scheduled_epoch
+ from datetime import datetime
+ 
+ import util
+@@ -4403,8 +4404,7 @@
+                 "training_step_count": int(getattr(
+                     self, "_training_step_count", 0) or 0),
+                 "word_observation_serial": int(getattr(self, "_word_observation_serial", 0)),
+-                "mode_schedule": ({'pending': self.mode_schedule.pending,
+-                                   'completed_parallel': self.mode_schedule.completed_parallel}
++                "mode_schedule": (self.mode_schedule.state_dict()
+                                   if getattr(self, 'mode_schedule', None) else None),
+                 "operator_gradient_opposition": dict(getattr(
+                     self, "_operator_gradient_opposition", {})),
+@@ -5784,9 +5784,9 @@
+             training_state.get("training_step_count", 0) or 0)
+         self._word_observation_serial = int(training_state.get("word_observation_serial", 0))
+         schedule = training_state.get('mode_schedule')
++        self._checkpoint_mode_schedule_state = schedule
+         if schedule and getattr(self, 'mode_schedule', None):
+-            self.mode_schedule.pending = list(schedule.get('pending', ()))
+-            self.mode_schedule.completed_parallel = int(schedule.get('completed_parallel', 0))
++            self.mode_schedule.load_state_dict(schedule)
+         self._operator_gradient_opposition = dict(
+             training_state.get("operator_gradient_opposition", {}))
+         self._train_batches_seen = int(
+@@ -14527,7 +14527,7 @@
+                                self.grammatical_thoughts, self._grammar_target_word)}
+         return {name: cost for name, cost in costs.items() if cost is not None} or None
+ 
+-    def runBatch(self, *args, **kwargs):
++    def runBatch(self, *args, schedule_context=None, **kwargs):
+         schedule = getattr(self, 'mode_schedule', None)
+         if schedule is None or not schedule.every:
+             return self._run_batch_once(*args, **kwargs)
+@@ -14537,46 +14537,48 @@
+         call = arguments.arguments
+         if call['exploration_trial']:
+             return self._run_batch_once(*args, **kwargs)
+-        self._scheduled_serial_snapshot = None
+-        result = self._run_batch_once(*args, **kwargs)
+-        records = self._scheduled_serial_snapshot or ()
+-        for group in schedule.append(records):
+-            texts, words = zip(*group)
+-            raw = self.inputSpace.prepInput(list(texts))
+-            # Reuse the ordinary batch transaction with native reconstruction
+-            # questions. The second pass is not a second external observation.
+-            with schedule.parallel_pass(self):
+-                from What import What
+-                self._scheduled_resymbolize_words = words
+-                try:
+-                    parallel, _ = self._run_batch_once(
+-                        train=call['train'],
+-                        batchNum=call['batchNum'], batchSize=len(group),
+-                        split=call['split'], optimizer=call['optimizer'],
+-                        batch_override=(raw, torch.empty(len(group), 0, device=raw.device)),
+-                        questions=tuple(What.present(b, split=call['split'])
+-                                        for b in range(len(group))), exploration_trial=True)
+-                    self._last_parallel_pass_loss = self._last_primary_costs['input_reconstruction_reverse']
+-                    schedule.completed_parallel += 1
+-                finally:
+-                    self._scheduled_resymbolize_words = None
+-        return result
+-
+-    def _snapshot_scheduled_sentences(self, input_tensor):
+-        schedule = getattr(self, 'mode_schedule', None)
+-        if schedule is None or not schedule.every or not self.serial:
+-            return
+         isp = self.inputSpace
+         packed = getattr(isp, '_packed_sentence_rows', None)
+-        if packed is None:
+-            raw = input_tensor.detach().to('cpu').reshape(input_tensor.shape[0], -1)
+-            packed = tuple((bytes(row.tolist()).rstrip(b'\0').decode('utf-8'),) for row in raw)
+-        ids = isp._ar_word_concept_ids.detach().cpu()
+-        active = isp._word_active_mask.detach().cpu()
+-        sentences = isp._packed_sentence_ids.detach().cpu()
+-        self._scheduled_serial_snapshot = tuple(
+-            (text, tuple(ids[b, active[b] & (sentences[b] == sentence)].tolist()))
+-            for b, texts in enumerate(packed) for sentence, text in enumerate(texts))
++        texts = (tuple(text for row in packed for text in row) if packed is not None
++                 else tuple(getattr(isp, '_last_sentences', None) or ()))
++        context = schedule.context_for(texts, schedule_context)
++        if context is not None:
++            if any(len(text.encode('ascii', errors='replace')) > int(isp.data.inputLength)
++                   for text in context):
++                raise ValueError('interleave context sentence exceeds InputSpace byte capacity')
++            teacher = getattr(self, 'teacher', None)
++            staged_split = getattr(teacher, '_staged_split', None)
++            staged_rows = getattr(teacher, '_staged_source_rows', None)
++            # Context has no supplied answer and consumes no external source
++            # observation. Restore the serial presentation and its lesson
++            # after the native pass, including packed sentence boundaries.
++            try:
++                if teacher is not None:
++                    teacher.stage_batch_sources(call['split'], None)
++                raw = isp.prepInput(list(context))
++                with schedule.parallel_pass(self):
++                    from What import What
++                    self._run_batch_once(train=call['train'], optimizer=call['optimizer'],
++                        batchNum=call['batchNum'], batchSize=len(context), split=call['split'],
++                        batch_override=(raw, torch.empty(len(context), 0, device=raw.device)),
++                        questions=tuple(What.present(b, split=call['split'])
++                                        for b in range(len(context))), exploration_trial=True)
++                    self._last_parallel_pass_loss = (
++                        None if not call['train'] and call['split'] == 'runtime' else
++                        self._last_primary_costs['input_reconstruction_reverse'].detach())
++                schedule.completed_parallel += 1
++                schedule.pending = list(context)
++                self._detach_persistent_state()
++            finally:
++                if packed is not None:
++                    isp.prepPackedInput(packed)
++                else:
++                    isp.prepInput(list(texts))
++                if teacher is not None:
++                    teacher.stage_batch_sources(staged_split or call['split'], staged_rows)
++        result = self._run_batch_once(*args, **kwargs)
++        del schedule.pending[:len(texts)]
++        return result
+ 
+     def _run_batch_once(self, train=True, batchNum=0, batchSize=10, split="train",
+                  optimizer=None, batch_override=None, progress=None,
+@@ -14992,10 +14994,6 @@
+                 if superposition_temperature is not None:
+                     self._set_superposition_temperature(None)
+                 self._exploration_trial = False
+-            labels = getattr(self, '_scheduled_resymbolize_words', None)
+-            if labels is not None:
+-                self.mode_schedule.resymbolize(self, labels, training=train)
+-                self._last_understanding = self._capture_understanding(_forward_result)
+             self._end_step()
+             # Unconditional SEEN priming: the rows this forward fired bump
+             # their surfaces (no-grad bookkeeping; consumers read next batch).
+@@ -15934,7 +15932,6 @@
+         self._ir_mask_positions = None
+         self._ir_pre_mask_input = None
+ 
+-        self._snapshot_scheduled_sentences(inputTensor)
+         self.End()
+         return result, batchNum
+ 
+@@ -16285,6 +16282,7 @@
+                     break
+             self._thread.join(timeout=2.0)
+ 
++    @scheduled_epoch
+     def runEpoch(self, optimizer=None, batchSize=10, split="train",
+                  max_batches=None):
+         """Run one epoch over the dataset (training if optimizer given, eval if None).
+@@ -16293,6 +16291,9 @@
+         split is consumed as ``B = batchSize`` contiguous streams. ``B`` is
+         capped at ``len(split)`` by ``data_loader``, so small eval sets
+         degrade gracefully.
++
++        Interleaving instead stages complete N-sentence groups in corpus
++        order and consumes them in serial batches up to ``batchSize``.
+ 
+         ``max_batches`` (optional int): cap the outer cursor loop at this
+         many ``runBatch`` calls. ``None`` (default) walks the full split.
+@@ -16417,9 +16418,12 @@
+             and isinstance(self.inputSpace.data.train_input[0], str)
+         )
+         byte_lexer = getattr(self, 'lexer', None) in ('byte', 'bytes')
+-        use_byte_cursor = (text_input and byte_lexer)
++        schedule = getattr(self, 'mode_schedule', None)
++        interleaving = bool(schedule is not None and schedule.every)
++        use_byte_cursor = (text_input and byte_lexer and not interleaving)
+         use_packed_cursor = bool(
+-            training
++            not interleaving
++            and training
+             and split == "train"
+             and text_input
+             and not byte_lexer
+@@ -16460,6 +16464,9 @@
+             slab_bytes=slab_bytes,
+         )
+         ds = loader.dataset
++        if interleaving:
++            from ModeSchedule import InterleaveCursor
++            ds = InterleaveCursor(ds, every=schedule.every, batch_size=batchSize)
+         B_eff = ds.num_streams
+ 
+         packed_next = None
+@@ -16500,6 +16507,8 @@
+                 self, "_resume_batches_to_skip", 0) or 0)
+             saved_batch_size = getattr(
+                 self, "_checkpoint_batch_size", None)
++            if resume_skip and schedule is not None:
++                schedule.validate_resume(getattr(self, '_checkpoint_mode_schedule_state', None))
+             if (resume_skip and saved_batch_size is not None
+                     and int(saved_batch_size) != int(batchSize)):
+                 raise ValueError(
+@@ -16515,7 +16524,9 @@
+                 ds, queue_size=num_workers,
+                 next_fn=packed_next if use_packed_cursor else None,
+                 done_fn=packed_done if use_packed_cursor else None)
+-            if num_workers > 0 else None)
++            if num_workers > 0 and not interleaving else None)
++        # InterleaveCursor already stages a whole host group; its context
++        # metadata must travel with the exact serial tick, not a later one.
+ 
+         # Pre-build the AR stub outputs once for the byte-cursor path
+         # (every tick reuses them; the AR target is the input bytes).
+@@ -16695,6 +16706,7 @@
+                     questions=_cur_questions,
+                     trial_mode=_trial_mode,
+                     source_rows=source_rows,
++                    schedule_context=(ds.context_sentences if interleaving else None),
+                 )
+                 if result is not None:
+                     record(result)
+--- a/bin/bench_mode_erosion.py
++++ /dev/null
+@@ -1,261 +0,0 @@
+-"""Item 9b's descriptive, three-seed native-membership erosion measurement.
+-
+-Seeds make measurements reproducible; no ordering is asserted or tuned.
+-The probe labels are XOR outcomes and native orthographic property classes,
+-not hand-assigned semantic categories. See the emitted protocol and receipt.
+-"""
+-import argparse
+-import copy
+-from contextlib import contextmanager, nullcontext
+-import gc
+-import hashlib
+-import json
+-from pathlib import Path
+-import random
+-import time
+-import xml.etree.ElementTree as ET
+-
+-import numpy as np
+-import torch
+-
+-
+-@contextmanager
+-def eager_native_loops():
+-    """Execute the native recurrence bodies without per-vocabulary compilation.
+-
+-    This CPU measurement compares memberships and learning, not throughput.
+-    Carry tensors and operations are identical; only the loop dispatcher is
+-    eager so changing sentence banks do not compile hundreds of graphs.
+-    """
+-    original = torch.while_loop
+-    def run_loop(cond, body, carries):
+-        while bool(cond(*carries)):
+-            carries = body(*carries)
+-        return carries
+-    torch.while_loop = run_loop
+-    try:
+-        yield
+-    finally:
+-        torch.while_loop = original
+-
+-
+-def discrimination(readings, labels):
+-    """Mean pairwise L2 distances, with every unordered pair counted once."""
+-    within, between = [], []
+-    for i, left in enumerate(readings):
+-        for j in range(i + 1, len(readings)):
+-            distance = float(torch.linalg.vector_norm(left - readings[j]))
+-            (within if labels[i] == labels[j] else between).append(distance)
+-    if not within or not between:
+-        raise ValueError('erosion probes need both within- and between-category pairs')
+-    dw, db = sum(within) / len(within), sum(between) / len(between)
+-    return dict(cp=db-dw, within=dw, between=db,
+-                within_pairs=len(within), between_pairs=len(between))
+-
+-
+-def launch_probes(root):
+-    from data import iter_documents
+-    from util import parse
+-    shard = root / 'data/fineweb/shard_00000.parquet'
+-    documents = list(iter_documents([str(shard)], max_docs=20))
+-    if len(documents) != 20:
+-        raise RuntimeError('the erosion gate requires the 20-document launch corpus')
+-    sentences, words = [], []
+-    for document in documents:
+-        candidates = [text for text, _ in parse(document, lex='sentences')
+-                      if 1 <= len(text.split()) <= 12 and len(text.encode()) <= 256]
+-        if not candidates:
+-            raise RuntimeError('launch document has no complete sentence within the declared probe budget')
+-        sentences.append(candidates[0])
+-        # Fixed discovery order, up to four distinct alphanumeric word forms
+-        # per document, retaining the native letter/digit/case boundaries.
+-        tokens = [word for word, _ in parse(document, lex='words') if word.isalnum()]
+-        words.extend(list(dict.fromkeys(tokens))[:4])
+-    return sentences, list(dict.fromkeys(words)), dict(
+-        shard=str(shard.relative_to(root)),
+-        document_sha256=[hashlib.sha256(d.encode()).hexdigest() for d in documents],
+-        sentences=sentences)
+-
+-
+-def make_config(root, destination):
+-    tree = ET.parse(root / 'data/BasicModel.xml')
+-    r = tree.getroot()
+-    def put(path, value):
+-        parent, tag = path.rsplit('/', 1)
+-        node = r.find(path)
+-        if node is None: node = ET.SubElement(r.find(parent), tag)
+-        node.text = str(value).lower() if isinstance(value, bool) else str(value)
+-    for section in ('InputSpace', 'PartSpace', 'ConceptualSpace', 'WholeSpace', 'OutputSpace'):
+-        for tag in ('nDim', 'nInputDim', 'nOutputDim'):
+-            if r.find(f'{section}/{tag}') is not None: put(f'{section}/{tag}', 16)
+-    put('InputSpace/nOutput', 512)
+-    put('PartSpace/nInput', 512)
+-    put('PartSpace/nVectors', 4096)
+-    put('ConceptualSpace/nVectors', 2048)
+-    put('ConceptualSpace/activeVectors', 2048)
+-    put('OutputSpace/nInputDim', 16)
+-    put('OutputSpace/nDim', 16)
+-    for tag, value in dict(serial=True, modeSchedule='serial', serialWordCapacity=32,
+-            serialWordBuckets='32', subsymbolicOrder=1, symbolicOrder=3,
+-            transformChooserDepth=1, answerSynthesis=False, attentionPromotion=True,
+-            conceptualPi=True).items(): put('architecture/'+tag, value)
+-    for tag,value in dict(autoload=False, autosave=False, checkpointEveryBatches=0,
+-            numWorkers=0, batchSize=1, reconstructionPlacement='eager',
+-            intraLossWeight=0., forwardGrammarWeight=0., branchDiagnosticsEvery=0).items():
+-        put('architecture/training/'+tag,value)
+-    put('architecture/data/dataset','text')
+-    put('architecture/weightsPath', destination.parent/'unused.ckpt')
+-    tree.write(destination, encoding='unicode')
+-    return destination
+-
+-
+-def read_probes(model, probes):
+-    from ModeSchedule import ModeSchedule
+-    from Spaces import _concept_alloc_of
+-    cs = model._concept_owner()
+-    readings = {False: [], True: []}
+-    active, learned = [], []
+-    previous = [(sp, getattr(sp, '_online_learning_frozen', False)) for sp in model.spaces]
+-    for sp,_ in previous: sp._online_learning_frozen = True
+-    try:
+-        with ModeSchedule('parallel').parallel_pass(model), torch.no_grad():
+-            for text in probes:
+-                raw = model.inputSpace.prepInput([text])
+-                state = model.understand(raw)
+-                field = state.reconstruction_carriers['field']
+-                evidence = field.evidence
+-                rows = model._combine_last_cs_sub._concept_inventory_rows
+-                if rows.ndim == 2: rows=rows[:,0]
+-                # The unmasked read is the actual reverse-pi symbol query.
+-                # It cannot create an interpretation or assert unseen values.
+-                words = [cid for cid in cs.word_concepts(text)
+-                         if cs._concept_source_order(cid) == 0]
+-                chosen = torch.zeros_like(evidence)
+-                ids = field.concept_ids[:,0] if field.concept_ids.ndim == 2 else field.concept_ids
+-                for word in words:
+-                    chosen[ids == word] = evidence[ids == word]
+-                feedback = cs.cs_reverse_presence(chosen, observed=evidence, inventory_rows=rows)
+-                active.append(int(evidence.count_nonzero()))
+-                learned.append(bool(words))
+-                for masked, values in ((True,evidence),(False,feedback)):
+-                    vector = torch.zeros(int(cs.nVectors), 2)
+-                    valid = torch.tensor([row >= 0 and cs._order0_inventory_row(int(row))
+-                                          for row in rows.tolist()])
+-                    vector[rows[valid].cpu()] = values[valid,0].amax(1).cpu()
+-                    readings[masked].append(vector.flatten())
+-                model.End()
+-    finally:
+-        for sp,value in previous: sp._online_learning_frozen=value
+-    return readings, dict(nonzero_readings=active, lexical_coverage=sum(learned), probes=len(probes))
+-
+-
+-@eager_native_loops()
+-def run(destination, seeds=(0,1,2)):
+-    import Language
+-    from Models import BaseModel
+-    from ModeSchedule import ModeSchedule
+-    from data import TheData
+-    from util import init_config, init_device, init_compile_backend
+-    from What import What
+-    root=Path(__file__).resolve().parents[1]
+-    destination=Path(destination); destination.mkdir(parents=True,exist_ok=True)
+-    init_device('cpu'); init_compile_backend('none'); torch.set_num_threads(1)
+-    sentences, words, provenance=launch_probes(root)
+-    config=make_config(root,destination/'model.xml')
+-    init_config(str(config),defaults_path=str(root/'data/model.xml'))
+-    TheData.load('text',num_shards=1,max_docs=20,
+-                 shard_dir=str(root/'data/fineweb'),max_sentence_words=32)
+-    smoke=['00','01','10','11']; training=smoke+sentences
+-    report=dict(protocol=dict(seeds=list(seeds),schedules=['serial','parallel','interleave:2'],
+-        training=training, epochs=1, probe_scope='XOR plus native orthographic property classes; no semantic-category claim',
+-        initialization='one model per seed, deep-copied before each condition',
+-        execution='CPU; native tensor recurrence bodies with an eager loop dispatcher; no throughput claim',
+-        symbol_mask='native field with symbols offline versus the owned word-symbol reverse-pi query',
+-        gate='all-three-seed ordering only; every violation is retained'), corpus=provenance, conditions=[])
+-    for seed in seeds:
+-        torch.manual_seed(seed); np.random.seed(seed); random.seed(seed)
+-        Language.TheGrammar._configured=False
+-        base,_=BaseModel.from_config(str(config),data=TheData)
+-        base.set_sigma(0); base.checkpoint_every_batches=0
+-        base._tensor_peer_while_eager=True
+-        base._chart_compose_per_word=lambda:None
+-        base.reconstruction_placement='eager'
+-        # FineWeb classes are the native property identity tuples.
+-        labels=[tuple(base.wholeSpaces[0].property_rows_for_bytes(word)) for word in words]
+-        for schedule in report['protocol']['schedules']:
+-            torch.manual_seed(seed); np.random.seed(seed); random.seed(seed)
+-            model=copy.deepcopy(base); model.mode_schedule=ModeSchedule(schedule)
+-            optimizer=model.getOptimizer(lr=.001)
+-            phases=[]; start=time.perf_counter()
+-            context=(model.mode_schedule.parallel_pass(model) if schedule=='parallel' else nullcontext())
+-            with context:
+-                for step,text in enumerate(training):
+-                    raw=model.inputSpace.prepInput([text])
+-                    result,_=model.runBatch(train=True,batchNum=step,batchSize=1,optimizer=optimizer,
+-                        split='train', batch_override=(raw,torch.empty(1,0)),
+-                        questions=(What.present(0,split='train'),))
+-                    phases.append({name: float(value) for name,value in model.primary_costs().items()
+-                                   if torch.is_tensor(value)})
+-                    # Each selected sentence is one completed document probe,
+-                    # using the ordinary runEpoch boundary and learning hooks.
+-                    model.dispatch_per_row_reset([True])
+-                    model.dispatch_soft_reset()
+-                    model.post_tick_compact()
+-                    (destination/'progress.json').write_text(json.dumps(dict(
+-                        seed=seed, schedule=schedule, completed_sentences=step+1)))
+-            metrics={}
+-            for name, probes, classes in (('smoke',smoke,[0,1,1,0]),('fineweb',words,labels)):
+-                reads,coverage=read_probes(model,probes)
+-                metrics[name]={'coverage':coverage,'probes':probes,'classes':classes}
+-                for masked, vectors in reads.items():
+-                    m=discrimination(vectors,classes)
+-                    # Alternatives are structural, not a score-threshold count.
+-                    from Spaces import _concept_alloc_of
+-                    store=_concept_alloc_of(model._concept_owner()).layer()
+-                    admitted = {row for row in range(store.nOutput)
+-                        if model._concept_owner()._order0_inventory_row(row)
+-                        and model._concept_owner().concept_id_at_row(row) is not None
+-                        and not bool(store.provisional[row])}
+-                    by_target={}
+-                    for (target,col),pos in store._index.items():
+-                        if target in admitted and float(store.values[pos])>0:
+-                            by_target.setdefault(target,set()).add(col)
+-                    m['admitted_order0_concepts'] = len(admitted)
+-                    m['alternatives_per_concept']=sum(map(len,by_target.values()))/max(1,len(admitted))
+-                    m['concepts_with_alternatives']=len(by_target)
+-                    metrics[name]['masked' if masked else 'unmasked']=m
+-            row=dict(seed=seed,schedule=schedule,seconds=time.perf_counter()-start,
+-                serial_training_steps=int(model._training_step_count),
+-                parallel_passes=model.mode_schedule.completed_parallel,losses=phases,metrics=metrics)
+-            report['conditions'].append(row)
+-            (destination/'results.json').write_text(json.dumps(report,indent=2))
+-            print(json.dumps(dict(seed=seed,schedule=schedule,seconds=row['seconds'],metrics=metrics)),flush=True)
+-            del model,optimizer;gc.collect()
+-        del base;gc.collect()
+-    findings=[]
+-    for workload in ('smoke','fineweb'):
+-        for seed in seeds:
+-            c={r['schedule']:r['metrics'][workload] for r in report['conditions'] if r['seed']==seed}
+-            tests={'parallel_cp_below_serial':c['parallel']['masked']['cp']<c['serial']['masked']['cp'],
+-                   'parallel_within_above_serial':c['parallel']['masked']['within']>c['serial']['masked']['within'],
+-                   'parallel_alternatives_above_serial':c['parallel']['masked']['alternatives_per_concept']>c['serial']['masked']['alternatives_per_concept'],
+-                   'interleave_cp_at_least_parallel':c['interleave:2']['unmasked']['cp']>c['parallel']['unmasked']['cp'],
+-                   'interleave_within_above_serial':c['interleave:2']['unmasked']['within']>c['serial']['unmasked']['within']}
+-            tests['interleave_cp_nearer_serial_than_parallel'] = (
+-                abs(c['interleave:2']['unmasked']['cp'] - c['serial']['unmasked']['cp'])
+-                <= abs(c['parallel']['unmasked']['cp'] - c['serial']['unmasked']['cp']))
+-            effects = {mode: v['unmasked']['cp'] - v['masked']['cp'] for mode,v in c.items()}
+-            tests['mask_effect_largest_in_serial'] = all(
+-                effects['serial'] > effect for mode,effect in effects.items() if mode != 'serial')
+-            for mode,v in c.items(): tests['mask_lowers_cp_'+mode]=v['masked']['cp']<v['unmasked']['cp']
+-            findings.append(dict(workload=workload,seed=seed,orderings=tests))
+-    report['findings']=findings
+-    (destination/'results.json').write_text(json.dumps(report,indent=2))
+-    return report
+-
+-
+-if __name__=='__main__':
+-    parser=argparse.ArgumentParser(description=__doc__)
+-    parser.add_argument('--out',type=Path,required=True)
+-    args=parser.parse_args()
+-    run(args.out)
+--- /dev/null
++++ b/data/categorical_discrimination_probes.json
+@@ -0,0 +1,330 @@
++{
++  "origin": "2026-09-25 item 9b fixed probe set; FineWeb labels are native orthographic properties, not semantic categories",
++  "sets": {
++    "xor": {
++      "texts": [
++        "00",
++        "01",
++        "10",
++        "11"
++      ],
++      "labels": [
++        0,
++        1,
++        1,
++        0
++      ]
++    },
++    "fineweb": {
++      "texts": [
++        "Shipment",
++        "Transport",
++        "Sea",
++        "Air",
++        "1",
++        "2",
++        "Definition",
++        "In",
++        "G",
++        "ú",
++        "thwin",
++        "ë",
++        "The",
++        "robot",
++        "in",
++        "the",
++        "Metal",
++        "additive",
++        "manufacturing",
++        "AM",
++        "region",
++        "Bergisches",
++        "Land",
++        "investigation",
++        "of",
++        "past",
++        "Agreement",
++        "On",
++        "Food",
++        "Safety",
++        "Many",
++        "good",
++        "novels",
++        "January",
++        "we",
++        "began",
++        "Wednesday",
++        "October",
++        "3",
++        "Japan",
++        "is",
++        "set",
++        "to",
++        "Modern",
++        "humans",
++        "crowded",
++        "out",
++        "USGS",
++        "Groundwater",
++        "Information",
++        "Resources",
++        "We",
++        "all",
++        "know",
++        "It",
++        "frequently",
++        "cited",
++        "At",
++        "start",
++        "ease",
++        "doing",
++        "They",
++        "may",
++        "be",
++        "small",
++        "This",
++        "What",
++        "If"
++      ],
++      "labels": [
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          1
++        ],
++        [
++          1
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          6
++        ],
++        [
++          0
++        ],
++        [
++          6
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          1
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ],
++        [
++          0,
++          4
++        ]
++      ]
++    }
++  }
++}
+--- a/test/test_item9b_erosion.py
++++ b/test/test_item9b_erosion.py
+@@ -1,21 +1,9 @@
+-"""Metric arithmetic and an explicitly requested native measurement job."""
+-import os
+-from pathlib import Path
+-import pytest
++"""Descriptive metric arithmetic; the three-seed experiment is archived."""
+ import torch
+ 
+ 
+ def test_categorical_discrimination_counts_each_pair_once():
+-    from bench_mode_erosion import discrimination
++    from CategoricalDiscrimination import categorical_discrimination
+     readings = torch.tensor([[0.], [1.], [4.], [5.]])
+-    measured = discrimination(readings, [0, 0, 1, 1])
++    measured = categorical_discrimination(readings, [0, 0, 1, 1])
+     assert measured == dict(cp=3., within=1., between=4., within_pairs=2, between_pairs=4)
+-
+-
+-@pytest.mark.skipif(os.environ.get('RUN_ITEM9B_EROSION') != '1', reason='explicit 9b measurement job')
+-def test_three_seed_native_erosion_measurement():
+-    from bench_mode_erosion import run
+-    report = run(Path(__file__).resolve().parents[1] / 'output/item9b-erosion-measurements')
+-    assert len(report['conditions']) == 9
+-    assert len(report['findings']) == 6
+-    # No ordering assertion: violated predictions are architectural findings.
+--- /dev/null
++++ b/test/test_item9b_followup.py
+@@ -0,0 +1,240 @@
++"""Reviewed follow-up: native context precedes the serial reading."""
++from functools import wraps
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++
++@pytest.mark.parametrize('packed', [False, True])
++def test_interleave_reads_native_context_before_any_serial_word(tmp_path, monkeypatch, packed):
++    from ModeSchedule import ModeSchedule
++    from What import What
++    from test_packed_reconstruction_parity import build_model
++    # Each sentence has five native units including spaces; the packed pair
++    # also includes its joining space. Reserve room for those actual units.
++    model = build_model(tmp_path, word_capacity=16 if packed else 8)
++    model.mode_schedule = ModeSchedule('interleave:2')
++    texts = ['the wug sat', 'the wug flew']
++    calls = []
++    execute = model._run_batch_once
++    @wraps(execute)
++    def record(*args, **kwargs):
++        rows = model.inputSpace._packed_sentence_rows
++        visible = (tuple(text for row in rows for text in row) if rows else
++                   tuple(model.inputSpace._last_sentences))
++        calls.append((model.serial, visible))
++        if model.serial:
++            field = model._last_understanding.reconstruction_carriers['field']
++            assert field.evidence.shape[1] == len(texts)
++        return execute(*args, **kwargs)
++    monkeypatch.setattr(model, '_run_batch_once', record)
++    raw = (model.inputSpace.prepPackedInput([texts]) if packed else
++           model.inputSpace.prepInput(texts))
++    batch = 1 if packed else 2
++    with torch.no_grad():
++        model.runBatch(train=False, batchSize=batch, split='validation',
++            batch_override=(raw, torch.empty(batch, 0)),
++            questions=tuple(What.present(b, split='validation') for b in range(batch)))
++    assert calls == [(False, tuple(texts)), (True, tuple(texts))]
++    assert not hasattr(model.mode_schedule, 'resymbolize')
++    assert not hasattr(model._concept_owner(), '_label_feedback')
++
++
++def test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets():
++    from ModeSchedule import InterleaveCursor
++    source = SimpleNamespace(inputs=['a', 'b', 'c', 'd', 'e'],
++                             outputs=[10, 20, 30, 40, 50], document_ids=None)
++    cursor = InterleaveCursor(source, every=3, batch_size=2)
++    ticks = []
++    while not cursor.all_done():
++        inputs, outputs, hard = cursor.next_tick()
++        ticks.append((inputs, outputs, cursor.last_source_indices,
++                      cursor.context_sentences, hard))
++    assert ticks == [
++        (['a', 'b'], [10, 20], [0, 1], ('a', 'b', 'c'), [True, True]),
++        (['c'], [30], [2], None, [True]),
++        (['d', 'e'], [40, 50], [3, 4], ('d', 'e'), [True, True]),
++    ]
++    assert cursor.progress() == 1.
++
++
++def test_fixed_discrimination_metric_keeps_all_probes_without_training():
++    from CategoricalDiscrimination import FIXED_PROBES, fixed_probe_discrimination
++    assert {name: len(probes['texts']) for name, probes in FIXED_PROBES.items()} == {
++        'xor': 4, 'fineweb': 68}
++    readings = {name: torch.zeros(len(probes['texts']), 8, requires_grad=True)
++                for name, probes in FIXED_PROBES.items()}
++    result = fixed_probe_discrimination(readings)
++    assert result['categorical_discrimination']['xor']['cp'] == 0.
++    assert result['categorical_discrimination']['fineweb']['cp'] == 0.
++    assert all(value.grad is None for value in readings.values())
++
++
++def test_interleave_epoch_reads_a_short_final_group_once(tmp_path, monkeypatch):
++    from ModeSchedule import ModeSchedule
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    model.mode_schedule = ModeSchedule('interleave:2')
++    texts = ['the wug sat', 'the wug flew', 'the wug ran']
++    calls, ticks = [], []
++    execute = model._run_batch_once
++    advance = model._advance_when_time
++    @wraps(execute)
++    def record(*args, **kwargs):
++        calls.append((model.serial, tuple(model.inputSpace._last_sentences)))
++        return execute(*args, **kwargs)
++    def clock():
++        ticks.append(model.serial)
++        return advance()
++    monkeypatch.setattr(model, '_run_batch_once', record)
++    monkeypatch.setattr(model, '_advance_when_time', clock)
++    with model.inputSpace.data.runtime_batch(texts):
++        model.runEpoch(None, batchSize=1, split='runtime')
++    assert calls == [(False, tuple(texts[:2])), (True, (texts[0],)),
++                     (True, (texts[1],)), (False, (texts[2],)), (True, (texts[2],))]
++    assert ticks == [True, True, True]
++    assert model.mode_schedule.pending == []
++    assert model.mode_schedule.completed_parallel == 2
++
++
++def test_interleave_checkpoint_resumes_unread_serial_prefix(tmp_path, monkeypatch):
++    from ModeSchedule import ModeSchedule
++    from What import What
++    from test_packed_reconstruction_parity import build_model
++    source = build_model(tmp_path, word_capacity=8)
++    source.mode_schedule = ModeSchedule('interleave:2')
++    texts = ('the wug sat', 'the wug flew')
++    with torch.no_grad():
++        raw = source.inputSpace.prepInput([texts[0]])
++        source.runBatch(train=False, batchSize=1, split='validation',
++            batch_override=(raw, torch.empty(1, 0)), schedule_context=texts,
++            questions=(What.present(0, split='validation'),))
++    checkpoint = tmp_path / 'pending.ckpt'
++    source.save_weights(checkpoint)
++    target_path = tmp_path / 'target'
++    target_path.mkdir()
++    target = build_model(target_path, word_capacity=8)
++    target.mode_schedule = ModeSchedule('interleave:2')
++    assert target.load_weights(checkpoint, strict=True, require_match=True)
++    assert target.mode_schedule.pending == [texts[1]]
++    calls = []
++    execute = target._run_batch_once
++    @wraps(execute)
++    def record(*args, **kwargs):
++        calls.append(target.serial)
++        return execute(*args, **kwargs)
++    monkeypatch.setattr(target, '_run_batch_once', record)
++    with torch.no_grad():
++        raw = target.inputSpace.prepInput([texts[1]])
++        target.runBatch(train=False, batchSize=1, split='validation',
++            batch_override=(raw, torch.empty(1, 0)),
++            questions=(What.present(0, split='validation'),))
++    assert calls == [True]
++    assert target.mode_schedule.pending == []
++    assert target.mode_schedule.completed_parallel == 1
++
++
++def test_legacy_pending_schedule_cannot_replay_the_wrong_direction():
++    from ModeSchedule import ModeSchedule
++    schedule = ModeSchedule('interleave:2')
++    with pytest.raises(ValueError, match='serial-first'):
++        schedule.load_state_dict(dict(pending=[('already read', (17,))]))
++    assert schedule.pending == []
++
++
++def test_interleave_resume_rejects_a_different_grouping_even_between_groups():
++    from ModeSchedule import ModeSchedule
++    state = ModeSchedule('interleave:2').state_dict()
++    ModeSchedule('interleave:2').validate_resume(state)
++    for target in ('interleave:3', 'serial', 'parallel'):
++        with pytest.raises(ValueError, match='mid-epoch'):
++            ModeSchedule(target).validate_resume(state)
++    with pytest.raises(ValueError, match='mid-epoch'):
++        ModeSchedule('interleave:2').validate_resume({'pending': []})
++
++
++def test_interleave_cursor_preserves_document_boundaries():
++    from ModeSchedule import InterleaveCursor
++    source = SimpleNamespace(inputs=['a', 'b', 'c', 'd'], outputs=None,
++                             document_ids=['one', 'one', 'one', 'two'])
++    cursor = InterleaveCursor(source, every=2, batch_size=1)
++    assert [cursor.next_tick()[2] for _ in source.inputs] == [[False], [False], [True], [True]]
++
++
++def test_failed_context_restores_serial_mode_input_and_teacher(tmp_path, monkeypatch):
++    from ModeSchedule import ModeSchedule
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    model.mode_schedule = ModeSchedule('interleave:2')
++    text = 'the wug sat'
++    raw = model.inputSpace.prepInput([text])
++    model.teacher.stage_batch_sources('validation', [0])
++    @wraps(model._run_batch_once)
++    def fail(*args, **kwargs):
++        assert not model.serial
++        raise RuntimeError('context failed')
++    monkeypatch.setattr(model, '_run_batch_once', fail)
++    with pytest.raises(RuntimeError, match='context failed'):
++        model.runBatch(train=False, split='validation',
++            batch_override=(raw, torch.empty(1, 0)),
++            schedule_context=(text, 'the wug flew'))
++    assert model.serial
++    assert model.inputSpace._last_sentences == [text]
++    assert model.teacher._staged_source_rows == [0]
++    assert model.mode_schedule.pending == []
++
++
++def test_evaluation_epoch_preserves_an_unfinished_training_group(tmp_path):
++    from ModeSchedule import ModeSchedule
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    model.mode_schedule = ModeSchedule('interleave:2')
++    model.mode_schedule.pending = ['unfinished training sentence']
++    with model.inputSpace.data.runtime_batch(['the wug sat']):
++        model.runEpoch(None, batchSize=1, split='runtime')
++    assert model.mode_schedule.pending == ['unfinished training sentence']
++
++
++@pytest.mark.parametrize('evaluation,resume', [(True, 0), (True, 2), (False, 0), (False, 2)])
++def test_epoch_queue_lifetime_on_success_and_error(evaluation, resume):
++    from ModeSchedule import ModeSchedule, scheduled_epoch
++    for fail in (False, True):
++        schedule = ModeSchedule('interleave:2')
++        schedule.pending = ['training tail']
++        model = SimpleNamespace(mode_schedule=schedule, _resume_batches_to_skip=resume)
++        seen = []
++        @scheduled_epoch
++        def epoch(model, optimizer=None):
++            seen.extend(model.mode_schedule.pending)
++            if fail:
++                raise RuntimeError('epoch failed')
++        if fail:
++            with pytest.raises(RuntimeError, match='epoch failed'):
++                epoch(model, optimizer=None if evaluation else object())
++        else:
++            epoch(model, optimizer=None if evaluation else object())
++        assert seen == ([] if evaluation or not resume else ['training tail'])
++        assert schedule.pending == (['training tail'] if evaluation or resume else [])
++
++
++def test_interleave_capacity_uses_the_input_encoders_bytes(tmp_path, monkeypatch):
++    from ModeSchedule import ModeSchedule
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    model.mode_schedule = ModeSchedule('interleave:2')
++    monkeypatch.setattr(model.inputSpace.data, 'inputLength', 4)
++    texts = ['éééé', 'abcd']
++    seen = []
++    @wraps(model._run_batch_once)
++    def record(*args, **kwargs):
++        seen.append((model.serial, kwargs['batch_override'][0].clone()))
++        return None, 0
++    monkeypatch.setattr(model, '_run_batch_once', record)
++    raw = model.inputSpace.prepInput(texts)
++    model.runBatch(train=False, batchSize=2, split='runtime',
++                   batch_override=(raw, torch.empty(2, 0)))
++    assert [serial for serial, _ in seen] == [False, True]
++    assert raw[0].flatten().tolist() == [63, 63, 63, 63]
++    for _, presented in seen:
++        torch.testing.assert_close(presented, raw)
+--- a/test/test_item9b_schedule.py
++++ b/test/test_item9b_schedule.py
+@@ -10,17 +10,18 @@
+         ModeSchedule(value)
+ 
+ 
+-def test_schedule_keeps_exact_sentence_groups_and_remainder():
++def test_schedule_keeps_unread_sentence_prefix_and_remainder():
+     from ModeSchedule import ModeSchedule
+     schedule = ModeSchedule('interleave:2')
+-    assert schedule.append(['first']) == []
+-    assert schedule.append(['second', 'third', 'fourth', 'fifth']) == [
+-        ('first', 'second'), ('third', 'fourth')]
+-    assert schedule.pending == ['fifth']
++    assert schedule.context_for(['first'], ['first', 'second']) == ('first', 'second')
++    schedule.pending = ['second']
++    assert schedule.context_for(['second']) is None
++    with pytest.raises(ValueError, match='do not match'):
++        schedule.context_for(['third'])
+ 
+ 
+ @pytest.mark.parametrize("training", [False, True])
+-def test_native_interleave_runs_and_resymbolizes_the_same_sentences(tmp_path, monkeypatch, training):
++def test_native_interleave_supplies_context_then_reads_the_same_sentences(tmp_path, monkeypatch, training):
+     from ModeSchedule import ModeSchedule
+     from test_packed_reconstruction_parity import build_model
+     from What import What
+@@ -35,7 +36,6 @@
+         model.checkpoint_every_batches = 0
+     else:
+         model = build_model(tmp_path, word_capacity=8)
+-    model.mode_schedule = ModeSchedule('interleave:2')
+     import warnings
+     optimizer = model.getOptimizer(lr=1e-3) if training else None
+     owner = model._concept_owner()
+@@ -51,23 +51,35 @@
+         return result
+     if training:
+         monkeypatch.setattr(model, '_backward_training_loss', capture_backward)
+-    for step, text in enumerate(('the wug sat', 'the wug flew')):
++    texts = ('the wug sat', 'the wug flew')
++    if training:
++        # Keep the original learning probe's prerequisite: its first native
++        # gradient read followed these two serial training observations.
++        # The schedule now puts context first, so admit/train that inventory
++        # explicitly before switching modes. The nonzero assertion stays.
++        for step, text in enumerate(texts):
++            raw = model.inputSpace.prepInput([text])
++            model.runBatch(train=True, optimizer=optimizer, batchNum=step,
++                batchSize=1, split='validation',
++                batch_override=(raw, torch.empty(1, 0)),
++                questions=(What.present(0, split='validation'),))
++    model.mode_schedule = ModeSchedule('interleave:2')
++    for step, text in enumerate(texts):
+         raw = model.inputSpace.prepInput([text])
+         with warnings.catch_warnings():
+             warnings.filterwarnings('error', message='Using a target size.*')
+             model.runBatch(train=training, optimizer=optimizer, batchNum=step,
+                            batchSize=1, split='validation',
+                            batch_override=(raw, torch.empty(1, 0)),
+-                           questions=(What.present(0, split='validation'),))
+-        assert model.mode_schedule.completed_parallel == step
++                           questions=(What.present(0, split='validation'),),
++                           schedule_context=texts if step == 0 else None)
++        assert model.mode_schedule.completed_parallel == 1
+     if training:
+         assert parallel_gradients == [True]
+-    assert model._training_step_count == (2 if training else 0)
++    assert model._training_step_count == (4 if training else 0)
+     assert model.serial
+     assert model._concept_owner() is owner
+     assert owner.similarity_codebook.getW().data_ptr() == parameter.data_ptr()
+-    assert owner._label_feedback.count_nonzero() > 0
+-    torch.testing.assert_close(model._last_understanding.reconstruction_carriers['field'].evidence,
+-                               owner._label_feedback)
++    assert not hasattr(owner, '_label_feedback')
+     assert model.mode_schedule.pending == []
+     model.End()
+--- a/test/test_reasoning.py
++++ b/test/test_reasoning.py
+@@ -8,6 +8,7 @@
+ 
+ import sys
+ import os
++import gc
+ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
+ 
+ import unittest
+@@ -25,6 +26,13 @@
+ from util import init_config, ProjectPaths, TheXMLConfig
+ 
+ _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
++
++
++@pytest.fixture(autouse=True)
++def _release_case_models():
++    """Reclaim model callback cycles before the next case builds another model."""
++    yield
++    gc.collect()
+ 
+ 
+ def _reload_config():

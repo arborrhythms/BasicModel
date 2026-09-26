@@ -1,8 +1,9 @@
 """Paired conceptual evidence; the final axis is presence and counterevidence.
 
-The live field is [concept, batch, extent, 2]. Extents retain their positions
-and scope through composition; only a symbol's readout unions over extents.
-One distributed code names both symbols. No signed scalar stores this field.
+The live field is [concept, batch, bracket, 2]. Each bracket owns one where
+and when pair; concepts have no individual coordinates. Native percept events
+retain the support used for inverse attribution. One distributed code names
+both poles. No signed scalar stores this field.
 """
 import torch
 

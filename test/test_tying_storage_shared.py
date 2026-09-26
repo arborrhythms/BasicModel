@@ -42,12 +42,12 @@ from util import init_config  # noqa: E402
 
 
 def _build_model():
+    Models.TheData.load("xor")
     init_config(path=_CONFIG, defaults_path=_DEFAULTS)
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         model, _ = Models.BasicModel.from_config(_CONFIG)
-    Models.TheData.load("xor")
     model.eval()
     return model
 
@@ -63,13 +63,16 @@ class TestUntiedWordFlow(unittest.TestCase):
         W = ws.subspace.what.getW()
         ws_before = None if W is None else W.detach().clone()
         rows_before = int(emb.wv._vectors.shape[0])
+        active_before = len(emb.wv.index_to_key)
+        parameter = emb.wv._vectors
 
         vec = torch.zeros(int(emb.wv._vectors.shape[1]))
         vec[0] = 0.7
         emb.insert("untiedword", vector=vec)
 
-        self.assertEqual(int(emb.wv._vectors.shape[0]), rows_before + 1,
-                         "insert must grow the PS-side lexicon by one row")
+        self.assertEqual(len(emb.wv.index_to_key), active_before + 1)
+        self.assertEqual(int(emb.wv._vectors.shape[0]), rows_before)
+        self.assertIs(emb.wv._vectors, parameter)
         if ws_before is not None:
             self.assertTrue(
                 torch.equal(ws_before, ws.subspace.what.getW().detach()),

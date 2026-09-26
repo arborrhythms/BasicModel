@@ -133,12 +133,13 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
         raw = torch.zeros(1, 1, 8, dtype=torch.long)
         raw[0, 0, :len(word)] = torch.tensor(list(word.encode()))
         model.forward(raw)
-        cid = cs._word_obj_meta[word][0]
+        cid, = cs.word_concepts(word)
         carrier = model._combine_last_cs_sub
         slot = (carrier._concept_ids == cid).nonzero().flatten()
         assert len(slot) == 1, word
         assert carrier._concept_activations[slot[0], 0, :, 0].max() > 0, word
-        assert cs._cs_last_a0.shape[0] == 8
+        # Open attention retains every definition reached by native evidence.
+        assert cs._cs_last_a0.shape[0] >= 8
         leg = model.symbolSpace.forward_concept_to_symbol(carrier)
         assert leg._symbol_indices[slot[0]].tolist() == [2 * cid, 2 * cid + 1]
         model.End()
@@ -149,11 +150,15 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
     carrier = model._combine_last_cs_sub
     leg = model.symbolSpace.forward_concept_to_symbol(carrier)
     for b, word in enumerate(words):
-        cid = cs._word_obj_meta[word][0]
-        slot = (carrier._concept_ids[:, b] == cid).nonzero().flatten()
+        cid, = cs.word_concepts(word)
+        ids = carrier._concept_ids
+        ids = ids[:, b] if ids.ndim == 2 else ids
+        slot = (ids == cid).nonzero().flatten()
         assert len(slot) == 1, word
         assert carrier._concept_activations[slot[0], b, :, 0].max() > 0, word
-        assert leg._symbol_indices[slot[0], b].tolist() == [2 * cid, 2 * cid + 1]
+        symbols = leg._symbol_indices
+        pair = symbols[slot[0], b] if symbols.ndim == 3 else symbols[slot[0]]
+        assert pair.tolist() == [2 * cid, 2 * cid + 1]
     model.End()
 
 
@@ -172,8 +177,8 @@ def test_batch_members_bind_independently_within_eight_rows():
     assert cs._cs_field_concept_ids[0].tolist() == cids
     assert a0[0, :, 0, 0].tolist() == [1.] * 12
     content, field = cs.cs_forward_content(a0, cs.similarity_codebook.getW())
-    assert content.shape[:2] == (12, 2 * sum(cs._order_caps()))
-    assert field.shape[:2] == (sum(cs._order_caps()), 12)
+    assert content.shape[:2] == (12, 2 * sum(cs._field_caps()))
+    assert field.shape[:2] == (sum(cs._field_caps()), 12)
 
 
 def test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence():

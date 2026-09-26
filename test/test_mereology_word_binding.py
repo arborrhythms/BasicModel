@@ -41,46 +41,14 @@ def _whole_space(nS=128):
 
 
 def _cs_stub(ss):
-    """A minimal ConceptualSpace-method host: the autobind methods use only
-    ``self.terminalSymbolSpace_ref`` (+ ``self._autobound_percept_ids`` on
-    the flag-off path), so a stub with the bound methods exercises the real
-    code without standing up a full model."""
-    stub = types.SimpleNamespace()
-    stub.terminalSymbolSpace_ref = ss
-    stub.nVectors = ss.nVectors
-    stub.wholeSpace_ref = None
-    stub._maybe_autobind_meta = types.MethodType(
-        Spaces.ConceptualSpace._maybe_autobind_meta, stub)
-    stub._autobind_word_wholes = types.MethodType(
-        Spaces.ConceptualSpace._autobind_word_wholes, stub)
-    stub._autobind_cross_tower = types.MethodType(
-        Spaces.ConceptualSpace._autobind_cross_tower, stub)
-    # The cross-tower path also populates the relation-only CS symbol table,
-    # and the orchestrator mints the per-word A/B/C symbols.
-    for _m in ("_populate_cs_symbols", "_concept_tables", "new_concept",
-               "add_part", "add_whole", "resolve_identities",
-               "relate", "reify_concept", "create_word_object_meta",
-               "concept_parts", "concept_wholes",
-               # create_word_object_meta now also decomposes the minted symbols
-               # into the per-order sparse weight store; these short-circuit to a
-               # no-op on the stub (not sparse-active -> no _symbolic_order).
-               "_populate_concept_weights", "_sparse_active",
-               # Refinement resolves definitions through the inventory.
-               "_csw_rows_of", "_order_caps",
-               # the spans-staged S2c lifecycle (refine + pruning round).
-               "refine_over_collected", "retire_concept",
-               "prune_concept_links", "_whole_ancestors", "_drop_concept_edge",
-               "taxonomy_parent", "_relation_store", "_concept_raise_set",
-               "synthesize_higher_order", "symbols_needing_processing",
-               # re-mint Hebbian strengthening (no-op while sparse-inactive).
-               "_hebbian_strengthen",
-               # joint/sentence concept (P2: the ordered bias-bounded chain).
-               "create_joint_concept", "conceptualize_chain"):
-        setattr(stub, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), stub))
-    return stub
+    """Use the actual operator owner: interpretation is no longer a host stub."""
+    cs = Spaces.ConceptualSpace([4, _D], [ss.nVectors, _D], [ss.nVectors, _D])
+    cs._serial = True
+    cs.terminalSymbolSpace_ref = ss
+    cs.wholeSpace_ref = None
+    return cs
 
 
-# one word "abc" spelled into 3 byte-parts (pids 10,11,12), then null pads.
 def _one_word_inputs():
     pid_2d = torch.tensor([[10, 11, 12, 0, 0, 0]], dtype=torch.long)
     word_groups = torch.tensor([[0, 0, 0, -1, -1, -1]], dtype=torch.long)
@@ -181,7 +149,7 @@ def test_gate_on_creates_word_object_meta():
     assert set(stub.concept_parts(A)) == {10, 11, 12}
     assert stub.concept_wholes(A) == [ss._word_whole_ss["abc"]]
     # B = object-symbol: maximally unspecified poles, awaiting refinement.
-    assert stub.concept_parts(B) == [ATOM] and stub.concept_wholes(B) == [UNIVERSE]
+    assert stub.concept_parts(B) == [("sym", A)] and stub.concept_wholes(B) == []
     # C = META-concept (P2 flip): the sec-4c ordered pair
     # [whole=word-symbol, part=object-symbol].
     assert stub.concept_parts(C) == [("sym", B)]

@@ -1,19 +1,10 @@
-"""Task 1 of the `.where`/`.when` encoding pass (2026-07-04 plan):
-`.where` period decoupled from ``architecture.nObjects``.
-
-The period becomes config-derived: ``<architecture><wherePeriod>`` with
-default 8192 (the input/sentence byte cap), NOT $\\Sigma$ nVectors. The
-build seam keeps raise-to-fit semantics, but any raise past the
-configured period WARNS ONCE (config name, length, period, "increase
-<wherePeriod>") -- never silent aliasing. The runtime guards (the
-``forward`` counter-overflow assert and the ``reconstruct_to_buffer``
-periodicity assert) still hold.
-"""
+"""The model derives one address ladder from its complete registry allocation."""
 
 import os
 import re
 import sys
 import warnings
+from pathlib import Path
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -66,44 +57,31 @@ def _where_enc(model):
     return model.perceptualSpace.subspace.whereEncoding
 
 
-def test_where_period_tag_sets_maxval(tmp_path):
-    """(a) <wherePeriod>8192</wherePeriod> -> maxVal == 8192 regardless of
-    nObjects (the fixture's nObjects == 33 would have been the old value)."""
-    model = _build(_write_config(tmp_path, where_period=8192))
-    enc = _where_enc(model)
-    assert enc.maxVal == 8192, enc.maxVal
-    from util import TheXMLConfig
-    n_objects = int(TheXMLConfig.get("architecture.nObjects"))
-    assert enc.maxVal != n_objects, "period must not track nObjects"
-
-
-def test_where_period_default_8192():
-    """(b) absent tag -> default 8192 (the input/sentence cap), not
-    nObjects; xor's 11-byte inputs never trigger the raise."""
+def test_where_period_is_derived_from_the_registry():
     model = _build(_FIXTURE)
-    assert _where_enc(model).maxVal == _WHERE_PERIOD_DEFAULT
+    enc = _where_enc(model)
+    assert enc is model.where_encoding
+    assert enc.maxVal > model.where_registry.capacity
+    assert enc.period_hf <= 256
+    for name, (start, end) in model.where_registry.slices.items():
+        if end > start:
+            addresses = torch.tensor([start, end - 1])
+            torch.testing.assert_close(enc.decode_index(enc.encode(addresses)), addresses)
 
 
-def test_where_period_overflow_warns_once_and_raises_to_fit(tmp_path):
-    """(c) input longer than the configured period -> exactly ONE
-    RuntimeWarning naming config, length, period, and the remedy -- and the
-    period is raised to fit (never silent aliasing)."""
-    cfg = _write_config(tmp_path, where_period=4)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        model = _build(cfg)
-    hits = [w for w in caught
-            if "wherePeriod" in str(w.message)
-            and issubclass(w.category, RuntimeWarning)]
-    assert len(hits) == 1, [str(w.message) for w in caught]
-    msg = str(hits[0].message)
-    assert os.path.basename(cfg) in msg or cfg in msg, msg
-    # xor's longest train input measures 12 bytes (dataset truth).
-    assert re.search(r"\b12\b", msg), f"input byte length missing: {msg}"
-    assert re.search(r"\b4\b", msg), f"configured period missing: {msg}"
-    assert "increase <wherePeriod>" in msg, msg
-    # Raise-to-fit: the seam's existing 2x headroom for string inputs.
-    assert _where_enc(model).maxVal == 24, _where_enc(model).maxVal
+def test_input_and_inventory_share_the_same_encoding():
+    model = _build(_FIXTURE)
+    spaces = (model.inputSpace, model.perceptualSpace, *model.wholeSpaces, model.symbolSpace)
+    assert all(space.subspace.whereEncoding is model.where_encoding for space in spaces)
+    assert all(space.subspace.whenEncoding is model.when_encoding for space in spaces)
+
+
+def test_retired_period_knob_is_rejected(tmp_path):
+    # A separately configured period could silently alias the registry. The
+    # schema rejects that old configuration rather than accepting a no-op.
+    from util import XMLConfig
+    with pytest.raises(ValueError, match='wherePeriod'):
+        XMLConfig._validate_against_schema(_write_config(tmp_path, where_period=4))
 
 
 def test_forward_overflow_assert_holds():
@@ -127,7 +105,7 @@ def test_reconstruct_buffer_period_assert_holds():
         model.runEpoch(batchSize=4, split="test")
     psp = model.perceptualSpace
     over = _where_enc(model).maxVal + 1
-    with pytest.raises(AssertionError, match="wherePeriod"):
+    with pytest.raises(AssertionError, match="construction-time input capacity"):
         psp.reconstruct_to_buffer(buf_size=over)
 
 

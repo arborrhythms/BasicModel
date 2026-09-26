@@ -92,10 +92,10 @@ def test_basicmodel_config_separates_concepts_properties_and_live_width():
     ws_rows = int(root.findtext("WholeSpace/nVectors"))
 
     assert root.findtext("WholeSpace/propertyBasis") == "true"
-    assert cs_rows == 1048576
+    assert cs_rows == 65536
     assert int(root.findtext("ConceptualSpace/activeVectors")) == 32768
     assert int(root.findtext("PartSpace/nVectors")) == 32768
-    assert int(root.findtext("PartSpace/maxVectors")) == 1048576
+    assert root.find("PartSpace/maxVectors") is None
     assert ws_rows == 8
     assert root.find("WholeSpace/activeVectors") is None
     assert int(root.findtext("ConceptualSpace/nOutput")) == 8
@@ -128,8 +128,9 @@ def test_aligned_property_folds_share_one_physical_concept_dictionary(tmp_path):
     cb = codebooks[0]
     assert cb._capacity_frozen is True
     assert cb._capacity_frozen_by == "aligned ConceptualSpace codebook"
+    assert not hasattr(cb, "grow_to")
     with pytest.raises(RuntimeError, match="fixed capacity"):
-        cb.grow_to(17)
+        cb.replace_W(torch.zeros(17, cb.W.shape[1]))
     cb.vq.set_active_rows(4)
     model._active_inventory_rows = 4
     identity = (id(cb.W), cb.W.data_ptr(), cb.vq.active_mask.data_ptr())
@@ -293,7 +294,7 @@ def test_property_model_category_vq_and_parser_context_are_cs_owned(tmp_path):
 
     # A property-mode terminal resolves pid -> word-concept directly in CS,
     # rather than trying the retired WS pid -> taxonomy-META lookup.
-    word_concept, _object, _meta = cs.create_word_object_meta(
+    word_concept, _object, _meta = cs.interpret_word(
         [7], [0], key="cat")
     cs._category_last_pid = [[7, -1]]
     cs._category_assign[word_concept] = 0

@@ -29,7 +29,7 @@
        exceed nOutput (4) without a VQ snap on .event. -->
   <PartSpace>
     <nOutput>4</nOutput>
-    <nVectors>16</nVectors>
+    <nVectors>256</nVectors>
   </PartSpace>
 
   <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->

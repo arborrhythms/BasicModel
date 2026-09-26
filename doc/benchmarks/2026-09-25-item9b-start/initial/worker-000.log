@@ -1,0 +1,51 @@
+F.FF.F..                                                                 [100%]
+=================================== FAILURES ===================================
+_____ test_inventory_checkpoint_preserves_definition_between_modes[False] ______
+test/test_item9b_field_contract.py:40: in test_inventory_checkpoint_preserves_definition_between_modes
+    assert target.load_weights(checkpoint, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5743: in load_weights
+    self._restore_structural_extras(
+bin/Models.py:4904: in _restore_structural_extras
+    self._restore_allocator_extras(cs, alloc_blob)
+bin/Models.py:4800: in _restore_allocator_extras
+    raise ValueError('ConceptAllocator store shape mismatch')
+E   ValueError: ConceptAllocator store shape mismatch
+----------------------------- Captured stdout call -----------------------------
+[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5794/test_inventory_checkpoint_pres0/shared-inventory.pt
+[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5794/test_inventory_checkpoint_pres0/shared-inventory.pt has no embedding bundle; embeddings stay at random init.
+__________ test_one_active_percept_reaches_every_referencing_concept ___________
+test/test_item9b_field_contract.py:69: in test_one_active_percept_reaches_every_referencing_concept
+    assert slots.numel() == 1, f"referenced concept {cid} was truncated from the field"
+E   AssertionError: referenced concept 9 was truncated from the field
+E   assert 0 == 1
+E    +  where 0 = <built-in method numel of Tensor object at 0x1266d4b90>()
+E    +    where <built-in method numel of Tensor object at 0x1266d4b90> = tensor([], dtype=torch.int64).numel
+__ test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0] ___
+test/test_item9b_field_contract.py:90: in test_observed_complement_is_pooled_inside_one_bracket
+    torch.testing.assert_close(field[0, 0, 0], torch.tensor(expected))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 2 (50.0%)
+E   Greatest absolute difference: 1.0 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (1,) (up to 1.3e-06 allowed)
+__ test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2] ___
+test/test_item9b_field_contract.py:90: in test_observed_complement_is_pooled_inside_one_bracket
+    torch.testing.assert_close(field[0, 0, 0], torch.tensor(expected))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 2 (50.0%)
+E   Greatest absolute difference: 1.0 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (1,) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[False]
+FAILED test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept
+FAILED test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]
+FAILED test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]
+4 failed, 4 passed, 1 warning in 2.38s

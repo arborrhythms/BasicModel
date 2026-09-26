@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item9/native.py",
+    "--seed",
+    "1",
+    "--control",
+    "shuffled",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9-native-release-1/shuffled-1"
+  ],
+  "pid": 39117,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 894535480,
+  "elapsed_seconds": 83.71465287497267,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9-native-release-1/shuffled-1.log"
+}

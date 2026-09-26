@@ -157,10 +157,11 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     cs._promotion_enabled = True
     cs._ensure_concept_pool()
     store = Spaces._concept_alloc_of(cs).layer()
+    # Both primitive poles are now directly observed. Learn the particular's
+    # link to that predicate instead of relearning its already-known absence.
     with torch.no_grad():
-        store.features.values.zero_()
-        store.features.values[0] = 1.  # supplied primitive positive membership
-    optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        store.values[store._index[(felix, 0)]] = 0.
+    optimizer = torch.optim.Adam([store.values], lr=.03)
     native, extents = binary_features(cs, torch.tensor([[49], [48], [65]]))
     dictionary = torch.rand(cs.nVectors, cs.nDim)  # no selected initialization
     target = torch.tensor([[1., 0.], [0., 1.], [0., 0.]])
@@ -169,7 +170,7 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
         optimizer.zero_grad()
         read = cs.cs_read_memberships(native, extents)
         _, field = cs.cs_forward_content(read, dictionary)
-        loss = (read[0, :, 0] - target).square().mean()
+        loss = (field[felix, :, 0] - target).square().mean()
         if initial is None:
             initial = float(loss.detach())
         loss.backward()

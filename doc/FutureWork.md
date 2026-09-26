@@ -299,6 +299,54 @@ strict-improvement/patience criterion is recorded for review in
 Choosing new attention targets from a neither reading remains future policy
 work. See [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).
 
+### Shared-mode erosion measurement (item 9b)
+
+The three-seed job is retired from the test suite. Its original
+script is [archived](benchmarks/2026-09-25-item9b/erosion/three_seed_job.py)
+with the source and findings; use the archived runtime to reproduce it.
+It ran N serial sentences, then parallel processing, then a label read-back.
+The current schedule reverses the first two steps and removes the third.
+**All of the old interleave rows and comparisons involving them are void for
+the current schedule.** No replacement three-seed job is required for landing.
+
+The first measurement
+compares serial, parallel and interleave:2 from the same initialization for
+each of three seeds, with symbols offline and with their owned reverse-pi
+read-back. It uses four XOR probes and 68 word probes from 20 FineWeb launch
+documents, after one pass over four XOR inputs and one complete sentence per
+document. FineWeb categories are native orthographic properties, not semantic
+categories. The [receipt](benchmarks/2026-09-25-item9b/README.md) preserves the
+protocol, inputs, full measurements and every failed prediction.
+
+On all three seeds the FineWeb native readings have lower categorical
+separation and higher within-category discrimination after parallel training
+than after serial training. The wider prediction does not hold: parallel
+training admits no more structural alternatives; label read-back lowers rather
+than raises categorical separation in every FineWeb condition; interleaving
+does not keep separation near the serial value while retaining its predicted
+within-category gain. Native XOR separation is zero in all conditions. This
+short measurement does not establish the proposed erosion-and-restoration
+mechanism, and the zero XOR result is separate from the native XOR learning
+tests. No seed, threshold or training duration was adjusted to make an ordering
+pass. More training and semantic probes are future experiments, not evidence
+already supplied by this receipt. Item 4 will log the inexpensive distance
+reduction from [CategoricalDiscrimination](../bin/CategoricalDiscrimination.py)
+on the [fixed four XOR and 68 FineWeb probes](../data/categorical_discrimination_probes.json).
+It accepts captured readings and returns CP, within-category and between-category
+distances plus pair counts. It does no training or extra label read-back;
+unknown/zero readings remain in the metric. The harness must budget the cost of
+collecting probe readings when choosing its logging interval. This is a
+descriptive measurement with no required ordering or threshold.
+
+The motivation remains the qualified human evidence summarized in
+[Philosophy](Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25)
+and [plan §2](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md#2-reasons-the-psychological-evidence):
+shared semantic access and label feedback, category effects of verbal
+interference, acquired equivalence and verbal overshadowing, and meditation
+studies of discrimination and category flexibility. Those analogies motivate
+the directional hypotheses; the present code-level results do not validate
+the psychological account.
+
 ## Throughput levers for the serial loop (item 1 candidates)
 
 **Recorded 2026-09-25 (Claude, on Alec's instruction) for item 1, the
@@ -334,8 +382,41 @@ Compare by bytes seen and wall time only
    vectorization of `stage_analysis_spans` / `property_spans`, bought a
    third of an epoch byte-identically (noted in the
    [fold-ladder plan](plans/2026-09-10-meronomy-fold-ladder.md)).
+   Item 9b adds explicit candidates here: the host dictionary walk that
+   gathers a ragged field, event attribution, testimony admission/retirement,
+   and context scheduling. Its archived CPU erosion harness used the same native tensor
+   recurrence bodies with an eager loop dispatcher to avoid recompilation as
+   sentence banks change. Those measurements make no throughput claim.
 5. **One pass each** for `subsymbolicOrder` and `symbolicOrder` in the
    first session.
 
 Compounded, these put the serial loop in the tens of sentences per second,
 NanoChat's order on the same machine; parity is not claimed.
+
+## `.when` is redundant across the elements of one input (noted 2026-09-26)
+
+`.when` is the incrementing sinusoid of the model's subjective step
+counter. Every element of one input — its positions, percept events and
+symbol occurrences — carries the same value, and the value differs only
+across LTM rows, where it addresses the chain. Within a field the band is
+therefore pure redundancy (Alec, 2026-09-26): it costs band width on every
+element and, if scored per element, distorts reconstruction objectives, as
+the item 9b bisection showed. Candidate simplification: carry `.when` once
+per field beside the field's bracket, stamp it on elements only when they
+leave the field (a sealed row, a captured program, a symbol occurrence
+that thought produces), and keep the exact clock side-band as now. This is
+future work: the current grammar still transports the temporal band on every
+element, with that shared band excluded from per-word reconstruction. Any
+carrier change must preserve the grammar's temporal operations. The
+`.where` band keeps the start only; a part's end follows from its byte
+length, a whole's does not — a known limitation of start-only stamping.
+
+## Global coordinate transport through learned operators
+
+The two-rung ladder exactly decodes clean registry addresses. Its tolerance
+to noise after learned composition and inversion remains a separate question.
+The [item 9b experiment](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md#4f-the-band-transported-through-the-grammar-reduced-periods-then-rungs-proposed-2026-09-26)
+refuted reduced periods as a remedy for the September 26 loss jump: the extra
+cost came from scoring a shared timestamp on every word. More rungs or rotary
+transport therefore need their own measured positional-error problem and
+evaluation; the occurrence/time correction does not implement them.

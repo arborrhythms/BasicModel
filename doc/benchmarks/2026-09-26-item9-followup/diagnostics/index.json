@@ -1,0 +1,85 @@
+[
+  {
+    "label": "benchmark-red",
+    "note": "Original helper retained context-free masks; typed forecast scorer was absent.",
+    "summary": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "outcomes": {
+        "passed": 6,
+        "failed": 2
+      }
+    },
+    "files": {
+      "result.json.gz": "a09731632c20dcc218109ec35fe55ab866496627e35e30cf90b4420172da595b",
+      "source-manifest.json.gz": "ecad71852fdf774e30fd803af9cfd56dc933ab8e2230b6eb12d3d654025b0b32",
+      "worker-000.log.gz": "7b15827a2ad7835bc3d4dd0081cfab9661e388c5e997cb0a69d5e4a2eac35009"
+    }
+  },
+  {
+    "label": "readiness-red",
+    "note": "Training-provenance module absent before implementation.",
+    "summary": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "outcomes": {
+        "failed": 8
+      }
+    },
+    "files": {
+      "result.json.gz": "c726ebdd2d4024ba9b39b26af545ef8c0a08c9dffef85ea6924bd510e67b6edf",
+      "source-manifest.json.gz": "be063944f53b23ec6d4a7d9c1b2dce14b43f837e578357277a71a321774fbaf6",
+      "worker-000.log.gz": "4484e2104eb8a6658fa0f494e212101b23d21ec277591d803b80e627f042f97b"
+    }
+  },
+  {
+    "label": "integration-first",
+    "note": "The test used an eager while-loop shim while reconstruction still tried to compile it; fixture placement corrected without relaxing assertions.",
+    "summary": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "outcomes": {
+        "passed": 8,
+        "failed": 1
+      }
+    },
+    "files": {
+      "result.json.gz": "102dccc8bef05acf35c3be19aa3ce19c32e53f2ef1ff22cfdde30668b51fdacb",
+      "source-manifest.json.gz": "2aaea9c6550ccde54f906bbef2d3f37f87bfc2f63e86560aed78ffe301dd6fd5",
+      "worker-000.log.gz": "a7c9dfd074b9a4a7b69b09c26fa65f9fbed3352fb88669a45116a95269659475"
+    }
+  },
+  {
+    "label": "integration-load-red",
+    "note": "Real saved LTM leaf_codes prefix rejected by the outer checkpoint shape audit.",
+    "summary": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "outcomes": {
+        "passed": 8,
+        "failed": 1
+      }
+    },
+    "files": {
+      "result.json.gz": "0289d1e6f1086049a8d08ab17491188c76272182ecae8131a0ad792e3625108b",
+      "source-manifest.json.gz": "a811277a3d6727dad0e28bda0087cfdaeb7aa405bc78e7146431e43bf344b5ff",
+      "worker-000.log.gz": "4e9414fe8c982e215d1d94cb02cd6015d3b11761d0d42b30a7935fbb8f85a735"
+    }
+  },
+  {
+    "label": "wording",
+    "note": "Unchanged seed 931 and 9000-update curriculum, collected on the prior 663-file source. Process completed; wording gate failed. Not a qualified checkpoint evaluation.",
+    "summary": {
+      "gate_passed": false,
+      "seed": 931,
+      "updates": 9000
+    },
+    "files": {
+      "harness-sha256.txt": "4a0187431459b709315056517d520f207f513ec17f8d23d00c23dddeaf2e0c4f",
+      "process.json.gz": "eed83c63eb96cc5203523e7ffac4f286133a447018fe2af0f135a510737c0851",
+      "process.log.gz": "9f4445cf1346f346a8beae2a523b42461a7f06e8947f42e69b9fe63488afc309",
+      "result.json.gz": "cd1467ec82d9a7bab62b89e3da06734a4613ac2df1a7b85e446fcb2145b3dde7",
+      "source-manifest.json.gz": "5361addd7b0e4719f44a2469626d90fccd08b3b838aea853aa72eb64d21a2182"
+    }
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "scope": "Reducer only; no probe inference, model mutation, training or device transfer measured",
+  "device": "cpu",
+  "threads": 1,
+  "physical_concept_rows": 65536,
+  "poles": 2,
+  "probes": {
+    "xor": 4,
+    "fineweb": 68
+  },
+  "durations_seconds": [
+    0.04945541697088629,
+    0.049589082947932184,
+    0.049439540947787464,
+    0.04954558308236301,
+    0.049445708049461246
+  ],
+  "median_seconds": 0.04945541697088629,
+  "input_bytes": 37748736,
+  "example": {
+    "categorical_discrimination": {
+      "xor": {
+        "cp": -34.83726501464844,
+        "within": 139.34901428222656,
+        "between": 104.51174926757812,
+        "within_pairs": 2,
+        "between_pairs": 4
+      },
+      "fineweb": {
+        "cp": 2.7244644165039062,
+        "within": 70.1864013671875,
+        "between": 72.9108657836914,
+        "within_pairs": 967,
+        "between_pairs": 1311
+      }
+    }
+  }
+}

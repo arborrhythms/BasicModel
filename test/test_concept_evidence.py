@@ -31,7 +31,7 @@ def test_membership_read_keeps_both_until_symbol_readout():
     cs = _cs()
     native, extents = binary_features(cs, torch.tensor([[49, 48]]))
     read = cs.cs_read_memberships(native, extents)
-    torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0, :2],
+    torch.testing.assert_close(cs._percept_field.events[cs._percept_field.keys.index(('ws', 0)), 0, 0, :2],
                                torch.tensor([[1., 0.], [0., 1.]]))
     torch.testing.assert_close(read[0, 0], torch.ones(1, 2))
     torch.testing.assert_close(symbols(read)[0, 0], torch.ones(2))
@@ -159,14 +159,16 @@ def test_alternatives_normalize_each_update_before_discovery():
     assert Spaces._concept_alloc_of(cs).layer().participation[row] > .8
 
 
-def test_context_allocation_uses_taper_span_not_inventory():
+def test_context_allocation_is_sparse_over_the_shared_inventory():
     cs = _cs(nS=128)
     cs.nVectors = 1048576
     cs.outputShape = (8, 8)
     cs._promotion_enabled = True
     cs._ensure_concept_pool()
     store = Spaces._concept_alloc_of(cs).layer()
-    assert store.where.shape == (15, 15)
+    assert store.where.shape == (1048576, 1048576)
+    assert store.where.layout == torch.sparse_coo
+    assert store.where._nnz() == 0
     assert store.where.device.type == 'cpu'
 
 
@@ -263,10 +265,8 @@ def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
     before = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
     before[1, 0, 0, 0] = 1.
     cs.subspace._concept_activations = before.clone()
-    cs.subspace._concept_extents = torch.tensor([[[0, 2]]])
-    cs.subspace._concept_position_spans = torch.tensor([[[0, 1], [1, 2]]])
-    positions = before.unsqueeze(-2).expand(-1, -1, -1, 2, -1).clone()
-    cs.subspace._concept_position_evidence = positions
+    cs.subspace._concept_where = torch.tensor([[[0, 2]]])
+    cs.subspace._concept_when = torch.tensor([[[5, 6]]])
     result = SimpleNamespace(semantic_id='quantize', evidence={'reference': ('row', row)})
     apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result,
                          row=0, work=QueryWorkBudget(32))
@@ -274,7 +274,6 @@ def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
     torch.testing.assert_close(after[:, :, :1], before)
     torch.testing.assert_close(after[1, 0, 1], torch.tensor([0., 1.]), atol=1e-6, rtol=0)
     torch.testing.assert_close(symbols(after)[1, 0], torch.ones(2), atol=1e-6, rtol=0)
-    assert cs.subspace._concept_extents.tolist() == [[[0, 2], [-1, -1]]]
-    torch.testing.assert_close(cs.subspace._concept_position_evidence[:, :, :1], positions)
-    assert cs.subspace._concept_position_evidence[:, :, 1].count_nonzero() == 0
-    assert cs.subspace._concept_position_spans.tolist() == [[[0, 1], [1, 2]]]
+    assert cs.subspace._concept_where.tolist() == [[[0, 2], [-1, -1]]]
+    assert cs.subspace._concept_when.tolist() == [[[5, 6], [-1, -1]]]
+    assert not hasattr(cs.subspace, "_concept_position_evidence")

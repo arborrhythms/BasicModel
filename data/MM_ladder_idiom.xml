@@ -192,7 +192,6 @@
     <!-- Allocate only this initial prefix.  Chunk promotion queues new rows
          during a word pass, then grows geometrically at the post-step boundary
          without exceeding this logical ceiling. -->
-    <maxVectors>1048576</maxVectors>
     <nDim>136</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>136</nOutputDim>

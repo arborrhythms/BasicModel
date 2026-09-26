@@ -53,6 +53,8 @@ def test_percept_attribution_follows_signed_definitions_without_complements():
     query = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
     query[0, 0, 0] = torch.tensor([.8, .6])
     columns, values, spans = cs.cs_percept_attribution(query)
-    assert columns.tolist() == [4 * 65, 4 * 3 + 3]
-    torch.testing.assert_close(values[:, 0, 0, 0], torch.tensor([.8, .6]))
+    # Both requested poles descend independently. An unlocated inverse
+    # returns both native poles; no subtraction creates an absence claim.
+    assert columns.tolist() == [4 * 65, 4 * 65 + 1, 4 * 3 + 2, 4 * 3 + 3]
+    torch.testing.assert_close(values[:, 0, 0, 0], torch.tensor([.8, .6, .6, .8]))
     assert spans is None

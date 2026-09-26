@@ -1336,15 +1336,19 @@ supplies the remedy.
 
 **What the architecture does with this.** Share the structure: one
 inventory for both modes. Expect erosion in both directions and measure it
-with a categorical-perception index under serial-only, parallel-only and
-interleaved training. Do not keep the modes as permanent alternatives:
-alternate them, and after every open pass read each word symbol back
-against the field, as a noting meditator names what arose. And give the
+with a categorical-perception index logged on fixed probes. The modes can
+alternate: first read the coming sentences with open attention, then read
+them serially in the context just formed. The serial reading supplies the
+symbolic processing; a separate label read-back is unnecessary. And give the
 serial loop `interpret`, the one operator that writes the parallel
 field's objects from words — so that reading develops the objects a video
 feed would otherwise have to supply, and an unfamiliar word can create an
 object the mind has never seen. Plan:
 [item 9b](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md).
+The initial [implementation measurements](FutureWork.md#shared-mode-erosion-measurement-item-9b)
+support only part of the predicted ordering; they do not establish the proposed
+label-based restoration of category boundaries. Their interleave rows used the
+opposite pass order and are void for the current schedule.
 
 **Sources.** Alogna et al. 2014, *Perspect. Psychol. Sci.* 9:556; Benn et
 al. 2023, *Cereb. Cortex* 33:10380; Carey 2009, *The Origin of Concepts*;

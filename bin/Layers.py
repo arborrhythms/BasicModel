@@ -5512,9 +5512,6 @@ class SparseLayer(Layer):
         view._inventory_edges = selected
         view._missing_sources = torch.tensor(missing, dtype=torch.bool)
         view._paired_sources = paired
-        view.locations = {(rows[i], cols[i]): self.locations[self._rows[pos], self._cols[pos]]
-                          for i, pos in enumerate(selected)
-                          if (self._rows[pos], self._cols[pos]) in getattr(self, 'locations', {})}
         return view
 
     def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
@@ -5574,7 +5571,10 @@ class SparseLayer(Layer):
                 # an edge even at a crisp membership rail. Its magnitude
                 # still qualifies the membership through the power above.
                 written = (w > 0).to(w)
-                insertion = written + w - w.detach()
+                # Only an unwritten edge needs surrogate incidence credit.
+                # A written edge differentiates its exponent exactly; adding
+                # incidence credit there reverses the gradient for fractions.
+                insertion = written + (w - w.detach()) * (w.detach() == 0).to(w)
                 candidate = powered * insertion[:, None]
                 neutral = torch.where(w[:, None] > 0, candidate, 1.)
                 powered = candidate + (neutral - candidate).detach()
@@ -5664,7 +5664,6 @@ class ConceptualAttentionLayer(SparseLayer):
 
         self.conjunctive = SparseLayer(nInput, nOutput, nonlinear=False,
                                       device=device, forbid_self_edges=True)
-        self.conjunctive.locations = {}  # edge -> required brackets relative to the shared extent
         # Feature addresses interleave PS/WS and membership/complement:
         # 4*row + 2*tower + pole. No distributed coordinate is an address.
         self.features = SparseLayer(1, nOutput, nonlinear=False, device=device)
@@ -5743,10 +5742,6 @@ class ConceptualAttentionLayer(SparseLayer):
         if size <= old:
             return
         for matrix in self.part_matrices():
-            if hasattr(matrix, 'locations'):
-                matrix.locations = {(r, (c % (old + 1) if c % (old + 1) != old else size)
-                                      + (c // (old + 1)) * (size + 1)): spans
-                                    for (r, c), spans in matrix.locations.items()}
             matrix._cols = [(c % (old + 1) if c % (old + 1) != old else size)
                             + (c // (old + 1)) * (size + 1) for c in matrix._cols]
             matrix._index = {pair: i for i, pair in enumerate(zip(matrix._rows, matrix._cols))}
@@ -5810,9 +5805,7 @@ class ConceptualAttentionLayer(SparseLayer):
         for name, matrix in (('conjunctive', self.conjunctive), ('features', self.features)):
             matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
                                   nInput=matrix.nInput,
-                                  values=None if matrix.values is None else matrix.values.detach().cpu().clone(),
-                                  locations={k: v for k, v in getattr(matrix, 'locations', {}).items()
-                                             if k in matrix._index})
+                                  values=None if matrix.values is None else matrix.values.detach().cpu().clone())
         return dict(version=4, matrices=matrices, where=self.where.clone(),
                     feature_groups=dict(self.feature_groups),
                     buffers={name: value.detach().cpu().clone()
@@ -5821,6 +5814,8 @@ class ConceptualAttentionLayer(SparseLayer):
     def load_parts_extras(self, saved, *, old_size=None):
         if saved is None:
             return
+        if any(blob.get('locations') for blob in saved.get('matrices', {}).values()):
+            raise ValueError('positional concept definitions predate item 9b; re-teach exact conjunctions as native fused percepts')
         if saved.get('version') not in (1, 2, 3, 4):
             raise ValueError('unsupported conceptual parts checkpoint')
         self.feature_groups = dict(saved.get('feature_groups', {}))
@@ -5844,10 +5839,6 @@ class ConceptualAttentionLayer(SparseLayer):
             if name == 'features':
                 matrix.nInput = int(blob['nInput'])
             rows, cols, values = blob['rows'], blob['cols'], blob['values']
-            matrix.locations = dict(blob.get('locations', {}))
-            if old_size is not None:
-                matrix.locations = {(r, c % (old_span + 1) + (c // (old_span + 1)) * (self.nOutput + 1)): v
-                                    for (r, c), v in matrix.locations.items()}
             if name != 'features' and saved['version'] == 1:
                 cols = [(self.nOutput if c == old_span else c) +
                         (self.nOutput + 1 if values is not None and values[i] < 0 else 0)
@@ -5974,6 +5965,8 @@ class ConceptualAttentionLayer(SparseLayer):
             b = int(base)
             cap = int(self.nOutput - b if capacity is None else capacity)
             nxt = int(self._row_next.get(b, 0))
+            while nxt < cap and b + nxt in self._tensor_row_keys:
+                nxt += 1
             if nxt >= cap:
                 return None
             r = b + nxt
@@ -6069,6 +6062,11 @@ class ConceptAllocator:
         self.chain_idx = {}              # ("chain", tuple) -> cid
         self.word_obj_meta = {}          # surface key -> (A, B, C)
         self.word_forms = {}             # surface -> set of persistent concept ids
+        self.lexical_words = {}          # ordered native part ids -> word id
+        self.interpretations = {}        # (word id, grammar order) -> (object, meta)
+        self.reference_orders = {}       # grammar-resolved object order
+        self.testimony_seen = {}         # object id -> first two distinct occurrences
+        self.testimony_current = {}      # deduplication within this observation boundary
         self.joint = {}                  # word-tuple key -> J
         self._layers = {}                # {0: THE shared square layer}
         self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
@@ -6137,7 +6135,8 @@ class ConceptAllocator:
                   + sorted(self.refs(cid, "whole"), key=repr)):
             if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
                 subs.append(self.order_of(x[1], _seen))
-        return 0 if not subs else min(self.cap(), 1 + max(subs))
+        return max(self.reference_orders.get(cid, 0),
+                   0 if not subs else min(self.cap(), 1 + max(subs)))
 
     def settle(self, cid):
         """Re-derive ``cid``'s order (BOOKKEEPING ONLY, v3: records and rows
@@ -13509,7 +13508,7 @@ class RadixLayer(Layer):
     * ``inverse_table: list[bytes]`` -- index by percept ID; maps ID
       back to canonical bytes. Structural invertibility.
     * ``codebook`` -- ``nn.Parameter[V, D]`` learned vector payload per
-      percept. ``V`` grows by doubling as inserts overflow.
+      percept. ``V`` is fixed; insertions activate its unused rows.
     * ``byte_fallback`` -- :class:`BytesFallbackEncoder` for unknown
       chunks; tracks promotion-candidate hit counts.
     * ``promotion_threshold`` / ``promotion_min_length`` -- when a chunk's
@@ -13537,8 +13536,7 @@ class RadixLayer(Layer):
       1. ``inverse_table[percept_id]`` -> bytes. Exact, no learning.
     """
 
-    # Cap at construction time; grow by doubling when an insert would
-    # otherwise overflow.
+    # Physical capacity is fixed at construction; admission grows occupancy.
     DEFAULT_INITIAL_CAP: int = 64
 
     def __init__(
@@ -13546,7 +13544,6 @@ class RadixLayer(Layer):
         dim: int,
         *,
         initial_cap: Optional[int] = None,
-        max_cap: Optional[int] = None,
         promotion_threshold: int = 4,
         promotion_min_length: int = 2,
         word_bounded: bool = False,
@@ -13566,17 +13563,7 @@ class RadixLayer(Layer):
         if cap <= 0:
             raise ValueError(
                 f"RadixLayer: initial_cap must be positive, got {cap}")
-        if max_cap is not None and int(max_cap) < cap:
-            raise ValueError(
-                "RadixLayer: max_cap must be at least initial_cap; "
-                f"got max_cap={int(max_cap)}, initial_cap={cap}")
         self._capacity: int = cap
-        # ``None`` retains the historical standalone-layer behaviour (grow
-        # immediately and without a logical ceiling).  PartSpace always
-        # supplies its configured ``maxVectors`` so the production radix
-        # store grows only at an explicit batch boundary.
-        self._max_capacity: Optional[int] = (
-            None if max_cap is None else int(max_cap))
         self._size: int = 0
         # 2026-06-04: vector storage is a Codebook *Basis*, not a raw
         # nn.Parameter. When ``basis`` is supplied (PartSpace passes
@@ -13598,7 +13585,9 @@ class RadixLayer(Layer):
             from Spaces import Codebook
             _own = Codebook()
             _own.create(1, self._capacity, self.dim, customVQ=False)
+            _own.setW(nn.Parameter(_own.getW().detach().clone()))
             self._basis = _own
+        self._basis.freeze_capacity("PartSpace.nVectors")
         # Authoritative trie + cache + inverse table.
         self.radix_trie: RadixTrie = RadixTrie()
         self.hash_map: Dict[bytes, int] = {}
@@ -13660,8 +13649,8 @@ class RadixLayer(Layer):
     def codebook(self):
         """The ``[V, D]`` percept prototype tensor (an ``nn.Parameter`` when
         owned), backed by the Codebook Basis. Read / seed call sites use
-        ``self.codebook`` / ``self.codebook.data`` transparently; growth
-        goes through ``_grow_to`` -> ``Basis.grow_to``."""
+        ``self.codebook`` / ``self.codebook.data`` transparently; logical
+        admission leaves this physical tensor unchanged."""
         return self._basis.getW()
 
     # ------------------------------------------------------------------
@@ -13674,11 +13663,6 @@ class RadixLayer(Layer):
     @property
     def capacity(self) -> int:
         return self._capacity
-
-    @property
-    def max_capacity(self) -> Optional[int]:
-        """Logical row ceiling, or ``None`` for an unbounded standalone store."""
-        return self._max_capacity
 
     @property
     def pending_promotions(self) -> int:
@@ -13811,11 +13795,9 @@ class RadixLayer(Layer):
     def _capacity_exhausted(self, required: int) -> RuntimeError:
         return RuntimeError(
             "RadixLayer percept codebook capacity exhausted: "
-            f"required {int(required)} rows, maxVectors="
-            f"{int(self._max_capacity)}. No percept/trie row was allocated "
-            "and the current Parameter was not replaced. Increase "
-            "PartSpace <maxVectors> (and restart from the checkpoint), or "
-            "freeze online word promotion.")
+            f"required {int(required)} rows, PartSpace nVectors={self._capacity}. "
+            "No row was allocated. Increase PartSpace <nVectors> before "
+            "constructing the model and reload the checkpoint.")
 
     def _queue_promotion(
         self,
@@ -13833,8 +13815,7 @@ class RadixLayer(Layer):
         if chunk_b in self.hash_map or chunk_b in self._pending_promotions:
             return
         required = self._size + len(self._pending_promotions) + 1
-        if (self._max_capacity is not None
-                and required > self._max_capacity):
+        if required > self._capacity:
             raise self._capacity_exhausted(required)
         if (not torch.is_tensor(init_vector)
                 or tuple(init_vector.shape) != (self.dim,)):
@@ -13854,15 +13835,10 @@ class RadixLayer(Layer):
         parts = self.spell_out(chunk)
         if any(p in self._formed_this_turn for p in parts):
             return None
+        if self._size >= self._capacity and bytes(chunk) not in self.hash_map:
+            raise self._capacity_exhausted(self._size + 1)
         self._pending_part_groups[bytes(chunk)] = tuple(parts)
-        if self._size < self._capacity:
-            return int(self.insert(chunk, init_vector=init_vector))
-        # Standalone RadixLayer users historically grow on insert. Only a
-        # configured logical cap opts into the production boundary protocol.
-        if self._max_capacity is None:
-            return int(self.insert(chunk, init_vector=init_vector))
-        self._queue_promotion(chunk, init_vector)
-        return None
+        return int(self.insert(chunk, init_vector=init_vector))
 
     def insert(
         self,
@@ -13873,7 +13849,7 @@ class RadixLayer(Layer):
         """Insert ``chunk`` (canonical bytes) and return its percept ID.
 
         If ``chunk`` is already known, returns the existing ID without
-        modifying state. Otherwise grows the codebook if needed and
+        modifying state. Otherwise checks the fixed capacity and
         seeds the new row with ``init_vector`` if supplied (else with
         a small-stddev random vector).
         """
@@ -13890,17 +13866,8 @@ class RadixLayer(Layer):
             return int(existing)
         # Allocate the next percept ID.
         new_id = self._size
-        # Grow the codebook if the new ID would overflow.
         if new_id >= self._capacity:
-            if self._max_capacity is not None:
-                if new_id + 1 > self._max_capacity:
-                    raise self._capacity_exhausted(new_id + 1)
-                raise RuntimeError(
-                    "RadixLayer.insert would replace the PartSpace codebook "
-                    "Parameter outside a safe batch boundary. Queue a chunk "
-                    "promotion and call flush_pending_promotions() after "
-                    "backward + optimizer.step; no row was allocated.")
-            self._grow_to(max(new_id + 1, self._capacity * 2))
+            raise self._capacity_exhausted(new_id + 1)
         # Seed the new row. Write the MASTER parameter (self._basis.W), NOT
         # self.codebook: under the [0,1] percept-store STE, ``self.codebook``
         # -> ``_basis.getW()`` returns a non-leaf clamped tensor that does NOT
@@ -14363,65 +14330,6 @@ class RadixLayer(Layer):
         for child in children:
             yield from RadixLayer._optimizer_leaves(child)
 
-    @staticmethod
-    def _migrate_optimizer_parameter(optimizer, old_param, new_param) -> int:
-        """Swap a grown Parameter into groups and prefix-pad row moments."""
-        if optimizer is None or old_param is new_param:
-            return 0
-        replaced = 0
-        old_rows = int(old_param.shape[0])
-        new_rows = int(new_param.shape[0])
-        for leaf in RadixLayer._optimizer_leaves(optimizer):
-            owns = False
-            for group in getattr(leaf, "param_groups", ()):
-                params = group.get("params", ())
-                for i, param in enumerate(params):
-                    if param is old_param:
-                        params[i] = new_param
-                        owns = True
-                        replaced += 1
-            state_by_param = getattr(leaf, "state", None)
-            if state_by_param is None or old_param not in state_by_param:
-                continue
-            old_state = state_by_param.pop(old_param)
-            migrated = {}
-            for name, value in old_state.items():
-                if (str(name) == "step" and torch.is_tensor(value)
-                        and value.numel() == 1):
-                    migrated[name] = value.clone()
-                elif (torch.is_tensor(value) and value.ndim > 0
-                        and int(value.shape[0]) == old_rows):
-                    target_shape = (new_rows, *tuple(value.shape[1:]))
-                    grown = value.new_zeros(target_shape)
-                    grown[:old_rows].copy_(value)
-                    migrated[name] = grown
-                elif torch.is_tensor(value):
-                    migrated[name] = value.clone()
-                else:
-                    migrated[name] = value
-            state_by_param[new_param] = migrated
-            # A state entry without a param-group owner is malformed; retain
-            # it on the new key for diagnostics but do not silently add a new
-            # optimizer group with unknown hyperparameters.
-            if not owns:
-                warnings.warn(
-                    "RadixLayer migrated optimizer state for a Parameter "
-                    "that was absent from optimizer param_groups.",
-                    RuntimeWarning,
-                )
-        return replaced
-
-    @staticmethod
-    def _optimizer_ownership_count(optimizer, parameter) -> int:
-        if optimizer is None or parameter is None:
-            return 0
-        return sum(
-            candidate is parameter
-            for leaf in RadixLayer._optimizer_leaves(optimizer)
-            for group in getattr(leaf, "param_groups", ())
-            for candidate in group.get("params", ())
-        )
-
     def ensure_atomic_bytes(self, byte_chunks, optimizer=None,
                             owner_space=None):
         """Install required one-byte fallback rows at an eager boundary.
@@ -14430,9 +14338,8 @@ class RadixLayer(Layer):
         unseen byte cannot: :meth:`spell_out` needs its row in the current
         lexical stem.  This routine is therefore the mandatory, pre-gather
         counterpart to :meth:`flush_pending_promotions`.  It validates the
-        complete insertion/growth transaction first, grows geometrically,
-        repairs the owning Space and optimizer, and only then mutates the
-        trie inventory.
+        complete admission transaction before mutating the trie inventory.
+        Physical capacity and optimizer ownership stay fixed.
 
         Callers must invoke it before any read of the current codebook in the
         forward/autograd graph.  ``PartSpace._embed_radix*`` does so once for
@@ -14474,55 +14381,8 @@ class RadixLayer(Layer):
         ]
         required_now = self._size + len(missing)
         required_logical = required_now + len(pending_only)
-        if (self._max_capacity is not None
-                and required_logical > self._max_capacity):
+        if required_logical > self._capacity:
             raise self._capacity_exhausted(required_logical)
-
-        old_capacity = self._capacity
-        target = old_capacity
-        while target < required_now:
-            target = max(target + 1, target * 2)
-            if self._max_capacity is not None:
-                target = min(target, self._max_capacity)
-            if (target < required_now
-                    and target == self._max_capacity):
-                raise self._capacity_exhausted(required_now)
-
-        old_param = self._basis._parameters.get("W")
-        target_will_grow = target > old_capacity
-        owners = 0
-        if target_will_grow:
-            if owner_space is not None and not callable(getattr(
-                    owner_space, "_replace_radix_codebook_parameter", None)):
-                raise RuntimeError(
-                    "RadixLayer eager atomic-byte growth owner lacks "
-                    "_replace_radix_codebook_parameter; no Parameter or "
-                    "radix row was changed.")
-            if optimizer is not None:
-                owners = self._optimizer_ownership_count(
-                    optimizer, old_param)
-                if owners != 1:
-                    raise RuntimeError(
-                        "RadixLayer eager atomic-byte growth requires exactly "
-                        "one optimizer param-group owner for PartSpace W; "
-                        f"found {owners}. No Parameter or radix row was "
-                        "changed.")
-
-        if target_will_grow:
-            self._grow_to(target)
-        new_param = self._basis._parameters.get("W")
-        optimizer_groups = 0
-        if new_param is not old_param:
-            if owner_space is not None:
-                owner_space._replace_radix_codebook_parameter(
-                    old_param, new_param, target)
-            optimizer_groups = self._migrate_optimizer_parameter(
-                optimizer, old_param, new_param)
-            if optimizer is not None and optimizer_groups != owners:
-                raise RuntimeError(
-                    "RadixLayer optimizer ownership changed during eager "
-                    "atomic-byte growth; refusing to continue with an "
-                    "unowned W")
 
         # With enough physical slack installed, insert() cannot resize.  A
         # byte that was somehow also pending is now satisfied immediately;
@@ -14532,20 +14392,17 @@ class RadixLayer(Layer):
             self._pending_promotions.pop(chunk, None)
         return {
             "inserted": len(missing),
-            "grew": target_will_grow,
-            "old_capacity": old_capacity,
-            "new_capacity": target,
-            "optimizer_groups": optimizer_groups,
+            "grew": False,
+            "old_capacity": self._capacity,
+            "new_capacity": self._capacity,
+            "optimizer_groups": 0,
         }
 
     def flush_pending_promotions(self, optimizer=None, owner_space=None):
         """Commit deferred promotions at an explicit graph-safe boundary.
 
-        Growth is geometric and capped by ``max_capacity``.  The complete
-        capacity check and initializer validation happen before any trie,
-        codebook, owner, or optimizer mutation.  When growth replaces ``W``,
-        the owner parameter list and optimizer groups/states are migrated in
-        place; row-wise moments keep their prefix and receive zero tails.
+        Preflight the entire logical admission before writing any row. The
+        physical codebook, parameter identity and optimizer moments stay fixed.
         """
         pending = [
             (chunk, init) for chunk, init in self._pending_promotions.items()
@@ -14559,58 +14416,13 @@ class RadixLayer(Layer):
                     "optimizer_groups": 0}
 
         required = self._size + len(pending)
-        if (self._max_capacity is not None
-                and required > self._max_capacity):
+        if required > self._capacity:
             raise self._capacity_exhausted(required)
         for chunk, init in pending:
             if not chunk or tuple(init.shape) != (self.dim,):
                 raise ValueError(
                     "RadixLayer pending-promotion state is corrupt; "
                     "no queued row was installed.")
-
-        old_capacity = self._capacity
-        old_param = self._basis._parameters.get("W")
-        if target_will_grow := (required > old_capacity):
-            if optimizer is not None:
-                owners = self._optimizer_ownership_count(
-                    optimizer, old_param)
-                if owners != 1:
-                    raise RuntimeError(
-                        "RadixLayer boundary growth requires exactly one "
-                        "optimizer param-group owner for PartSpace W; found "
-                        f"{owners}. No Parameter or radix row was changed.")
-            else:
-                owners = 0
-        else:
-            owners = 0
-        target = old_capacity
-        while target < required:
-            target = max(target + 1, target * 2)
-            if self._max_capacity is not None:
-                target = min(target, self._max_capacity)
-            if target < required and target == self._max_capacity:
-                raise self._capacity_exhausted(required)
-
-        if target > old_capacity:
-            self._grow_to(target)
-        new_param = self._basis._parameters.get("W")
-        optimizer_groups = 0
-        if new_param is not old_param:
-            if owner_space is not None:
-                replace = getattr(
-                    owner_space, "_replace_radix_codebook_parameter", None)
-                if not callable(replace):
-                    raise RuntimeError(
-                        "RadixLayer growth owner lacks "
-                        "_replace_radix_codebook_parameter; optimizer "
-                        "ownership cannot be repaired safely.")
-                replace(old_param, new_param, target)
-            optimizer_groups = self._migrate_optimizer_parameter(
-                optimizer, old_param, new_param)
-            if optimizer is not None and optimizer_groups != owners:
-                raise RuntimeError(
-                    "RadixLayer optimizer ownership changed during boundary "
-                    "growth; refusing to continue with an unowned W")
 
         # Capacity and all ownership transitions are now valid.  ``insert``
         # cannot grow in this loop and each queued initializer was prechecked.
@@ -14619,33 +14431,11 @@ class RadixLayer(Layer):
         self._pending_promotions.clear()
         return {
             "inserted": len(pending),
-            "grew": target > old_capacity,
-            "old_capacity": old_capacity,
-            "new_capacity": target,
-            "optimizer_groups": optimizer_groups,
+            "grew": False,
+            "old_capacity": self._capacity,
+            "new_capacity": self._capacity,
+            "optimizer_groups": 0,
         }
-
-    def _grow_to(self, new_cap: int) -> None:
-        """Grow the codebook to ``new_cap`` rows, preserving existing rows.
-
-        Mirrors the ``Codebook.grow_to`` pattern: rebuild the
-        ``nn.Parameter`` with the new capacity, copy the old rows,
-        small-stddev init the new ones. Existing optimizer state is
-        not preserved -- callers that hold an optimizer over
-        :attr:`codebook` must rebuild it (PartSpace does this via
-        the standard ``rebuild_optimizer`` plumbing on insert).
-        """
-        new_cap = int(new_cap)
-        if new_cap <= self._capacity:
-            return
-        if (self._max_capacity is not None
-                and new_cap > self._max_capacity):
-            raise self._capacity_exhausted(new_cap)
-        # Delegate growth to the Codebook Basis: it preserves the existing
-        # rows and zero-inits the new ones (``insert`` seeds the new row
-        # immediately after). Replaces the old raw-Parameter rebuild.
-        self._basis.grow_to(new_cap)
-        self._capacity = new_cap
 
     # ------------------------------------------------------------------
     # Persistence
@@ -14662,7 +14452,6 @@ class RadixLayer(Layer):
         return {
             "dim": self.dim,
             "capacity": self._capacity,
-            "max_capacity": self._max_capacity,
             "size": self._size,
             "promotion_threshold": self.promotion_threshold,
             "promotion_min_length": self.promotion_min_length,
@@ -14689,19 +14478,11 @@ class RadixLayer(Layer):
         """
         cap = int(extras["capacity"])
         size = int(extras["size"])
-        saved_max = extras.get("max_capacity", None)
-        if self._max_capacity is None and saved_max is not None:
-            self._max_capacity = int(saved_max)
-        if (self._max_capacity is not None
-                and cap > self._max_capacity):
-            raise ValueError(
-                "RadixLayer checkpoint physical capacity exceeds configured "
-                f"maxVectors: checkpoint={cap}, maxVectors="
-                f"{self._max_capacity}")
         if cap > self._capacity:
-            # Never shrink a larger configured initial allocation.  This is
-            # the sidecar half of the prefix-load checkpoint migration.
-            self._grow_to(cap)
+            raise ValueError(
+                "RadixLayer checkpoint exceeds PartSpace nVectors: "
+                f"checkpoint={cap}, nVectors={self._capacity}. "
+                "Configure sufficient capacity before model construction.")
         if size > self._capacity:
             raise ValueError(
                 f"RadixLayer checkpoint size {size} exceeds live physical "
@@ -14737,11 +14518,10 @@ class RadixLayer(Layer):
                     "RadixLayer checkpoint pending initializer has shape "
                     f"{tuple(init_t.shape)}, expected ({self.dim},)")
             pending[chunk_b] = init_t
-        if (self._max_capacity is not None
-                and self._size + len(pending) > self._max_capacity):
+        if self._size + len(pending) > self._capacity:
             raise ValueError(
                 "RadixLayer checkpoint pending promotions exceed configured "
-                f"maxVectors={self._max_capacity}")
+                f"nVectors={self._capacity}")
         self._pending_promotions = pending
         self.part_groups = dict(extras.get("part_groups", {}))
         self._canonical_group_cache = None

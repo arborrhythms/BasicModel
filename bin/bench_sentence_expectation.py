@@ -92,12 +92,37 @@ def summarize_steps(steps, warmup=2):
 
 def _controlled_inputs(values, masks, control, seed):
     if control == "context_free":
-        return torch.zeros_like(values), masks
+        return torch.zeros_like(values), torch.zeros_like(masks)
     if control == "shuffled":
         generator = torch.Generator(device="cpu").manual_seed(seed)
         order = torch.randperm(len(values), generator=generator, device="cpu")
         return values[order.to(values.device)], masks[order.to(masks.device)]
     return values, masks
+
+
+def score_prediction_thought(result, target, occupied):
+    """Score a typed forecast, never reinterpret unknown truth as a forecast.
+
+    The held-out target is used here only after the ordinary controller has
+    finished. Unanswered questions retain their work but have no error score.
+    """
+    from Layers import MeaningExpectation
+    checked = result.result
+    prediction = None if checked is None else checked.value
+    answered = (checked is not None and checked.semantic_id == 'arma'
+                and checked.result_kind == 'prediction'
+                and isinstance(prediction, MeaningExpectation))
+    report = dict(answered=answered, work=result.work.spent,
+        steps=sum(record.kind == 'thought' for record in result.records),
+        feature_mse=None, presence_bce=None)
+    if answered:
+        if prediction.roles.shape != target.shape or occupied.shape != target.shape[:1]:
+            raise ValueError('prediction thought target shape differs from its roles')
+        report.update(
+            feature_mse=float((prediction.roles.detach() - target.to(prediction.roles)).square().mean()),
+            presence_bce=float(F.binary_cross_entropy_with_logits(
+                prediction.presence_logits.detach(), occupied.to(prediction.presence_logits))))
+    return report
 
 
 def _score_head(head, values, masks, targets, root=False, target_masks=None):

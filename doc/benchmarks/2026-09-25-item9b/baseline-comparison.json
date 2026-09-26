@@ -1,0 +1,19 @@
+{
+  "preceding_receipt": "../2026-09-25-item9-bank-sync/measurements/baseline.json",
+  "prior_means": {
+    "before_training": 0.10061445273458958,
+    "training": 0.0879226878285408,
+    "after_training": 0.08916187100112438
+  },
+  "current_means": {
+    "before_training": 0.10059066489338875,
+    "training": 0.0949082300066948,
+    "after_training": 0.08824818022549152
+  },
+  "deltas": {
+    "before_training": -2.3787841200828552e-05,
+    "training": 0.006985542178153989,
+    "after_training": -0.0009136907756328583
+  },
+  "note": "Descriptive fixed-seed comparison; no invented numerical tolerance gate."
+}

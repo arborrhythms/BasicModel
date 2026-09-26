@@ -231,47 +231,37 @@ class TestPromotion(unittest.TestCase):
                       "promotion_threshold=2)")
 
 
-class TestCodebookGrowth(unittest.TestCase):
-    """Item 6: codebook grows on insert; existing rows preserved."""
+class TestCodebookCapacity(unittest.TestCase):
+    """Item 9b: physical rows stay fixed while occupancy grows."""
 
-    def test_codebook_grows_when_capacity_exceeded(self):
+    def test_insert_activates_preallocated_rows(self):
         from Layers import RadixLayer
-        ps = RadixLayer(dim=4, initial_cap=2)
-        self.assertEqual(ps.capacity, 2)
-        ids = []
-        for w in (b"a", b"b", b"c", b"d", b"e"):
-            ids.append(ps.insert(w))
+        ps = RadixLayer(dim=4, initial_cap=5)
+        parameter = ps.codebook
+        ids = [ps.insert(w) for w in (b"a", b"b", b"c", b"d", b"e")]
         self.assertEqual(ids, [0, 1, 2, 3, 4])
-        self.assertGreaterEqual(ps.capacity, 5,
-                                "Capacity must have grown to fit 5 inserts")
+        self.assertEqual(ps.capacity, 5)
+        self.assertIs(ps.codebook, parameter)
 
-    def test_existing_codebook_rows_preserved_through_growth(self):
+    def test_existing_rows_survive_admission(self):
         from Layers import RadixLayer
-        ps = RadixLayer(dim=4, initial_cap=2)
-        ps.insert(b"a")
-        ps.insert(b"b")
-        # Snapshot rows before growth.
-        row_a = ps.codebook[0].detach().clone()
-        row_b = ps.codebook[1].detach().clone()
-        # Force growth.
+        ps = RadixLayer(dim=4, initial_cap=3)
+        ps.insert(b"a"); ps.insert(b"b")
+        before = ps.codebook[:2].detach().clone()
         ps.insert(b"c")
-        self.assertGreaterEqual(ps.capacity, 3)
-        # Rows 0 and 1 must remain bit-identical after the grow.
-        self.assertTrue(torch.equal(ps.codebook[0].detach(), row_a),
-                        "Row 0 changed after codebook growth")
-        self.assertTrue(torch.equal(ps.codebook[1].detach(), row_b),
-                        "Row 1 changed after codebook growth")
+        self.assertEqual(ps.capacity, 3)
+        self.assertTrue(torch.equal(ps.codebook[:2], before))
 
-    def test_capacity_doubles_on_overflow(self):
+    def test_overflow_does_not_resize_or_insert(self):
         from Layers import RadixLayer
         ps = RadixLayer(dim=4, initial_cap=2)
-        ps.insert(b"a")
-        ps.insert(b"b")
+        ps.insert(b"a"); ps.insert(b"b")
+        parameter = ps.codebook
+        with self.assertRaisesRegex(RuntimeError, 'nVectors'):
+            ps.insert(b"c")
         self.assertEqual(ps.capacity, 2)
-        ps.insert(b"c")
-        self.assertEqual(ps.capacity, 4,
-                         "PerceptStore should double its codebook on "
-                         "overflow")
+        self.assertIs(ps.codebook, parameter)
+        self.assertIsNone(ps.get_id(b"c"))
 
 
 class TestForwardLookupPath(unittest.TestCase):
@@ -348,7 +338,7 @@ class TestPersistence(unittest.TestCase):
                            promotion_min_length=2)
         # The replay codebook needs to be at the target capacity
         # before ``load_state_dict`` (Parameter shape must match).
-        ps2._grow_to(extras["capacity"])
+        assert ps2.capacity == extras["capacity"]
         ps2.load_state_dict(state)
         ps2.load_vocab_extras(extras)
         # Same lookups should now succeed.

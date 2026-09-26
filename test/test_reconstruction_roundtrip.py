@@ -251,9 +251,11 @@ def test_where_scale_applies_to_d3_reconstruction():
     finally:
         model.loss.compute = orig_compute
     assert model._d3_active, "grammar train batch should take the D3 path"
+    # The per-word objective scores position but excludes the field's shared
+    # timestamp. Its retained event prefix still uses the input where scale.
     banded = [kw for shape, kw in calls
-              if len(shape) == 3 and shape[-1] == D
-              and kw.get("nWhere") == nw and kw.get("nWhen") == nn_]
+              if len(shape) == 3 and shape[-1] == D - nn_
+              and kw.get("nWhere") == nw and kw.get("nWhen") == 0]
     assert banded, (calls, "the D3 event compare did not carry the input band")
 
 

@@ -8,8 +8,12 @@
 ## Question and falsifiable first milestone
 
 The comparison-sized experiment asks whether the serial grammar architecture
-can acquire predictive language structure from FineWeb-Edu at roughly the
-parameter count of NanoChat depth 4.
+can acquire predictive language structure from FineWeb-Edu, measured against
+Karpathy's default NanoChat speedrun tier, depth 20 (Alec, 2026-09-25;
+replaces the earlier matched-parameter depth-4 reference). The two are not
+parameter-matched: the comparison is by bytes seen and wall time on the
+common held-out item set, and the depth-20 result is the ceiling reference —
+what the default $100 speedrun does on these items — not a matched curve.
 
 The first milestone is deliberately narrower:
 
@@ -57,13 +61,20 @@ telemetry, but is not a language pass criterion.
 |---|---|---:|---:|---:|---:|
 | Architecture gate | `data/MM_nanochat_grammar_gate.xml` | 8,518,478 | 64 / 8 / 256 | 8,192 | 200 |
 | Comparison pilot | `data/MM_nanochat_grammar_pilot.xml` | 41,679,182 | 64 / 8 / 512 | 32,768 | 2,000 |
-| NanoChat reference | local depth 4, vocab 32,768 | 36,700,296 | context / -- / 256 | 32,768 | matched manifest |
+| NanoChat reference | Karpathy's default speedrun, depth 20 | about 560M (per the nanochat defaults; record the exact count from the run) | context 2048 / -- / 1,280 | 65,536 BPE vocab | the speedrun's own FineWeb-Edu shards, about 11B tokens |
 | Existing FineWeb config | `data/MM_20M_fineweb.xml` | 118,256,431 | legacy 64 / -- / 1,024 | 65,536 | 10,000 default |
 
 Counts include the bounded STM reducer that is registered during the standard
-pre-training warmup. The comparison pilot is 13.57% larger than NanoChat d4,
-so it is comparison-scale rather than an exact parameter match. The old "20M"
-name is not a reliable budget: its current live graph is about 118M parameters.
+pre-training warmup. The pilot is roughly one-thirteenth the size of the
+depth-20 reference and sees roughly one five-hundredth of its bytes; the
+comparison is deliberately unmatched, and the numbers are reported with
+those ratios beside them. The old "20M" name is not a reliable budget: its
+current live graph is about 118M parameters. Nothing NanoChat has been built
+locally yet: the reference tier is trained on rented hardware (eight H100s,
+about four hours for the depth-20 speedrun), and the evaluator's NanoChat
+scorer — conditional log-probability of each of the 16 candidates given the
+prefix, top-1 and reciprocal rank on the same item file — is still to be
+written.
 
 Here `W=64` is only the outer serial-loop bound. `F=8` is the simultaneous PS,
 WS, and CS field width and the STM workspace depth. Raw radix width is not a
@@ -156,12 +167,20 @@ decreases were accounted for inside STM8. The fresh operator mix (60 online
 `conjunction`, one online and two boundary `disjunction`) is initialization
 telemetry, not evidence of learned grammar diversity.
 
-For a fair NanoChat comparison, export the exact BasicModel document manifest
-into NanoChat train and validation parquet files.  Budget both runs by source
-UTF-8 bytes seen and wall time, not optimizer steps or tokenizer tokens.  Report
-parameter count, peak memory, bytes/second, top-1/MRR on the common word-choice
-set, and learning curves.  Do not compare BasicModel's reconstruction MSE to
-NanoChat bits-per-byte or cross-entropy as though they were the same quantity.
+The depth-20 reference trains on the speedrun's own shards, not on the
+BasicModel manifest. Two consequences. First, **contamination**: the speedrun
+consumes the first FineWeb-Edu shards, and the checked-in gate draws its
+held-out items from `shard_00000`; regenerate the item manifest from a shard
+outside the speedrun's shard list before scoring the reference, or state
+plainly that the reference has seen the test documents. Second, the
+**matched curve is a separate, cheap run**: a small NanoChat (depth 4 to 8)
+trained on the exact BasicModel document manifest exported to NanoChat train
+and validation parquet files, minutes on one H100, reported beside the
+depth-20 ceiling. Budget every run by source UTF-8 bytes seen and wall time,
+not optimizer steps or tokenizer tokens.  Report parameter count, peak
+memory, bytes/second, top-1/MRR on the common word-choice set, and learning
+curves.  Do not compare BasicModel's reconstruction MSE to NanoChat
+bits-per-byte or cross-entropy as though they were the same quantity.
 
 ## ArborStudio MPS launch posture
 

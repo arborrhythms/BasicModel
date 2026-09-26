@@ -115,7 +115,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             with self.assertRaises(ValueError) as ctx:
                 BaseModel.from_config(config_path=path)
             self.assertIn("nVectors", str(ctx.exception))
-            self.assertIn("256", str(ctx.exception))
+            self.assertIn("257", str(ctx.exception))  # 256 bytes plus the null percept
 
     def test_init_accepts_bpe_with_nVectors_256(self):
         """Task 4: nVectors>=256 is accepted; chunk_layer is built in bpe mode."""

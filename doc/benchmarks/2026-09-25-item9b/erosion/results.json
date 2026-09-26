@@ -1,0 +1,5413 @@
+{
+  "protocol": {
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "schedules": [
+      "serial",
+      "parallel",
+      "interleave:2"
+    ],
+    "training": [
+      "00",
+      "01",
+      "10",
+      "11",
+      "Shipment & Transport-Sea, Air, Rail, Road, Pipeline",
+      "12.",
+      "G\u00fathwin\u00eb was the sword that belonged to \u00c9omer.",
+      "Getting children to design a robot was not easy.",
+      "Powder bed fusion is the current market leader in metal additive manufacturing.",
+      "Geologically it belongs to the Rhenish Slate Mountains.",
+      "Related categories 1",
+      "Agreement On Food Safety",
+      "His mother believes he is a selfish boy.",
+      "He wrote choral and orchestral works, as well as operas.",
+      "Wednesday, October 13, 2010",
+      "See on www.scientificamerican.com",
+      "Modern humans crowded out Europes Neanderthals",
+      "USGS Groundwater Information",
+      "The more we learn about something, the better we can understand.",
+      "yet contain only 19% of world population.",
+      "At the start of the 20th century:",
+      "It revealed that India has made a rank progress over 2016.",
+      "Here\u2019s the list of their mighty benefits:",
+      "This is \u2018What If\u2019"
+    ],
+    "epochs": 1,
+    "probe_scope": "XOR plus native orthographic property classes; no semantic-category claim",
+    "initialization": "one model per seed, deep-copied before each condition",
+    "execution": "CPU; native tensor recurrence bodies with an eager loop dispatcher; no throughput claim",
+    "symbol_mask": "native field with symbols offline versus the owned word-symbol reverse-pi query",
+    "gate": "all-three-seed ordering only; every violation is retained"
+  },
+  "corpus": {
+    "shard": "data/fineweb/shard_00000.parquet",
+    "document_sha256": [
+      "9cffecbbbd4c68cf79c3512cf103a494d5f5904573c570332cf6675386eabd75",
+      "f027db81e1cf6cc6ebce3358ec76ad04cf368d379041a7a9695327ab8a153e3a",
+      "60dc12fe8fcaca05a4c31b0706af96af560740812c35ca837c2d1a4f089e1fe3",
+      "44cf5f4a2f0df24b5cd8ed5f84f4e9a3fc2d3407e4e340b3354ac06d4add1f19",
+      "73043b6b2374fbdd87ad6751d0bb1ae67e7877a276b379f627cb8a4d3865e3aa",
+      "4feaa06f798e52d1723b1fa3792b82c352670aca765832248763f59fb24cb06e",
+      "b82d59b838055a0d9319093864237b8c201ab33a5931d1326bfb01a1c501539b",
+      "2ffa59ed86aa963d142a4c4daa8876139fc8b5afe4d6163c4be757b3d4ec25f5",
+      "0ef56914924f795496672b67488f9f948bce828feee7c4d26b531a7238c13561",
+      "d5a798168e030d2dc6ef04c67d73feca0cfd5f2688f138551dc031f68fc89eee",
+      "5eda687de9ad0d77302b404c843b01863a90dcffa4b3a5b8cfa92d5ac0c4e83a",
+      "4f3652394e234290e6c994c1ac62826c308e0e3273876b2b1ac18572ae291c4f",
+      "bfe77e185dc484afac4eb1817ab8b75441dd7e635165c1e162b9e6e29a3c5e8f",
+      "68e0203acdde9de5bcaed1a68c1445f7605f863d7505384f2d76647fb51c908e",
+      "72fee89cdf6cc7477c840cdc438cc76edaaa35737d6319cc9cb91bc522cffa93",
+      "4101bc0fd0c231818feab0b73bb1beb228021951b51f160062b0b742f4e6b6cc",
+      "6ee8a816be0f1f13c0f9df25e3a656f1d7bd71fcfedff3de782c48078a8a355e",
+      "72b7c6ab3c07982524e02e9c80d42eebad9f1830e58a2f7af771a40cb5902ce4",
+      "7c6c9e51797fb13dbe127950ab84b4bdf649e81136b2299b09ce89f9b58fea3f",
+      "8e90f19c568b4d312f85371296f4a06be088933316e84d2ba499fe67c3ad8c7f"
+    ],
+    "sentences": [
+      "Shipment & Transport-Sea, Air, Rail, Road, Pipeline",
+      "12.",
+      "G\u00fathwin\u00eb was the sword that belonged to \u00c9omer.",
+      "Getting children to design a robot was not easy.",
+      "Powder bed fusion is the current market leader in metal additive manufacturing.",
+      "Geologically it belongs to the Rhenish Slate Mountains.",
+      "Related categories 1",
+      "Agreement On Food Safety",
+      "His mother believes he is a selfish boy.",
+      "He wrote choral and orchestral works, as well as operas.",
+      "Wednesday, October 13, 2010",
+      "See on www.scientificamerican.com",
+      "Modern humans crowded out Europes Neanderthals",
+      "USGS Groundwater Information",
+      "The more we learn about something, the better we can understand.",
+      "yet contain only 19% of world population.",
+      "At the start of the 20th century:",
+      "It revealed that India has made a rank progress over 2016.",
+      "Here\u2019s the list of their mighty benefits:",
+      "This is \u2018What If\u2019"
+    ]
+  },
+  "conditions": [
+    {
+      "seed": 0,
+      "schedule": "serial",
+      "seconds": 9.956997041939758,
+      "serial_training_steps": 24,
+      "parallel_passes": 0,
+      "losses": [
+        {
+          "input_reconstruction": 4.5181343011790887e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.530055957729928e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.524094765656628e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.428722968441434e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8645807504653931,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.15352150797843933,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.834931492805481,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.45924973487854,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0677807331085205,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.1160165071487427,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.240073323249817,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0246800184249878,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.4962458610534668,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.5144205689430237,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.151077389717102,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8622387051582336,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.3055216073989868,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.2943638563156128,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7533969879150391,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.6002215147018433,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.4689733982086182,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.5150388479232788,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7227951884269714,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8452207446098328,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              175,
+              175,
+              175,
+              175
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": 0.0,
+            "within": 1.4142135381698608,
+            "between": 1.4142135381698608,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.0,
+            "between": 0.0,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              229,
+              338,
+              229,
+              239,
+              175,
+              175,
+              219,
+              229,
+              195,
+              174,
+              219,
+              174,
+              338,
+              219,
+              219,
+              219,
+              229,
+              219,
+              219,
+              239,
+              219,
+              219,
+              219,
+              219,
+              219,
+              219,
+              239,
+              229,
+              338,
+              229,
+              229,
+              219,
+              219,
+              219,
+              219,
+              219,
+              338,
+              229,
+              175,
+              219,
+              219,
+              219,
+              219,
+              229,
+              219,
+              219,
+              219,
+              239,
+              239,
+              229,
+              229,
+              338,
+              219,
+              219,
+              229,
+              219,
+              219,
+              239,
+              219,
+              219,
+              219,
+              338,
+              219,
+              219,
+              219,
+              338,
+              338,
+              229
+            ],
+            "lexical_coverage": 36,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": -0.09954379582780915,
+            "within": 1.253755740073992,
+            "between": 1.154211944246183,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          },
+          "masked": {
+            "cp": 3.993628651253638,
+            "within": 1.7431035877594043,
+            "between": 5.736732239013042,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          }
+        }
+      }
+    },
+    {
+      "seed": 0,
+      "schedule": "parallel",
+      "seconds": 2.6118353330530226,
+      "serial_training_steps": 24,
+      "parallel_passes": 0,
+      "losses": [
+        {
+          "input_reconstruction": 0.00012469659850466996,
+          "input_reconstruction_reverse": 0.025104543194174767,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00010454326547915116,
+          "input_reconstruction_reverse": 0.020378166809678078,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0003215295437257737,
+          "input_reconstruction_reverse": 0.020377352833747864,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.020405320450663567,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.000143559678690508,
+          "input_reconstruction_reverse": 0.0992814227938652,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0001543503749417141,
+          "input_reconstruction_reverse": 0.03219195082783699,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.3390375897870399e-05,
+          "input_reconstruction_reverse": 0.09451531618833542,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.0831763967871666,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.000203523290110752,
+          "input_reconstruction_reverse": 0.09416381269693375,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 9.303855040343478e-05,
+          "input_reconstruction_reverse": 0.08282480388879776,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0002760979987215251,
+          "input_reconstruction_reverse": 0.09419894963502884,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00010120851220563054,
+          "input_reconstruction_reverse": 0.09380429983139038,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00018832147179637104,
+          "input_reconstruction_reverse": 0.0941794365644455,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 8.65083493408747e-05,
+          "input_reconstruction_reverse": 0.09419579803943634,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0001306542253587395,
+          "input_reconstruction_reverse": 0.09382588416337967,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00018635147716850042,
+          "input_reconstruction_reverse": 0.09454794973134995,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 7.535020267823711e-05,
+          "input_reconstruction_reverse": 0.0941777154803276,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00017223550821654499,
+          "input_reconstruction_reverse": 0.06894701719284058,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00028659618692472577,
+          "input_reconstruction_reverse": 0.08234789222478867,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.09501855820417404,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00029862855444662273,
+          "input_reconstruction_reverse": 0.09458067268133163,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 6.29032583674416e-05,
+          "input_reconstruction_reverse": 0.09420550614595413,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 5.942795178270899e-05,
+          "input_reconstruction_reverse": 0.08269655704498291,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.08270122855901718,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              75,
+              76,
+              75,
+              75
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": 0.0,
+            "within": 1.8660253882408142,
+            "between": 1.8660253882408142,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.5,
+            "between": 0.5,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              80,
+              80,
+              80,
+              77,
+              75,
+              77,
+              78,
+              78,
+              78,
+              75,
+              78,
+              75,
+              78,
+              78,
+              77,
+              77,
+              80,
+              78,
+              78,
+              78,
+              77,
+              78,
+              78,
+              78,
+              77,
+              80,
+              77,
+              78,
+              78,
+              80,
+              78,
+              77,
+              80,
+              78,
+              77,
+              78,
+              78,
+              79,
+              77,
+              80,
+              77,
+              77,
+              78,
+              78,
+              78,
+              78,
+              78,
+              80,
+              78,
+              78,
+              80,
+              78,
+              80,
+              78,
+              78,
+              80,
+              78,
+              77,
+              77,
+              77,
+              77,
+              78,
+              78,
+              78,
+              80,
+              78,
+              78,
+              78
+            ],
+            "lexical_coverage": 17,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": -0.06768580127712148,
+            "within": 0.545908576700039,
+            "between": 0.4782227754229175,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          },
+          "masked": {
+            "cp": 1.2070741735793131,
+            "within": 2.470574979926574,
+            "between": 3.6776491535058873,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          }
+        }
+      }
+    },
+    {
+      "seed": 0,
+      "schedule": "interleave:2",
+      "seconds": 14.440352750010788,
+      "serial_training_steps": 24,
+      "parallel_passes": 12,
+      "losses": [
+        {
+          "input_reconstruction": 4.5181343011790887e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00010857429151656106,
+          "input_reconstruction_reverse": 9.810882329475135e-05,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.5002514525549486e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0003825667954515666,
+          "input_reconstruction_reverse": 9.762505942489952e-05,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8265553116798401,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00017857120838016272,
+          "input_reconstruction_reverse": 0.056957028806209564,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.6863189339637756,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.199508460558718e-05,
+          "input_reconstruction_reverse": 0.0766078531742096,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.9340239763259888,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 8.551862993044779e-05,
+          "input_reconstruction_reverse": 0.09393302351236343,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.8014591932296753,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 9.986806253436953e-05,
+          "input_reconstruction_reverse": 0.09438887238502502,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 2.0326783657073975,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 8.486915612593293e-05,
+          "input_reconstruction_reverse": 0.08818920701742172,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.5391440391540527,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00014673532859887928,
+          "input_reconstruction_reverse": 0.09370158612728119,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 2.166705846786499,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00011362836085027084,
+          "input_reconstruction_reverse": 0.09332112222909927,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.8316324949264526,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0001633518550079316,
+          "input_reconstruction_reverse": 0.09452381730079651,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 2.6439590454101562,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00012102674372727051,
+          "input_reconstruction_reverse": 0.08181870728731155,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 2.266817331314087,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0001460992352804169,
+          "input_reconstruction_reverse": 0.06476115435361862,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              335,
+              335,
+              335,
+              335
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": -0.012472003698348999,
+            "within": 1.7320507764816284,
+            "between": 1.7195787727832794,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.0,
+            "between": 0.0,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              348,
+              348,
+              348,
+              348,
+              335,
+              337,
+              348,
+              346,
+              348,
+              335,
+              342,
+              335,
+              348,
+              348,
+              342,
+              340,
+              346,
+              348,
+              348,
+              346,
+              342,
+              348,
+              348,
+              348,
+              340,
+              342,
+              348,
+              348,
+              348,
+              348,
+              348,
+              340,
+              348,
+              348,
+              340,
+              348,
+              348,
+              348,
+              337,
+              348,
+              340,
+              340,
+              340,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              346,
+              340,
+              348,
+              346,
+              348,
+              348,
+              346,
+              342,
+              340,
+              342,
+              348,
+              348,
+              348,
+              342,
+              348,
+              348,
+              348
+            ],
+            "lexical_coverage": 36,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": 0.02280447248966555,
+            "within": 0.7142371158091789,
+            "between": 0.7370415882988445,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          },
+          "masked": {
+            "cp": 5.289716967343247,
+            "within": 5.226126452366517,
+            "between": 10.515843419709764,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          }
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "schedule": "serial",
+      "seconds": 9.683682707953267,
+      "serial_training_steps": 24,
+      "parallel_passes": 0,
+      "losses": [
+        {
+          "input_reconstruction": 4.5002514525549486e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.5002514525549486e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.530055957729928e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.512173472903669e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.170762300491333,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.9433660507202148,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8760584592819214,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.9896252751350403,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7077077627182007,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.9203044176101685,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.6902092695236206,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.8956575393676758,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0353693962097168,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.1608237028121948,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.2955714464187622,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.5873181819915771,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7659360766410828,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.5917553901672363,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.3412363529205322,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.1696016788482666,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.3556267023086548,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.2988853454589844,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.6812962293624878,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.6936615705490112,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              175,
+              175,
+              175,
+              175
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": 0.0,
+            "within": 1.4142135381698608,
+            "between": 1.4142135381698608,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.0,
+            "between": 0.0,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              348,
+              229,
+              348,
+              348,
+              175,
+              175,
+              219,
+              348,
+              185,
+              174,
+              219,
+              174,
+              229,
+              219,
+              219,
+              219,
+              338,
+              219,
+              219,
+              348,
+              219,
+              219,
+              219,
+              219,
+              219,
+              219,
+              348,
+              338,
+              338,
+              348,
+              338,
+              219,
+              219,
+              219,
+              219,
+              219,
+              338,
+              338,
+              175,
+              219,
+              219,
+              219,
+              219,
+              338,
+              219,
+              219,
+              219,
+              348,
+              229,
+              348,
+              229,
+              338,
+              219,
+              219,
+              348,
+              219,
+              219,
+              348,
+              219,
+              219,
+              219,
+              229,
+              219,
+              219,
+              219,
+              229,
+              338,
+              348
+            ],
+            "lexical_coverage": 36,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": -0.08482166461243335,
+            "within": 1.1531438329473769,
+            "between": 1.0683221683349435,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          },
+          "masked": {
+            "cp": 5.613404139517279,
+            "within": 1.7966748320264412,
+            "between": 7.41007897154372,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          }
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "schedule": "parallel",
+      "seconds": 2.5937995829153806,
+      "serial_training_steps": 24,
+      "parallel_passes": 0,
+      "losses": [
+        {
+          "input_reconstruction": 2.264587783429306e-05,
+          "input_reconstruction_reverse": 0.02502959594130516,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 3.654549800558016e-05,
+          "input_reconstruction_reverse": 0.020292164757847786,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 3.654549800558016e-05,
+          "input_reconstruction_reverse": 0.02029079757630825,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.020304402336478233,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 5.8282992540625855e-05,
+          "input_reconstruction_reverse": 0.09929396212100983,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.0452163375448436e-05,
+          "input_reconstruction_reverse": 0.03210599347949028,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 5.9288580814609304e-05,
+          "input_reconstruction_reverse": 0.09448716789484024,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.08317152410745621,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.09420578181743622,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.08285171538591385,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00013549652067013085,
+          "input_reconstruction_reverse": 0.09418454021215439,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.000251072458922863,
+          "input_reconstruction_reverse": 0.09388931095600128,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.0942177027463913,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 7.93203798821196e-05,
+          "input_reconstruction_reverse": 0.09422458708286285,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 7.887629908509552e-05,
+          "input_reconstruction_reverse": 0.0938134714961052,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00024932081578299403,
+          "input_reconstruction_reverse": 0.09455273300409317,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0003030274820048362,
+          "input_reconstruction_reverse": 0.09421193599700928,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.06901867687702179,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 3.1322775612352416e-05,
+          "input_reconstruction_reverse": 0.08239820599555969,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00017305350047536194,
+          "input_reconstruction_reverse": 0.09497775137424469,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00027186278020963073,
+          "input_reconstruction_reverse": 0.0945408046245575,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00018466584151610732,
+          "input_reconstruction_reverse": 0.09422457218170166,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.08274491876363754,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 6.583955109817907e-05,
+          "input_reconstruction_reverse": 0.08269132673740387,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              75,
+              76,
+              75,
+              75
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": 0.0,
+            "within": 1.8660253882408142,
+            "between": 1.8660253882408142,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.5,
+            "between": 0.5,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              80,
+              80,
+              80,
+              78,
+              75,
+              77,
+              78,
+              78,
+              78,
+              75,
+              78,
+              75,
+              78,
+              78,
+              77,
+              77,
+              78,
+              78,
+              80,
+              78,
+              77,
+              80,
+              78,
+              80,
+              77,
+              80,
+              80,
+              78,
+              78,
+              80,
+              78,
+              77,
+              80,
+              78,
+              77,
+              78,
+              80,
+              79,
+              77,
+              80,
+              77,
+              80,
+              78,
+              78,
+              80,
+              78,
+              78,
+              80,
+              78,
+              80,
+              80,
+              78,
+              78,
+              78,
+              78,
+              78,
+              78,
+              78,
+              80,
+              78,
+              77,
+              78,
+              80,
+              78,
+              80,
+              78,
+              78,
+              78
+            ],
+            "lexical_coverage": 17,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": -0.06279773109704812,
+            "within": 0.5080285898285544,
+            "between": 0.44523085873150625,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          },
+          "masked": {
+            "cp": 1.426923201867823,
+            "within": 1.9769870113766028,
+            "between": 3.403910213244426,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          }
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "schedule": "interleave:2",
+      "seconds": 14.412059499998577,
+      "serial_training_steps": 24,
+      "parallel_passes": 12,
+      "losses": [
+        {
+          "input_reconstruction": 4.5002514525549486e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 2.2669528334517963e-05,
+          "input_reconstruction_reverse": 3.13562668452505e-05,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.5181343011790887e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 3.654549800558016e-05,
+          "input_reconstruction_reverse": 3.1259354727808386e-05,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7061898708343506,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 7.470080890925601e-05,
+          "input_reconstruction_reverse": 0.056920070201158524,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7786949872970581,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 5.766936737927608e-05,
+          "input_reconstruction_reverse": 0.07658866047859192,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.5451908111572266,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 9.696722554508597e-05,
+          "input_reconstruction_reverse": 0.09394600242376328,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.9495723843574524,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0002747457765508443,
+          "input_reconstruction_reverse": 0.09443429112434387,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8538424968719482,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 9.372423664899543e-05,
+          "input_reconstruction_reverse": 0.08821384608745575,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.679757833480835,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00016469803813379258,
+          "input_reconstruction_reverse": 0.09369445592164993,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.1368972063064575,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.09335719048976898,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.6968706846237183,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 5.012235124013387e-05,
+          "input_reconstruction_reverse": 0.0945124700665474,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.608069121837616,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 9.574250725563616e-05,
+          "input_reconstruction_reverse": 0.08181270211935043,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8035656213760376,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00011788181291194633,
+          "input_reconstruction_reverse": 0.0647672712802887,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              335,
+              335,
+              335,
+              335
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": -0.012472003698348999,
+            "within": 1.7320507764816284,
+            "between": 1.7195787727832794,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 1.8686470985412598,
+            "between": 1.8686470985412598,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              348,
+              348,
+              348,
+              348,
+              335,
+              335,
+              348,
+              348,
+              346,
+              335,
+              340,
+              335,
+              342,
+              348,
+              340,
+              340,
+              348,
+              348,
+              348,
+              348,
+              342,
+              348,
+              348,
+              348,
+              342,
+              342,
+              348,
+              348,
+              348,
+              348,
+              348,
+              342,
+              348,
+              348,
+              340,
+              348,
+              348,
+              348,
+              337,
+              348,
+              340,
+              342,
+              340,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              346,
+              348,
+              342,
+              342,
+              348,
+              348,
+              348,
+              348,
+              340,
+              348,
+              348
+            ],
+            "lexical_coverage": 36,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": -0.001512220653952956,
+            "within": 0.7900245453779043,
+            "between": 0.7885123247239514,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          },
+          "masked": {
+            "cp": 3.9059743212575784,
+            "within": 5.327150417148693,
+            "between": 9.233124738406271,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          }
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "schedule": "serial",
+      "seconds": 9.662012916989625,
+      "serial_training_steps": 24,
+      "parallel_passes": 0,
+      "losses": [
+        {
+          "input_reconstruction": 4.524094765656628e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.5181343011790887e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.512173472903669e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.524094765656628e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7543990015983582,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8126868605613708,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.5847631692886353,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.9051277041435242,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.2948315739631653,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.9124093651771545,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.6337382793426514,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.931196689605713,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8182765245437622,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0411323308944702,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.9897688627243042,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 2.046388864517212,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8507389426231384,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 2.6974563598632812,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.47047966718673706,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.2553224563598633,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0078045129776,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.2431795597076416,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0720362663269043,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0422295331954956,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              175,
+              175,
+              175,
+              175
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": 0.0,
+            "within": 1.4142135381698608,
+            "between": 1.4142135381698608,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.0,
+            "between": 0.0,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              239,
+              348,
+              239,
+              348,
+              175,
+              175,
+              219,
+              239,
+              348,
+              174,
+              219,
+              174,
+              348,
+              219,
+              219,
+              219,
+              239,
+              219,
+              219,
+              348,
+              219,
+              219,
+              219,
+              219,
+              219,
+              219,
+              348,
+              328,
+              239,
+              239,
+              239,
+              219,
+              219,
+              219,
+              219,
+              219,
+              239,
+              328,
+              175,
+              219,
+              219,
+              219,
+              219,
+              239,
+              219,
+              219,
+              219,
+              348,
+              348,
+              239,
+              239,
+              239,
+              219,
+              219,
+              239,
+              219,
+              219,
+              348,
+              219,
+              219,
+              219,
+              348,
+              219,
+              219,
+              219,
+              348,
+              239,
+              239
+            ],
+            "lexical_coverage": 36,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": -0.09375384783727081,
+            "within": 1.2144636142586724,
+            "between": 1.1207097664214016,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          },
+          "masked": {
+            "cp": 4.422913667703513,
+            "within": 1.8485166785730271,
+            "between": 6.27143034627654,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 17
+          }
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "schedule": "parallel",
+      "seconds": 2.60103770904243,
+      "serial_training_steps": 24,
+      "parallel_passes": 0,
+      "losses": [
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.025069084018468857,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 8.996165706776083e-05,
+          "input_reconstruction_reverse": 0.020319098606705666,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0001076826301869005,
+          "input_reconstruction_reverse": 0.020317843183875084,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 6.530567043228075e-05,
+          "input_reconstruction_reverse": 0.020323576405644417,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00027385703288018703,
+          "input_reconstruction_reverse": 0.09933153539896011,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0001303781900787726,
+          "input_reconstruction_reverse": 0.032121237367391586,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 5.238998346612789e-05,
+          "input_reconstruction_reverse": 0.09456060826778412,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00031441106693819165,
+          "input_reconstruction_reverse": 0.08322833478450775,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00015999027527868748,
+          "input_reconstruction_reverse": 0.09420207142829895,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.08282959461212158,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.000231250625802204,
+          "input_reconstruction_reverse": 0.09420368075370789,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.0938742607831955,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 9.559721365803853e-05,
+          "input_reconstruction_reverse": 0.09421874582767487,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.000254350044997409,
+          "input_reconstruction_reverse": 0.09425252676010132,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00028318350086919963,
+          "input_reconstruction_reverse": 0.09387543797492981,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.09464383125305176,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0,
+          "input_reconstruction_reverse": 0.09426247328519821,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00035883262171410024,
+          "input_reconstruction_reverse": 0.06901875883340836,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0002434336201986298,
+          "input_reconstruction_reverse": 0.08243557065725327,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0003097825974691659,
+          "input_reconstruction_reverse": 0.09507447481155396,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00041854422306641936,
+          "input_reconstruction_reverse": 0.09460701793432236,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00015035331307444721,
+          "input_reconstruction_reverse": 0.09426773339509964,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00036551945959217846,
+          "input_reconstruction_reverse": 0.08282820880413055,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.0003385311574675143,
+          "input_reconstruction_reverse": 0.08278091996908188,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              75,
+              76,
+              75,
+              75
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": 0.0,
+            "within": 1.8660253882408142,
+            "between": 1.8660253882408142,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.5,
+            "between": 0.5,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              80,
+              80,
+              80,
+              78,
+              75,
+              77,
+              78,
+              78,
+              78,
+              75,
+              78,
+              75,
+              78,
+              78,
+              77,
+              77,
+              80,
+              78,
+              80,
+              78,
+              77,
+              78,
+              78,
+              78,
+              77,
+              80,
+              80,
+              78,
+              78,
+              80,
+              78,
+              77,
+              80,
+              78,
+              77,
+              78,
+              78,
+              79,
+              77,
+              80,
+              77,
+              78,
+              78,
+              78,
+              80,
+              78,
+              78,
+              80,
+              78,
+              80,
+              78,
+              78,
+              80,
+              78,
+              78,
+              80,
+              78,
+              78,
+              78,
+              78,
+              77,
+              78,
+              80,
+              78,
+              80,
+              78,
+              78,
+              78
+            ],
+            "lexical_coverage": 17,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": -0.06279670885099276,
+            "within": 0.5080190726248653,
+            "between": 0.4452223637738726,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          },
+          "masked": {
+            "cp": 1.4964819641762226,
+            "within": 2.038431651303098,
+            "between": 3.5349136154793204,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 47,
+            "alternatives_per_concept": 0.0,
+            "concepts_with_alternatives": 0
+          }
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "schedule": "interleave:2",
+      "seconds": 14.33519749995321,
+      "serial_training_steps": 24,
+      "parallel_passes": 12,
+      "losses": [
+        {
+          "input_reconstruction": 4.524094765656628e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 9.232947195414454e-05,
+          "input_reconstruction_reverse": 5.307371975504793e-05,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.530055957729928e-05,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 8.529629849363118e-05,
+          "input_reconstruction_reverse": 5.2997824241174385e-05,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7483125329017639,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 7.653425564058125e-05,
+          "input_reconstruction_reverse": 0.056941818445920944,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.6084016561508179,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00021025509340688586,
+          "input_reconstruction_reverse": 0.07664303481578827,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.5556493997573853,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00021185408695600927,
+          "input_reconstruction_reverse": 0.09392398595809937,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 4.462834358215332,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00012641987996175885,
+          "input_reconstruction_reverse": 0.0944221019744873,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.29499551653862,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00018540739256422967,
+          "input_reconstruction_reverse": 0.0882212296128273,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0260697603225708,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00019121315563097596,
+          "input_reconstruction_reverse": 0.0937420129776001,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.763643741607666,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00023945975408423692,
+          "input_reconstruction_reverse": 0.09337788075208664,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.8939063549041748,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00011963118595303968,
+          "input_reconstruction_reverse": 0.0945703312754631,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 1.0560969114303589,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00014288559032138437,
+          "input_reconstruction_reverse": 0.08185788244009018,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.7147704362869263,
+          "input_reconstruction_reverse": 0.0,
+          "answer_construction": 0.0
+        },
+        {
+          "input_reconstruction": 0.00028370102518238127,
+          "input_reconstruction_reverse": 0.06481336057186127,
+          "answer_construction": 0.0
+        }
+      ],
+      "metrics": {
+        "smoke": {
+          "coverage": {
+            "nonzero_readings": [
+              335,
+              335,
+              335,
+              335
+            ],
+            "lexical_coverage": 4,
+            "probes": 4
+          },
+          "probes": [
+            "00",
+            "01",
+            "10",
+            "11"
+          ],
+          "classes": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "unmasked": {
+            "cp": -0.012472003698348999,
+            "within": 1.7320507764816284,
+            "between": 1.7195787727832794,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          },
+          "masked": {
+            "cp": 0.0,
+            "within": 0.0,
+            "between": 0.0,
+            "within_pairs": 2,
+            "between_pairs": 4,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          }
+        },
+        "fineweb": {
+          "coverage": {
+            "nonzero_readings": [
+              348,
+              348,
+              346,
+              348,
+              335,
+              337,
+              348,
+              348,
+              342,
+              335,
+              342,
+              335,
+              348,
+              348,
+              342,
+              340,
+              346,
+              348,
+              348,
+              346,
+              342,
+              348,
+              348,
+              348,
+              342,
+              342,
+              348,
+              342,
+              348,
+              348,
+              348,
+              342,
+              348,
+              348,
+              340,
+              348,
+              348,
+              348,
+              337,
+              348,
+              340,
+              340,
+              340,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              348,
+              340,
+              348,
+              348,
+              348,
+              348,
+              346,
+              342,
+              340,
+              342,
+              348,
+              348,
+              348,
+              342,
+              348,
+              348,
+              348
+            ],
+            "lexical_coverage": 36,
+            "probes": 68
+          },
+          "probes": [
+            "Shipment",
+            "Transport",
+            "Sea",
+            "Air",
+            "1",
+            "2",
+            "Definition",
+            "In",
+            "G",
+            "\u00fa",
+            "thwin",
+            "\u00eb",
+            "The",
+            "robot",
+            "in",
+            "the",
+            "Metal",
+            "additive",
+            "manufacturing",
+            "AM",
+            "region",
+            "Bergisches",
+            "Land",
+            "investigation",
+            "of",
+            "past",
+            "Agreement",
+            "On",
+            "Food",
+            "Safety",
+            "Many",
+            "good",
+            "novels",
+            "January",
+            "we",
+            "began",
+            "Wednesday",
+            "October",
+            "3",
+            "Japan",
+            "is",
+            "set",
+            "to",
+            "Modern",
+            "humans",
+            "crowded",
+            "out",
+            "USGS",
+            "Groundwater",
+            "Information",
+            "Resources",
+            "We",
+            "all",
+            "know",
+            "It",
+            "frequently",
+            "cited",
+            "At",
+            "start",
+            "ease",
+            "doing",
+            "They",
+            "may",
+            "be",
+            "small",
+            "This",
+            "What",
+            "If"
+          ],
+          "classes": [
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              6
+            ],
+            [
+              0
+            ],
+            [
+              6
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "unmasked": {
+            "cp": 0.010632207053809739,
+            "within": 0.7558711607420538,
+            "between": 0.7665033677958636,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          },
+          "masked": {
+            "cp": 4.4961244416814665,
+            "within": 5.922278210087768,
+            "between": 10.418402651769235,
+            "within_pairs": 967,
+            "between_pairs": 1311,
+            "admitted_order0_concepts": 168,
+            "alternatives_per_concept": 0.18452380952380953,
+            "concepts_with_alternatives": 22
+          }
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "workload": "smoke",
+      "seed": 0,
+      "orderings": {
+        "parallel_cp_below_serial": false,
+        "parallel_within_above_serial": true,
+        "parallel_alternatives_above_serial": false,
+        "interleave_cp_at_least_parallel": false,
+        "interleave_within_above_serial": true,
+        "interleave_cp_nearer_serial_than_parallel": false,
+        "mask_effect_largest_in_serial": false,
+        "mask_lowers_cp_serial": false,
+        "mask_lowers_cp_parallel": false,
+        "mask_lowers_cp_interleave:2": false
+      }
+    },
+    {
+      "workload": "smoke",
+      "seed": 1,
+      "orderings": {
+        "parallel_cp_below_serial": false,
+        "parallel_within_above_serial": true,
+        "parallel_alternatives_above_serial": false,
+        "interleave_cp_at_least_parallel": false,
+        "interleave_within_above_serial": true,
+        "interleave_cp_nearer_serial_than_parallel": false,
+        "mask_effect_largest_in_serial": false,
+        "mask_lowers_cp_serial": false,
+        "mask_lowers_cp_parallel": false,
+        "mask_lowers_cp_interleave:2": false
+      }
+    },
+    {
+      "workload": "smoke",
+      "seed": 2,
+      "orderings": {
+        "parallel_cp_below_serial": false,
+        "parallel_within_above_serial": true,
+        "parallel_alternatives_above_serial": false,
+        "interleave_cp_at_least_parallel": false,
+        "interleave_within_above_serial": true,
+        "interleave_cp_nearer_serial_than_parallel": false,
+        "mask_effect_largest_in_serial": false,
+        "mask_lowers_cp_serial": false,
+        "mask_lowers_cp_parallel": false,
+        "mask_lowers_cp_interleave:2": false
+      }
+    },
+    {
+      "workload": "fineweb",
+      "seed": 0,
+      "orderings": {
+        "parallel_cp_below_serial": true,
+        "parallel_within_above_serial": true,
+        "parallel_alternatives_above_serial": false,
+        "interleave_cp_at_least_parallel": true,
+        "interleave_within_above_serial": false,
+        "interleave_cp_nearer_serial_than_parallel": false,
+        "mask_effect_largest_in_serial": false,
+        "mask_lowers_cp_serial": false,
+        "mask_lowers_cp_parallel": false,
+        "mask_lowers_cp_interleave:2": false
+      }
+    },
+    {
+      "workload": "fineweb",
+      "seed": 1,
+      "orderings": {
+        "parallel_cp_below_serial": true,
+        "parallel_within_above_serial": true,
+        "parallel_alternatives_above_serial": false,
+        "interleave_cp_at_least_parallel": true,
+        "interleave_within_above_serial": false,
+        "interleave_cp_nearer_serial_than_parallel": false,
+        "mask_effect_largest_in_serial": false,
+        "mask_lowers_cp_serial": false,
+        "mask_lowers_cp_parallel": false,
+        "mask_lowers_cp_interleave:2": false
+      }
+    },
+    {
+      "workload": "fineweb",
+      "seed": 2,
+      "orderings": {
+        "parallel_cp_below_serial": true,
+        "parallel_within_above_serial": true,
+        "parallel_alternatives_above_serial": false,
+        "interleave_cp_at_least_parallel": true,
+        "interleave_within_above_serial": false,
+        "interleave_cp_nearer_serial_than_parallel": false,
+        "mask_effect_largest_in_serial": false,
+        "mask_lowers_cp_serial": false,
+        "mask_lowers_cp_parallel": false,
+        "mask_lowers_cp_interleave:2": false
+      }
+    }
+  ]
+}

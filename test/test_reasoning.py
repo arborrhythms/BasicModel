@@ -8,6 +8,7 @@ English-level tests are @pytest.mark.xfail until word identity is learned.
 
 import sys
 import os
+import gc
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import unittest
@@ -25,6 +26,13 @@ matplotlib.use('Agg')
 from util import init_config, ProjectPaths, TheXMLConfig
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
+
+
+@pytest.fixture(autouse=True)
+def _release_case_models():
+    """Reclaim model callback cycles before the next case builds another model."""
+    yield
+    gc.collect()
 
 
 def _reload_config():

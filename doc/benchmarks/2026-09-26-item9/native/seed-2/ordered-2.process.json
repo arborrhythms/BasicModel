@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item9/native.py",
+    "--seed",
+    "2",
+    "--control",
+    "ordered",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9-native-release-2/ordered-2"
+  ],
+  "pid": 39502,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 813237904,
+  "elapsed_seconds": 92.69216045900248,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9-native-release-2/ordered-2.log"
+}

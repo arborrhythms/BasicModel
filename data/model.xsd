@@ -69,30 +69,17 @@
            sigma/codebook reads emit conceptual-width activations before CS;
            there is no PS->WS edge or CS-owned coordinate lift. -->
       <xs:element name="conceptBinding" type="conceptBindingEnum" minOccurs="0"/>
-      <!-- wherePeriod (2026-07-04 encoding pass): the .where quadrature
-           period in input BYTES. Default 8192 (twice the 4096 inputLength
-           cap). Decoupled from architecture.nObjects (the retired implicit
-           period, Sigma nVectors). The build seam keeps raise-to-fit for
-           inputs longer than the period, warning once per build (never
-           silent aliasing). -->
-      <xs:element name="wherePeriod" type="xs:positiveInteger" minOccurs="0"/>
-      <!-- whereRungRatio (2026-07-09 multi-rung pass): LF/HF period ratio of
-           the .where 2-rung ladder. Default 32 (HF period = wherePeriod/32,
-           256 bytes at the default, the fine period Gate-B measured exact
-           starts at; LF keeps the full-period range). -->
-      <xs:element name="whereRungRatio" type="xs:positiveInteger" minOccurs="0"/>
-      <!-- whenPeriod (2026-07-04 encoding pass): the .when v2 LF horizon in
-           clock ticks (the LTM event-addressing range). Default 1000000.
-           The band is the SIMILARITY channel; absolute addressing rides the
-           exact long-int clock (BasicModel.when_time), the Option-C hybrid. -->
-      <xs:element name="whenPeriod" type="xs:positiveInteger" minOccurs="0"/>
-      <!-- whenRungRatio: LF/HF period ratio of the .when v2 2-rung ladder.
-           Default 32 (safe branch bound ~35 at the dense-support floor). -->
-      <xs:element name="whenRungRatio" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Where/when ladder periods are derived from registry/LTM capacity.
+           They are not independent configuration knobs. -->
       <!-- serial selects the per-word grammatical body. If omitted, code
            derives it from symbolicOrder > 0 for legacy configs. New configs
            should set it explicitly. -->
       <xs:element name="serial" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="modeSchedule" minOccurs="0">
+        <xs:simpleType><xs:restriction base="xs:string">
+          <xs:pattern value="serial|parallel|interleave:[1-9][0-9]*"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
       <!-- symbolicOrder is the symbolic iteration budget K of the conceptual
            wave. We are NOT forcing ramsification: the value is the maximum
            possible conceptual order, i.e. the order reached if a novel concept
@@ -1060,7 +1047,6 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Logical ceiling for boundary-safe radix percept growth.  When
            omitted it resolves to nVectors (fixed physical capacity). -->
-      <xs:element name="maxVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>

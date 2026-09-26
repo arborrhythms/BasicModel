@@ -1,0 +1,88 @@
+{
+  "affected": {
+    "elapsed_seconds": 424.37090279196855,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 3600.0,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 3376729472,
+    "exit_code": 0,
+    "peak_worker_memory_bytes": 3376729472,
+    "selected": 110,
+    "completed": 110,
+    "outcomes": {
+      "passed": 110
+    }
+  },
+  "full": {
+    "elapsed_seconds": 1094.648877916974,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 7200.0,
+      "batch_size": 128,
+      "max_files": 8
+    },
+    "peak_aggregate_memory_bytes": 10864667544,
+    "exit_code": 0,
+    "peak_worker_memory_bytes": 8298372392,
+    "selected": 4905,
+    "completed": 4905,
+    "outcomes": {
+      "passed": 4580,
+      "skipped": 324,
+      "xfailed": 1
+    }
+  },
+  "slow": {
+    "elapsed_seconds": 224.03544949996285,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 2400.0,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 4793651640,
+    "exit_code": 0,
+    "peak_worker_memory_bytes": 4793651640,
+    "selected": 4,
+    "completed": 4,
+    "outcomes": {
+      "passed": 4
+    }
+  },
+  "doc-links": {
+    "elapsed_seconds": 5.242468541953713,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 120.0,
+      "suite_seconds": 300.0,
+      "batch_size": 256,
+      "max_files": 16
+    },
+    "peak_aggregate_memory_bytes": 428082472,
+    "exit_code": 0,
+    "peak_worker_memory_bytes": 428082472,
+    "selected": 93,
+    "completed": 93,
+    "outcomes": {
+      "passed": 93
+    }
+  }
+}

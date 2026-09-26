@@ -173,14 +173,7 @@ def test_64_word_trace_reduces_online_in_stm8_without_part_truncation():
 
 def test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory():
     class FakeCodebook:
-        nVectors = 4
-
-        def __init__(self):
-            self.grown_to = None
-
-        def grow_to(self, n):
-            self.grown_to = int(n)
-            self.nVectors = int(n)
+        nVectors = 8192
 
     codebook = FakeCodebook()
     reducer_calls = []
@@ -196,5 +189,5 @@ def test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory():
     gate._prewarm_checkpoint_shapes(model, torch.device("cpu"))
 
     assert reducer_calls == [True]
-    assert codebook.grown_to == 8192
+    assert codebook.nVectors == 8192
     assert to_calls == [torch.device("cpu")]

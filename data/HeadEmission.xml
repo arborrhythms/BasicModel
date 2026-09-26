@@ -48,7 +48,7 @@
   <PartSpace>
     <nOutput>32</nOutput>
     <nDim>14</nDim>
-    <nVectors>8</nVectors>
+    <nVectors>256</nVectors>
   </PartSpace>
 
   <ConceptualSpace>

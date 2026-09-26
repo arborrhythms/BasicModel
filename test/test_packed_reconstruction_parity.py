@@ -12,7 +12,7 @@ import torch
 ATOL, RTOL = 1e-6, 1e-5
 
 
-def build_model(tmp_path, *, active_vectors=None):
+def build_model(tmp_path, *, active_vectors=None, word_capacity=32):
     import Language
     from Models import BaseModel
     from data import TheData
@@ -25,9 +25,9 @@ def build_model(tmp_path, *, active_vectors=None):
                                 f"<activeVectors>{active_vectors}</activeVectors>", 1)
     for old, new in (
         ("<serialWordCapacity>8</serialWordCapacity>",
-         "<serialWordCapacity>32</serialWordCapacity>"),
+         f"<serialWordCapacity>{word_capacity}</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>",
-         "<serialWordBuckets>32</serialWordBuckets>"),
+         f"<serialWordBuckets>{word_capacity}</serialWordBuckets>"),
         ("<training>", "<training><reconstructInLoop>true</reconstructInLoop>"),
     ):
         assert old in source

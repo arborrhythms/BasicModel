@@ -67,11 +67,6 @@ def _observe(cs, active, B_rows=None):
     snap = torch.arange(cs._order_caps()[0]).unsqueeze(-1)
     object.__setattr__(cs, "_promo_last_acts", a)
     object.__setattr__(cs, "_cs_level_rows", [snap])
-    if cs.conceptual_pi:
-        n0 = cs._order_caps()[0]
-        cs._cs_position_evidence = a[:n0].unsqueeze(-2)
-        cs._cs_position_spans = torch.tensor([[[0, 1]]])
-        cs._cs_extents = torch.tensor([[[0, 1]]])
     cs.promotion_observe()
 
 
@@ -155,7 +150,7 @@ def test_nonrecurring_row_decays_and_is_recycled():
 
 def test_objects_never_acquire_witnessed_kinds():
     cs, _ = _fixture()
-    word, obj, meta = cs.create_word_object_meta([1], 2, key='cat')
+    word, obj, meta = cs.interpret_word([1], 2, key='cat')
     ly = Spaces._concept_alloc_of(cs).layer()
     assert cs._csw_row_of(word) in cs._witnessed_rows()
     assert cs._csw_row_of(obj) not in cs._witnessed_rows()

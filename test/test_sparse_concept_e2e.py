@@ -62,7 +62,7 @@ def _build(name):
 
 def test_word_symbol_defines_order0_native_features_and_object_stays_unwritten():
     cs = _cs_active()
-    A, B, C = cs.create_word_object_meta([1, 2], WORD, key="cat")
+    A, B, C = cs.interpret_word([1, 2], WORD, key="cat")
     # A reads native features. B's standing bounds are no perceptual
     # definition: only testimony can give the object its membership.
     assert cs._concept_source_order(A) == 0
@@ -78,17 +78,14 @@ def test_word_symbol_defines_order0_native_features_and_object_stays_unwritten()
     assert not any(row == b_row for row, _ in features._index)
 
 
-def test_meta_is_ordered_pair_over_subsymbols():
+def test_meta_is_structural_ordered_pair_over_word_and_object():
     cs = _cs_active()
-    A, B, C = cs.create_word_object_meta([1, 2], WORD, key="cat")
-    # C (meta) is the sec-4c ordered pair [whole=A, part=B]: order 1, ONE
-    # untyped edge per sym constituent (v3: direction lives in the records).
-    assert cs._concept_source_order(C) == 1
-    c_row = cs._csw_concept_row(1, C)
-    got = dict(cs.concept_weights(c_row))
-    assert cs._csw_concept_row(0, A) in got
-    assert cs._csw_concept_row(0, B) in got
-    assert len(got) == 2                            # no bias: pair only
+    A, B, C = cs.interpret_word([1, 2], WORD, key="cat")
+    assert cs._concept_source_order(C) == 2
+    assert cs.concept_parts(C) == [('sym', B)]
+    assert cs.concept_wholes(C) == [('sym', A)]
+    # Naming relates different orders; this pair is not a field sigma fold.
+    assert cs._csw_row_of(C) is None
 
 
 def test_symbolic_order_does_not_admit_a_same_order_edge():
@@ -107,7 +104,7 @@ def test_population_inactive_is_noop():
         outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
     cs = Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D])   # NOT active
-    cs.create_word_object_meta([1, 2], WORD, key="cat")
+    cs.interpret_word([1, 2], WORD, key="cat")
     assert getattr(cs, "_sparse_fam", None) is None    # nothing populated
 
 
@@ -131,10 +128,11 @@ def test_symbolic_phase_unwritten_definitions_are_neither():
     extents = torch.tensor([[[0, 64]]]).expand(2, -1, -1)
     content, acts = cs.cs_symbolic_phase(settled, extents=extents,
                                         percepts=(raw, spans, None, raw, spans))
-    assert acts.shape == (sum(cs._order_caps()), 2, 1, 2)
+    assert acts.shape == (sum(cs._field_caps()), 2, 1, 2)
     assert acts.count_nonzero() == 0
-    assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 2, 1, 128, 2)
-    assert content.shape == (2, 2 * sum(cs._order_caps()), D)
+    assert cs._percept_field.events.shape[1:] == (2, 1, 128, 2)
+    assert not hasattr(cs, "_cs_position_evidence")
+    assert content.shape == (2, 2 * sum(cs._field_caps()), D)
 
 
 def test_symbolic_phase_inactive_is_noop():
@@ -180,7 +178,7 @@ def test_sparse_concept_forward_smoke():
 def test_getparameters_includes_csw_after_population():
     cs = _cs_active()
     base = set(id(p) for p in cs.getParameters())
-    cs.create_word_object_meta([1, 2], WORD, key="cat")     # populates weights
+    cs.interpret_word([1, 2], WORD, key="cat")     # populates weights
     after = cs.getParameters()
     csw = [ly.values for fam in cs._sparse_fam.values() for ly in fam
            if ly is not None and ly.values is not None]
@@ -197,7 +195,7 @@ def test_getparameters_byte_identical_when_inactive():
         outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
     cs = Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D])   # NOT active
-    cs.create_word_object_meta([1, 2], WORD, key="cat")
+    cs.interpret_word([1, 2], WORD, key="cat")
     assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]
 
 
@@ -209,7 +207,7 @@ def test_model_optimizer_picks_up_csw_weights():
     # including the feature weights of the newly fused word parts.
     for word in (b'cat', b'dog'):
         parts = m.perceptualSpace.percept_store.spell_out(word)
-        cs.create_word_object_meta(parts, WORD, key=word)
+        cs.interpret_word(parts, WORD, key=word)
     csw_ptrs = {ly.values.data_ptr()
                 for ly in Spaces._concept_alloc_of(cs).layer().definition_matrices()
                 if ly.values is not None}
@@ -240,8 +238,8 @@ def test_conceptual_sbow_situates_live_sparse_codes():
     # init-blindness), but the joint's EVERYTHING bias edge reads the
     # CONSTANT 1, so its value's gradient is alive at ANY init: the
     # mechanism check is deterministic.
-    A1, _B1, _C1 = cs.create_word_object_meta([1], 2, key="w1")
-    A2, _B2, _C2 = cs.create_word_object_meta([3], 4, key="w2")
+    A1, _B1, _C1 = cs.interpret_word([1], 2, key="w1")
+    A2, _B2, _C2 = cs.interpret_word([3], 4, key="w2")
     cs.create_joint_concept([A1, A2], key=("w1", "w2"))
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
@@ -337,7 +335,7 @@ def test_two_phase_forward_cutover_stamps_terminal_activations():
     last_cs = getattr(m, "_combine_last_cs_sub", None)
     assert last_cs is not None
     acts = getattr(last_cs, "_concept_activations", None)
-    assert acts is not None and int(acts.shape[0]) == sum(cs0._order_caps())
+    assert acts is not None and int(acts.shape[0]) == sum(cs0._field_caps())
     assert torch.equal(W.detach(), before)
     assert acts[start0:end0].count_nonzero() == 0
     for _ in range(3):

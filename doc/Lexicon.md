@@ -85,10 +85,22 @@ these concepts; lexical resolution never invents a missing one.
 Item 9b names the operator that performs this resolution: `interpret`
 ([Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25)),
 the default per-word step of serial mode, from the word-concept PartSpace
-looked up to the object-concept at the order the grammar selects. The one
-case in which resolution *does* create a concept is the unknown word:
-`interpret` mints a provisional object row whose only literal is the
-naming occurrence — testimony — and later occurrences resolve to it.
+looked up to its associated object-concept. An existing association wins at
+its existing order, including a kind. If several objects are associated with
+the word, grammar can resolve the ambiguity. If none exists, interpretation
+mints a provisional object whose only literal is the naming occurrence;
+the new object's default order is 1, unless grammar requests another order.
+A missing particular is not a reason to add one beside a known kind.
+
+`InterpretLayer` consults both witnessed associations and earlier testimony
+before minting. Its `(word identity, object order)` index records an association;
+it is not a request to allocate every missing word/order combination.
+Repeated reads of the same observation count
+once. A recurring provisional object is admitted at the existing participation
+threshold; an unused one-off below the recycle threshold is retired at a later
+boundary. Retirement removes it from future knowing while preserving its
+identity-to-word inverse for programs already captured. No spelling heuristic
+or surface-to-operator anchor decides the reference order.
 
 A selected compose rule can declare `reference="I2:particular"` (the
 shipped determiner `lower`) or `reference="I2:pronoun"` (the shipped
@@ -98,8 +110,8 @@ not a token spelling. Proper-name and generic contexts therefore resolve
 through their selected grammar, without capitalization rules or word lists.
 Inner reference phrases retain their choice when an outer rule requests an
 order. A unique association at that order is selected; a carried referent
-can disambiguate it. Missing orders and unresolved competing particulars
-remain unknown.
+can disambiguate it. A new order-1/2 referent is minted through `interpret` only when the word
+has no existing object; unresolved competing particulars remain unknown. Other unsupported orders remain unknown.
 
 At program capture the selected identity and order are owned beside the
 original word references. Meaning recovery consumes the resolved identity
@@ -108,6 +120,12 @@ the tied reconstruction's provenance. Pronouns select particulars, never
 kinds. Symbolizing a particular does not also symbolize its kind.
 
 ## Quick reference
+
+Perceptual lexicons reserve physical `nVectors` at construction. The active
+prefix grows in place and search reads only that prefix; admission preserves
+the Parameter, existing vectors and optimizer moments. A full allocation
+raises an error naming `nVectors`. It does not silently omit a new word or
+resize the codebook. Checkpoints preserve capacity and occupancy separately.
 
 The Lexicon ([`bin/Layers.py`](../bin/Layers.py)) is a learnable
 vocabulary embedding on the **projective unit ball** $B^D / (x \sim

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-25-item9b-followup/measure_metric.py",
+    "--worker",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-followup-metric-clean/metric.json"
+  ],
+  "pid": 23983,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 193905432,
+  "elapsed_seconds": 2.0434969160705805,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-followup-metric-clean/worker.log"
+}

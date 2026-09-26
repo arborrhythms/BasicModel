@@ -268,7 +268,7 @@ def lexicon_section_from_word_vectors(wv) -> Dict[str, Any]:
     saving, so artifacts on disk are always in the canonical domain even
     if the live parameter has drifted between optimizer steps.
     """
-    raw = wv._vectors.detach()
+    raw = wv._vectors[:len(wv.index_to_key)].detach()
     vectors = _wrap_unit_ball(raw).cpu()
     counts = getattr(wv, "counts", None)
     if counts is not None:
@@ -1256,6 +1256,8 @@ class WordVectors(nn.Module):
 
         Shrinks vectors, counts, and vocabulary mappings in-place.
         """
+        if getattr(self, '_fixed_capacity', None) is not None and indices:
+            raise RuntimeError('fixed-capacity lexicon rows have stable identities; deletion cannot renumber them')
         if not indices:
             return 0
         removed_set = set(indices)
@@ -1368,7 +1370,7 @@ class WordVectors(nn.Module):
     def get_normed_vectors(self) -> torch.Tensor:
         """Return raw vectors. Kept for API symmetry; values already in
         ``[-1, 1)`` after every step / save / load."""
-        return self._vectors.detach()
+        return self._vectors[:len(self.index_to_key)].detach()
 
     # -- Similarity --
 
@@ -1504,7 +1506,7 @@ class PretrainModel:
         if grad is None:
             return
         device = grad.device
-        vocab_size = self.wv._vectors.shape[0]
+        vocab_size = len(self.wv.index_to_key)
         if self.sigma is None:
             self.sigma = torch.zeros(vocab_size, device=device)
             self.sigma_mean = torch.zeros(vocab_size, device=device)
@@ -1532,7 +1534,7 @@ class PretrainModel:
             Scalar loss.
         """
         device = queries.device
-        vocab_size = self.wv._vectors.shape[0]
+        vocab_size = len(self.wv.index_to_key)
         K = min(self.neg_samples, vocab_size - 1)
 
         pos_vecs = self.wv._vectors[target_idx]                      # [N, dim]

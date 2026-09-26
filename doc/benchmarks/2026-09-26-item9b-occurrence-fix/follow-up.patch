@@ -1,0 +1,583 @@
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -10175,13 +10175,25 @@
+             return word_mask.to(device=device, dtype=torch.bool)
+         return (leaves.detach().abs().sum(dim=-1) > 0).to(device=device)
+ 
+-    def loss(self, S, trace, *, surface_weight=1.0):
++    @staticmethod
++    def _surface_error(pred, target, nWhen):
++        """Content and position credit; the field time is not a word target."""
++        width = min(int(pred.shape[-1]), int(target.shape[-1]))
++        n_when = int(nWhen)
++        if not 0 <= n_when < width:
++            raise ValueError('word reconstruction requires content before its time band')
++        stop = width - n_when
++        return .25 * (torch.tanh(pred[..., :stop])
++                      - torch.tanh(target[..., :stop])).square().mean(dim=-1)
++
++    def loss(self, S, trace, *, surface_weight=1.0, nWhen=0):
+         """Return ``(total, components)`` with no gradient into ``S``.
+ 
+         Kind supervision includes structurally relevant inactive slots so the
+         student learns when a derivation ends.  Rule CE is applied only where
+         forward committed a unary/binary rule.  Surface reconstruction uses a
+-        tanh-bounded MSE against exact detached leaves.
++        tanh-bounded MSE against exact detached leaves, excluding the trailing
++        ``nWhen`` field-time dimensions supplied by the model's input layout.
+         """
+         h = self._hidden(S)
+         leaves = trace.leaves() if trace is not None else None
+@@ -10247,11 +10259,8 @@
+         pred = self.leaf_decoder(self._conform_idea(S))[:, :word_count, :]
+         target = leaves[:, :word_count, :].detach().to(
+             device=pred.device, dtype=pred.dtype)
+-        width = min(int(pred.shape[-1]), int(target.shape[-1]))
+-        pred = torch.tanh(pred[..., :width])
+-        target = torch.tanh(target[..., :width])
+         word_f = word_valid.to(pred.dtype)
+-        surface_each = 0.25 * (pred - target).square().mean(dim=-1)
++        surface_each = self._surface_error(pred, target, nWhen)
+         surface_loss = ((surface_each * word_f).sum()
+                         / word_f.sum().clamp_min(1.0))
+         total = trace_loss + float(surface_weight) * surface_loss
+@@ -10265,7 +10274,7 @@
+             self, sentence_roots, trace, *,
+             word_positions, sentence_end_for_word=None, sentence_ids=None,
+             sentence_end_mask,
+-            surface_weight=1.0):
++            surface_weight=1.0, nWhen=0):
+         """Vectorized detached reconstruction loss for packed sentences.
+ 
+         ``sentence_roots`` is a compact chronological ``[B,S,D]`` FIFO.
+@@ -10275,6 +10284,7 @@
+         The shared LeafDecoderHead is evaluated only once per real packed word
+         (using its existing trunk/slot/output parameters), rather than
+         expanding every sentence to the full W=512 ceiling.
++        Surface credit excludes the trailing ``nWhen`` field-time dimensions.
+         """
+         leaves = trace.leaves() if trace is not None else None
+         if (trace is None or not torch.is_tensor(sentence_roots)
+@@ -10328,11 +10338,8 @@
+         pred = self.leaf_decoder.out(torch.tanh(leaf_hidden))
+         target = leaves.detach().to(
+             device=pred.device, dtype=pred.dtype)
+-        leaf_width = min(int(pred.shape[-1]), int(target.shape[-1]))
+-        pred = torch.tanh(pred[..., :leaf_width])
+-        target = torch.tanh(target[..., :leaf_width])
+         word_f = word_valid.to(pred.dtype)
+-        surface_each = 0.25 * (pred - target).square().mean(dim=-1)
++        surface_each = self._surface_error(pred, target, nWhen)
+         surface_loss = (
+             (surface_each * word_f).sum()
+             / word_f.sum().clamp_min(1.0))
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -7972,7 +7972,7 @@
+             "irreconcilable after reduction; supervised output loss zeroed")
+         return None
+ 
+-    def _reverse_event_loss(self, rev_ev, fwd_ev):
++    def _reverse_event_loss(self, rev_ev, fwd_ev, *, score_when=True):
+         """lossRev seam (nWhere=0 wiring fix, 2026-07-04): clip to the shared
+         [K, D] window, then weight with the INPUT event layout's where/when
+         band. ModelLoss's constructor band is canonical_shape("OutputSpace")
+@@ -7980,6 +7980,8 @@
+         2-dim where band was diluted ~512x inside the what-scaled mean-MSE.
+         Also serves the D3 serial-path reconstruction (its twin site): the
+         D3 compare is the same reverse-vs-input-event layout.
++        Per-word reconstruction sets score_when=False: the field's shared
++        time is transported, but is not an independent target on every word.
+         """
+         Kr = min(rev_ev.shape[1], fwd_ev.shape[1])
+         Dr = min(rev_ev.shape[-1], fwd_ev.shape[-1])
+@@ -8002,6 +8004,9 @@
+                 f"{int(fwd_ev.shape[-1])}) misaligns the trailing "
+                 f"where/when band; the clipped event takes what_scale")
+             nw, nn_ = 0, 0
++        if not score_when:
++            Dr -= int(nn_)
++            nn_ = 0
+         return self.loss.compute(rev_ev[:, :Kr, :Dr],
+                                  fwd_ev[:, :Kr, :Dr].detach(),
+                                  nWhere=int(nw), nWhen=int(nn_))
+@@ -9328,7 +9333,8 @@
+             # Readiness is explicit: a zero-valued result is still complete.
+             event = owned.event.clone()
+             target_event = target.materialize() if hasattr(target, "materialize") else target
+-            score = (self._reverse_event_loss(event, target_event)
++            score = (self._reverse_event_loss(event, target_event,
++                score_when=not (self.serial and getattr(self.inputSpace, '_per_word_enabled', False)))
+                      if torch.is_tensor(target_event) else None)
+             return event, score
+         if self.reconstruct_in_loop:
+@@ -9382,7 +9388,8 @@
+                 # Native surface bytes are decoded by activity. Score the
+                 # continuous native rows produced by that same attribution.
+                 score_event = getattr(rev_sub, '_reconstruction_percepts', rev_ev)
+-                cost = self._reverse_event_loss(score_event, fwd_ev)
++                cost = self._reverse_event_loss(score_event, fwd_ev,
++                    score_when=not (self.serial and getattr(self.inputSpace, '_per_word_enabled', False)))
+                 # Spec section 11: an EXACT, unmasked inverse identity has zero
+                 # error and therefore no learning signal.  Flag it rather than
+                 # let a perfect round trip pass as reconstruction learning.
+@@ -12040,10 +12047,12 @@
+             object_order_host, dtype=torch.long, device=part_ids.device)
+         registry = getattr(self, 'where_registry', None)
+         if registry is not None:
+-            positions = torch.arange(W, device=rows.device)[None].expand(B, -1)
+-            capacity = max(W, int(getattr(self, 'serial_word_capacity', W)))
+-            isp._ar_word_symbol_where = registry.encode(
+-                'symbols', 2 * object_rows, positions=positions, capacity=capacity)
++            offsets = getattr(isp, '_ar_word_part_offsets', None)
++            if (not torch.is_tensor(offsets) or offsets.ndim != 3
++                    or tuple(offsets.shape[:2]) != (B, W) or offsets.shape[2] < 1):
++                raise RuntimeError('input word occurrences require their byte starts')
++            starts = torch.where(object_rows >= 0, offsets[:, :, 0], -1)
++            isp._ar_word_symbol_where = registry.encode('input', starts)
+             tick = self.when_time.to(device=rows.device)
+             isp._ar_word_symbol_when = self.when_encoding.encode(tick).expand(B, W, -1)
+             isp._ar_word_symbol_when = torch.where((rows >= 0)[..., None],
+@@ -24109,8 +24118,13 @@
+         mask = (target.abs().sum(-1, keepdim=True) > 0).to(pred.dtype)
+         if float(mask.sum()) == 0.0:
+             return None
+-        num = (mask * (pred - target) ** 2).sum()
+-        return num / (mask.sum() * float(D))
++        n_when = int(getattr(getattr(getattr(self, 'inputSpace', None),
++                                     'subspace', None), 'nWhen', 0))
++        width = D - n_when
++        if width < 1:
++            raise ValueError('word reconstruction requires content before its time band')
++        num = (mask * (pred[..., :width] - target[..., :width]) ** 2).sum()
++        return num / (mask.sum() * float(width))
+ 
+     def _detached_reverse_construction_loss(self):
+         """Idea-only reverse supervision with a hard forward gradient boundary.
+@@ -24139,11 +24153,13 @@
+                 sentence_end_for_word=isp._packed_sentence_end_for_word,
+                 sentence_ids=isp._packed_sentence_ids,
+                 sentence_end_mask=isp._packed_sentence_end_mask,
++                nWhen=int(isp.subspace.nWhen),
+                 surface_weight=float(
+                     getattr(self, "leaf_distill_weight", 0.0) or 0.0))
+         else:
+             loss, terms = chooser.loss(
+                 S, trace,
++                nWhen=int(getattr(getattr(isp, 'subspace', None), 'nWhen', 0)),
+                 surface_weight=float(
+                     getattr(self, "leaf_distill_weight", 0.0) or 0.0))
+         if loss is None:
+@@ -24344,8 +24360,9 @@
+         ``reverse(S)`` (driven from ``_stm_single_S``), mapped back
+         through the Rework-A MPHF->table, compared vs the COMPLETE
+         UNMASKED input sentence (``inputSpace._ar_embedded`` -- every
+-        word, the full pre-mask muxed slab the per-word loop never
+-        touched).
++        word, the pre-mask slab the per-word loop never touched). Content
++        and position are scored; the field's shared time remains transported
++        but is excluded from this per-word objective.
+ 
+         Returns ``(loss, metric)``:
+           * ``loss`` -- the CONTINUOUS percept/concept-vector
+@@ -24381,7 +24398,7 @@
+         # the bounded reduce -- not the fixed input).
+         Kr = min(recon.shape[1], target.shape[1])
+         Dr = min(recon.shape[-1], target.shape[-1])
+-        loss = self._reverse_event_loss(recon, target)
++        loss = self._reverse_event_loss(recon, target, score_when=False)
+ 
+         # REPORTED-ONLY metric (NON-differentiable; never backpropped --
+         # the lexer-discrete word-level distance is not the gradient
+@@ -24392,7 +24409,7 @@
+         # owner's identity-stub per-op reverses, so its output width can
+         # differ from the codebook width; when the table-index 0/1 is
+         # not materializable at compatible widths, fall back to a
+-        # reported continuous WHAT-distance proxy (still NEVER
++        # reported continuous content/position proxy (still NEVER
+         # backpropped) rather than silently dropping the report. Fully
+         # wrapped: a metric edge case must never perturb the step.
+         metric = None
+@@ -24426,13 +24443,11 @@
+                     metric = (pred_idx[..., :Km]
+                               != tgt_idx[..., :Km]).float().mean()
+                 else:
+-                    # Reported continuous WHAT-distance proxy (the
++                    # Reported continuous content/position proxy (the
+                     # identity-stub reverse yields a non-codebook-width
+                     # output; the discrete 0/1 needs the owner's
+                     # per-op reverses filled). NEVER backpropped.
+-                    metric = F.mse_loss(
+-                        recon[:, :Kr, :Dr],
+-                        target[:, :Kr, :Dr]).detach()
++                    metric = loss.detach()
+         except Exception:
+             metric = None
+         return loss, metric
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -12072,7 +12072,10 @@
+                 offsets = part_offsets.to(
+                     device=event.device, dtype=torch.long)
+                 registry = getattr(self, 'where_registry', None)
+-                stamp = (registry.encode('parts', ids) if registry is not None else
++                # This event is an occurrence in the input. Its stored part
++                # has a separate registry row address, independent of where
++                # this instance starts. The band carries no end coordinate.
++                stamp = (registry.encode('input', offsets) if registry is not None else
+                          w_enc.encode(offsets.clamp(min=0)))
+                 stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)
+                 event[..., w_idx] = stamp
+@@ -12766,7 +12769,7 @@
+             # Only stamp when the band lies past the percept content columns.
+             if _w_idx and content_width <= _w_idx[0] < muxed_width:
+                 registry = getattr(self, 'where_registry', None)
+-                _stamp = (registry.encode('parts', pid_grid) if registry is not None else
++                _stamp = (registry.encode('input', word_offset_grid) if registry is not None else
+                           _w_enc.encode(word_offset_grid.clamp(min=0)))
+                 _stamp = _stamp * (word_offset_grid >= 0).unsqueeze(-1).to(
+                     _stamp.dtype)
+--- a/bin/WhereRegistry.py
++++ b/bin/WhereRegistry.py
+@@ -1,4 +1,4 @@
+-"""A model's fixed address ranges for located percept and symbol occurrences.
++"""A model's fixed address ranges for input locations and stored percepts.
+ 
+ These addresses are coordinates, never keys into a content codebook. The
+ registry is model-local so constructing another model cannot move a slice.
+@@ -9,67 +9,41 @@
+ 
+ 
+ class WhereRegistry:
+-    def __init__(self, capacities, *, symbol_slots=1):
+-        self.symbol_slots = int(symbol_slots)
+-        if self.symbol_slots < 1:
+-            raise ValueError('symbol occurrence capacity must be positive')
++    def __init__(self, capacities):
+         end, slices = 0, {}
+         for name, capacity in capacities:
+             capacity = int(capacity)
+             if capacity < 0 or name in slices:
+                 raise ValueError('where ranges require unique names and nonnegative capacities')
+-            width = capacity * (self.symbol_slots if name == 'symbols' else 1)
+-            slices[name] = (end, end + width)
+-            end += width
++            slices[name] = (end, end + capacity)
++            end += capacity
+         self.slices = MappingProxyType(slices)
+         self.capacity = end
+         from Spaces import WhereEncoding
+         self.encoding = WhereEncoding(nWhere=4, nWhen=4).set_capacity(end)
+ 
+-    def encode(self, name, indices, *, positions=None, capacity=None):
++    def encode(self, name, indices):
+         """Located percepts carry these bands; integers are decoded on demand."""
+-        intervals = (self.intervals(name, indices) if positions is None else
+-                     self.occurrences(name, indices, positions, capacity))
++        intervals = self.intervals(name, indices)
+         bands = self.encoding.encode(intervals[..., 0])
+         return torch.where((indices >= 0)[..., None], bands, 0.)
+ 
+     def __deepcopy__(self, memo):
+         from copy import deepcopy
+-        copied = type(self)(((name, (end - start) //
+-            (self.symbol_slots if name == 'symbols' else 1))
+-            for name, (start, end) in self.slices.items()), symbol_slots=self.symbol_slots)
++        copied = type(self)((name, end - start)
++                            for name, (start, end) in self.slices.items())
+         memo[id(self)] = copied
+         copied.encoding = deepcopy(self.encoding, memo)
+         return copied
+ 
+     def intervals(self, name, indices):
+         start, end = self.slices[name]
+-        stride = self.symbol_slots if name == 'symbols' else 1
+         valid = indices >= 0
+-        torch._assert_async((~valid | (indices < (end - start) // stride)).all(),
++        torch._assert_async((~valid | (indices < end - start)).all(),
+                             'occurrence exceeds its configured where-space capacity')
+-        positions = indices.to(torch.int64) * stride + start
++        positions = indices.to(torch.int64) + start
+         result = torch.stack((positions, positions + 1), -1)
+         return torch.where(valid[..., None], result, -1)
+-
+-    def occurrences(self, name, rows, positions, capacity):
+-        """Disjoint subintervals for repeated occurrences of one symbol.
+-
+-        Each symbol row reserves serialWordCapacity integer locations. This
+-        avoids float rounding or float64 (unsupported on MPS), even for large
+-        inventories. A coordinate never resolves a content identity.
+-        """
+-        if name != 'symbols':
+-            raise ValueError('only symbol rows reserve occurrence slots')
+-        interval = self.intervals(name, rows)
+-        capacity = int(capacity)
+-        if not 1 <= capacity <= self.symbol_slots:
+-            raise ValueError('symbol occurrence exceeds construction-time serialWordCapacity')
+-        torch._assert_async(((positions >= 0) & (positions < capacity)).all(),
+-                            'symbol occurrence exceeds serialWordCapacity')
+-        starts = interval[..., 0] + positions.to(interval)
+-        return torch.where((rows >= 0)[..., None], torch.stack((starts, starts + 1), -1), -1)
+-
+ 
+ def install_where_registry(model):
+     parts = model.perceptualSpace.subspace.what
+@@ -86,15 +60,12 @@
+         return int(getattr(basis, 'lexicon_capacity', getattr(basis, 'nVectors', 0)))
+ 
+     from util import TheXMLConfig
+-    symbol_slots = int(getattr(model, "serial_word_capacity", None) or
+-        TheXMLConfig.get("architecture.serialWordCapacity", default=0) or
+-        getattr(model.conceptualSpace, "stm_capacity", 0) or 1)
+     registry = WhereRegistry((
+         ('input', int(model.inputSpace.outputShape[0])),
+         ('parts', capacity(parts)),
+         ('wholes', sum(capacity(basis) for basis in wholes)),
+         ('symbols', 2 * max(capacity(symbols), int(model.conceptualSpaces[0].nVectors))),
+-    ), symbol_slots=max(1, symbol_slots))
++    ))
+     parts.where_offset = registry.slices['parts'][0]
+     offset = registry.slices['wholes'][0]
+     for basis in wholes:
+--- a/test/test_item9b_capacity_contract.py
++++ b/test/test_item9b_capacity_contract.py
+@@ -91,24 +91,27 @@
+     assert second.where_registry is not layout
+ 
+ 
+-def test_repeated_symbol_occurrences_have_disjoint_stable_locations():
++def test_input_occurrences_and_thought_symbols_use_their_own_ranges():
+     from WhereRegistry import WhereRegistry
+     registry = WhereRegistry([('input', 256), ('parts', 64), ('wholes', 8),
+-                              ('symbols', 128)], symbol_slots=32)
++                              ('symbols', 128)])
+     rows = torch.tensor([[12, 12, -1]])
+     positions = torch.tensor([[0, 1, 2]])
+-    where = registry.occurrences('symbols', rows, positions, 32)
++    where = registry.intervals('input', torch.where(rows >= 0, positions, -1))
+     assert where[0, 0, 1] <= where[0, 1, 0]
+     assert where.dtype == torch.int64
+-    assert where[0, 0, 0] == registry.slices['symbols'][0] + 12 * 32
++    assert where[0, 0, 0] == registry.slices['input'][0]
+     assert where[0, 2].tolist() == [-1., -1.]
+-    torch.testing.assert_close(where, registry.occurrences('symbols', rows, positions, 32))
++    thought = registry.intervals('symbols', rows)
++    assert thought[0, 0, 0] == registry.slices['symbols'][0] + 12
++    torch.testing.assert_close(thought[0, 0], thought[0, 1])
++    assert registry.slices['symbols'][1] - registry.slices['symbols'][0] == 128
+ 
+ 
+-def test_large_where_ranges_keep_occurrences_exact():
++def test_large_where_ranges_keep_symbol_row_addresses_exact():
+     from WhereRegistry import WhereRegistry
+-    registry = WhereRegistry([('parts', 1 << 25), ('symbols', 1 << 20)], symbol_slots=256)
+-    rows = torch.tensor([1 << 19, 1 << 19, (1 << 19) + 1])
+-    where = registry.occurrences('symbols', rows, torch.tensor([254, 255, 0]), 256)
++    registry = WhereRegistry([('parts', 1 << 25), ('symbols', 1 << 20)])
++    rows = torch.tensor([1 << 19, (1 << 19) + 1, (1 << 19) + 2])
++    where = registry.intervals('symbols', rows)
+     assert (where[:, 1] - where[:, 0]).tolist() == [1, 1, 1]
+     assert where[0, 1] == where[1, 0] and where[1, 1] == where[2, 0]
+--- a/test/test_item9b_corrections.py
++++ b/test/test_item9b_corrections.py
+@@ -64,8 +64,7 @@
+ def test_large_registry_addresses_roundtrip_through_both_phases():
+     from WhereRegistry import WhereRegistry
+     registry = WhereRegistry([('input', 8192), ('parts', 400_000),
+-                              ('wholes', 400_000), ('symbols', 2_000_000)],
+-                             symbol_slots=256)
++                              ('wholes', 400_000), ('symbols', 512_000_000)])
+     encoding = registry.encoding
+     addresses = torch.tensor([0, 8191, 8192, 2**24 + 1, 2**28 - 1,
+                               registry.capacity - 2, registry.capacity - 1])
+@@ -146,15 +145,16 @@
+     program, = model._last_understanding.answer_program
+     assert program.symbol_where.shape == (*program.rows.shape, 4)
+     addresses = model.where_encoding.decode_index(program.symbol_where)
+-    expected = model.where_registry.occurrences('symbols', 2 * program.rows,
+-        torch.arange(len(program.rows)), 8)[..., 0]
++    starts = model.inputSpace._ar_word_part_offsets[0,
++        model.inputSpace._word_active_mask[0], 0]
++    expected = model.where_registry.intervals('input', starts)[..., 0]
+     torch.testing.assert_close(addresses, expected)
+     assert program.symbol_when.shape == program.symbol_where.shape
+     torch.testing.assert_close(program.symbol_when,
+         model.when_encoding.encode(model.when_time).expand_as(program.symbol_when))
+ 
+ 
+-def test_native_percepts_encode_their_registry_rows_and_share_time(tmp_path):
++def test_native_percepts_encode_input_starts_and_share_time(tmp_path):
+     from test_packed_reconstruction_parity import build_model
+     model = build_model(tmp_path, word_capacity=8)
+     parts = model.perceptualSpace
+@@ -164,7 +164,7 @@
+     event = parts._radix_part_events(ids, offsets)
+     bands = event[..., parts._radix_where_indices]
+     torch.testing.assert_close(model.where_encoding.decode_index(bands),
+-        ids + model.where_registry.slices['parts'][0])
++        offsets + model.where_registry.slices['input'][0])
+     torch.testing.assert_close(event[..., -4:],
+         model.when_encoding.encode(model.when_time).expand_as(event[..., -4:]))
+     first_time = event[..., -4:].clone()
+--- a/test/test_item9b_occurrence_coordinates.py
++++ b/test/test_item9b_occurrence_coordinates.py
+@@ -0,0 +1,143 @@
++"""Occurrence starts and field time have different reconstruction roles."""
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++
++@pytest.fixture
++def model(tmp_path):
++    from test_packed_reconstruction_parity import build_model
++    owner = build_model(tmp_path, word_capacity=8)
++    try:
++        yield owner
++    finally:
++        owner.End()
++        owner.symbolSpace.soft_reset()
++        torch._dynamo.reset()
++
++
++def test_symbol_range_has_one_address_per_pole_without_word_slots(model):
++    start, end = model.where_registry.slices['symbols']
++    symbols = model.symbolSpace.subspace.what
++    rows = max(int(getattr(symbols, 'lexicon_capacity', symbols.nVectors)),
++               int(model.conceptualSpaces[0].nVectors))
++    assert end - start == 2 * rows
++
++
++def test_repeated_percept_occurrences_use_input_starts_and_one_time(model):
++    parts = model.perceptualSpace
++    ids = torch.tensor([[1, 1, 2]])
++    starts = torch.tensor([[0, 8, 19]])
++    model._advance_when_time()
++    event = parts._radix_part_events(ids, starts)
++    decoded = model.where_encoding.decode_index(event[..., parts._radix_where_indices])
++    torch.testing.assert_close(decoded, starts + model.where_registry.slices['input'][0])
++    torch.testing.assert_close(event[..., -4:],
++        model.when_encoding.encode(model.when_time).expand_as(event[..., -4:]))
++    before = event[..., -4:].clone()
++    model._advance_when_time()
++    later = parts._radix_part_events(ids, starts)
++    assert not torch.equal(later[..., -4:], before)
++
++
++def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model):
++    from What import What
++    text = 'cat cat sat'
++    with torch.no_grad():
++        model.runBatch(train=False, split='validation', batchSize=1,
++            batch_override=(model.inputSpace.prepInput([text]), torch.empty(1, 0)),
++            questions=(What.present(0, split='validation'),))
++    program, = model._last_understanding.answer_program
++    # This grammar retains the two spaces as units too.
++    assert len(program.rows) == 5
++    torch.testing.assert_close(model.where_encoding.decode_index(program.symbol_where),
++                               torch.tensor([0, 3, 4, 7, 8]))
++    torch.testing.assert_close(program.symbol_when,
++        model.when_encoding.encode(model.when_time).expand_as(program.symbol_when))
++
++
++def test_input_event_time_uses_the_subjective_clock(model):
++    model._advance_when_time()
++    before = model.when_time.clone()
++    with torch.no_grad():
++        model.runBatch(train=False, split='validation', batchSize=1,
++            batch_override=(model.inputSpace.prepInput(['cat cat sat']), torch.empty(1, 0)))
++    torch.testing.assert_close(model.when_time, before + 1)
++    events = model.inputSpace._ar_embedded[:, :5]
++    torch.testing.assert_close(events[..., -4:],
++        model.when_encoding.encode(model.when_time).expand_as(events[..., -4:]))
++
++
++def test_d3_scores_content_and_position_without_repeated_time_credit():
++    from Models import BasicModel
++    from Layers import ModelLoss
++    target = torch.zeros(1, 3, 16)
++    pred = torch.zeros_like(target)
++    pred[..., 0] = .2
++    pred[..., 8] = .3
++    pred[..., -4:] = 20.
++    pred.requires_grad_()
++    owner = SimpleNamespace(
++        inputSpace=SimpleNamespace(subspace=SimpleNamespace(nWhere=4, nWhen=4),
++                                   _ar_embedded=target),
++        perceptualSpace=None, loss=ModelLoss(),
++        _stm_single_S=torch.zeros(1, 16), _reverse_from_S=lambda _: pred)
++    owner._reverse_event_loss = BasicModel._reverse_event_loss.__get__(owner)
++    loss, metric = BasicModel._d3_reconstruction_loss(owner)
++    expected = .7 * pred[..., :8].square().mean() + .2 * pred[..., 8:12].square().mean()
++    torch.testing.assert_close(loss, expected)
++    loss.backward()
++    assert pred.grad[..., :12].count_nonzero() > 0
++    assert pred.grad[..., -4:].count_nonzero() == 0
++    target[..., -4:] = -100.
++    again, metric_again = BasicModel._d3_reconstruction_loss(owner)
++    torch.testing.assert_close(again, loss)
++    torch.testing.assert_close(metric_again, metric)
++    # A general event comparison may still score temporal differences.
++    assert owner._reverse_event_loss(pred, target) > loss
++
++
++def test_leaf_distillation_excludes_field_time():
++    from Models import BasicModel
++    from Layers import LeafDecoderHead
++    root = torch.ones(1, 8, requires_grad=True) * 2
++    leaves = torch.ones(1, 2, 12)
++    head = LeafDecoderHead(8, 2, 12)
++    owner = SimpleNamespace(_stm_single_S=root,
++        _reconstruction_stack=lambda: SimpleNamespace(leaves=lambda: leaves),
++        _leaf_distill_head_module=head,
++        inputSpace=SimpleNamespace(subspace=SimpleNamespace(nWhen=4)))
++    loss = BasicModel._leaf_distill_loss(owner)
++    loss.backward()
++    assert head.out.weight.grad[-4:].count_nonzero() == 0
++    assert head.out.weight.grad[:-4].count_nonzero() > 0
++    leaves[..., -4:] = -100.
++    torch.testing.assert_close(BasicModel._leaf_distill_loss(owner), loss)
++
++
++@pytest.mark.parametrize('packed', [False, True])
++def test_detached_word_teacher_also_excludes_field_time(packed):
++    from Language import ReconstructionStack, ReverseConstructionChooser
++    chooser = ReverseConstructionChooser(idea_dim=8, n_rules=2, max_words=2,
++        max_steps=6, leaf_dim=12, hidden=16)
++    idea = torch.ones(1, 8, requires_grad=True)
++    stack = ReconstructionStack(batch=1, max_depth=8)
++    leaves = torch.ones(1, 2, 12)
++    stack.store_word_parts(torch.ones(1, 2, 1, dtype=torch.long),
++                           torch.ones(1, 2, 1, dtype=torch.bool))
++    def score():
++        stack.store_leaves(leaves)
++        if packed:
++            return chooser.packed_loss(idea[:, None], stack,
++                word_positions=torch.tensor([[0, 1]]),
++                sentence_ids=torch.zeros(1, 2, dtype=torch.long),
++                sentence_end_mask=torch.tensor([[False, True]]), nWhen=4)[0]
++        return chooser.loss(idea, stack, nWhen=4)[0]
++    loss = score()
++    loss.backward()
++    assert idea.grad is None
++    assert chooser.leaf_decoder.out.weight.grad[-4:].count_nonzero() == 0
++    assert chooser.leaf_decoder.out.weight.grad[:-4].count_nonzero() > 0
++    leaves[..., -4:] = -100.
++    torch.testing.assert_close(score(), loss)
+--- a/test/test_reconstruction_roundtrip.py
++++ b/test/test_reconstruction_roundtrip.py
+@@ -251,9 +251,11 @@
+     finally:
+         model.loss.compute = orig_compute
+     assert model._d3_active, "grammar train batch should take the D3 path"
++    # The per-word objective scores position but excludes the field's shared
++    # timestamp. Its retained event prefix still uses the input where scale.
+     banded = [kw for shape, kw in calls
+-              if len(shape) == 3 and shape[-1] == D
+-              and kw.get("nWhere") == nw and kw.get("nWhen") == nn_]
++              if len(shape) == 3 and shape[-1] == D - nn_
++              and kw.get("nWhere") == nw and kw.get("nWhen") == 0]
+     assert banded, (calls, "the D3 event compare did not carry the input band")
+ 
+ 

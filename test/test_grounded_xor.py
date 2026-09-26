@@ -6,6 +6,7 @@ No random seed is set, and every declared run is an assertion.
 """
 from pathlib import Path
 import warnings
+import math
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -32,8 +33,8 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
         'architecture/training/autoload': False, 'architecture/training/maskRate': 0.,
         'InputSpace/nVectors': slots, 'InputSpace/nOutput': slots,
         'PartSpace/nInput': slots, 'PartSpace/nOutput': slots,
-        'PartSpace/nVectors': slots, 'PartSpace/synthesis': 'meronomy',
-        'PartSpace/chunkPromotionThreshold': 100000,
+        'PartSpace/nVectors': 256, 'PartSpace/synthesis': 'meronomy',
+        'PartSpace/chunkPromotionThreshold': 2,
         'ConceptualSpace/nInput': slots, 'ConceptualSpace/nOutput': slots,
         'ConceptualSpace/nVectors': 8 * pool if inventory is None else inventory,
         'WholeSpace/nInput': slots, 'WholeSpace/nOutput': slots,
@@ -100,19 +101,19 @@ def learn_grounded_xor(tmp_path, pool):
     model.forward(x)
     expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
     torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
-    torch.testing.assert_close(cs._cs_extents, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
-    # Composition check only, on the two located primitive readings. It is
-    # independent of the output row's learned case selection below.
-    positions = cs._cs_position_evidence[0, :, 0]
-    spans = cs._cs_position_spans
+    torch.testing.assert_close(cs._cs_field_where, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
+    # Before conceptual folds, the native property events still discriminate
+    # both byte positions. Concepts themselves retain only the bracket pool.
+    events = cs._percept_field.event_evidence([('ws', 8)])[0, :, 0]
+    spans = cs._percept_field.spans
     located = []
     for start in (0, 1):
         mask = (spans[..., 0] == start) & (spans[..., 1] == start + 1)
-        located.append((positions * mask[..., None]).amax(1))
+        located.append((events * mask[..., None]).amax(1))
     a, b = located
-    or_positive = torch.maximum(a[:, 0], b[:, 0])
-    not_and = torch.maximum(a[:, 1], b[:, 1])
-    torch.testing.assert_close(torch.minimum(or_positive, not_and), torch.tensor([0., 1., 1., 0.]))
+    torch.testing.assert_close(torch.minimum(torch.maximum(a[:, 0], b[:, 0]),
+                                            torch.maximum(a[:, 1], b[:, 1])),
+                               torch.tensor([0., 1., 1., 0.]))
     pool_rows = [r for r in store.provisional.nonzero().flatten().tolist()
                  if cs._order0_inventory_row(r)]
     assert len(pool_rows) == pool
@@ -121,12 +122,17 @@ def learn_grounded_xor(tmp_path, pool):
     # The ordinary observer receives all four unlabeled primitive fields.
     # It records complete located witnesses, including both repeated-pole
     # patterns. No XOR-specific part or output edge is supplied.
+    # The second presentation admits the recurrent units in PartSpace.
+    model.End()
+    model.forward(x)
     cs.promotion_observe()
     rows = [r for r in pool_rows if bool(store.assigned[r])]
     assert len(rows) == 4
-    assert all(sum(len(v) for (r, _), v in store.conjunctive.locations.items() if r == row) >= 2
-               for row in rows)
-    for _ in range(8):
+    assert all(any(r == row and (col // 2) % 2 == 0
+                   for r, col in store.features._index) for row in rows)
+    assert not hasattr(store.conjunctive, "locations")
+    witness_updates = math.ceil(math.log(1 - cs.concept_mint_threshold) / math.log(cs.concept_use_ewma))
+    for _ in range(witness_updates):
         model.End()
         model.forward(x)
         cs.observe_concept_use(model._combine_last_cs_sub._concept_activations)
@@ -167,22 +173,21 @@ def learn_grounded_xor(tmp_path, pool):
            'concept_updates': 32, 'initial_mse': initial_mse, 'mse': mse, 'output': output.tolist(),
            'conjunctions': len(rows), 'gates': store.participation[rows].tolist(),
            'xor_parts': cs.concept_weights(xor),
-           'located_parts': repr(store.conjunctive.locations)})
+           'native_cases': [(r, c) for r, c in store.features._index if r in rows]})
     assert mse < 1e-6
     torch.testing.assert_close(output, target, atol=1e-6, rtol=0)
     assert not torch.equal(initial, store.values)
     learned = [(r, weight) for r, weight in cs.concept_weights(xor) if weight > 0]
     assert len(learned) == 2
-    assert store.features.values[store.features._index[0, 4 * 9 + 3]] > 0
+    assert store.features.values[store.features._index[0, 4 * 8 + 2]] > 0
     # Pi was performed on retained order-0 positions, before symbolization.
     # The higher-order XOR row contains only sigma edges to those cases.
     assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))
                for r, c in store.conjunctive._index)
     assert all(r != xor for r, _ in store.conjunctive._index)
     assert set(r for r, _ in learned).issubset(rows)
-    torch.testing.assert_close(leg._concept_extents, cs._cs_extents)
-    torch.testing.assert_close(leg._concept_position_spans, cs._cs_position_spans)
-    assert leg.materialize().shape[1] == 2 * sum(cs._order_caps())
+    torch.testing.assert_close(leg._concept_where, cs._cs_field_where)
+    assert leg.materialize().shape[1] == 2 * sum(cs._field_caps())
     model.End()
     # Learned exclusion is exact at every read scope, without a noise floor.
     controls = x[:1].expand(4, -1, -1).clone()
@@ -190,7 +195,7 @@ def learn_grounded_xor(tmp_path, pool):
     with torch.no_grad():
         model.forward(controls)
         leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
-        assert cs._cs_position_evidence.count_nonzero() == 0
+        assert cs._percept_field.events.count_nonzero() == 0
         assert leg._concept_activations.count_nonzero() == 0
         assert leg._symbol_evidence.count_nonzero() == 0
     model.End()

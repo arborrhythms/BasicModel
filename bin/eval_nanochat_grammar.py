@@ -436,24 +436,13 @@ def _autoload_from_xml(path):
 def _prewarm_checkpoint_shapes(model, target):
     """Materialize every lazy module whose shape is saved by training.
 
-    Training's ``enable_compiled_step`` does two shape-affecting prewarms
-    before optimizer construction: it builds the STM reducer and grows the
-    terminal WholeSpace symbol codebook from its well-known-atom seed to the
-    configured inventory. Evaluation stays eager, but strict checkpoint
+    Training builds its lazy STM reducer before optimizer construction.
+    Perceptual codebooks already own their configured physical capacities. Evaluation stays eager, but strict checkpoint
     loading still needs the same destination shapes.
     """
     reducer_factory = getattr(model, "_stm_reducer", None)
     if callable(reducer_factory):
         reducer_factory()
-
-    ws = getattr(model, "wholeSpace", None)
-    sub = getattr(ws, "subspace", None)
-    codebook = (sub.codebook()
-                if sub is not None and hasattr(sub, "codebook") else None)
-    budget = int(getattr(ws, "nVectors", 0) or 0)
-    if (codebook is not None and budget > 0
-            and int(getattr(codebook, "nVectors", 0) or 0) < budget):
-        codebook.grow_to(budget)
 
     model.to(target)
 

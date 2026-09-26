@@ -29,7 +29,7 @@
        ConceptualSpace below keeps its VQ codebook=quantize. -->
   <PartSpace>
     <nOutput>8</nOutput>
-    <nVectors>16</nVectors>
+    <nVectors>256</nVectors>
   </PartSpace>
 
   <ConceptualSpace>

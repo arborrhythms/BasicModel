@@ -69,7 +69,7 @@
   <PartSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
-    <nVectors>8</nVectors>
+    <nVectors>256</nVectors>
     <invertible>true</invertible>
   </PartSpace>
 

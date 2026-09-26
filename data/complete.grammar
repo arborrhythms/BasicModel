@@ -98,6 +98,7 @@
     <start name="relative_truth">equal_O1</start>
 
     <compose>
+      <rule>interpret_O1 = interpret.forward(interpret_I1)</rule>
       <!-- Relations R (the relation family): part / whole / equal are
            COMPOSITIONAL operators, i.e. Relation(RI_1, RI_2) over two ideas,
            that head the relative-truth start. Their checked thought faces are
@@ -187,6 +188,7 @@
     </thought>
 
     <generate>
+      <rule>interpret_I1 = interpret.reverse(interpret_O1)</rule>
       <!-- Reverse rules: output -> inputs. -->
       <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
       <rule family="part" permutation="I2,I1">whole_I1, whole_I2 = whole.reverse(whole_O1)</rule>

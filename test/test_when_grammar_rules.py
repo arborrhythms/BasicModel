@@ -124,14 +124,10 @@ class TestPrepositionSignalRouterBinding(unittest.TestCase):
 
 
 class TestMentalModelWhenEnabled(unittest.TestCase):
-    """Phase 6 (Task 6.1): MentalModel.xml ships ``.when`` ON. Its Input /
-    Perceptual subspaces carry a 2-dim WhenRangeEncoding (nWhen == nWhere == 2),
-    while Conceptual / Symbolic / Output keep it disabled (nWhen == 0). The
-    plan's "turn it on" flip was already committed (nWhen already matched
-    nWhere in every space), so this is a guard against a silent later disable
-    or a hardcoded-width drift, not a new switch. A finite ``.when`` loss on a
-    real forward is already exercised by test_basicmodel.py's nWhen=2 model
-    suite; here we lock the structural enablement and the encoding type.
+    """Located events use the one global four-channel time ladder.
+
+    Content-only layouts retain zero band width while referring to the same
+    encoder. Input and perceptual events must still carry the complete band.
     """
 
     def test_when_enabled_at_width_four_with_start_ladder(self):
@@ -155,8 +151,8 @@ class TestMentalModelWhenEnabled(unittest.TestCase):
             we = mod.whenEncoding
             # 2026-07-04 encoding pass: the v2 start ladder is in use everywhere.
             self.assertEqual(type(we).__name__, "WhenStartDurationEncoding", name)
-            # nWhen and the encoding width agree (no hardcoded-width drift).
-            self.assertEqual(mod.nWhen, we.nDim, f"{name}: nWhen != encoding nDim")
+            self.assertIs(we, model.when_encoding, name)
+            self.assertIn(mod.nWhen, (0, we.nDim), name)
             if mod.nWhen == 4:
                 enabled.append(name)
         # .when is genuinely ON at width 4 for the input + perceptual subspaces.

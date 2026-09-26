@@ -71,7 +71,7 @@ def test_no_self_edge_via_populate():
 
 def test_relate_x_x_merges_to_one_edge():
     cs = _cs(nS=16, order=2)
-    A, _b, _c = cs.create_word_object_meta([1], 2, key="w")
+    A, _b, _c = cs.interpret_word([1], 2, key="w")
     sx = cs.singleton_concept(A)                     # the unit set {A}
     C = cs.reify_concept(sx, sx)                     # part- AND whole-leg on sx
     cs._populate_concept_weights(C)                  # relate() records only

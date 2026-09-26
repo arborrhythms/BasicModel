@@ -1,0 +1,70 @@
+{
+  "source_sha256": "86c9aa27bed5345a57e253a3f85668066789499555ba145fca0af960173f17d6",
+  "checks": {
+    "full": {
+      "elapsed_seconds": 1880.098313207971,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1200.0,
+        "suite_seconds": 7200.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "peak_aggregate_memory_bytes": 8122457744,
+      "exit_code": 0,
+      "selected": 4920,
+      "completed": 4920,
+      "outcomes": {
+        "passed": 4595,
+        "skipped": 324,
+        "xfailed": 1
+      },
+      "peak_worker_memory_bytes": 7723293032
+    },
+    "slow": {
+      "elapsed_seconds": 164.87195266701747,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 900.0,
+        "suite_seconds": 10800,
+        "batch_size": 256,
+        "max_files": 16
+      },
+      "peak_aggregate_memory_bytes": 7151851640,
+      "exit_code": 0,
+      "selected": 4,
+      "completed": 4,
+      "outcomes": {
+        "passed": 4
+      },
+      "peak_worker_memory_bytes": 7151851640
+    },
+    "doc-links": {
+      "elapsed_seconds": 5.257402583025396,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 900.0,
+        "suite_seconds": 10800,
+        "batch_size": 256,
+        "max_files": 16
+      },
+      "peak_aggregate_memory_bytes": 427509056,
+      "exit_code": 0,
+      "selected": 96,
+      "completed": 96,
+      "outcomes": {
+        "passed": 96
+      },
+      "peak_worker_memory_bytes": 427509056
+    }
+  }
+}

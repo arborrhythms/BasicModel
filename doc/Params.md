@@ -27,28 +27,17 @@ LiftingLayer). Older docs sometimes call `nOutput` / `nInput` `nActive`;
 treat that as the same thing as `nOutput`.
 
 > 2026-05-28: `<nWhere>` / `<nWhen>` are retired from per-file configs.
-> The band is architectural (`canonical_shape`, `bin/architecture.py`):
-> (nWhere=4, nWhen=4) on every interior space (2026-07-09 multi-rung
-> pass), (0, 0) on OutputSpace. The
-> `.where` field is the canonical positional identifier.
->
-> 2026-06-16: `.where` is an **endpoint-sum bracket** `[start,
-> end]` (angle = span center, magnitude = extent), the invertible
-> `EndpointSumWhere` form. An instant (`start==end`) is byte-identical to the
-> prior single-quadrature point. **Superseded 2026-07-09**: the
-> endpoint-sum bracket is retired from the muxed band — `.where` is now
-> the same 4-dim 2-rung quadrature ladder as `.when`, over the byte
-> START only (LF period = `<wherePeriod>`, HF = `wherePeriod /
-> <whereRungRatio>`); the analyzer-side `EndpointSumWhere` keeps the
-> bracket form.
->
-> 2026-07-04 (encoding pass): `.when` is the **4-dim 2-rung start ladder**
-> (`WhenStartDurationEncoding`; onset only — duration left the band; the
-> exact long-int clock addresses LTM, the Option-C hybrid). New
-> `<architecture>` knobs: `<wherePeriod>` (default 8192 input bytes;
-> `.where` period, decoupled from nObjects, warn-once raise-to-fit),
-> `<whenPeriod>` (default $10^6$ ticks), `<whenRungRatio>` (default 32).
-> Tense is the onset-vs-`now` relation; see [doc/Spaces.md](Spaces.md).
+> The band widths are architectural (`canonical_shape` in `bin/architecture.py`).
+> Input, part, whole and symbol events use two quadrature pairs for `.where`
+> and two for `.when`; conceptual codes and final outputs have no local band.
+> A complete model shares **one** spatial ladder and **one** temporal ladder.
+> The spatial long period is derived from the total input/percept/symbol
+> registry capacity; the temporal long period covers the LTM allocation.
+> Short periods preserve one-location resolution. Integer spatial addresses
+> are decoded from the band, not saved beside it. Everything observed in one
+> field shares its time; the exact clock side-band stays. Span endpoints are
+> separate extent metadata. The old `wherePeriod`, `whereRungRatio`,
+> `whenPeriod` and `whenRungRatio` XML knobs are retired.
 
 ---
 
@@ -63,16 +52,14 @@ sub-elements `<training>` and `<data>` (see below).
 | `reconstruct` | — | — | RETIRED (A1, 2026-06-09): the `reconstructEnum` / `<reconstruct>` element no longer exists. Reconstruction is concepts-seeded; stream binding is governed separately by `conceptBinding` (`aligned` does not allocate `ConceptualCombine`, while `mixing` is the parallel learned-matrix option). There is no selectable `none` / `symbols` / `both` mode. |
 | `subsymbolicOrder` | int | `1` | Maximum subsymbolic passes over native percepts and the order-0 field. Passes may retarget region or mereological level through subsymbolicLoop; they do not raise conceptual order or apply perceptual fold layers. |
 | `conceptBinding` | string | `"mixing"` | PS/WS concept-formation mode. `aligned` preserves location and fuses every non-raw cumulative fold from both towers; BasicModel uses order 4, hence three PS plus three WS sources. Exact ordered paths and actual concept order ride on the concept and persist on minted META concepts. `mixing` retains the learned `ConceptualCombine` matrix as a parallel-path alternative; BasicModel's serial path is aligned. |
-| `wherePeriod` | int | `8192` | The `.where` quadrature period in input BYTES (2026-07-04 encoding pass; decoupled from the retired implicit $\Sigma$ nVectors period). The build seam raise-to-fits for longer inputs, warning once — never silent aliasing. |
-| `whenPeriod` | int | `1000000` | The `.when` v2 LF horizon in clock ticks (the LTM event-addressing range). The band is the SIMILARITY channel; absolute addressing rides the exact long-int clock (`when_time`). |
-| `whenRungRatio` | int | `32` | LF/HF period ratio of the `.when` 2-rung start ladder (safe branch bound $\approx 35$ at the dense-support floor). |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
 | `serial` | bool | derived | Forward-dispatch mode. `true` = serial / grammatical (per-word `[B, 1, D]` body); `false` = parallel (whole-slab `[B, N, D]` body). If omitted, legacy configs derive it from `symbolicOrder > 0`; new configs should set it explicitly. |
+| `modeSchedule` | string | derived from `serial` | `serial`, `parallel`, or `interleave:N` for a positive integer N. Interleaving stages the next N complete sentences, reads them in native parallel mode, then reads the same sentences in serial mode. The final shorter group is processed too. Both passes share the inventory. Context runs forward under no-grad, updating admission, participation and priming; only serial presentations train through the optimizer and advance the external clock. There is no separate label read-back. |
 | `symbolicOrder` | int | `0` | Bound on symbolizations in the symbolic loop. Higher rows union the preceding order's symbols; pi edges exist only within the order-0 field. Two poles share one code. 0 disables the parallel pyramid; serial grammar dispatch is independent. |
-| `conceptualPi` | bool | `false` | Enable conjunctive parts in the order-0 field before max over alternatives. The pool may discover located co-present patterns there. Pi edges above order 0 are rejected. |
+| `conceptualPi` | bool | `false` | Enable conjunctive parts in the order-0 field before max over alternatives. The pool discovers recurring fused native parts; conceptual conjunction means co-presence inside the field bracket. Pi edges above order 0 are rejected. |
 | `attentionPromotion` | bool | `false` | Enable witnessed-context discovery in the conceptual row pool at the parallel sentence boundary. Independent of `truthCriterion`. |
 | `conceptPoolSize` | positive int | `1` | Provisional rows reserved per conceptual order, replenished after discovery, within the fixed inventory. Exhaustion is reported; discovered rows are never recycled. |
 | `conceptUseEWMA` | decimal | `0.9` | Previous-value coefficient for context, part support and participation updates; must be less than one. |
@@ -130,6 +117,17 @@ penalises propositions that contradict the TruthSet. Both coexist. See
 
 ---
 
+With `interleave:N`, `runEpoch` stages complete sentences in corpus order and
+keeps serial batches at or below the requested `batchSize`, splitting at group
+boundaries. The native context batch has N rows, so N also determines its memory
+requirement. This cursor uses complete sentence inputs rather than byte slabs
+or packed bricks. Direct `runBatch` callers can supply a complete group or pass
+`schedule_context` with the coming group before its first serial batch; later
+batches must match the unread prefix. A checkpoint preserves that prefix.
+Mid-epoch resume requires the same schedule and serial batch size.
+Evaluation uses its own temporary queue, preserving any unfinished training
+group. A fresh training epoch starts a new queue; a resume keeps the saved one.
+
 ### `<architecture><data>`
 
 Data loading and filtering.
@@ -177,7 +175,7 @@ Training loop and I/O.
 | `forwardGrammarWeight` | float | `0.0` | Weight of the bounded local structural contrast for committed unary/binary folds. Its candidate evidence is detached, so it updates only the chooser at that fold. |
 | `whatScale` | float | `0.7` | Loss weight on the `.what` (content) channel. |
 | `whereScale` | float | `0.2` | Loss weight on the `.where` (positional) channel. |
-| `whenScale` | float | `0.1` | Loss weight on the `.when` (temporal) channel. |
+| `whenScale` | float | `0.1` | Loss weight on the `.when` (temporal) channel in general event comparisons. Per-word reconstruction excludes the field's shared timestamp. |
 | `negSamples` | int | `64` | Negative samples per positive for CBOW / SBOW. Memory cost: $O(\text{batch} \cdot \text{negSamples} \cdot \text{dim})$ vs $O(\text{batch} \cdot \text{vocab})$ for full softmax. |
 | `TruthLoss` | float | `0.0` | Additive penalty for propositions that contradict the TruthSet (union-norm reduction via `Basis.disjunction()`). `0.0` disables. |
 | `maskRate` | float | `0.15` | Within-sentence IR Bernoulli mask rate. BERT default 0.15. |
@@ -304,12 +302,19 @@ distributed code is the max of its constituent codes; the ordered
 containment read retains the distinction between anagrams. Native
 PartSpace has no `SigmaLayer` or `PiLayer`.
 
+The current BasicModel configuration reserves 32,768 part rows. That is a
+small-run setting, not a capacity estimate for the million-sentence corpus.
+Rows store admitted parts, so sentence count alone does not determine the
+required number. Item 3 must measure part admission on the target corpus,
+raise this reserve, and record the resulting memory cost before the full run.
+If the reserve fills, training stops with a capacity error; it cannot grow the
+table while an optimizer owns it.
+
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Number of active perceptual feature vectors. Should be $\geq$ `InputSpace.nOutput`. For XOR: 4. |
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
-| `nVectors` | int | sentinel | Initially allocated percept-codebook rows. When `> nOutput`, enables vector quantization with top-k selection of `nOutput` rows. |
-| `maxVectors` | int | `nVectors` | Hard logical ceiling for the canonical meronomy/radix percept store. Promotions are queued during forward and installed after `optimizer.step`; storage grows geometrically only at that safe boundary. Existing ids and optimizer state are preserved. |
+| `nVectors` | int | sentinel | Fixed physical percept-codebook capacity. Logical admission writes unused rows without changing tensor shape or optimizer ownership. Exhaustion raises an error naming this knob. Serial attention may select `nOutput` rows; parallel attention reads all active percepts. |
 | `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
@@ -339,7 +344,7 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Active concept vectors. For XOR: 3. |
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
-| `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns concepts, META relations, and taxonomy. Aligned property-basis stages share one table; order is metadata, not a row partition. This value is independent of `WholeSpace.nVectors`, PartSpace's allocated/max rows, live `nOutput`, SymbolSpace references, and STM capacity. |
+| `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns concepts, META relations, and taxonomy. Aligned property-basis stages share one table; order is metadata, not a row partition. This value is independent of `WholeSpace.nVectors`, PartSpace's physical capacity, live `nOutput`, SymbolSpace references, and STM capacity. |
 | `invertible` | bool | `false` | Space construction flag. Aligned native binding retains both perceptual views for reconstruction; ConceptualSpace owns no unary chart fold. |
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: no longer constructs an attention pass in conceptual processing; kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
@@ -375,7 +380,7 @@ META, taxonomy, or symbol-prototype inventory. See
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Number of simultaneously live whole-percept locations. This is a field width, not a property-inventory or symbol count. |
 | `nDim` | int | `0` | Width of one whole-percept/property vector. `0` inherits the preceding compatible event width. |
-| `nVectors` | int | sentinel | Whole-percept/property codebook capacity. BasicModel starts with roughly eight ASCII-class properties; this inventory may grow dynamically and is independent of both `ConceptualSpace.nVectors` and live `nOutput`. |
+| `nVectors` | int | sentinel | Fixed physical whole-percept/property capacity. BasicModel starts with eight ASCII-class properties; further admission uses unused rows inside the declared nVectors and is independent of both `ConceptualSpace.nVectors` and live `nOutput`. |
 | `propertyBasis` | bool | `false` for legacy configs; `true` in BasicModel | Selects the migrated property-only ownership contract. When true, `subspace.what` is the sole WS codebook, `analysis_store`/`type_subspace` are absent, `activeVectors` does not couple to CS, and `nSymbols` remains a downstream alias of conceptual capacity. The false path exists only for unmigrated fixtures/checkpoints. |
 | `codebook` | mode | `quantize` | `none`, `quantize`, or `project` for the property-percept basis. It never selects a concept or symbol codebook. |
 | `analysis` | string | `"byte"` | Top-down division over the unity view. `meronomy` is the only canonical mode: the WholeSpace descending ladder (doc/plans/2026-09-10-meronomy-fold-ladder.md; until its Phase 2 lands it is the type-run cut). `byte`, `raw`, `sentence` (no division) and `word`, `grammatical` (the type-run cut) are legacy cuts dispatched through `Legacy.py`. The old `analyse` spelling is not accepted by the schema. |
@@ -427,7 +432,7 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 |-----------|------|---------|-------------|
 | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
 | `truthMaxEntries` | int | `1024` | TruthLayer SS-codebook capacity. |
-| `ltmCapacity` | int | `1024` | Long-term-memory (LTM) chain capacity on `InterSentenceLayer`: the per-row bounded `deque` of STM end-states (the AR sequence feeding inter-sentence prediction) is capped at this many entries. Separate from `truthMaxEntries`. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+| `ltmCapacity` | int | `1024` | Long-term-memory (LTM) chain capacity on `InterSentenceLayer`: the per-row bounded `deque` of STM end-states (the AR sequence feeding inter-sentence prediction) is capped at this many entries. Also sizes the model's shared `.when` ladder. Item 3 must set it for the intended million-row run and record the resulting clock range. Separate from `truthMaxEntries`. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
 | `parserBackend` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): the chart backend is gone and the signal router (`LanguageLayer`) is now the sole, fixed parser. The element is rejected — leaving it in an XML config raises a loud `ValueError` at load time (`Language._assert_retired_chart_knobs_absent`). |
 | `routerKind` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): there is no longer a selectable router; the signal router is fixed. Rejected with a loud `ValueError` if present in a config. |
 | `chartCollapse` | string | `"root"` | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/` (the writeback contract it described rode out with the chart). |
@@ -463,7 +468,6 @@ symbol (line anchors drift).
 | `meronomy` (attr `dMaxStable`) | `Layers.py` (`meronomy_enabled` / `meronomy_d_max_stable`) | code `off`; `data/model.xml` ships `on` with `dMaxStable="4.0"` $\Rightarrow$ effectively **ON** | Binds the meronymic slots (PS.sigma / WS.pi) directly to `[0,1]` membership kernels; `dMaxStable` bounds the complete learned fold's inverse gain. |
 | `sigmaPi` | `Models.py` (BaseModel init) + `Spaces.py` (PS/WS fold builders) | `butterfly` | Fold span enum `last` \| `butterfly` \| `full`; the per-space `<butterfly>` boolean is its deprecated alias (PS/WS only). |
 | `conceptBinding` | `Models.py` (serial word loop) + `Spaces.py` (`ConceptualSpace`) | `mixing`; BasicModel sets `aligned` | Selects historical learned mixing or strict same-location fusion over all non-raw PS/WS folds. |
-| `whereRungRatio` | `Spaces.py` (`WhereEncoding` construction) | `32` | LF/HF period ratio of the `.where` 2-rung ladder; HF period = `wherePeriod / ratio`. |
 | `syntacticOrder` | `Models.py` (BaseModel init) | `0` | Parse-tree depth cap for the serial reduce sweep; `0` = unbounded. Inert in parallel mode. |
 | `sentenceProtocol` | `Models.py` (BaseModel init) | = `serial` | Whole-sentence gist prelude (parallel `subsymbolicOrder` pumps, intent-only commit) before the serial per-word loop. |
 | `truthSet` (`<truth>` rows: text, `trust` / `kind` attrs) | `Models.py` (`provision_ltm`) | (none) | Config-provisioned trusted truths run through the real forward and appended to the consolidated LTM at load; row trust $\times$ `architecture.trust`. Read only when `<ltmConsolidation>` is on — otherwise ignored. |
@@ -570,7 +574,6 @@ symbol (line anchors drift).
 | `codebookEmaDeadThreshold` (PS/CS/WS) | same | unset ($\to$ VQ default: `1` if `codebookRetire` else `0`) | Dead-code retire: EMA `cluster_size` below this replaces the slot with a fresh row. |
 | `codebookGrowthEpsilon` (PS/CS/WS) | same | `0.0` | Stashed as `vq.growth_epsilon`; `runBatch` consults it for codebook growth. |
 | `activeVectors` (ConceptualSpace) | `Models.py`, `Layers.py` | `nVectors` | Initially selectable prefix of the physically preallocated shared conceptual codebook. Prefix growth updates a fixed-shape mask in place, so reserve activation cannot replace the optimizer-owned Parameter. WholeSpace properties use their own small inventory and lifecycle. |
-| `maxVectors` (PartSpace) | `Spaces.py`, `Layers.py`, `Models.py` | `nVectors` | Maximum rows the percept store may reach through post-step geometric growth. The current physical row count remains `nVectors` until queued promotions require expansion. |
 
 ### `<SymbolSpace>` level
 

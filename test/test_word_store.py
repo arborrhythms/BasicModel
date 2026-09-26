@@ -765,7 +765,7 @@ def test_percept_concept_reverse_index_and_row(tmp_path_factory):
     """Step (b) substrate (snap design doc §ontology): wholes and parts
     co-occurring at one `.where`/`.when` form a concept's SUPPORT; the
     concept, once formed, is location-independent. The PARALLEL path forms
-    the word/object pair (``create_word_object_meta``); the SERIAL path
+    the word/object pair (``interpret_word``); the SERIAL path
     RESOLVES and lights it up — it does not mint. The forward folds the
     OBJECT concept ``B``; Method-2 un-folds into object concepts and
     TRANSLATES them back to word concepts (the exact reverse). Pins:
@@ -773,7 +773,7 @@ def test_percept_concept_reverse_index_and_row(tmp_path_factory):
     row, and the B -> A translation."""
     m = _build(tmp_path_factory, word_store=True)
     cs = m.conceptualSpace
-    A, B, C = cs.create_word_object_meta([3, 5], word_whole=None, key="hello")
+    A, B, C = cs.interpret_word([3, 5], word_whole=None, key="hello")
     # Each word-part percept resolves to BOTH members of the pair ...
     assert cs.concept_of_percept(3) == A
     assert cs.concept_of_percept(5) == A
@@ -806,7 +806,7 @@ def test_concept_row_content_lights_up_the_resolved_row(tmp_path_factory):
 
     m = _build(tmp_path_factory, word_store=True)
     cs = m.conceptualSpace
-    A1, _, _ = cs.create_word_object_meta([3], word_whole=None, key="hello")
+    A1, _, _ = cs.interpret_word([3], word_whole=None, key="hello")
     content, mask = cs.concept_row_content(torch.tensor([3, 99]))
     assert mask.tolist() == [True, False]
     assert torch.allclose(content[0].norm(), torch.tensor(1.0), atol=1e-5)

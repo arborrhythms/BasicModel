@@ -9,15 +9,19 @@ from test_cs_sparse_weights import _cs, _mint_row
 from test_concept_memberships import binary_features
 
 
-def test_located_conjunction_matches_requested_poles_before_union():
+def test_native_ordered_case_supplies_the_bracket_conjunction():
     cs = _cs()
     cs.conceptual_pi = True
     assert _mint_row(cs, 0, 100) == 0
     row = _mint_row(cs, 0, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True, locations=((0, 1),))
-    cs.add_concept_edge(row, 0, 1., conjunctive=True, negated=True,
-                        locations=((1, 2),))
-    native, extents = binary_features(cs, torch.tensor([[48, 48], [48, 49], [49, 48], [49, 49]]))
+    # Section 4c moves exact ordered conjunctions to native perception.
+    # Preserve the original 10-only truth table after retiring locations.
+    cs.add_concept_feature(0, 'ps', (49, 48), 1.)
+    cs.add_concept_edge(row, 0, 1., conjunctive=True)
+    raw = torch.tensor([[48, 48], [48, 49], [49, 48], [49, 49]])
+    positions = torch.tensor([[[0, 1], [1, 2]]]).expand(4, -1, -1)
+    extents = torch.tensor([[[0, 2]]]).expand(4, -1, -1)
+    native = (raw, positions, None, raw, positions)
     read = cs.cs_read_memberships(native, extents)
     torch.testing.assert_close(read[row, :, 0, 0], torch.tensor([0., 0., 1., 0.]))
     # Neither a symbol union nor two separate subjects can supply this case.
@@ -28,11 +32,12 @@ def test_located_conjunction_matches_requested_poles_before_union():
     other = _cs()
     restored = Spaces._concept_alloc_of(other).layer()
     restored.load_parts_extras(saved)
-    assert restored.conjunctive.locations == Spaces._concept_alloc_of(cs).layer().conjunctive.locations
+    assert restored.conjunctive._index == Spaces._concept_alloc_of(cs).layer().conjunctive._index
+    assert not hasattr(restored.conjunctive, "locations")
 
 
 def test_passback_scales_unknown_parts_without_erasing_location():
-    cs = SimpleNamespace(_order_caps=lambda: (2,), cs_percept_attribution=lambda *a, **k:
+    cs = SimpleNamespace(_field_caps=lambda: (2,), cs_percept_attribution=lambda *a, **k:
         (torch.tensor([0]), torch.tensor([[[[1., 0.]]]]),
          torch.tensor([[[0, 1], [1, 2]]])))
     model = SimpleNamespace(subsymbolic_loop={1}, conceptualSpaces=[cs],
@@ -72,9 +77,9 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48], [1.])
     spans = torch.tensor([[[0, 1]]])
-    cs.cs_read_memberships((torch.tensor([[7]]), spans, primitive,
+    read = cs.cs_read_memberships((torch.tensor([[7]]), spans, primitive,
                             torch.tensor([[48]]), spans), spans)
-    torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0, 0], torch.tensor([0., 1.]))
+    torch.testing.assert_close(read[0, 0, 0], torch.tensor([0., 1.]))
     cs.Reset(hard=True)
     features = Spaces._concept_alloc_of(cs).layer().features
     written = {col for (_, col), i in features._index.items() if float(features.values[i]) > 0}
@@ -83,21 +88,22 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     assert 4 * 8 not in written and 4 * 8 + 1 not in written
 
 
-def test_boundary_candidates_keep_located_brackets_and_do_not_veto():
+def test_boundary_candidates_keep_bracket_semantics_and_do_not_veto():
     cs = _cs()
     cs.conceptual_pi = True
     _mint_row(cs, 0, 100)
     row = _mint_row(cs, 0, 101)
-    cs.add_concept_edge(row, 0, 1., conjunctive=True, locations=((0, 1),))
+    cs.add_concept_edge(row, 0, 1., conjunctive=True)
     # An unwritten source outside the bound field must not veto this pattern.
-    cs.add_concept_edge(row, 60, 0., conjunctive=True, locations=((1, 2),))
+    cs.add_concept_edge(row, 60, 0., conjunctive=True)
     native, extents = binary_features(cs, torch.tensor([[49, 48]]))
     before = cs.cs_read_memberships(native, extents)
     assert float(before[row, 0, 0, 0]) == 1.
     cs._prepare_part_learning()
     matrix = Spaces._concept_alloc_of(cs).layer().conjunctive
     opposite = matrix.nOutput + 1
-    assert matrix.locations[row, opposite] == ((0, 1),)
+    assert (row, opposite) in matrix._index
+    assert not hasattr(matrix, "locations")
     after = cs.cs_read_memberships(native, extents)
     torch.testing.assert_close(after, before)
 

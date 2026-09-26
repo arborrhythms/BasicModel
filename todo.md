@@ -38,69 +38,35 @@ seed may make a *measurement* reproducible, never an *assertion* true. A test
 that fails at some seed has found a defect; fix the defect, or let it fail.
 Do not remove unused reasoning methods without Alec's review.
 
-- **9b. One structure across the two modes; the field as a percept
-   activation vector; `interpret`** ([spec](doc/plans/2026-09-25-item-9b-mode-sharing-and-interpret.md);
-   [Architecture](doc/Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25);
-   [Philosophy](doc/Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25)).
-   Decided by Alec, 2026-09-25: (1) one inventory for both modes, no
-   private copies, checkpoints load in either mode; (2) the conceptual
-   field is a percept activation vector — presence and observed complement
-   per percept row, pooled over the occurrences inside **one convex
-   bracket** in space and **one interval** in time; a field has one where,
-   one when and many whats, a concept row has neither coordinate, a
-   percept event keeps its own, an LTM row's address is its `.when` and
-   its `.where` is what it was looking at, and symbols' `.where` extends
-   the pre-allocated part and whole percepts' `.where` in one address
-   space (the pre-2026-06-04 where-space slice registry, revived); (3)
-   open attention in parallel mode (all
-   active percepts), focused attention in serial mode (the 8/8 attended
-   field), no `n0` truncation, no per-concept `.where`/`.when` channel;
-   (4) *both* is the field's report that the bracket is heterogeneous —
-   narrow it, or raise order; exact co-location is perception's (fused
-   parts, pervading runs), so XOR's cases are the fused parts `10`/`01`;
-   (5) `interpret`, the default per-word word-concept → object-concept
-   step of serial mode, unknown words minting provisional object rows by
-   testimony, `create_word_object_meta` deleted. Pending Alec's yes/no:
-   `modeSchedule` (`serial | parallel | interleave:N`, re-symbolization
-   after every parallel pass) and the erosion gate (categorical-perception
-   ordering across three seeds), and fixed-capacity perceptual codebooks
-   with stable where-space slices (§4e). **Next after the parity landing
-   (Alec, September 25).** Work: replace
-   the 11b/11c `[B, E, P]` seam read, retained pairs in the field and
-   readout/checkpoint position pairs with the per-bracket pooled read and
-   the field's single pair; move the refine-before-raise run count to
-   percept events via attribution; open attention in parallel mode;
-   `interpret` with its three faces and the seal no longer resolving
-   objects; then the schedule and the gate. Exit: the native XOR gate and
-   exact-zero controls unchanged; serial reconstruction within the 11b
-   tolerance of `99207a3`; a concept learned in one mode read by id with
-   the same definition in the other; the `interpret` tests of plan §5
-   (particular, kind, reverse, every word interpreted, unknown word minted
-   once and reused, `create_word_object_meta` gone); the erosion
-   orderings; docs per plan §6.
-- **9. Expectation learning gates.** The negative-image mechanism and residual
-   query credit are in (`7d7dc4f`,
-   [measurements](doc/benchmarks/2026-09-21-item2/README.md)): the predictor
-   learns in controlled settings and a related continuation leaves a smaller
-   remainder than an unrelated one, but the native runs are seven optimizer
-   steps on one seed, prediction does not beat its context-free control, and
-   the reasoning comparison is null.
-   **Item 9b is next (Alec, September 25); these learning gates remain open.**
-   *Compatibility (Claude, 2026-09-25):* the baseline for parity and for
-   every later "unchanged" check is now `99207a3` (serial after-training
-   .0891618710), not `d4dc385`; re-measure both layouts on the current
-   tree before diagnosing. Item 9 runs on the serial path, which by the
-   mode exclusion never touches the order-0 field, its sigma/pi/not or the
-   attended rows; the negative image remains a sealed-idea operation
-   (accessible-mind §2.6.2 as amended). The reconstruction-only control
-   must reconstruct from forward artifacts, never a saved input trace.
-   Then the gates. Exit: on the packed native config, at
-   least three seeds and a run length declared in advance — ordered prediction
-   beats the shuffled and context-free controls at equal updates, with
-   reconstruction and discrimination no worse than the reconstruction-only
-   control; and thought work at matched answer error with the conceived
-   remainder against the full observation as evidence (spec test 32, plan
-   §10). A null that survives that run is recorded, and Alec decides.
+**The grammatical operations and their inverses are still in development
+(Alec, 2026-09-26).** The compose, thought and generate catalogs are a
+fragment, their routing is learned with sparse credit, and their tied
+inverses are exercised mostly by reconstruction. No item's gate, and no
+conference number, should be read as a claim about the performance of the
+grammar as a set yet; a poor result on wording, parse depth or free
+generation is expected at this stage and is recorded, not tuned away.
+
+- **9b. Shared fields, interpretation and fixed capacities.** Claude accepted
+   the implementation; the required final sweep is green. Ready to record the
+   implementation commit under Done ([review receipt](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md)).
+- **9. Mature-checkpoint learning evidence.** The mechanism, checkpoint exposure
+   counter and quality-evaluation machinery are reviewed and implemented
+   ([receipt](doc/benchmarks/2026-09-26-item9-followup/README.md)). Learning
+   acceptance remains deferred until a checkpoint has at least **one million
+   completed FineWeb training sentences**; missing exposure skips, never passes,
+   the quality evaluation. Correctness checks stay unconditional. No qualifying
+   checkpoint has been evaluated. Then run the loaded-model wording, prediction
+   and predictive-thought checks; the full causal gate still needs separately
+   trained, equal-update controls across at least three seeds, with tasks, run
+   length and thresholds declared first. Ordered prediction must beat shuffled
+   and context-free controls without worsening reconstruction/discrimination
+   against reconstruction-only; thought must improve error at matched work or
+   reduce work at matched error. Same-checkpoint ablations do not establish this
+   causal result, and fused AMP conservatively undercounts exposure. Preserve the
+   tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
+   development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
+   old context-free and assertion-thought scores are invalid controls. Item 8 is
+   the next implementation task while this empirical gate waits for training.
 - **8. Evidence: learned utility and structural preference.** Prefer
    understandable structural operators when they carry the meaning; any opaque
    operator must be an ordinary grammar-MLP choice, with the structural face
@@ -118,7 +84,12 @@ Do not remove unused reasoning methods without Alec's review.
    ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
    *Compatibility:* `XOR_grammar.xml` composes `not` / `conjunction` /
    `disjunction` over symbols on the serial path and never used the deleted
-   tower folds, so its gate stands as written; its baseline is `99207a3`.
+   tower folds, so its gate stands as written. Reconstruction comparisons use
+   the [reviewed 9b baseline](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md):
+   serial before/during/after .1005906649 / .0948241442 / .0928765051;
+   packed/single byte reconstruction .6839025617 with exact parity. Learning
+   quality gates follow the million-sentence prerequisite in item 9; mechanism
+   and regression checks remain unconditional.
 - **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
    new session. One S = one LTM row: an absolute S fuses to one point and
    writes an idea row with derivation and `refs`; a relative S (generic
@@ -198,7 +169,7 @@ Do not remove unused reasoning methods without Alec's review.
    subordinate rows, then the row, gradually, coarsening the referring row
    instead of cascading where the operand's point survives. Exit: the fourteen
    §7 tests, the accessible-mind spec's test 31 (retention by surprise), the
-   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and the `99207a3`
+   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and the reviewed 9b
    reconstruction measurements unchanged unless explicitly re-baselined.
    *Compatibility:* rows carry the pair `(c⁺, c⁻)` (§1.1); `|trust|` in
    the value is `|c⁺ − c⁻|` (11c entry 2's collapse) and the *both* corner
@@ -208,8 +179,12 @@ Do not remove unused reasoning methods without Alec's review.
    feature groups — is not in the spec; discovered rows are never recycled
    (item 11), so their retirement needs a rule here or in FutureWork.
 - **4. Run harness and resume test.** One logger per interval: reconstruction
-   loss; expectation discrepancy; LTM occupancy, forgetting passes, rows
-   deleted per origin, value cut-off; luminosity of provisioned truths; the
+   loss; expectation discrepancy; LTM occupancy and forgetting passes;
+   [categorical discrimination](bin/CategoricalDiscrimination.py) from the
+   fixed four XOR and 68 FineWeb probes, reporting CP and within/between
+   distances without pass thresholds. Reuse captured readings and budget their
+   collection cost; the three-seed experiment is archived in FutureWork.
+   Also log rows deleted per origin, value cut-off; luminosity of provisioned truths; the
    per-shared-operator gradient cosine and norm ratio — reconstruction against
    expectation, and against output where answers are supplied — with the
    operators in persistent opposition named; the held-out two-truths §7
@@ -226,8 +201,24 @@ Do not remove unused reasoning methods without Alec's review.
    one command on a small config; the test in the suite.
 - **3. Corpus at target size.** Raise `maxDocs`, exercise multi-shard if needed,
    measure sentence-list/address-table memory and loader time, confirm
-   `resume_skip` with the run's stream count. Exit: the load recorded and
-   `maxDocs`/`shardDir`/stream count in the run config.
+   `resume_skip` with the run's stream count. Measure admitted PartSpace rows
+   on the target corpus and raise the current 32,768-row reserve before the
+   million-sentence run. The required capacity depends on admitted parts,
+   not one row per sentence; exhaustion now stops training. Record the chosen
+   physical `nVectors`, occupancy and dictionary/optimizer memory cost.
+   Target about 200,000 English word forms plus one associated object per
+   word, with further room for non-verbal concepts: roughly one million
+   physical ConceptualSpace rows (about 4.3 GB at width 1032 in float32,
+   without Adam moments on the rotation-owned dictionary). Reserve a few
+   hundred thousand PartSpace rows and measure WholeSpace admission for the
+   same vocabulary and non-verbal coverage. The current CS 65,536 / PS 32,768
+   settings are small-run values, not production capacity estimates.
+   Set `SymbolSpace.ltmCapacity` for the intended million-row run; its default
+   1,024 also sizes the shared `.when` ladder. Record retained-row memory, the
+   actual subjective-clock range needed by the run and the ladder's resulting
+   periods, so a long training history does not silently reuse temporal phases.
+   Exit: the load and capacity measurement recorded, and
+   `maxDocs`/`shardDir`/stream count/PS-CS-WS `nVectors`/`ltmCapacity` in the run config.
 - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or

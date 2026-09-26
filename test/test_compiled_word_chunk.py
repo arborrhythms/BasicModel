@@ -319,7 +319,8 @@ def _tiny_canonical_model(
         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
         detached_reverse=False, concept_rows=64, dimension=16,
-        chooser_depth=None, training_overrides=None, architecture_overrides=None):
+        chooser_depth=None, training_overrides=None, architecture_overrides=None,
+        part_rows=64):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -333,8 +334,7 @@ def _tiny_canonical_model(
     _set("./InputSpace/nDim", 16)
     _set("./PartSpace/nInput", input_width)
     _set("./PartSpace/nInputDim", 16)
-    _set("./PartSpace/nVectors", 64)
-    _set("./PartSpace/maxVectors", 256)
+    _set("./PartSpace/nVectors", part_rows)
     _set("./PartSpace/nDim", 16)
     _set("./PartSpace/nOutputDim", 16)
     _set("./ConceptualSpace/nInputDim", 16)

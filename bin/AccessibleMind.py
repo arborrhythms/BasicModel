@@ -95,7 +95,8 @@ def apply_thought_effect(model, result, *, row, work):
     existing = getattr(carrier, '_concept_activations', None)
     batch = max(row + 1, int(existing.shape[1]) if torch.is_tensor(existing) else 1)
     sparse = callable(getattr(space, '_sparse_active', None)) and space._sparse_active()
-    count = sum(space._order_caps()) if sparse else len(basis)
+    count = (len(existing) if torch.is_tensor(existing) else
+             sum(space._field_caps()) if sparse else len(basis))
     location = getattr(carrier, '_thought_occurrence', None)
     previous_locations = int(existing.shape[2]) if torch.is_tensor(existing) else 0
     if location is None or location >= previous_locations:
@@ -105,18 +106,15 @@ def apply_thought_effect(model, result, *, row, work):
         n = min(len(field), len(existing))
         field[:n, :existing.shape[1], :previous_locations] = existing[:n].detach()
     object.__setattr__(carrier, '_thought_occurrence', location)
-    # An inferred subject has no input byte extent. Keep a sentinel extent
-    # and empty position evidence beside its independently retained pair.
-    extents = getattr(carrier, '_concept_extents', None)
-    positions = getattr(carrier, '_concept_position_evidence', None)
-    if torch.is_tensor(extents) and extents.shape[1] < field.shape[2]:
-        added = field.shape[2] - extents.shape[1]
-        extents = torch.cat((extents, extents.new_full((extents.shape[0], added, 2), -1)), dim=1)
-        object.__setattr__(carrier, '_concept_extents', extents)
-        if torch.is_tensor(positions):
-            positions = torch.cat((positions, positions.new_zeros(
-                positions.shape[0], positions.shape[1], added, positions.shape[3], 2)), dim=2)
-            object.__setattr__(carrier, '_concept_position_evidence', positions)
+    # An inferred reading has one field bracket and interval. It does not
+    # manufacture a concept-by-position carrier or an external observation.
+    for coordinate in ('where', 'when'):
+        intervals = getattr(carrier, '_concept_' + coordinate, None)
+        if torch.is_tensor(intervals) and intervals.shape[1] < field.shape[2]:
+            added = field.shape[2] - intervals.shape[1]
+            intervals = torch.cat((intervals, intervals.new_full(
+                (intervals.shape[0], added, 2), -1)), dim=1)
+            object.__setattr__(carrier, '_concept_' + coordinate, intervals)
     addresses = getattr(carrier, '_concept_inventory_rows', None)
     addresses = (torch.arange(count, device=basis.device) if addresses is None
                  else addresses.to(basis.device).clone())

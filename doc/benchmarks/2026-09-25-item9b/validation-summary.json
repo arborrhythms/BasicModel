@@ -1,0 +1,160 @@
+{
+  "full": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 974.2088016669732,
+    "limits": {
+      "memory_bytes": 17179869184,
+      "aggregate_memory_bytes": 17179869184,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 2,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 7200.0,
+      "batch_size": 128,
+      "max_files": 8
+    },
+    "peak_aggregate_memory_bytes": 8840946520,
+    "compile_cache_retries": [],
+    "selected": 4888,
+    "completed": 4888,
+    "outcomes": {
+      "passed": 4562,
+      "skipped": 325,
+      "xfailed": 1
+    },
+    "source_files": 660,
+    "fixture_only_delta": {
+      "test/test_sparse_concept_e2e.py": {
+        "measured": "b25f7bbc3796cfaa333c2f715d366bbbed9016a8151b944bd4fe7224c67fc7ef",
+        "final": "d69bef7fe2b94b32ecdfa8ac460b159537b2a492be828fda07ce7ccd4ce0d1a8"
+      }
+    },
+    "source_sha256": "847be7471aca937f01ae8bbab7279fa161ca4035fb810aef66095d4ff4b4b18d"
+  },
+  "affected": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 205.4182802499272,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 2400.0,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 3393768904,
+    "compile_cache_retries": [],
+    "selected": 46,
+    "completed": 46,
+    "outcomes": {
+      "passed": 46
+    },
+    "source_files": 660,
+    "fixture_only_delta": {},
+    "source_sha256": "1c8edd4342c9739de5c2634e1b9d1af63871a55c06c4bb4ebf0cb427de026d51"
+  },
+  "slow": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 1200.1679915409768,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800.0,
+      "suite_seconds": 10800.0,
+      "batch_size": 1,
+      "max_files": 1
+    },
+    "peak_aggregate_memory_bytes": 4782002616,
+    "compile_cache_retries": [],
+    "selected": 24,
+    "completed": 24,
+    "outcomes": {
+      "passed": 24
+    },
+    "source_files": 660,
+    "fixture_only_delta": {
+      "test/test_relevance_bases.py": {
+        "measured": "9128076441a6a944f8c73069f1d15d57dbbab7c9656dc6467814e6ae02a30f91",
+        "final": "e40533ff19fb69ed2363b1e6e3d9287b62c52132d51a24feb88432d1d1998388"
+      },
+      "test/test_sparse_concept_e2e.py": {
+        "measured": "8e550ec34fdcddc44e79a58294462259c622fc20a98c2dc62026c3b07911bb7e",
+        "final": "d69bef7fe2b94b32ecdfa8ac460b159537b2a492be828fda07ce7ccd4ce0d1a8"
+      },
+      "test/test_xor_spaces.py": {
+        "measured": "969d42471e6cec4da1e01141fca6a43fc5881318977fd324cb0f721464a27d06",
+        "final": "9aae7aa0914ae2c7233130da26853e9095c53f0cbd40ad494e700d9ca4ccb6f6"
+      }
+    },
+    "source_sha256": "68af4d1d3d42a134622c9fce0f4297583701d80627b0cf20216665b98b672104"
+  },
+  "erosion": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 89.19712550006807,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1200.0,
+      "suite_seconds": 1500.0,
+      "batch_size": 128,
+      "max_files": 8
+    },
+    "peak_aggregate_memory_bytes": 3182185808,
+    "compile_cache_retries": [],
+    "selected": 3,
+    "completed": 3,
+    "outcomes": {
+      "passed": 3
+    },
+    "source_files": 660,
+    "fixture_only_delta": {
+      "test/test_relevance_bases.py": {
+        "measured": "9128076441a6a944f8c73069f1d15d57dbbab7c9656dc6467814e6ae02a30f91",
+        "final": "e40533ff19fb69ed2363b1e6e3d9287b62c52132d51a24feb88432d1d1998388"
+      },
+      "test/test_sparse_concept_e2e.py": {
+        "measured": "8e550ec34fdcddc44e79a58294462259c622fc20a98c2dc62026c3b07911bb7e",
+        "final": "d69bef7fe2b94b32ecdfa8ac460b159537b2a492be828fda07ce7ccd4ce0d1a8"
+      },
+      "test/test_xor_spaces.py": {
+        "measured": "969d42471e6cec4da1e01141fca6a43fc5881318977fd324cb0f721464a27d06",
+        "final": "9aae7aa0914ae2c7233130da26853e9095c53f0cbd40ad494e700d9ca4ccb6f6"
+      }
+    },
+    "source_sha256": "68af4d1d3d42a134622c9fce0f4297583701d80627b0cf20216665b98b672104"
+  },
+  "doc-links": {
+    "reason": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 5.338541915989481,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 120.0,
+      "suite_seconds": 300.0,
+      "batch_size": 256,
+      "max_files": 16
+    },
+    "peak_aggregate_memory_bytes": 430392664,
+    "compile_cache_retries": [],
+    "selected": 91,
+    "completed": 91,
+    "outcomes": {
+      "passed": 91
+    },
+    "source_files": 660,
+    "fixture_only_delta": {},
+    "source_sha256": "1c8edd4342c9739de5c2634e1b9d1af63871a55c06c4bb4ebf0cb427de026d51"
+  }
+}

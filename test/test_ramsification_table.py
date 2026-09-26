@@ -154,11 +154,10 @@ def test_ramsification_not_in_state_dict():
 
 # -- resize keeps the table index-aligned ---------------------------------
 
-def test_grow_to_preserves_and_extends_table():
-    cb = _codebook(V=3, D=4)
+def test_reserved_rows_preserve_fold_table():
+    cb = _codebook(V=6, D=4)
     cb.enable_ramsification(max_order=2)
     cb.record_fold(torch.tensor([2]), 0, Codebook.FOLD_PI)
-    cb.grow_to(6)
     assert cb.ramsification.shape == (6, 2)
     assert int(cb.ramsification[2, 0]) == Codebook.FOLD_PI    # preserved
     assert int(cb.ramsification[5].sum()) == 0               # new rows NEITHER

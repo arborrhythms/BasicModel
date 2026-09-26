@@ -21,15 +21,14 @@ def counts_in_spans(byte_ids, spans, observed=None):
     if byte_ids.ndim != 2 or spans.ndim != 3 or spans.shape[-1] != 2:
         raise ValueError('byte extents require bytes [B,L] and spans [B,E,2]')
     B, L = byte_ids.shape
-    positions = torch.arange(L, device=byte_ids.device)[None, None]
-    spans = spans.to(byte_ids.device)
-    mask = (positions >= spans[..., :1]) & (positions < spans[..., 1:])
+    spans = spans.to(byte_ids.device).clamp(0, L)
+    counts = torch.nn.functional.one_hot(byte_ids.long().clamp(0, 255), 256).to(torch.get_default_dtype())
     if observed is not None:
-        mask = mask & observed[:, None].to(device=mask.device, dtype=torch.bool)
-    counts = torch.zeros(B, spans.shape[1], 256, device=byte_ids.device,
-                         dtype=torch.get_default_dtype())
-    return counts.scatter_add(2, byte_ids.long().clamp(0, 255)[:, None].expand_as(mask),
-                              mask.to(counts))
+        counts = counts * observed[..., None].to(counts)
+    prefix = torch.cat((counts.new_zeros(B, 1, 256), counts.cumsum(1)), 1)
+    lo = spans[..., :1].expand(-1, -1, 256)
+    hi = spans[..., 1:].expand(-1, -1, 256)
+    return prefix.gather(1, hi) - prefix.gather(1, lo)
 
 
 class PrimitiveProperties(nn.Module):
@@ -44,6 +43,9 @@ class PrimitiveProperties(nn.Module):
     def __init__(self, rows, *, device=None, dtype=None):
         super().__init__()
         self.members = nn.Parameter(torch.zeros(int(rows), 256, device=device, dtype=dtype))
+        # A coefficient of zero can mean either a witnessed exclusion or an
+        # unwritten primitive. Only the former supplies counterevidence.
+        self.register_buffer('observed', torch.zeros(int(rows), 256, device=device, dtype=torch.bool))
 
     def coefficients(self):
         # Projection constrains storage after the optimizer step. The read
@@ -63,7 +65,23 @@ class PrimitiveProperties(nn.Module):
         return union(torch.minimum(presences.unsqueeze(-2), self.coefficients()), dim=-1)
 
     def complement(self, byte_ids, observed):
-        return (1 - self(byte_ids)) * observed.to(self.members).unsqueeze(-1)
+        ids = byte_ids.to(device=self.members.device, dtype=torch.long).clamp(0, 255)
+        known = (self.observed | (self.members.detach() != 0)).t()[ids]
+        return (1 - self(byte_ids)) * known * observed.to(self.members).unsqueeze(-1)
+
+    def evidence_on_counts(self, counts):
+        """Two observed poles of a property on each native run.
+
+        A run witnesses a property or its complement only on known primitives;
+        unseen bytes and padding cannot create a closed-world negative.
+        """
+        present = counts.to(self.members).unsqueeze(-2) > 0
+        known = self.observed | (self.members.detach() != 0)
+        complete = ((~present | known).all(-1)
+                    & (counts.sum(-1, keepdim=True) > 0))
+        positive = self.on_counts(counts)
+        negative = self.on_counts(counts, complement=True)
+        return torch.stack((positive, negative), -1) * complete[..., None]
 
     def on_counts(self, counts, *, conjunctive=True, complement=False):
         """Read a byte multiset by intersection or union of its properties.
@@ -95,6 +113,14 @@ class PrimitiveProperties(nn.Module):
         weights = weights / weights.sum(-1, keepdim=True).clamp_min(1e-12)
         return evidence @ weights
 
+    def reverse_poles(self, evidence):
+        """Attribute either observed pole through the same primitive basis."""
+        weights = self.coefficients()
+        known = self.observed | (self.members.detach() != 0)
+        pairs = torch.stack((weights, (1 - weights) * known), -1).clamp_min(0)
+        pairs = pairs / pairs.sum(1, keepdim=True).clamp_min(1e-12)
+        return torch.einsum('...rp,rvp->...v', evidence, pairs)
+
     @torch.no_grad()
     def teach(self, row, byte_ids, targets, *, steps=32, rate=.5):
         """Fit observed primitive memberships by the squared-error delta rule."""
@@ -104,6 +130,7 @@ class PrimitiveProperties(nn.Module):
             raise ValueError('property teaching requires paired byte observations and memberships')
         if ids.unique().numel() != ids.numel():
             raise ValueError('aggregate repeated primitive observations before teaching')
+        self.observed[row, ids] = True
         before = (self.members[row, ids] - targets).square().mean()
         for _ in range(int(steps)):
             self.members[row, ids] += float(rate) * (targets - self.members[row, ids])
@@ -122,5 +149,7 @@ class PrimitiveProperties(nn.Module):
         key = prefix + 'members'
         if key not in state_dict:
             state_dict[key] = self.members.detach().clone()
+        if prefix + 'observed' not in state_dict:
+            state_dict[prefix + 'observed'] = state_dict[key] != 0
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                      missing_keys, unexpected_keys, error_msgs)

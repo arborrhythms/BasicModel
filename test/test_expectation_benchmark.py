@@ -96,3 +96,46 @@ def test_fixed_meaning_controls_keep_the_input_device_under_an_ambient_device():
         shuffled = _controlled_inputs(views[0], views[1], "shuffled", 27)
     torch.testing.assert_close(shuffled[0], expected[0])
     torch.testing.assert_close(shuffled[1], expected[1])
+
+
+def test_context_free_control_removes_presence_and_length_as_well_as_values():
+    from bench_sentence_expectation import _controlled_inputs
+
+    values = torch.arange(4 * 3 * 3 * 2.).reshape(4, 3, 3, 2).requires_grad_()
+    masks = torch.tensor([
+        [[False, False, False], [True, False, False], [True, True, False]],
+        [[True, True, True], [True, True, True], [True, True, True]],
+        [[False, False, False], [False, False, False], [True, False, False]],
+        [[False, False, False], [True, True, True], [True, False, True]],
+    ])
+    controlled, occupied = _controlled_inputs(values, masks, 'context_free', 0)
+    assert not controlled.any()
+    assert not occupied.any(), 'role presence and history length still reveal context'
+    assert not controlled.requires_grad
+    assert masks.any(), 'the control must not mutate the original input'
+
+
+def test_prediction_thought_scoring_rejects_unknown_truth_and_wrong_operations():
+    from types import SimpleNamespace
+    from bench_sentence_expectation import score_prediction_thought
+    from Layers import MeaningExpectation
+
+    target = torch.arange(12.).reshape(3, 4) / 12
+    occupied = torch.tensor([True, True, False])
+    prediction = MeaningExpectation(target + .25, torch.zeros(3))
+    def trial(checked):
+        return SimpleNamespace(result=checked, work=SimpleNamespace(spent=17),
+            records=[SimpleNamespace(kind='thought'), SimpleNamespace(kind='finish')])
+    for checked in (None, SimpleNamespace(semantic_id='part', result_kind='truth',
+                                         value=None),
+                    SimpleNamespace(semantic_id='arma', result_kind='prediction', value=None)):
+        result = score_prediction_thought(trial(checked), target, occupied)
+        assert not result['answered']
+        assert result['feature_mse'] is None
+        assert result['work'] == 17
+    result = score_prediction_thought(trial(SimpleNamespace(
+        semantic_id='arma', result_kind='prediction', value=prediction)), target, occupied)
+    assert result['answered']
+    assert result['feature_mse'] == pytest.approx(.25 ** 2)
+    assert result['presence_bce'] == pytest.approx(float(torch.log(torch.tensor(2.))))
+    assert result['steps'] == 1

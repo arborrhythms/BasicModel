@@ -710,6 +710,7 @@ held; an episode is approximated by chaining ideas.
 | `<compose>` | R | R W | R W | R | — (purity, 2.6.3) | — | — | R | — |
 | `<thought>` | — | R W (effects; episodic reinstatement) | R W | cue only | R (the conceived remainder `c`), W by `arma` | R via frames; `what` brings frames | R, charged | R | R |
 | `<generate>` | W (output stream) | R | R (idea), own emitted prefix | — | — | — | walk budget | — | — |
+| `interpret` (mandatory compose) | R | R W | R W | — | — | — | — | — | — |
 | chooser (not an operator) | — | R | R | — | R (`c` per role) | R (attended frames) | R | — | — |
 | the seal (not an operator) | — | — | R (the completed idea `o`) | — | R (the image `n`), W (`c`) | W (the one writer; the estimate / observation pair) | — | — | — |
 
@@ -717,7 +718,7 @@ A subsymbolic operator, when declared, has exactly the `<compose>` /
 `<generate>` row. It sees nothing a structural operator does not.
 `interpret` (item 9b), the default per-word step of serial mode that maps
 a word-concept to its object-concept, has the `<compose>` row and may
-also **mint** an order-0 object row for an unknown word (W on 2.2 by
+also **mint** an object row at the grammar-resolved order for an unknown word (W on 2.2 by
 testimony); its `<generate>` face is lexicalization.
 
 Nothing has write access to 2.1 or 2.2 on expectation's behalf, and

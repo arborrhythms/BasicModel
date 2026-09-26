@@ -1,0 +1,21 @@
+{
+  "elapsed_seconds": 5.242468541953713,
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 120.0,
+    "suite_seconds": 300.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 428082472,
+  "exit_code": 0,
+  "peak_worker_memory_bytes": 428082472,
+  "selected": 93,
+  "completed": 93,
+  "outcomes": {
+    "passed": 93
+  }
+}

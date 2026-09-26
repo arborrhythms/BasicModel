@@ -42,10 +42,9 @@
 
   <PartSpace>
     <nInput>8</nInput>
-    <nVectors>8</nVectors>
+    <nVectors>256</nVectors>
     <!-- The fixture begins tiny but several tests intentionally learn more
          than eight distinct byte/chunk percepts. -->
-    <maxVectors>256</maxVectors>
     <nDim>16</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>

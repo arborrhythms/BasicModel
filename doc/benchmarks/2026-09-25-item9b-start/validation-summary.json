@@ -1,0 +1,48 @@
+{
+  "initial": {
+    "counts": {
+      "failed": 4,
+      "passed": 4
+    },
+    "elapsed_seconds": 7.714726499980316,
+    "peak_aggregate_memory_bytes": 544687376,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 8,
+      "max_files": 1
+    },
+    "production_and_existing_tests_match_published_review": true,
+    "published_source_files": 650,
+    "probe_sha256": "fd52b834173d46b7b890aa81e90e0a4b3a00b4b51765be9bd8973005ae4c9727",
+    "source_map_sha256": "0044c46c5b545a6f2bb140403fe7e75ec6207dedb7bb73e8e35702da04436d8f"
+  },
+  "baseline": {
+    "counts": {
+      "failed": 4,
+      "passed": 6
+    },
+    "elapsed_seconds": 7.779158707940951,
+    "peak_aggregate_memory_bytes": 543229224,
+    "limits": {
+      "memory_bytes": 8589934592,
+      "aggregate_memory_bytes": 8589934592,
+      "per_worker_memory_bytes": 8589934592,
+      "workers": 1,
+      "worker_seconds": 1800,
+      "suite_seconds": 10800,
+      "batch_size": 10,
+      "max_files": 1
+    },
+    "production_and_existing_tests_match_published_review": true,
+    "published_source_files": 650,
+    "probe_sha256": "2e353b42b04936c75f847a35f613d003b519054de92621c1f1e9c640ca59dad5",
+    "source_map_sha256": "084711b792e22f0427eb1ad69be0a0db2b7ea875f9c597953f65f4b0da79b463"
+  },
+  "base_commit": "00a5ded40e73e43eb9c05711af46ff5dcdb64d9b",
+  "plan_sha256": "caac03177b45fbbf30278f7613c9a1bbe59491e3b645dc6b6bd794e77fae16bb"
+}

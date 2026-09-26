@@ -53,8 +53,7 @@ def _ws():
 
 def _grow(ss, v):
     cb = ss.subspace.what
-    if int(cb.getW().shape[0]) < v:
-        cb.grow_to(v)
+    assert int(cb.getW().shape[0]) >= v
     return int(cb.getW().shape[0])
 
 

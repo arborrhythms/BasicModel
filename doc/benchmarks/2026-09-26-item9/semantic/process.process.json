@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-09-26-item9/text_probe.py"
+  ],
+  "pid": 37416,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1563265304,
+  "elapsed_seconds": 235.02968108397909,
+  "log": "output/item9-semantic-diagnostic-complete/process.log"
+}

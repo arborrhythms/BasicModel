@@ -1,0 +1,172 @@
+[
+  {
+    "path": "data/BasicModel.xml",
+    "exit_code": 0,
+    "output": "data/BasicModel.xml validates"
+  },
+  {
+    "path": "data/BasicModel_answers_benchmark.xml",
+    "exit_code": 0,
+    "output": "data/BasicModel_answers_benchmark.xml validates"
+  },
+  {
+    "path": "data/BasicModel_answers_tied_benchmark.xml",
+    "exit_code": 0,
+    "output": "data/BasicModel_answers_tied_benchmark.xml validates"
+  },
+  {
+    "path": "data/BasicModel_expectation_benchmark.xml",
+    "exit_code": 0,
+    "output": "data/BasicModel_expectation_benchmark.xml validates"
+  },
+  {
+    "path": "data/BasicModel_long_tied_benchmark.xml",
+    "exit_code": 0,
+    "output": "data/BasicModel_long_tied_benchmark.xml validates"
+  },
+  {
+    "path": "data/BasicModel_output_tied_benchmark.xml",
+    "exit_code": 0,
+    "output": "data/BasicModel_output_tied_benchmark.xml validates"
+  },
+  {
+    "path": "data/HeadEmission.xml",
+    "exit_code": 0,
+    "output": "data/HeadEmission.xml validates"
+  },
+  {
+    "path": "data/MM_boolean.xml",
+    "exit_code": 0,
+    "output": "data/MM_boolean.xml validates"
+  },
+  {
+    "path": "data/MM_grammar.xml",
+    "exit_code": 0,
+    "output": "data/MM_grammar.xml validates"
+  },
+  {
+    "path": "data/MM_grammar_wording.xml",
+    "exit_code": 0,
+    "output": "data/MM_grammar_wording.xml validates"
+  },
+  {
+    "path": "data/MM_init_scale.xml",
+    "exit_code": 0,
+    "output": "data/MM_init_scale.xml validates"
+  },
+  {
+    "path": "data/MM_ladder.xml",
+    "exit_code": 0,
+    "output": "data/MM_ladder.xml validates"
+  },
+  {
+    "path": "data/MM_ladder_idiom.xml",
+    "exit_code": 0,
+    "output": "data/MM_ladder_idiom.xml validates"
+  },
+  {
+    "path": "data/MM_ladder_text.xml",
+    "exit_code": 0,
+    "output": "data/MM_ladder_text.xml validates"
+  },
+  {
+    "path": "data/MM_ladder_textpacked.xml",
+    "exit_code": 0,
+    "output": "data/MM_ladder_textpacked.xml validates"
+  },
+  {
+    "path": "data/MM_ltm_consolidation_fixture.xml",
+    "exit_code": 0,
+    "output": "data/MM_ltm_consolidation_fixture.xml validates"
+  },
+  {
+    "path": "data/MM_ltm_consolidation_serial_fixture.xml",
+    "exit_code": 0,
+    "output": "data/MM_ltm_consolidation_serial_fixture.xml validates"
+  },
+  {
+    "path": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "exit_code": 0,
+    "output": "data/MM_ltm_consolidation_stateful_fixture.xml validates"
+  },
+  {
+    "path": "data/MM_shamatha.xml",
+    "exit_code": 0,
+    "output": "data/MM_shamatha.xml validates"
+  },
+  {
+    "path": "data/MM_xor_fixture.xml",
+    "exit_code": 0,
+    "output": "data/MM_xor_fixture.xml validates"
+  },
+  {
+    "path": "data/MM_xor_loopback.xml",
+    "exit_code": 0,
+    "output": "data/MM_xor_loopback.xml validates"
+  },
+  {
+    "path": "data/MM_xor_step3.xml",
+    "exit_code": 0,
+    "output": "data/MM_xor_step3.xml validates"
+  },
+  {
+    "path": "data/MM_xor_step4.xml",
+    "exit_code": 0,
+    "output": "data/MM_xor_step4.xml validates"
+  },
+  {
+    "path": "data/MentalModel.xml",
+    "exit_code": 0,
+    "output": "data/MentalModel.xml validates"
+  },
+  {
+    "path": "data/POS_smoke.xml",
+    "exit_code": 0,
+    "output": "data/POS_smoke.xml validates"
+  },
+  {
+    "path": "data/RamsifiedModel.xml",
+    "exit_code": 0,
+    "output": "data/RamsifiedModel.xml validates"
+  },
+  {
+    "path": "data/XOR_exact.xml",
+    "exit_code": 0,
+    "output": "data/XOR_exact.xml validates"
+  },
+  {
+    "path": "data/XOR_grammar.xml",
+    "exit_code": 0,
+    "output": "data/XOR_grammar.xml validates"
+  },
+  {
+    "path": "data/XOR_pos.xml",
+    "exit_code": 0,
+    "output": "data/XOR_pos.xml validates"
+  },
+  {
+    "path": "data/XOR_spaces.xml",
+    "exit_code": 0,
+    "output": "data/XOR_spaces.xml validates"
+  },
+  {
+    "path": "data/idempotent.xml",
+    "exit_code": 0,
+    "output": "data/idempotent.xml validates"
+  },
+  {
+    "path": "data/stream_smoke.xml",
+    "exit_code": 0,
+    "output": "data/stream_smoke.xml validates"
+  },
+  {
+    "path": "data/tomatoes.xml",
+    "exit_code": 0,
+    "output": "data/tomatoes.xml validates"
+  },
+  {
+    "path": "data/xor.xml",
+    "exit_code": 0,
+    "output": "data/xor.xml validates"
+  }
+]

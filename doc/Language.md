@@ -387,10 +387,13 @@ Unary, like `not`; its second argument is implicit, the current attentive
 field. `interpret_I1` is the **word-concept**: the code the word arrives
 as, which PartSpace has already looked up as the recurring unit the fold
 ladder admitted — `interpret` is never the byte-to-word step.
-`interpret_O1` is the **object-concept** in the shared inventory: the
-order-1 particular when the field holds an occurrence the word addresses
-(*the cat*, *Felix*), otherwise the kind (*cat*), with the resolution
-supplied by the grammatical context per
+`interpret_O1` is the **object-concept** already associated with the word,
+at whatever order that object has. For example, *cat* returns a known cat
+kind if that is its association. Only an unknown association needs a new
+object; without a grammar request that new object is an order-1 particular.
+Grammar selects among ambiguous existing associations or requests the order
+of a new mint. A default call never adds a particular beside a known kind.
+Reference orders follow
 [Lexicon](Lexicon.md#word-forms-and-concept-orders); the operator never
 reads the surface form, and no word is anchored to it.
 
@@ -407,8 +410,15 @@ host-side `create_word_object_meta` triple `(A = word, B = object,
 C = meta)` and its callers; the two-truths seal, which writes asserted
 part rows between the object concepts words resolve to, stops resolving
 them itself. The `<thought>` face is off by default; a per-model
-allow-list may add it (naming what is attended, the noting meditator's
-move, which is also the re-symbolization that closes a parallel pass).
+allow-list may add it for naming what is attended. Interleaving uses the
+ordinary serial reading after its parallel context pass.
+
+The implementation keeps the operator outside the chooser's action catalog.
+The serial word transaction invokes its tensor face before the post-deposit
+grammar choice. Native parallel admission creates word predicates without
+invoking this serial forward face. The owned lexical inverse remains available
+for generation. Interleaving does not invoke a separate inverse pass or replace
+the native field with label feedback.
 
 #### Tensor reverses for the compiled loops (2026-09-13)
 

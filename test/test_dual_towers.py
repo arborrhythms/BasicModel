@@ -204,7 +204,7 @@ def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
         slots = (ids == cid).nonzero().flatten()
         assert len(slots) == 1, word
         slot = slots.item()
-        for evidence in (a0[slot, b], cs0._cs_position_evidence[slot, b],
+        for evidence in (a0[slot, b],
                          carrier._concept_activations[slot, b], leg._symbol_evidence[slot, b]):
             assert evidence[..., 0].max() > 0, word
             assert evidence[..., 1].count_nonzero() == 0, word

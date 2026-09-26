@@ -1,0 +1,207 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+    "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+    "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements"
+  ],
+  "completed": [
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+    "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+    "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-field-contracts-baseline/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-field-contracts-baseline/worker-000.json"
+      ],
+      "pid": 69198,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 543229224,
+      "elapsed_seconds": 4.045179500011727,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-field-contracts-baseline/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+        "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+        "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements"
+      ],
+      "completed": [
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+        "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+        "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.015238417079672217,
+          "message": "test/test_item9b_field_contract.py:47: in test_inventory_checkpoint_preserves_definition_between_modes\n    assert target.load_weights(checkpoint, strict=True, require_match=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5743: in load_weights\n    self._restore_structural_extras(\nbin/Models.py:4904: in _restore_structural_extras\n    self._restore_allocator_extras(cs, alloc_blob)\nbin/Models.py:4800: in _restore_allocator_extras\n    raise ValueError('ConceptAllocator store shape mismatch')\nE   ValueError: ConceptAllocator store shape mismatch",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres0/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres0/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n"
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.018130959011614323,
+          "message": "",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres1/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres1/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres1/shared-inventory.pt\r\n"
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.020630208076909184,
+          "message": "",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres2/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres2/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres2/shared-inventory.pt\r\n"
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.019698292016983032,
+          "message": "",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres3/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres3/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5795/test_inventory_checkpoint_pres3/shared-inventory.pt\r\n"
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.005408916971646249,
+          "message": "test/test_item9b_field_contract.py:76: in test_one_active_percept_reaches_every_referencing_concept\n    assert slots.numel() == 1, f\"referenced concept {cid} was truncated from the field\"\nE   AssertionError: referenced concept 9 was truncated from the field\nE   assert 0 == 1\nE    +  where 0 = <built-in method numel of Tensor object at 0x12396cf00>()\nE    +    where <built-in method numel of Tensor object at 0x12396cf00> = tensor([], dtype=torch.int64).numel",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00610849994700402,
+          "message": "test/test_item9b_field_contract.py:97: in test_observed_complement_is_pooled_inside_one_bracket\n    torch.testing.assert_close(field[0, 0, 0], torch.tensor(expected))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 2 (50.0%)\nE   Greatest absolute difference: 1.0 at index (1,) (up to 1e-05 allowed)\nE   Greatest relative difference: 1.0 at index (1,) (up to 1.3e-06 allowed)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005976125015877187,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.005975375068373978,
+          "message": "test/test_item9b_field_contract.py:97: in test_observed_complement_is_pooled_inside_one_bracket\n    torch.testing.assert_close(field[0, 0, 0], torch.tensor(expected))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 2 (50.0%)\nE   Greatest absolute difference: 1.0 at index (1,) (up to 1e-05 allowed)\nE   Greatest relative difference: 1.0 at index (1,) (up to 1.3e-06 allowed)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006431374931707978,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005865624989382923,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 10,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-field-contracts-baseline",
+  "elapsed_seconds": 7.779158707940951,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 543229224,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-field-contracts-baseline/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-field-contracts-baseline/collect.json"
+    ],
+    "pid": 69177,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430032096,
+    "elapsed_seconds": 3.5477854579221457,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-field-contracts-baseline/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+        "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+        "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+        "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+        "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

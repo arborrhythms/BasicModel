@@ -61,16 +61,16 @@ def test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids():
 
 def test_witnesses_write_alternatives_without_conjoining_their_literals():
     cs = _cs()
-    A, _, _ = cs.create_word_object_meta([7], [1], key='word')
+    A, _, _ = cs.interpret_word([7], [1], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
-    row = store.row_of(('snap', A))
-    cs.create_word_object_meta([8], [2], key='word')
+    row = cs._csw_row_of(A)
+    cs.interpret_word([8], [2], key='word')
     [(alternative, weight)] = cs.concept_weights(row)
     assert weight == 1.
     assert {col for r, col in store.features._index if r == row} == {28, 6}
     assert {col for r, col in store.features._index if r == alternative} == {32, 10}
     before = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
-    cs.create_word_object_meta([8], [2], key='word')
+    cs.interpret_word([8], [2], key='word')
     assert before == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
     from test_structural_checkpoint import _model_with
     saved = _model_with(cs, SimpleNamespace())._collect_structural_extras()
@@ -89,11 +89,11 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     letters = ps.percept_store.spell_out(b'love')
     whole = ws.property_rows_for_bytes(b'love')
     assert whole
-    A, _, _ = cs.create_word_object_meta(letters, whole, key='love')
+    A, _, _ = cs.interpret_word(letters, whole, key='love')
     assert cs.concept_parts(A) == letters
     assert ps.percept_store.get_id(b'love') is None
     store = Spaces._concept_alloc_of(cs).layer()
-    row = store.row_of(('snap', A))
+    row = cs._csw_row_of(A)
     assert store.feature_groups[row, 4 * letters[0]] == tuple(letters)
     raw = torch.tensor([[108, 111, 118, 101]])
     parts = torch.tensor([[[0, 1], [1, 2], [2, 3], [3, 4]]])
@@ -113,7 +113,7 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     assert (row, 4 * letters[0]) not in store.feature_groups
     assert ps.fuse_parts(letters) == [fused]
     count = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
-    cs.create_word_object_meta([fused], whole, key='love')
+    cs.interpret_word([fused], whole, key='love')
     assert count == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
     cs.refine_over_collected()
     assert A not in Spaces._concept_alloc_of(cs).retired
@@ -122,7 +122,7 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
 def test_alternatives_do_not_trigger_conjunctive_overcollection():
     cs = _cs()
     for n in range(6):
-        A, _, _ = cs.create_word_object_meta([20 + n], [10 + n], key='word')
+        A, _, _ = cs.interpret_word([20 + n], [10 + n], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
     before = dict(store.features._index)
     cs.refine_over_collected()

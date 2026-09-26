@@ -1017,24 +1017,51 @@ def _bracket_decode_span(encoded, div_term, scale=_BRACKET_SCALE, wrap=True,
     return center - half, center + half
 
 
-# .where multi-rung defaults (2026-07-09 multi-rung pass): the LF/HF rung
-# ratio <whereRungRatio>. 32 puts the HF period at wherePeriod/32 (8192 -> 256,
-# the fine period Gate-B measured EXACT starts at) while the LF rung keeps the
-# full-period RANGE -- a single period cannot carry both (range vs resolution).
+# Standalone fixture default. A complete model derives both periods from its
+# global registry capacity and shares that single encoding across all spaces.
 _WHERE_RUNG_RATIO = 32
+
+
+def _ladder_periods(capacity):
+    """Cover the allocation plus a seam guard, with unit-resolution phases.
+
+    Power-of-two periods permit exact integer modulo on CPU, CUDA and MPS.
+    The fine period grows only when needed to keep coarse float32 rounding
+    comfortably inside half a fine period. No large absolute integer is
+    converted to float before extracting its fine phase.
+    """
+    needed = max(256, (int(capacity) + 1) * 64 // 63 + 1)
+    long = 1 << (needed - 1).bit_length()
+    short = max(256, long // (1 << 20))
+    return long, short
+
+
+def _ladder_phase(start, period, omega):
+    integer_period = int(round(period))
+    exact = abs(period - integer_period) < 1e-6
+    modulus = integer_period if exact and not start.is_floating_point() else period
+    return torch.remainder(start, modulus).to(torch.float32) * omega
+
+
+def _ladder_index(encoded, long, short, div_lf, div_hf, origin=0):
+    """Decode a discrete address from the bands, without an integer sidecar."""
+    coarse = (torch.atan2(encoded[..., 0], encoded[..., 1]) % (2 * math.pi)) / div_lf
+    fine = (torch.atan2(encoded[..., 2], encoded[..., 3]) % (2 * math.pi)) / div_hf
+    branch = torch.round((coarse - fine) / short).to(torch.int64)
+    return (branch * int(round(short)) + fine.round().to(torch.int64) - origin) % long
 
 
 class WhereEncoding(QuadratureEncoding):
     """4-dim `.where` multi-rung: a 2-rung quadrature LADDER over ONE quantity,
-    the byte START position (2026-07-09 pass; mirrors the `.when` v2 ladder,
+    the registry address (mirrors the `.when` ladder,
     ``WhenStartDurationEncoding``):
 
       ``[sin(p*w_lf), cos(p*w_lf), sin(p*w_hf), cos(p*w_hf)]``
 
-    with ``w_lf = 2*pi/<wherePeriod>`` (RANGE: the full sentence cap) and
-    ``w_hf = w_lf * <whereRungRatio>`` (RESOLUTION: default ratio 32 puts one
-    byte at ~0.0245 rad at the 8192 default -- above the measured ~0.02 rad
-    reverse-transport noise, the Gate-B closing measurement). ``decode`` =
+    with both periods derived once from the complete registry capacity.
+    The long rung covers the allocation; the short rung resolves one address.
+    ``decode_index`` recovers exact integer addresses even above 2**24;
+    ``decode`` returns continuous floating positions. Both use
     atan2 per pair + HF branch resolution by LF: a single period trades range
     against resolution; the ladder carries both. The END is NOT in the band --
     content terminates the tile (Alec 2026-07-09); the endpoint-sum bracket is
@@ -1045,10 +1072,9 @@ class WhereEncoding(QuadratureEncoding):
     align with the muxed layout ``[what, where, when]``:
       index = [-(nWhere+nWhen), ..., -(nWhen+1)]
 
-    A monotonic counter ``self.p`` assigns each object a unique position
-    within a dataset pass; it must be reset between epochs to avoid overflow.
-    Codebook identity stays the row index (the retired cross-codebook .where
-    registry note lives in git history).
+    Input positions, part and whole rows, and symbol occurrences occupy
+    disjoint registry ranges. Codebook identity stays the row index.
+    The legacy standalone stamping helper retains a resettable ``self.p``.
     """
     p = 0
 
@@ -1074,11 +1100,24 @@ class WhereEncoding(QuadratureEncoding):
     def set_period(self, maxP):
         """The ONE period seam: sets ``maxVal`` and derives both rung omegas
         (and the legacy ``div_term`` alias = the LF omega, for the period
-        checks that read it). The raise-to-fit overflow seam calls this."""
+        checks that read it). Model construction calls this via set_capacity."""
         self.maxVal = max(1, int(maxP))
         self.div_lf = 2 * math.pi / self.maxVal
         self.div_hf = self.div_lf * self.rung_ratio
         self.div_term = self.div_lf
+
+    def set_capacity(self, capacity):
+        long, short = _ladder_periods(capacity)
+        self.rung_ratio = long // short
+        self.set_period(long)
+        self.capacity = int(capacity)
+        return self
+
+    def decode_index(self, encoded):
+        if self.nDim < 4:
+            return self.decode(encoded).round().to(torch.int64)
+        return _ladder_index(encoded, self.maxVal, self.period_hf,
+                             self.div_lf, self.div_hf, self.where_origin)
 
     @property
     def period_hf(self):
@@ -1094,7 +1133,7 @@ class WhereEncoding(QuadratureEncoding):
         the LF period (LF angle ~0.098 rad, ~5x the measured ~0.02 rad
         transport noise). The HF rung needs no seam clearance of its own: HF
         wraps are absorbed by the LF branch resolution. Computed LIVE off
-        ``maxVal`` so it tracks the raise-to-fit period reset."""
+        ``maxVal`` after construction-time capacity selection."""
         return max(1, int(self.maxVal) // 64) if self.nDim > 0 else 0
 
     def encode(self, start):
@@ -1105,12 +1144,12 @@ class WhereEncoding(QuadratureEncoding):
         precision at any position). ``nWhere=2`` is the degenerate single-rung
         (LF-only) band -- the legacy fixture width."""
         if not isinstance(start, torch.Tensor):
-            start = torch.tensor(float(start), device=TheDevice.get())
-        start = start.to(torch.float32) + self.where_origin
-        a_lf = torch.remainder(start, float(self.maxVal)) * self.div_lf
+            start = torch.as_tensor(start, device=TheDevice.get())
+        start = start + self.where_origin
+        a_lf = _ladder_phase(start, self.maxVal, self.div_lf)
         parts = [torch.sin(a_lf), torch.cos(a_lf)]
         if self.nDim >= 4:
-            a_hf = torch.remainder(start, self.period_hf) * self.div_hf
+            a_hf = _ladder_phase(start, self.period_hf, self.div_hf)
             parts += [torch.sin(a_hf), torch.cos(a_hf)]
         return torch.stack(parts, dim=-1)
 
@@ -1208,9 +1247,7 @@ class WhereEncoding(QuadratureEncoding):
 # existing construction sites that import / pass it keep working.
 _WHEN_PERIOD = 65536
 _WHEN_MAXT = _WHEN_PERIOD
-# .where period default in input BYTES (2026-07-04 encoding pass): twice the
-# 4096 inputLength cap; config-derived via <architecture><wherePeriod>,
-# decoupled from architecture.nObjects (the retired implicit period).
+# Legacy standalone fixture period. Complete models use the registry capacity.
 _WHERE_PERIOD_DEFAULT = 8192
 # ``_WHEN_TENSE_DEFAULT`` is RETAINED only as a back-compat constant for the many
 # construction sites that pass ``encode(t, D=_WHEN_TENSE_DEFAULT)``; the ``D``
@@ -1339,9 +1376,7 @@ class WhenRangeEncoding(QuadratureEncoding):
         print(f"present .when decodes to (center={float(c):.3f}, extent={float(ext):.3f})")
 
 
-# .when v2 defaults (2026-07-04 encoding pass): LF horizon <whenPeriod> and
-# the LF/HF rung ratio <whenRungRatio> (safe branch bound ~pi/dphi ~ 35 at
-# the dense-support phase floor).
+# Standalone defaults; complete models derive the shared ladder from LTM capacity.
 _WHEN_PERIOD_V2 = 10 ** 6
 _WHEN_RUNG_RATIO = 32
 
@@ -1352,18 +1387,18 @@ class WhenStartDurationEncoding(Encoding):
 
       ``[sin(s*w_lf), cos(s*w_lf), sin(s*w_hf), cos(s*w_hf)]``
 
-    with ``w_lf = 2*pi/<whenPeriod>`` (default 1e6 ticks) and ``w_hf =
-    w_lf * <whenRungRatio>`` (default 32). Two TRUE pairs => constant norm
+    with periods derived once from LTM capacity. Both phases are constant
+    across a field. Two quadrature pairs have constant norm
     ``sqrt(2)`` (nothing to calibrate, no validity keying). ``decode`` =
     atan2 per pair + HF branch resolution by LF (exact once the LF
-    estimate localizes within half an HF period). The band is the
-    SIMILARITY channel; ABSOLUTE addressing rides the exact long-int
-    clock (``BasicModel.when_time`` -> the synced ``self.t``), the Option-C
-    hybrid. DURATION is REMOVED from the band (write-only in v1:
+    estimate localizes within half an HF period). The band carries the field
+    address within the chain's capacity. The exact long-int clock remains
+    alongside it (``BasicModel.when_time`` -> the synced ``self.t``).
+    DURATION is REMOVED from the band (write-only in v1:
     ``decode_span`` had zero callers, tense rotates the center only,
     aspect is retired) -- exact extents belong to the record store when
     aspect is built. Endpoint-sum bracketing no longer serves `.when`
-    (``WhereEncoding`` keeps it). Tense (past/present/future) keys on the
+    (the analyzer keeps separate spatial brackets). Tense keys on the
     LF pair vs ``self.t``. The class name keeps the plan's 4-value
     lineage; the shipped band carries start only. nDim=4 enabled /
     0 disabled.
@@ -1390,6 +1425,18 @@ class WhenStartDurationEncoding(Encoding):
         """The HF rung period in ticks (P_lf / rung_ratio)."""
         return 2 * math.pi / self.div_hf
 
+    def set_capacity(self, capacity):
+        self.maxVal, short = _ladder_periods(capacity)
+        self.rung_ratio = self.maxVal // short
+        self.div_lf = 2 * math.pi / self.maxVal
+        self.div_hf = 2 * math.pi / short
+        self.capacity = int(capacity)
+        return self
+
+    def decode_index(self, encoded):
+        return _ladder_index(encoded, self.maxVal, self.period_hf,
+                             self.div_lf, self.div_hf)
+
     def encode(self, start):
         """Encode onset(s) to the 4-dim two-pair ladder. ONE quantity --
         no end/duration, no tense magnitude (both retired from the band).
@@ -1397,10 +1444,9 @@ class WhenStartDurationEncoding(Encoding):
         so the sin/cos argument stays < 2*pi (float32 keeps tick-level
         precision at any onset; unfolded, s=1e6 costs ~0.08 HF ticks)."""
         if not isinstance(start, torch.Tensor):
-            start = torch.tensor(float(start), device=TheDevice.get())
-        start = start.to(torch.float32)
-        a_lf = torch.remainder(start, float(self.maxVal)) * self.div_lf
-        a_hf = torch.remainder(start, self.period_hf) * self.div_hf
+            start = torch.as_tensor(start, device=TheDevice.get())
+        a_lf = _ladder_phase(start, self.maxVal, self.div_lf)
+        a_hf = _ladder_phase(start, self.period_hf, self.div_hf)
         return torch.stack((torch.sin(a_lf), torch.cos(a_lf),
                             torch.sin(a_hf), torch.cos(a_hf)), dim=-1)
 
@@ -1474,16 +1520,13 @@ class WhenStartDurationEncoding(Encoding):
 
 
 def event_when_encoding(n_when):
-    """The ONE `.when` construction seam: build the v2 ladder from the config
-    knobs <whenPeriod> / <whenRungRatio> (defaults 1e6 / 32). Every event-tail
-    consumer (Space build, grammar tense ops) constructs through here so all
-    encoders share one omega pair -- shift_time on a mismatched period would
-    silently rotate wrong."""
-    return WhenStartDurationEncoding(
-        int(TheXMLConfig.get("architecture.whenPeriod", _WHEN_PERIOD_V2)),
-        n_when=n_when,
-        rung_ratio=int(TheXMLConfig.get("architecture.whenRungRatio",
-                                        _WHEN_RUNG_RATIO)))
+    """Construct a standalone ladder from the LTM allocation.
+
+    Model construction replaces these temporary references with one shared
+    model-owned encoding, including the tense operators.
+    """
+    capacity = int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024)
+    return WhenStartDurationEncoding(n_when=n_when).set_capacity(capacity)
 
 
 # ``WhenEncoding`` resolves to the v2 start ladder (2026-07-04 encoding
@@ -2725,9 +2768,8 @@ class Codebook(Tensor):
         # identity for the lifetime of this module instance, so an optimizer
         # can never keep training an orphaned pre-growth Parameter.  A
         # context-owned conceptual dictionary switches that frozen storage to
-        # a buffer after construction; dynamic stores such as the radix
-        # PerceptStore do not take this lock and retain the legacy ``grow_to``
-        # surface.
+        # a buffer after construction. Percept stores use the same fixed
+        # physical storage contract, with logical admission into free rows.
         self._capacity_frozen = False
         self._capacity_frozen_by = None
         self._frozen_parameter_id = None
@@ -2817,9 +2859,9 @@ class Codebook(Tensor):
         # name for the derived depth.
         # CANONICAL (not opt-in): :meth:`create` allocates the table for
         # every built codebook with ``max_order = max(1,
-        # architecture.subsymbolicOrder)``; it grows with the codebook
-        # (``grow_to`` / ``insert`` append aligned rows, ``remove`` masks)
-        # and is never reset on document boundaries. Plain attr (NOT a
+        # architecture.subsymbolicOrder)`` and the full physical capacity.
+        # Logical admission writes existing rows; the table is never reset
+        # on document boundaries. Plain attr (NOT a
         # Parameter / buffer): non-gradient metadata that stays out of the
         # state_dict, so it adds no keys and cannot move a pinned basin;
         # checkpoint roundtrip rides the ``vocab_extras`` sidecar
@@ -3069,6 +3111,8 @@ class Codebook(Tensor):
         W = self._parameters.get("W")
         if W is None:
             W = self._buffers.get("W")
+        if W is None:
+            W = getattr(self, "W", None)
         if not isinstance(W, torch.Tensor):
             raise RuntimeError(
                 f"Codebook.{operation}: frozen codebook lost its W storage")
@@ -3648,11 +3692,11 @@ class Codebook(Tensor):
             self.ramsification_max_order = max_order
 
     def _sync_ramsification_rows(self):
-        """Grow the table to cover the live prototype rows. Every growth
-        path APPENDS rows (``grow_to`` / ``insert`` / RadixLayer growth),
-        so zero-fill growth here is index-aligned by construction;
-        ``remove`` keeps alignment by masking the table with the same row
-        mask it applies to ``W``."""
+        """Align construction-time metadata with the full prototype capacity.
+
+        Fixed-capacity owners allocate every row before admission begins;
+        their subsequent insertions leave this table's shape unchanged.
+        """
         if self.ramsification is None:
             return
         n = int(self.nVectors)
@@ -4010,11 +4054,11 @@ class Codebook(Tensor):
         Dynamic structural stores which intentionally grow simply do not call
         this method.
         """
-        W = self.getW()
-        if not isinstance(W, nn.Parameter) or W.ndim != 2:
+        W = getattr(self, 'W', None)
+        if not torch.is_tensor(W) or W.ndim != 2:
             raise RuntimeError(
                 f"Codebook.freeze_capacity({owner!r}) requires an allocated "
-                f"2-D nn.Parameter; got "
+                f"2-D tensor; got "
                 f"{type(W).__name__} shape="
                 f"{None if not torch.is_tensor(W) else tuple(W.shape)}.")
         if int(W.shape[0]) != int(self.nVectors):
@@ -4026,7 +4070,8 @@ class Codebook(Tensor):
         self._capacity_frozen = True
         self._capacity_frozen_by = str(owner)
         self._frozen_parameter_id = id(W)
-        self._frozen_storage_kind = "parameter"
+        self._frozen_storage_kind = ("parameter" if 'W' in self._parameters else
+                                     "buffer" if 'W' in self._buffers else "tensor")
         self._assert_frozen_parameter_identity()
         return W
 
@@ -4039,6 +4084,9 @@ class Codebook(Tensor):
         if W is None:
             W = self._buffers.get("W")
             storage_kind = "buffer"
+        if W is None:
+            W = getattr(self, 'W', None)
+            storage_kind = "tensor"
         expected = getattr(self, "_frozen_parameter_id", None)
         expected_kind = getattr(self, "_frozen_storage_kind", None)
         if expected_kind is None:
@@ -4064,122 +4112,6 @@ class Codebook(Tensor):
                 f"{self._capacity_frozen_by or 'learned codebook'} lost "
                 f"single ownership: VectorQuantize no longer references the "
                 f"same W storage.")
-
-    def grow_to(self, new_nVectors):
-        """Resize this codebook so it carries at least ``new_nVectors``
-        prototype rows. In-place on the underlying Parameter (a new
-        Parameter is registered with the extended storage; the previous
-        rows are copied byte-for-byte). Meronomy / category buffers are
-        re-allocated and copied over too.
-
-        2026-05-27 (tied-storage refactor): WholeSpace.insert_paired_word
-        calls this when the configured WS ``nVectors`` is smaller than the
-        PS-side lexicon at tie time. Growing here keeps the where-space
-        registry's last slice extended past the configured count (it lives
-        at the end of the registry; no downstream codebook overlap).
-
-        Notes
-        -----
-        * Existing optimizer state on the previous Parameter is invalidated
-          (a fresh Parameter is registered). Callers that own an optimizer
-          should rebuild it after growth.
-        * The new rows are zero-initialized; callers must overwrite them
-          (via ``set_event`` / ``replace_W`` / direct ``.data`` writes)
-          before they are looked up.
-        * Growth is local: codebook identity is the row index (the
-          .where-as-codebook-key registry was retired, Phase 4), so there is
-          no downstream where-space slice to overrun.
-        """
-        self._assert_frozen_parameter_identity()
-        new_n = int(new_nVectors)
-        if new_n <= int(self.nVectors):
-            return
-        if getattr(self, "_capacity_frozen", False):
-            raise RuntimeError(
-                f"{self._capacity_frozen_by or 'learned codebook'} has fixed "
-                f"capacity {int(self.nVectors)} and cannot grow to {new_n}. "
-                f"No rows were allocated. Runtime growth is intentionally "
-                f"disabled: aligned growth must resize CS, WS, and the "
-                f"ConceptAllocator square/bias coordinates together at a "
-                f"reset boundary and recapture compiled graphs. Increase the "
-                f"configured CS/WS inventories before model construction "
-                f"(smaller checkpoints prefix-load safely), or move structural "
-                f"nodes to a separate growing store.")
-        # Growth copies the authoritative MASTER storage, never a transformed
-        # read view.  In particular, a radix percept Codebook's ``getW()`` is
-        # the [0,1] UNORM-STE view under meronomy; copying that would silently
-        # clamp learned raw Parameter values while Adam moments still describe
-        # the unclamped master prefix.
-        W = self._parameters.get("W")
-        if W is None:
-            W = getattr(self, "W", None)
-        if W is None:
-            # No prototype yet -- ``addVectors`` will allocate to the right
-            # size next time it runs. Just bump nVectors.
-            self.nVectors = new_n
-            return
-        # Codebook growth is local (2026-06-04, Phase 4): identity is the row
-        # index, so there is no global where-space registry slice to overrun.
-
-        old_n = int(W.shape[0])
-        D = int(W.shape[1])
-        new_data = torch.zeros(
-            new_n, D, device=W.device, dtype=W.dtype)
-        with torch.no_grad():
-            new_data[:old_n, :].copy_(W.data)
-        # Register the new Parameter (or plain tensor for non-Parameter
-        # codebooks).
-        if "W" in self._parameters:
-            del self._parameters["W"]
-            self.W = nn.Parameter(new_data, requires_grad=W.requires_grad)
-        else:
-            self.W = new_data
-        # Resize meronomy buffer.
-        if self.part_parents is not None:
-            new_pp = torch.full(
-                (new_n,), -1, dtype=torch.long,
-                device=self.part_parents.device)
-            new_pp[:old_n].copy_(self.part_parents)
-            self.part_parents = new_pp
-        # Resize category_ids buffer.
-        if self.category_ids is not None:
-            new_cid = torch.zeros(
-                (new_n,), dtype=torch.long,
-                device=self.category_ids.device)
-            new_cid[:old_n].copy_(self.category_ids)
-            self.category_ids = new_cid
-        # Resize category_logits buffer if allocated.
-        if self.category_logits is not None:
-            C = int(self.category_logits.shape[1])
-            new_cl = torch.zeros(
-                (new_n, C), dtype=self.category_logits.dtype,
-                device=self.category_logits.device)
-            new_cl[:old_n, :].copy_(self.category_logits)
-            self.category_logits = new_cl
-        # Resize the ramsification table (index-aligned with the rows).
-        if self.ramsification is not None:
-            new_rt = torch.zeros(
-                (new_n, self.ramsification_max_order), dtype=torch.uint8,
-                device=self.ramsification.device)
-            new_rt[:old_n, :].copy_(self.ramsification)
-            self.ramsification = new_rt
-        # Resize VQ codebook (if customVQ is on, the VQ holds its own
-        # codebook tensor that mirrors W). Keep the two in sync.
-        if self.vq is not None and hasattr(self.vq, "codebook"):
-            try:
-                vq_cb = self.vq.codebook
-                if torch.is_tensor(vq_cb) and vq_cb.shape[0] == old_n:
-                    new_vq = torch.zeros(
-                        new_n, D, device=vq_cb.device, dtype=vq_cb.dtype)
-                    new_vq[:old_n, :].copy_(vq_cb)
-                    self.vq.codebook = new_vq
-            except Exception:
-                pass
-        self._bind_vq_to_owned_parameter()
-        self.nVectors = new_n
-        self.codebookSize = max(int(self.codebookSize), new_n)
-        # Cached SVD factors are sized to the old W; invalidate.
-        self._svd_dirty = True
 
     def get_part_parent(self, idx):
         """Return the meronomy parent index of row ``idx`` (-1 = none)."""
@@ -5242,6 +5174,11 @@ class Embedding(Basis):
             return _wrap_unit_ball(self.wv._vectors)
         return None
 
+    def active_prototypes(self):
+        """Search only the active prefix of the fixed physical lexicon."""
+        weight = self.getW()
+        return weight[:len(self.wv.index_to_key)] if weight is not None else None
+
     def setW(self, value):
         """Embedding W is managed by wv._vectors -- setW is a no-op."""
         pass
@@ -5446,28 +5383,21 @@ class Embedding(Basis):
                        vector_size)
         # W is managed by wv._vectors; getW() returns live data
 
-        # Reserve the lexicon's row capacity. (The global ``.where`` slice
-        # registry was retired -- modality re-architecture Phase 4,
-        # 2026-06-04; lexicon entries are identified by their row index, not a
-        # ``where_offset + row`` key.)
-        #
-        # Embedding's ``nVectors`` is the *slot count* of the owning
-        # InputSpace, NOT the lexicon's row capacity -- the lexicon grows
-        # dynamically via ``insert()`` past ``nVectors`` (e.g., ASCII
-        # bootstrap inserts 127 char rows even when nVectors=8). To
-        # avoid colliding with the next codebook's where-space slice we
-        # reserve a generous capacity here: ``max(nVectors, vocab_size,
-        # _LEXICON_DEFAULT_CAPACITY)``. Runtime ``insert()`` asserts
-        # against this reserved capacity so growth past the bound fails
-        # loudly. If a deployed lexicon needs more, raise the default
-        # or wire a per-Embedding capacity knob in the XML.
-        reserve = max(int(nVectors) if nVectors else 0,
-                      vocab_size,
-                      Embedding._LEXICON_DEFAULT_CAPACITY)
+        # Reserve the final physical table before any optimizer owns it.
+        reserve = int(nVectors) if nVectors else Embedding._LEXICON_DEFAULT_CAPACITY
+        bootstrap = 256 if byte_mode else 127
+        missing = sum(chr(cp) not in wv.key_to_index for cp in range(1, bootstrap))
+        required = vocab_size + missing + int(PartSpace.NULL_PERCEPT_KEY not in wv.key_to_index)
+        if reserve < required:
+            raise ValueError(f"Embedding nVectors={reserve} cannot hold its {required} initial rows")
         self.lexicon_capacity = reserve
-        # .where-as-codebook-key retired (2026-06-04, Phase 4): row identity
-        # is local; no global .where slice allocated.
+        self.nVectors = reserve
         self.where_offset = 0
+        if wv._vectors.shape[0] != reserve:
+            data = wv._vectors.detach().new_zeros(reserve, vector_size)
+            data[:vocab_size].copy_(wv._vectors.detach())
+            wv._vectors = nn.Parameter(data, requires_grad=True)
+        wv._fixed_capacity = reserve
 
         self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
         self.wv = wv  # register as submodule for .to(device) and state_dict
@@ -5478,15 +5408,6 @@ class Embedding(Basis):
         self._oov_fallback_count = 0
         self._oov_fallback_sample: list = []
         self._oov_fallback_sample_cap = 1024
-        # NOTE: ``_inflate_to_capacity`` is no longer called from
-        # ``create()``. Auto-inflating ``wv._vectors`` to
-        # ``lexicon_capacity`` rows broke downstream consumers that
-        # read ``wv._vectors.shape[0]`` as the active codebook size
-        # (perceptualspace BPE forward, knowledge artifact writer,
-        # phase-2a labor-division tests). The in-place preallocated-
-        # reserve contract is opt-in via ``stage_oov(..., preallocate=True)``
-        # for callers that explicitly want it.
-
         # Bootstrap codebook with ASCII (and full 0-255 in byte mode).
         # \x00 is already at index 0 from the placeholder row above; fill
         # chr(1)..chr(upper-1) at indices 1..upper-1 so byte_value aligns
@@ -5534,17 +5455,6 @@ class Embedding(Basis):
             self.null_percept_idx = len(self.wv)
             self.insert(null_key, vector=None, initial_count=0)
 
-    def _rebuild_optimizer(self):
-        # All Adam construction in the project routes through
-        # ``bin/Optimizer.py`` so the MPS scalar-step workaround
-        # (pytorch#149184 + the radix step-zero divergence) lives in
-        # exactly one place; see that module's docstring.
-        self.pretrain.optimizer = Adam(
-            [self.wv._vectors],
-            lr=self.pretrain.optimizer.param_groups[0]['lr'],
-        )
-        # W is managed by wv._vectors; getW() returns live data
-
     # ------------------------------------------------------------------
     # Tied-storage refactor (2026-05-27 follow-up)
     # ------------------------------------------------------------------
@@ -5557,43 +5467,21 @@ class Embedding(Basis):
     # the lexicon keeps PS-LOCAL storage permanently (untied), and the
     # decode resolves row->word through the inverse of ``key_to_index``
     # (identity when untied).
-    def _inflate_to_capacity(self):
-        # Inflate ``wv._vectors`` to ``[lexicon_capacity, dim]`` so future
-        # OOV inserts write into preallocated reserve rows in place
-        # (no Parameter reassignment, no optimizer rebuild).
-        if self.wv is None:
-            return
-        cap = int(getattr(self, "lexicon_capacity",
-                          Embedding._LEXICON_DEFAULT_CAPACITY))
-        cur = self.wv._vectors.shape[0]
-        if cap <= cur:
-            return
-        dim = self.wv._vectors.shape[1]
-        device = self.wv._vectors.device
-        dtype = self.wv._vectors.dtype
-        pad = torch.zeros(cap - cur, dim, device=device, dtype=dtype)
-        with torch.no_grad():
-            full = torch.cat([self.wv._vectors.data, pad], dim=0)
-            self.wv._vectors = nn.Parameter(full, requires_grad=True)
-        # counts array stays at the active length; new rows get appended
-        # entries when they are activated.
-
     def stage_oov(self, keys, vectors=None):
         # Stage OOV keys into preallocated reserve rows
         # (doc/plans/2026-05-20-static-per-word-loop-impl.md §4.1).
         # Writes happen in place under ``no_grad`` — Parameter identity
         # is preserved, optimizer is not rebuilt, Adam moments at the
         # newly activated row indices are zeroed. Keys that exceed the
-        # remaining reserve capacity are returned for fallback routing
-        # by the caller (§4.4).
+        # remaining capacity fail atomically with nVectors named (9b §4e).
         keys = [k for k in (keys or []) if k not in self.pretrain.key_to_index]
         if not keys:
             return []
         cap = int(self.lexicon_capacity)
         active = len(self.wv.index_to_key)
-        n_free = max(0, cap - active)
-        accepted = keys[:n_free]
-        overflowed = keys[n_free:]
+        if active + len(keys) > cap:
+            raise RuntimeError(f"Embedding nVectors={cap} exhausted: {active + len(keys)} rows required")
+        accepted, overflowed = keys, []
         if accepted:
             n = len(accepted)
             dim = self.wv.vector_size
@@ -5628,14 +5516,6 @@ class Embedding(Basis):
             # accepted key on the WS codebook) is RETIRED with the tie;
             # the lexicon is PS-local, and the CS-leg symbol codebook
             # adopts concept codes via ``adopt_symbolic_evidence``.
-        if overflowed:
-            self._oov_fallback_count += len(overflowed)
-            cap_sample = int(self._oov_fallback_sample_cap)
-            for key in overflowed:
-                if len(self._oov_fallback_sample) < cap_sample:
-                    self._oov_fallback_sample.append(key)
-                else:
-                    break
         return overflowed
 
     def _zero_optimizer_moments_for_rows(self, start, end):
@@ -5659,17 +5539,14 @@ class Embedding(Basis):
                     mom[start:end].zero_()
 
     def replace(self, new_W):
-        """Replace.
-        
-        See class docstring for the operation contract.
-        """
-        new_W = self._coerce_rows(new_W).to(TheDevice.get())
+        """Refresh active lexical values without replacing the fixed table."""
+        new_W = self._coerce_rows(new_W).to(self.wv._vectors)
+        active = len(self.wv.index_to_key)
+        if tuple(new_W.shape) not in ((active, self.wv.vector_size), tuple(self.wv._vectors.shape)):
+            raise ValueError('Embedding.replace cannot change nVectors or vector width')
         with torch.no_grad():
-            self.wv._vectors = nn.Parameter(new_W, requires_grad=True)
-        # W is managed by wv._vectors; getW() returns live data
+            self.wv._vectors[:len(new_W)].copy_(new_W)
         self.wv._normed = None
-        if self.pretrain is not None:
-            self._rebuild_optimizer()
         return self.getW()
 
     def insert(self, word, vector=None, initial_count=0):
@@ -5712,28 +5589,10 @@ class Embedding(Basis):
         else:
             new_vec = _random_unit_ball((1, dim), device=device)
 
-        # If the Parameter has been preallocated to capacity (via
-        # explicit opt-in ``stage_oov(preallocate=True)`` / a future
-        # caller), write in place into the next reserve row. Otherwise
-        # fall back to the legacy cat + reassign + optimizer rebuild
-        # so downstream consumers that read ``wv._vectors.shape[0]`` as
-        # the active codebook size keep working.
-        cur_shape = self.wv._vectors.shape[0]
-        if cur_shape > current_size:
-            idx = current_size
-            with torch.no_grad():
-                self.wv._vectors.data[idx:idx + 1, :] = new_vec
-            self._zero_optimizer_moments_for_rows(idx, idx + 1)
-        else:
-            with torch.no_grad():
-                new_data = torch.cat(
-                    [self.wv._vectors.data,
-                     new_vec.to(self.wv._vectors.device)],
-                    dim=0)
-                self.wv._vectors = nn.Parameter(new_data, requires_grad=True)
-            idx = len(self.wv.index_to_key)
-            if self.pretrain is not None:
-                self._rebuild_optimizer()
+        idx = current_size
+        with torch.no_grad():
+            self.wv._vectors.data[idx:idx + 1].copy_(new_vec)
+        self._zero_optimizer_moments_for_rows(idx, idx + 1)
         self.wv.counts = np.append(self.wv.counts, np.int64(initial_count))
         self._pending_counts.pop(word, None)
         self.wv._normed = None
@@ -5753,34 +5612,14 @@ class Embedding(Basis):
         return new_vec.squeeze(0)  # (1, dim) -> (dim,); preserves 1-dim case
 
     def remove(self, words_or_indices):
-        """Remove words by name or index from vocabulary and codebook.
-
-        Args:
-            words_or_indices: list of word strings or integer indices to remove.
-
-        Updates nn.Embedding, WordVectors, PretrainModel mappings, special token
-        indices, and the optimizer in one shot.
-        """
+        """Fixed lexical identities cannot be compacted or renumbered."""
         if not words_or_indices:
             return
-        # Resolve to indices
-        if isinstance(words_or_indices[0], str):
-            indices = [self.pretrain.key_to_index[w] for w in words_or_indices
-                       if w in self.pretrain.key_to_index]
-        else:
-            indices = list(words_or_indices)
-        if not indices:
-            return
-
-        # Shrink WordVectors (parameter + vocab)
-        self.wv.remove(indices)
-
-        # PretrainModel shares wv's mappings
-        self.pretrain.index_to_key = self.wv.index_to_key
-        self.pretrain.key_to_index = self.wv.key_to_index
-
-        self._rebuild_optimizer()
-        # W is managed by wv._vectors; getW() returns live data
+        indices = ([self.pretrain.key_to_index[w] for w in words_or_indices
+                    if w in self.pretrain.key_to_index]
+                   if isinstance(words_or_indices[0], str) else list(words_or_indices))
+        if indices:
+            raise RuntimeError('fixed-capacity lexicon rows have stable identities; deletion cannot renumber them')
 
     @staticmethod
     def _load_embeddings(embedding_path=None, nDim=None, nVectors=None):
@@ -6668,8 +6507,9 @@ class SubSpace(nn.Module):
         # encoder-driven carve-out for any non-EventEncoding objectEncoding.)
         _oe = self.objectEncoding
         if hasattr(_oe, "set_band") and hasattr(_oe, "muxedSize"):
-            _oe.set_band(self.whereEncoding.nDim, self.whenEncoding.nDim,
-                         total=outputShape[1])
+            if not hasattr(self.whereEncoding, 'capacity'):
+                _oe.set_band(self.whereEncoding.nDim, self.whenEncoding.nDim,
+                             total=outputShape[1])
             self.nWhere = _oe.nWhere
             self.nWhen = _oe.nWhen
             self.nWhat = _oe.nWhat
@@ -8428,30 +8268,34 @@ class SubSpace(nn.Module):
             objects = self.pad(objects)
         if what:
             objects = self.whatEncoding(objects)
-        if where:
+        if where and self.nWhere > 0:
             objects = self.whereEncoding(objects)
-        if when:
+        if when and self.nWhen > 0:
             objects = self.whenEncoding(objects)
         return objects
 
     def decode(self, objects):
         """Extract positional/temporal components. Returns (objects, space, time)."""
-        objects, space = self.whereEncoding.reverse(objects)
-        objects, time = self.whenEncoding.reverse(objects)
+        space = torch.zeros(objects.shape[:2], device=objects.device)
+        time = torch.zeros_like(space)
+        if self.nWhere > 0:
+            objects, space = self.whereEncoding.reverse(objects)
+        if self.nWhen > 0:
+            objects, time = self.whenEncoding.reverse(objects)
         return objects, space, time
 
     def pad(self, objects, where=True, when=True):
         """Pad vectors with zeros for where/when encoding slots."""
         size = 0
-        size += self.whereEncoding.nDim if where else 0
-        size += self.whenEncoding.nDim if when else 0
+        size += self.nWhere if where else 0
+        size += self.nWhen if when else 0
         return F.pad(objects, (0, size))
 
     def slice(self, object, where=True, when=True):
         """Slice off where/when encoding dims from the end of a vector."""
         size = 0
-        size += self.whereEncoding.nDim if where else 0
-        size += self.whenEncoding.nDim if when else 0
+        size += self.nWhere if where else 0
+        size += self.nWhen if when else 0
         if size == 0:
             return object
         return object[0:-size]
@@ -8636,16 +8480,10 @@ class Space(SpaceCarrierMixin, nn.Module):
         self.nWhat = objectEncoding.nWhat
         self.muxedSize = objectEncoding.muxedSize
         whatEncoding   = WhatEncoding(inputShape, outputShape)
-        # Period is config-derived (<wherePeriod>, default 8192), NOT nObjects
-        # (2026-07-04 encoding pass; the seam below raise-to-fits with a warn).
-        # <whereRungRatio> (2026-07-09 multi-rung pass): HF period =
-        # wherePeriod / ratio (default 32 -> 256-byte fine rung at the default).
-        whereEncoding  = WhereEncoding(
-            int(TheXMLConfig.get("architecture.wherePeriod",
-                                 _WHERE_PERIOD_DEFAULT)), _nWhere, _nWhen,
-            rung_ratio=int(TheXMLConfig.get("architecture.whereRungRatio",
-                                            _WHERE_RUNG_RATIO)))
-        whenEncoding   = event_when_encoding(_nWhen)
+        # Standalone spaces have a local fixture ladder. A complete model
+        # installs its single registry-sized ladder after capacities are known.
+        whereEncoding = WhereEncoding(max(256, 2 * inputShape[0]), _nWhere, _nWhen)
+        whenEncoding = event_when_encoding(_nWhen)
         self.subspace  = SubSpace(
             nInputDim=self.nInputDim,
             nOutputDim=self.nOutputDim,
@@ -11128,8 +10966,12 @@ class InputSpace(Space):
             # embedding lookup, chunking).
             what_buf, where_idx, when_idx, host_tokens = self._lex_batch(input)
             self.subspace.what.setW(what_buf)
-            self.subspace.where.setW(where_idx)
-            self.subspace.when.setW(when_idx)
+            located = hasattr(self.subspace.whereEncoding, 'capacity')
+            self.subspace.where.setW(self.subspace.whereEncoding.encode(where_idx)
+                                    if located else where_idx)
+            when_idx = torch.zeros_like(when_idx) + self.subspace.whenEncoding.t
+            self.subspace.when.setW(self.subspace.whenEncoding.encode(when_idx)
+                                   if located else when_idx)
             # R3-live (C): in analyse mode InputSpace is NOT the lexer -- it
             # hands PartSpace the UNANALYZED, UNTRUNCATED surface (one
             # whole-line token per row), and the meronymic analyzer (the
@@ -11164,7 +11006,7 @@ class InputSpace(Space):
             positions = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
             self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
         if self.nWhen > 0:
-            timesteps = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+            timesteps = torch.zeros((batch, nIdeas), dtype=torch.long, device=dev) + self.subspace.whenEncoding.t
             self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
         self.input = self.subspace.materialize()
         self.subspace.normalize("input", target="what", normalize=True)
@@ -11322,16 +11164,8 @@ class PartSpace(Space):
         """
         section = self.config_section
         initial_vectors = int(spaceShape[0])
-        self.maxVectors = int(TheXMLConfig.space(
-            section, "maxVectors", default=initial_vectors))
         if initial_vectors <= 0:
-            raise ValueError(
-                f"PartSpace nVectors must be positive, got {initial_vectors}")
-        if self.maxVectors < initial_vectors:
-            raise ValueError(
-                "PartSpace maxVectors must be greater than or equal to "
-                f"nVectors; got maxVectors={self.maxVectors}, "
-                f"nVectors={initial_vectors}")
+            raise ValueError(f"PartSpace nVectors must be positive, got {initial_vectors}")
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
         invertible = TheXMLConfig.space(section, "invertible")
@@ -11391,31 +11225,6 @@ class PartSpace(Space):
         else:
             self.doc_spans = []
             self.doc_sources = []
-        # Raise-never-lower period seam -- ALL synthesis modes (2026-07-04:
-        # was Embedding-only, but the radix path stamps byte offsets too and
-        # would alias silently past the period).
-        data = TheData
-        if data.train_input and self.subspace.whereEncoding.nDim > 0:
-            period = self.subspace.whereEncoding.maxVal
-            if (isinstance(data.train_input, list) and data.train_input
-                    and isinstance(data.train_input[0], str)):
-                need = max(len(s.encode('utf-8'))
-                           for s in data.train_input)
-                maxP = max(period, need * 2)
-            else:
-                need = data.inputLength
-                maxP = max(period, need)
-            if need > period:
-                # Overflow warn (2026-07-04): raise-to-fit, never silent.
-                cfg = str((TheXMLConfig._sources or ["?"])[-1])
-                warnings.warn(
-                    f"PartSpace .where period overflow [config {cfg}]: "
-                    f"input length {need} bytes exceeds the configured "
-                    f"period {period}; raising the period to {maxP} -- "
-                    f"increase <wherePeriod> to at least {need} to "
-                    f"silence this.", RuntimeWarning)
-            # set_period derives BOTH rung omegas (+ the div_term alias).
-            self.subspace.whereEncoding.set_period(maxP)
         # <chunking> was renamed <synthesis>; fail loudly on old configs.
         try:
             _legacy_chunking = TheXMLConfig.space(section, "chunking")
@@ -11528,7 +11337,6 @@ class PartSpace(Space):
             self.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 1),
-                max_cap=self.maxVectors,
                 promotion_threshold=self.chunk_promotion_threshold,
                 promotion_min_length=self.chunk_promotion_min_length,
                 word_bounded=self._meronomy_words,
@@ -11552,21 +11360,9 @@ class PartSpace(Space):
                 _sb.setW(nn.Parameter(_sw.detach().clone()))
         else:
             self.percept_store = None
-        # A dynamically growing or canonical aligned radix table is a learned
-        # PartSpace Parameter. It is not an Embedding, so BaseModel's
-        # embedding-specific optimizer hook does not discover it; register it
-        # explicitly and update this slot when a boundary growth replaces the
-        # Parameter. Fixed-capacity legacy mixing models retain their prior
-        # non-enlistment (their empirical trajectories predate learned radix
-        # ownership and are kept isolated from the canonical path).
-        _binding = str(TheXMLConfig.get(
-            "architecture.conceptBinding", default="mixing"
-        )).strip().lower()
-        self._optimize_radix_codebook = (
-            self.synthesis_mode == "radix"
-            and (int(self.maxVectors) > int(self.nVectors)
-                 or _binding == "aligned")
-        )
+        # Native prototype storage has one optimizer owner in either mode.
+        # Admission never replaces it or moves its moments.
+        self._optimize_radix_codebook = self.synthesis_mode == "radix"
         if self._optimize_radix_codebook:
             _radix_w = self.subspace.what._parameters.get("W")
             if (isinstance(_radix_w, nn.Parameter)
@@ -11858,44 +11654,6 @@ class PartSpace(Space):
             return self.percept_store
         return super().vocabulary
 
-    def _replace_radix_codebook_parameter(
-        self, old_parameter, new_parameter, new_capacity,
-    ):
-        """Repair PartSpace ownership after a boundary-safe radix resize."""
-        if not isinstance(new_parameter, nn.Parameter):
-            raise RuntimeError(
-                "PartSpace radix growth produced a non-Parameter codebook; "
-                "optimizer ownership cannot be preserved.")
-        if getattr(self, "_optimize_radix_codebook", False):
-            replaced = False
-            for i, parameter in enumerate(self.params):
-                if parameter is old_parameter:
-                    self.params[i] = new_parameter
-                    replaced = True
-            if (not replaced
-                    and all(new_parameter is not p for p in self.params)):
-                self.params.append(new_parameter)
-        else:
-            # Legacy fixed dictionaries were not optimizer-owned. Preserve
-            # that compatibility if a hand-built caller grows one explicitly.
-            self.params = [
-                parameter for parameter in self.params
-                if parameter is not old_parameter
-                and parameter is not new_parameter
-            ]
-        self.nVectors = int(new_capacity)
-        self.maxVectors = max(int(self.maxVectors), self.nVectors)
-        # Keep capacity metadata consumers aligned with the physical .what
-        # table.  The event basis remains lazily allocated.
-        self.subspace.what.nVectors = self.nVectors
-        event = getattr(self.subspace, "event", None)
-        if event is not None:
-            event.nVectors = self.nVectors
-        if isinstance(self.spaceShape, list):
-            self.spaceShape[0] = self.nVectors
-        elif isinstance(self.spaceShape, tuple):
-            self.spaceShape = (self.nVectors, *self.spaceShape[1:])
-
     def flush_pending_promotions(self, optimizer=None):
         """Commit queued radix rows at a training/inference batch boundary."""
         store = self.percept_store
@@ -11984,9 +11742,6 @@ class PartSpace(Space):
             optimizer=getattr(self, "_radix_optimizer", None),
             owner_space=self,
         )
-        callback = getattr(self, "_radix_growth_callback", None)
-        if result.get("grew", False) and callable(callback):
-            callback(result)
         return result
 
     def everything(self, target="what"):
@@ -12245,6 +12000,10 @@ class PartSpace(Space):
         # where / when come straight from the upstream buffer.
         where_raw = upstream_vspace.materialize(mode="where")
         when_raw = upstream_vspace.materialize(mode="when")
+        if where_raw is not None and where_raw.ndim == 3:
+            where_raw = self.subspace.whereEncoding.decode_index(where_raw)
+        if when_raw is not None and when_raw.ndim == 3:
+            when_raw = self.subspace.whenEncoding.decode_index(when_raw)
         if self.nWhere > 0:
             if where_raw is not None:
                 where_indices = where_raw[:, :nIdeas].long()
@@ -12256,8 +12015,7 @@ class PartSpace(Space):
             if when_raw is not None:
                 when_indices = when_raw[:, :nIdeas].long()
             else:
-                when_indices = torch.arange(
-                    nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
+                when_indices = torch.zeros((batch, nIdeas), device=dev, dtype=torch.long) + self.subspace.whenEncoding.t
         else:
             when_indices = None
 
@@ -12313,9 +12071,17 @@ class PartSpace(Space):
             if w_idx and content_width <= w_idx[0] < muxed_width:
                 offsets = part_offsets.to(
                     device=event.device, dtype=torch.long)
-                stamp = w_enc.encode(offsets.clamp(min=0).to(torch.float32))
+                registry = getattr(self, 'where_registry', None)
+                # This event is an occurrence in the input. Its stored part
+                # has a separate registry row address, independent of where
+                # this instance starts. The band carries no end coordinate.
+                stamp = (registry.encode('input', offsets) if registry is not None else
+                         w_enc.encode(offsets.clamp(min=0)))
                 stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)
                 event[..., w_idx] = stamp
+        if self.subspace.nWhen:
+            event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(
+                self.subspace.whenEncoding.t).to(event)
         return event
 
     def synthesize_word_parts(self, part_ids, part_mask, part_offsets=None):
@@ -12854,6 +12620,7 @@ class PartSpace(Space):
         # intentionally repeated on every constituent), these brackets advance
         # by the emitted percept's own byte extent.
         part_span_2d: list = []
+        native_ids, native_spans = [], []
         for b, row in enumerate(batch_tokens):
             # Word-isolation tiling cut ahead of Pass 1/2; see doc/Mereology.md. None off-flag.
             _wspans = None
@@ -12930,8 +12697,6 @@ class PartSpace(Space):
                 for piece, piece_start in pieces:
                     byte_pos = piece_start
                     for pid in ps.spell_out(piece):
-                        if len(row_pids) >= nIdeas:
-                            break
                         part_start = int(byte_pos)
                         _pb = ps.bytes_for(int(pid))
                         part_len = len(_pb) if _pb else 1
@@ -12953,10 +12718,8 @@ class PartSpace(Space):
                                           int(piece_start + len(piece))))
                         row_part_spans.append(
                             (part_start, int(part_start + part_len)))
-                    if len(row_pids) >= nIdeas:
-                        break
-                if len(row_pids) >= nIdeas:
-                    break
+            native_ids.append(list(row_pids))
+            native_spans.append(list(row_part_spans))
             while len(row_pids) < nIdeas:
                 row_pids.append(int(null_pid))
                 row_groups.append(-1)             # pad slots: no token group
@@ -13005,11 +12768,15 @@ class PartSpace(Space):
             _w_idx = [int(i) for i in _w_enc.resolve(muxed_width)]
             # Only stamp when the band lies past the percept content columns.
             if _w_idx and content_width <= _w_idx[0] < muxed_width:
-                _stamp = _w_enc.encode(
-                    word_offset_grid.clamp(min=0).to(torch.float32))
+                registry = getattr(self, 'where_registry', None)
+                _stamp = (registry.encode('input', word_offset_grid) if registry is not None else
+                          _w_enc.encode(word_offset_grid.clamp(min=0)))
                 _stamp = _stamp * (word_offset_grid >= 0).unsqueeze(-1).to(
                     _stamp.dtype)
                 what_event[..., _w_idx] = _stamp
+        if self.subspace.nWhen:
+            what_event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(
+                self.subspace.whenEncoding.t).to(what_event)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(what_event)
         # The percept ``.where`` belongs on ``subspace.where`` -- the SubSpace
@@ -13024,7 +12791,13 @@ class PartSpace(Space):
             self.subspace.where.setW(word_offset_grid)
         self._embedded_input = what_event
         self._last_tokens = batch_tokens
+        native_width = max((len(row) for row in native_ids), default=0)
+        all_ids = torch.tensor([r + [-1] * (native_width - len(r)) for r in native_ids],
+                               device=dev, dtype=torch.long)
+        all_spans = torch.tensor([r + [(0, 0)] * (native_width - len(r)) for r in native_spans],
+                                 device=dev, dtype=torch.long).reshape(len(native_ids), native_width, 2)
         self._forward_input = {
+            'native_indices': all_ids, 'native_part_spans': all_spans,
             'tokens': batch_tokens, 'indices': pid_grid,
             'percept_store': ps, 'word_groups': word_group_grid,
             'word_texts': word_texts_2d,
@@ -13359,13 +13132,17 @@ class PartSpace(Space):
         differ only in how the [B,nIdeas,*] word arrays are built."""
         where_raw = upstream_vspace.materialize(mode="where")
         when_raw = upstream_vspace.materialize(mode="when")
+        if where_raw is not None and where_raw.ndim == 3:
+            where_raw = self.subspace.whereEncoding.decode_index(where_raw)
+        if when_raw is not None and when_raw.ndim == 3:
+            when_raw = self.subspace.whenEncoding.decode_index(when_raw)
         where_indices = (where_raw[:, :nIdeas].long()
                          if (self.nWhere > 0 and where_raw is not None)
                          else (torch.zeros(batch, nIdeas, dtype=torch.long, device=dev)
                                if self.nWhere > 0 else None))
         when_indices = (when_raw[:, :nIdeas].long()
                         if (self.nWhen > 0 and when_raw is not None)
-                        else (torch.arange(nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
+                        else (torch.zeros((batch, nIdeas), dtype=torch.long, device=dev) + self.subspace.whenEncoding.t
                               if self.nWhen > 0 else None))
 
         self.subspace.whereEncoding.p = 0
@@ -14663,7 +14440,7 @@ class PartSpace(Space):
             assert where_enc.maxVal >= buf_size, (
                 f"WhereEncoding periodicity ({where_enc.maxVal}) must be "
                 f">= render buffer size ({buf_size}). Increase "
-                f"<wherePeriod> to at least {buf_size}."
+                f"the construction-time input capacity to at least {buf_size}."
             )
         what = self.subspace.what
         if hasattr(what, "reconstruct_to_buffer"):
@@ -15033,7 +14810,9 @@ def _concept_alloc_of(host):
             caps_fn = getattr(_h, "_order_caps", None)
             if caps_fn is None:
                 return 1, 1, None, None
-            N = sum(int(c) for c in caps_fn())
+            # Both modes own exactly the same fixed physical inventory.
+            # Attention and order selection never determine checkpoint size.
+            N = int(_h.nVectors)
             dev = None
             params = getattr(_h, "parameters", None)
             if params is not None:
@@ -15044,7 +14823,7 @@ def _concept_alloc_of(host):
 
         def _cap(_h=host):
             caps_fn = getattr(_h, "_order_caps", None)
-            return 0 if caps_fn is None else len(caps_fn()) - 1
+            return max(2, int(getattr(_h, "_symbolic_order", 0)))
 
         alloc = ConceptAllocator(layer_sizer=_sizer, order_cap=_cap)
         object.__setattr__(host, "_concept_allocator", alloc)
@@ -16446,7 +16225,21 @@ class ConceptualSpace(Space):
 
     def _clear_percept_field(self, batch=None):
         """Release native analysis state without touching learned reference rows."""
-        for name in ('_refinement_field', '_refinement_both', '_refinement_raise_ready', '_cs_feature_support'):
+        perception = getattr(self, '_percept_field', None)
+        if perception is not None:
+            if batch is None:
+                object.__setattr__(self, '_percept_field', None)
+            else:
+                perception = perception.clone()
+                perception.values[:, int(batch)] = 0
+                perception.events[:, int(batch)] = 0
+                perception.spans[int(batch)] = 0
+                perception.where[int(batch)] = 0
+                perception.when[int(batch)] = 0
+                if perception.when_band is not None:
+                    perception.when_band[int(batch)] = 0
+                object.__setattr__(self, '_percept_field', perception)
+        for name in ('_refinement_field', '_refinement_both', '_refinement_raise_ready'):
             value = getattr(self, name, None)
             if batch is None or value is None:
                 object.__setattr__(self, name, None)
@@ -16713,23 +16506,19 @@ class ConceptualSpace(Space):
             # dictionary and initialised from the additive composition of
             # its members' rows; the reduce step snaps a matching chunk to
             # it and the losses train it thereafter.
-            try:
-                order = int(self._concept_source_order(A))
-                row = self._csw_concept_row(order, A)
-                if row is not None:
-                    member_rows = [self._csw_row_of(int(m)) for m in members]
-                    member_rows = [r for r in member_rows if r is not None]
-                    ly = _concept_alloc_of(self).layer(0)
-                    W = getattr(ly, "values", None)
-                    W = W if torch.is_tensor(W) else getattr(ly, "W", None)
-                    if torch.is_tensor(W) and member_rows:
-                        with torch.no_grad():
-                            comp = W[member_rows].sum(dim=0)
-                            comp = comp / comp.norm().clamp_min(1e-6)
-                            W.data[int(row)].copy_(comp)
-                    self.__dict__.setdefault("_chunk_rows", {})[members] = int(row)
-            except Exception:
-                pass
+            order = int(self._concept_source_order(A))
+            row = self._csw_concept_row(order, A)
+            if row is not None:
+                member_rows = [self._csw_row_of(int(m)) for m in members]
+                member_rows = [r for r in member_rows if r is not None]
+                # Sparse edge values describe relations, not dictionary atoms.
+                W = self.similarity_codebook.getW()
+                if torch.is_tensor(W) and member_rows:
+                    with torch.no_grad():
+                        comp = W[member_rows].sum(dim=0)
+                        comp = comp / comp.norm().clamp_min(1e-6)
+                        W.data[int(row)].copy_(comp)
+                self.__dict__.setdefault("_chunk_rows", {})[members] = int(row)
             admitted[members] = int(A)
             hits.pop(members, None)
         cached = getattr(self, "_chunk_row_table", None)
@@ -16758,6 +16547,7 @@ class ConceptualSpace(Space):
             self._commit_utility_counts()
             self._commit_chunk_admissions()
             self._commit_autobind_from_stash()
+            self.interpret.boundary()
             # Sentence-boundary relation learning, HOISTED off the compiled
             # forward (fullgraph): ``learn_relations_from_stm`` does
             # ``mask.tolist()`` + host-side taxonomy / codebook mutation,
@@ -16963,7 +16753,6 @@ class ConceptualSpace(Space):
                    and tuple(word_groups.shape) == tuple(pid_2d.shape))
         grp_host = (word_groups.detach().reshape(B, N).tolist()
                     if grouped else None)
-        per_row = {}
         # Capacity rejection must follow the word's byte extent, not merely
         # its ordinal group index.  WholeSpace analyses TYPE runs, so one word
         # (for example ``abc1``) can occupy several WS spans.  Keep the old
@@ -17015,8 +16804,12 @@ class ConceptualSpace(Space):
                     except (IndexError, TypeError, ValueError):
                         raw = b""
                     prop_rows = ws.property_rows_for_bytes(raw)
-                formed = ConceptualSpace._automatic_word_object_meta(
-                    self, parts, prop_rows, key=key)
+                if getattr(self, '_serial', False):
+                    formed = ConceptualSpace.interpret_word(self, parts, prop_rows, key=key)
+                else:
+                    # Native perception admits the word predicate only.
+                    # Word-to-object testimony belongs to the serial operator.
+                    formed = (self.interpret.lookup_word(parts, prop_rows, form=key), None, None)
                 if formed is None:
                     # Capacity lookup-only mode: the unbound word remains a
                     # transient carrier in this forward.  It must not acquire
@@ -17051,22 +16844,11 @@ class ConceptualSpace(Space):
                             b, slots, tile_spans, ws, parts=parts,
                             percept_store=percept_store)):
                     self._register_recognized_word(A, key, parts[0])
-                per_row.setdefault(b, []).append((A, key))
 
-        # SerialObjectMeta already combines one word-concept per iteration by
-        # grammatical reductions in bounded STM. Persisting an additional
-        # right-branching concept for every whole sentence duplicated that
-        # composition and consumed O(tokens) dictionary rows. Nonserial models
-        # retain their historical optional joint inventory.
-        if not getattr(self, "_serial_object_meta", False):
-            for entries in per_row.values():
-                if len(entries) >= 2:
-                    ConceptualSpace._automatic_joint_concept(
-                        self, [a for a, _key in entries],
-                        key=tuple(key for _a, key in entries))
-
-        # The location concepts retain every observed part and whole-property;
-        # identity resolution/refinement now runs wholly inside CS.
+        # Native perception admits predicates and their observed support.
+        # Sentence chains belong to serial grammar composition: a native
+        # parallel boundary must not build an implicit right-branching parse.
+        # Exact ordered units remain the percept store's responsibility.
         spans = getattr(ws, "_staged_analysis_spans", None)
         if (torch.is_tensor(percept_where) and torch.is_tensor(spans)):
             self._populate_cs_symbols(
@@ -17117,9 +16899,11 @@ class ConceptualSpace(Space):
         would overrun the where-space registry. Falls back to the
         per-stage ``wholeSpace_ref`` for standalone tests.
         """
-        ws = getattr(self, 'terminalSymbolSpace_ref', None)
-        if ws is None:
-            ws = getattr(self, 'wholeSpace_ref', None)
+        # Native properties belong to WholeSpace. The terminal symbol space
+        # is only the relation owner in configurations without that basis.
+        ws = getattr(self, 'wholeSpace_ref', None)
+        if not getattr(ws, 'property_basis', False):
+            ws = getattr(self, 'terminalSymbolSpace_ref', None) or ws
         if ws is None:
             return
         # Lazy enable (Phase 1): the model requested the category codebook at
@@ -17172,8 +16956,10 @@ class ConceptualSpace(Space):
             per_row = {}
             for (b, w_parts, w_whole, w_key, w_slots) in (word_bindings
                                                           or ()):
-                formed = ConceptualSpace._automatic_word_object_meta(
-                    self, w_parts, w_whole, key=w_key)
+                if getattr(self, '_serial', False):
+                    formed = ConceptualSpace.interpret_word(self, w_parts, w_whole, key=w_key)
+                else:
+                    formed = (self.interpret.lookup_word(w_parts, w_whole, form=w_key), None, None)
                 if formed is None:
                     continue
                 A, _B, _C = formed
@@ -17948,11 +17734,11 @@ class ConceptualSpace(Space):
         return int(words[0]), int(others[0])
 
     def _sparse_active(self):
-        """True iff the ramsified sparse concept transform is active here:
-        the symbolic order is > 0 AND we are in parallel mode. Mirrors the
-        forward gate, so the per-order weight population and the forward
-        transform activate together; both are no-ops (byte-identical)
-        otherwise."""
+        """Whether this pass runs conceptual sigma/pi over the shared store.
+
+        Definitions are populated in either mode; only the transform is
+        restricted to parallel passes with a positive symbolic order.
+        """
         return (int(getattr(self, "_symbolic_order", 0) or 0) > 0
                 and not bool(getattr(self, "_serial", True)))
 
@@ -17960,26 +17746,19 @@ class ConceptualSpace(Space):
     # Edges run between row identities; dictionary vectors stay distributed.
 
     def _order_caps(self):
-        """Cached per-order row caps of THIS CS's ``nVectors`` inventory.
-        Sparse-parallel (dual-towers rev 2): the tile-based taper
-        ``[base, base>>1, .., 1]`` (base = outputShape[0] tiles; K+1
-        entries; inventory rows past ``sum(caps)`` stay inert). Off-path:
-        the v3 ``(n_snap, n_pool)`` split, unchanged."""
+        """Cached initial order partition, independent of execution mode.
+
+        The tile-based taper seeds allocation. The native field separately
+        gathers every reachable definition through ``_field_caps``; inventory
+        rows beyond this initial partition are not an attention limit.
+        """
         N = int(self.nVectors)
         K = int(getattr(self, "_symbolic_order", 0) or 0)
-        sparse = bool(self._sparse_active())
-        aligned_serial = bool(
-            getattr(self, "_concept_binding", "mixing") == "aligned"
-            and getattr(self, "_serial", False))
-        key = (N, K, sparse, aligned_serial)
+        sparse = int(getattr(self, '_symbolic_order', 0)) > 0
+        key = (N, K, sparse)
         cache = getattr(self, "_order_caps_cache", None)
         if cache is None or cache[0] != key:
-            if aligned_serial:
-                # Serial concepts of different actual orders share one fixed
-                # dictionary. Order is carried explicitly with the concept and
-                # STM slot; it is not encoded by reserving disjoint row ranges.
-                caps = (N,)
-            elif sparse:
+            if sparse:
                 # Shrink the tile base until the whole taper fits the
                 # inventory (nVectors == nActive configs keep pool room:
                 # N=8, K=3 -> [4, 2, 1, 1], mirroring the legacy split).
@@ -18069,7 +17848,7 @@ class ConceptualSpace(Space):
         return got
 
     def add_concept_edge(self, row, col, weight=0.0, *, conjunctive=False,
-                         negated=False, locations=None):
+                         negated=False):
         """Add a nonnegative exponent; a negated part addresses its c-minus.
 
         W_pi intersects order-0 field concepts. Order-0 W_sigma unions
@@ -18081,19 +17860,15 @@ class ConceptualSpace(Space):
         source0 = self._order0_inventory_row(int(col))
         if conjunctive and not (order0 and source0):
             raise ValueError('conjunctive edges require order-0 field concepts')
-        if locations is not None:
-            if not conjunctive:
-                raise ValueError('located literals require an order-0 conjunction')
-            brackets = tuple(sorted(set((int(a), int(b)) for a, b in locations)))
-            if not brackets or any(a < 0 or b <= a for a, b in brackets):
-                raise ValueError('field literal brackets must be nonempty relative extents')
         if order0 and not source0:
             raise ValueError('order-0 alternatives require order-0 field concepts')
         if not order0 and int(col) != int(self.nVectors):
-            target_order = next(k for k in range(1, len(self._order_caps()))
-                                if self.order_slice(k)[0] <= r < self.order_slice(k)[1])
-            lower_start, lower_end = self.order_slice(target_order - 1)
-            if not (source0 if target_order == 1 else lower_start <= int(col) < lower_end):
+            target_order = self._row_order(r)
+            cid = self.concept_id_at_row(r)
+            alloc = _concept_alloc_of(self)
+            testimony = (cid in alloc.reference_orders and source0
+                         and ('sym', self.concept_id_at_row(int(col))) in self.concept_parts(cid))
+            if self._row_order(col) != target_order - 1 and not testimony:
                 raise ValueError('sigma edges require symbols of the preceding order')
         # Frozen definition: no FORMING of new connections on its row.
         if getattr(self, "_frozen_concepts", None) and r in self._frozen_rows():
@@ -18114,8 +17889,6 @@ class ConceptualSpace(Space):
             _c += ly.nOutput + 1
         self._maybe_rebuild_optimizer_for_csw()
         out = ly.add_edge(r, _c, weight=weight)
-        if locations is not None:
-            ly.locations[r, _c] = brackets
         # Values may have regrown: re-arm the frozen-weights grad hook.
         if getattr(self, "_frozen_concepts", None):
             self._refresh_frozen_values_hook()
@@ -18151,9 +17924,18 @@ class ConceptualSpace(Space):
             self._refresh_frozen_values_hook()
         return result
 
-    def _order0_inventory_row(self, row):
+    def _row_order(self, row):
+        """Logical order is metadata, never an address or a mode."""
+        row = int(row)
+        cid = self.concept_id_at_row(row)
+        if cid is not None:
+            return _concept_alloc_of(self).order_of(cid)
         caps = self._order_caps()
-        return 0 <= row < int(self.nVectors) and (row < caps[0] or row >= sum(caps))
+        return next((k for k in range(1, len(caps))
+                     if sum(caps[:k]) <= row < sum(caps[:k + 1])), 0)
+
+    def _order0_inventory_row(self, row):
+        return 0 <= row < int(self.nVectors) and self._row_order(row) == 0
 
     def _canonicalize_part_literals(self):
         """Transfer a group's edge to its recurrent percept, preserving credit."""
@@ -18188,6 +17970,16 @@ class ConceptualSpace(Space):
             rows = torch.arange(sum(self._order_caps()), dtype=torch.long)
         return rows.to(device=device)
 
+    def _field_caps(self):
+        """Transient packed widths; persistent inventory order slices stay fixed."""
+        return getattr(self, '_cs_field_caps', self._order_caps())
+
+    def _field_order_slice(self, order):
+        caps = self._field_caps()
+        order = max(0, min(int(order), len(caps) - 1))
+        start = sum(caps[:order])
+        return start, start + caps[order]
+
     def _field_codes(self, dictionary, rows=None):
         rows = self._field_inventory_rows(dictionary.device) if rows is None else rows.to(dictionary.device)
         codes = dictionary[rows.clamp_min(0)].clone() * (rows >= 0)[..., None]
@@ -18207,190 +17999,118 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def _bind_attended_concepts(self, required, matrix, part_ids):
-        """Admit referenced definitions by membership support, then release next read.
-
-        The field is bounded; the sparse inventory and its concept ids persist.
-        A sufficient alternative brings its parent into the same candidate set.
-        """
-        store = _concept_alloc_of(self).layer(0)
-        n0, size = self._order_caps()[0], sum(self._order_caps())
-        rows, _ = matrix._indices(required.device)
-        weight = (required.new_zeros(len(rows)) if matrix.values is None
-                  else matrix.values.detach().to(required).clamp_min(0))
-        mass = required.new_zeros(store.nOutput).index_add_(0, rows, weight)
-        support = (required[..., 0].amax(dim=(1, 2)) if required.numel()
-                   else torch.zeros_like(weight))
-        referenced = (required.amax(dim=(1, 2, 3)) if required.numel()
-                      else torch.zeros_like(weight))
-        attended_parts = set(part_ids[part_ids >= 0].tolist())
-        for edge, (row, col) in enumerate(zip(matrix._rows, matrix._cols)):
-            if (col // 2) % 2 == 0:
-                literal = store.feature_groups.get((row, col), (col // 4,))
-                referenced[edge] = bool(attended_parts.intersection(literal))
-        scores = required.new_zeros(store.nOutput).index_add_(0, rows, support * weight) / mass.clamp_min(1e-12)
-        admitted = required.new_zeros(store.nOutput).index_add_(
-            0, rows, referenced * (mass[rows] > 0)) > 0
-        # All reachable field definitions compete for this turn's slots.
-        for _ in range(n0):
-            before = admitted.clone()
-            for parent in (store, store.conjunctive):
-                if parent is store.conjunctive and not self.conceptual_pi:
+        """Gather every definition reachable from active native percept poles."""
+        store = _concept_alloc_of(self).layer()
+        active = (required.amax((2, 3)) > 0 if required.shape[2] else
+                  required.new_zeros(required.shape[:2], dtype=torch.bool))
+        written = [] if matrix.values is None else (matrix.values.detach() > 0).tolist()
+        dependencies, standing = [], set()
+        for parent in (store, store.conjunctive):
+            if parent is store.conjunctive and not self.conceptual_pi:
+                continue
+            for (target, column), pos in parent._index.items():
+                # Zero-weight candidate edges still need their inputs to
+                # receive learning credit; the fold keeps their value zero.
+                source = column % (store.nOutput + 1)
+                if source < store.nOutput:
+                    dependencies.append((target, source))
+                elif column == store.nOutput:
+                    standing.add(target)
+        orders = max(2, int(self._symbolic_order)) + 1
+        by_batch = []
+        retired = _concept_alloc_of(self).retired
+        for batch in range(required.shape[1]):
+            reached = standing | {row for edge, row in enumerate(matrix._rows)
+                if written[edge] and bool(active[edge, batch])}
+            while True:
+                parents = {target for target, source in dependencies if source in reached}
+                if parents <= reached:
+                    break
+                reached |= parents
+            groups = [[] for _ in range(orders)]
+            for row in sorted(reached):
+                if self.concept_id_at_row(row) in retired:
                     continue
-                for (target, col), pos in parent._index.items():
-                    source = col % (store.nOutput + 1)
-                    if self._order0_inventory_row(target) and source < store.nOutput and float(parent.values[pos]) > 0:
-                        admitted[target] |= admitted[source]
-                        scores[target] = torch.maximum(scores[target], scores[source])
-            if torch.equal(before, admitted):
-                break
-        candidates = [r for r in admitted.nonzero().flatten().tolist() if self._order0_inventory_row(r)]
-        candidates.sort(key=lambda r: (-float(scores[r]), r))
-        # Stable inventory order within the selected set makes an unchanged
-        # attended field stable, without granting any definition a permanent slot.
-        chosen = sorted(candidates[:n0])
-        addresses = chosen + [-1] * (n0 - len(chosen)) + [
-            r if r in store._tensor_row_keys else -1 for r in range(n0, size)]
-        field_rows = torch.tensor(addresses, dtype=torch.long, device=required.device)
-        ids = []
-        for r in addresses:
-            key = store._tensor_row_keys.get(r)
-            ids.append((key[1] if isinstance(key, tuple) else key) if key is not None else None)
-        object.__setattr__(self, '_cs_field_rows', field_rows)
-        object.__setattr__(self, '_cs_field_concept_ids', torch.tensor(
-            [-1 if cid is None else cid for cid in ids], dtype=torch.long, device=required.device))
+                order = self._row_order(row)
+                if order < orders:
+                    groups[order].append(row)
+            by_batch.append(groups)
+        caps = [max([min(self._order_caps()[0], int(self.outputShape[0])) if k == 0 else 0]
+                    + [len(groups[k]) for groups in by_batch]) for k in range(orders)]
+        addresses = [[row for k, group in enumerate(groups)
+                      for row in (group + [-1] * (caps[k] - len(group)))]
+                     for groups in by_batch]
+        rows = torch.tensor(addresses, dtype=torch.long, device=required.device).t()
+        ids = [[self.concept_id_at_row(row) if row >= 0 else None for row in batch]
+               for batch in addresses]
+        ids = torch.tensor([[cid if cid is not None else -1 for cid in batch] for batch in ids],
+                           dtype=torch.long, device=required.device).t()
+        if rows.shape[1] == 1 or torch.equal(rows, rows[:, :1].expand_as(rows)):
+            rows, ids = rows[:, 0], ids[:, 0]
+        object.__setattr__(self, '_cs_field_caps', tuple(caps))
+        object.__setattr__(self, '_cs_field_rows', rows)
+        object.__setattr__(self, '_cs_field_concept_ids', ids)
 
     def cs_read_memberships(self, percepts, extents):
-        """Located parts and pervading properties, union at extent readout.
+        """Pool native percept poles inside each bracket, then read definitions.
 
-        Positive percepts witness signed conceptual evidence. A negative
-        weight swaps poles; an absent percept supplies neither. Containment is read
-        over the subject extent and shared by its positions. WholeSpace
-        properties pervade each position; identical brackets count once.
+        The reading axis batches independent attention brackets. No concept
+        owns a position; the retained native events own attribution locations.
         """
-        from ConceptEvidence import in_extents
-        from PerceptProperties import counts_in_spans
-        part_ids, part_spans, primitive, raw, whole_spans = percepts
-        if raw.shape[0] > 1:
-            fields, bindings, identities, positions, brackets, subjects, raw_fields, feature_fields, supports = [], [], [], [], [], [], [], [], []
-            for b in range(raw.shape[0]):
-                field = self.cs_read_memberships((part_ids[b:b+1], part_spans[b:b+1],
-                    primitive, raw[b:b+1], whole_spans[b:b+1]), extents[b:b+1])
-                fields.append(field)
-                raw_fields.append(self._cs_order0_raw)
-                feature_fields.append(self._cs_feature_memberships)
-                supports.append(self._cs_feature_support)
-                bindings.append(self._cs_field_rows)
-                identities.append(self._cs_field_concept_ids)
-                positions.append(self._cs_position_evidence)
-                brackets.append(self._cs_position_spans)
-                subjects.append(self._cs_extents)
-            binding, ids = torch.stack(bindings, 1), torch.stack(identities, 1)
-            if torch.equal(binding, binding[:, :1].expand_as(binding)):
-                binding, ids = binding[:, 0], ids[:, 0]
-            object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
-            object.__setattr__(self, '_cs_feature_memberships', torch.cat(feature_fields, 1))
-            object.__setattr__(self, '_cs_feature_support', torch.cat(supports, 1))
-            object.__setattr__(self, '_cs_field_rows', binding)
-            object.__setattr__(self, '_cs_field_concept_ids', ids)
-            object.__setattr__(self, '_cs_position_evidence', torch.cat(positions, 1))
-            object.__setattr__(self, '_cs_position_spans', torch.cat(brackets, 0))
-            object.__setattr__(self, '_cs_extents', torch.cat(subjects, 0))
-            return torch.cat(fields, 1)
-        if raw.ndim == 3:
-            raw = raw[:, 0]
-        B = raw.shape[0]
-        spans = torch.cat((part_spans, whole_spans), dim=1).to(raw.device)
-        # Stable integer span keys deduplicate without an inventory square.
-        keys = spans[..., 0] * (raw.shape[1] + 1) + spans[..., 1]
-        order = keys.argsort(dim=1, stable=True)
-        sorted_keys = keys.gather(1, order)
-        repeat = torch.cat((torch.zeros_like(sorted_keys[:, :1], dtype=torch.bool),
-                            sorted_keys[:, 1:] == sorted_keys[:, :-1]), 1)
-        duplicate = torch.zeros_like(repeat).scatter(1, order, repeat)
-        spans = spans.masked_fill(duplicate[..., None], 0)
-        P, E = spans.shape[1], extents.shape[1]
-        L = E * P
+        from PerceptField import read_percepts
         self._ensure_concept_pool()
         self._canonicalize_part_literals()
         store = _concept_alloc_of(self).layer(0)
         matrix = store.features
-        _, columns = matrix._indices(raw.device)
-        features, towers, poles = columns // 4, (columns // 2) % 2, columns % 2
-        dtype = self.similarity_codebook.getW().dtype
-        membership = torch.zeros(len(columns), B, E, P, 2, device=raw.device, dtype=dtype)
-        feature_support = torch.zeros(len(columns), B, E, P, device=raw.device, dtype=torch.bool)
-        ps_edges = (towers == 0).nonzero().flatten()
-        if len(ps_edges):
-            model = getattr(self, '_model', None)
-            ps = getattr(model, 'perceptualSpace', None)
-            native = getattr(ps, 'percept_store', None)
-            literals = [store.feature_groups.get((matrix._rows[i], matrix._cols[i]),
-                                                 (matrix._cols[i] // 4,)) for i in ps_edges.tolist()]
-            pair, support = PartSpace.part_memberships(
-                native, literals, part_ids, part_spans, extents, raw.shape[1], return_support=True)
-            feature_support = feature_support.index_copy(0, ps_edges,
-                F.pad(support, (0, P - part_ids.shape[1])))
-            # Containment supplies a one-sided percept. Counterevidence
-            # requires a present percept with a negative conceptual weight.
-            pair = torch.stack((pair[..., 0], torch.zeros_like(pair[..., 0])), -1)
-            membership = membership.index_copy(0, ps_edges,
-                pair[:, :, :, None, :].expand(-1, -1, -1, P, -1).to(membership))
-        ws_edges = (towers == 1).nonzero().flatten()
-        if len(ws_edges) and primitive is not None:
-            counts = counts_in_spans(raw, spans, observed=raw != 0)
-            positive = primitive.on_counts(counts)
-            complete = counts.sum(-1) == spans[..., 1] - spans[..., 0]
-            pair = torch.stack((positive, torch.zeros_like(positive)), -1) * complete[..., None, None]
-            membership = membership.index_copy(0, ws_edges,
-                pair.index_select(2, features[ws_edges]).permute(2, 0, 1, 3)[:, :, None]
-                    .expand(-1, -1, E, -1, -1).to(membership))
-            feature_support = feature_support.index_copy(0, ws_edges,
-                membership[ws_edges, ..., 0] > 0)
-        # Extents retain separate copies of their position evidence. Flatten
-        # only for the existing sparse fold, then restore the subject axis.
-        contained = ((spans[:, None, :, 0] >= extents[:, :, None, 0])
-                     & (spans[:, None, :, 1] <= extents[:, :, None, 1])
-                     & (spans[:, None, :, 1] > spans[:, None, :, 0]))
-        object.__setattr__(self, '_cs_feature_memberships',
-                           membership[..., 0].detach() * contained[None])
-        object.__setattr__(self, '_cs_feature_support', feature_support & contained[None])
-        object.__setattr__(self, '_cs_witness_feature_refs', tuple(
-            (r, c, store.feature_groups.get((r, c), (c // 4,)))
-            for r, c in zip(matrix._rows, matrix._cols)))
-        membership = membership.flatten(2, 3)
-        required = torch.where(poles[:, None, None, None].bool(),
+        keys = [('ws', col // 4) if (col // 2) % 2 else
+                ('ps', store.feature_groups.get((row, col), (col // 4,)))
+                for row, col in zip(matrix._rows, matrix._cols)]
+        model = getattr(self, '_model', None)
+        native = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
+        tick = getattr(model, 'when_time', 0)
+        when = torch.zeros_like(extents) + torch.as_tensor(tick, device=extents.device, dtype=extents.dtype)
+        when[..., 1] += 1
+        perception = read_percepts(percepts, extents, keys,
+            part_reader=PartSpace.part_memberships, native=native,
+            dtype=self.similarity_codebook.getW().dtype, when=when,
+            registry=getattr(model, 'where_registry', None),
+            when_encoding=getattr(model, 'when_encoding', None))
+        object.__setattr__(self, '_percept_field', perception)
+        object.__setattr__(self, '_cs_field_where', perception.where)
+        object.__setattr__(self, '_cs_field_when', perception.when)
+        indices = perception.selected(keys)
+        membership = perception.values.index_select(0, indices)
+        columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
+        required = torch.where((columns % 2)[:, None, None, None].bool(),
                                membership.flip(-1), membership)
-        self._bind_attended_concepts(required, matrix, part_ids)
-        matrix = matrix.bind(self._cs_field_rows.tolist(), paired=False)
-        selected = torch.tensor(matrix._inventory_edges, device=required.device, dtype=torch.long)
-        required = required.index_select(0, selected)
-        columns = columns.index_select(0, selected)
-        store = self._concept_field_store()
-        prototype = membership.new_zeros(0, B * L)
-        start, end = self.order_slice(0)
-        conjunctions = torch.stack([
-            matrix.fold_presence(prototype, conjunctive=True, start=start, end=end,
-                                 edge_memberships=required[..., pole].reshape(len(columns), B * L),
-                                 edge_known=required.any(-1).reshape(len(columns), B * L))
-            for pole in (0, 1)], -1)
-        positions = conjunctions.reshape(end - start, B * E, P, 2)
-        brackets = spans[:, None].expand(B, E, P, 2).reshape(B * E, P, 2)
-        field, retained = in_extents(positions, brackets, extents.reshape(B * E, 1, 2))
-        field = field.reshape(end - start, B, E, 2)
-        retained = retained.reshape(end - start, B, E, P, 2)
-        object.__setattr__(self, '_cs_position_evidence', retained)
-        object.__setattr__(self, '_cs_position_spans', spans.detach().clone())
-        object.__setattr__(self, '_cs_extents', extents.detach().clone())
-        return self._compose_order0(field)
+        self._bind_attended_concepts(required, matrix, percepts[0])
+        fields, raw_fields = [], []
+        B, E = membership.shape[1:3]
+        n0 = self._field_caps()[0]
+        addresses = self._field_inventory_rows()
+        for b in range(B):
+            rows = addresses[:, b] if addresses.ndim == 2 else addresses
+            bound = matrix.bind(rows.tolist(), paired=False)
+            selected = torch.tensor(bound._inventory_edges, device=required.device, dtype=torch.long)
+            literals = required.index_select(0, selected)[:, b]
+            prototype = membership.new_zeros(0, E)
+            field = torch.stack([
+                bound.fold_presence(prototype, conjunctive=True, start=0, end=n0,
+                    edge_memberships=literals[..., pole], edge_known=literals.any(-1))
+                for pole in (0, 1)], -1).unsqueeze(1)
+            fields.append(self._compose_order0(field, inventory_rows=rows))
+            raw_fields.append(self._cs_order0_raw)
+        object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
+        return torch.cat(fields, 1)
 
-    def _compose_order0(self, field):
+    def _compose_order0(self, field, *, inventory_rows=None):
         """Intersect and union predicates of the shared subject before encoding.
 
-        Located literals read retained occurrences before the readout union.
+        Native percept poles have already been pooled inside the bracket.
         Dependencies are evaluated once in topological order, preserving
         sparse identity; an extent's both corner is only a diagnosis.
         """
-        store = self._concept_field_store()
+        store = self._concept_field_store(inventory_rows)
         n0, B, E, _ = field.shape
         S = store.nOutput
         working = torch.cat((field, field.new_zeros(S - n0, B, E, 2)))
@@ -18417,14 +18137,11 @@ class ConceptualSpace(Space):
                 own = field[row:row+1].reshape(1, B * E, 2)
                 own_mask = store.feature_defined[row:row+1]
                 if self.conceptual_pi and bool(pi_rows[row]):
-                    if any(r == row for r, _ in store.conjunctive.locations):
-                        own = self._located_conjunction(store.conjunctive, row, working, own, own_mask)
-                    else:
-                        own = torch.stack((
-                            store.conjunctive.fold_presence(source, conjunctive=True, start=row, end=row+1,
-                                own=own[..., 0], own_mask=own_mask, own_known=own.any(-1)),
-                            store.conjunctive.fold_presence(source, conjunctive=True, dual=True, start=row, end=row+1,
-                                own=own[..., 1], own_mask=own_mask, own_known=own.any(-1))), -1)
+                    own = torch.stack((
+                        store.conjunctive.fold_presence(source, conjunctive=True, start=row, end=row+1,
+                            own=own[..., 0], own_mask=own_mask, own_known=own.any(-1)),
+                        store.conjunctive.fold_presence(source, conjunctive=True, dual=True, start=row, end=row+1,
+                            own=own[..., 1], own_mask=own_mask, own_known=own.any(-1))), -1)
                     own_mask = torch.ones_like(own_mask)
                 result = torch.stack((
                     store.fold_presence(source, start=row, end=row+1,
@@ -18439,59 +18156,6 @@ class ConceptualSpace(Space):
                 pending.remove(row)
         object.__setattr__(self, '_cs_order0_raw', raw[:n0].detach())
         return working[:n0]
-
-    def _located_conjunction(self, matrix, row, field, own, own_mask):
-        """Match a joint located witness before reducing its evidence.
-
-        Brackets are coordinates within the shared subject, never a concept's
-        location. Each requested pole must occur at each designated bracket
-        for the pattern to be present. A missing witness is not a match; it
-        does not manufacture counterevidence. Per-pole min still reduces the
-        observed support and contraindications independently.
-        """
-        S, B, E, _ = field.shape
-        retained = self._cs_position_evidence
-        spans, extents = self._cs_position_spans, self._cs_extents
-        edge_pairs = field.new_zeros(matrix.nnz, B, E, 2)
-        complete = torch.ones(B, E, device=field.device, dtype=torch.bool)
-        for i, (target, col) in enumerate(zip(matrix._rows, matrix._cols)):
-            if target != row:
-                continue
-            source, pole = col % (S + 1), col // (S + 1)
-            if source >= retained.shape[0] or bool(matrix._missing_sources[i]):
-                if float(matrix.values[i].detach()) > 0:
-                    complete &= False
-                continue
-            locations = matrix.locations.get((target, col))
-            if locations is None:
-                pair = field[source]
-            else:
-                witnesses = []
-                for start, end in locations:
-                    a, b = extents[..., 0] + start, extents[..., 0] + end
-                    match = ((spans[:, None, :, 0] == a[..., None])
-                             & (spans[:, None, :, 1] == b[..., None])
-                             & (b <= extents[..., 1])[..., None])
-                    witnesses.append((retained[source] * match[..., None]).amax(-2))
-                pairs = torch.stack(witnesses)
-                # Multiple occurrences of one literal share its exponent.
-                values = pairs.flip(-1) if pole else pairs
-                if float(matrix.values[i].detach()) > 0:
-                    complete &= (values[..., 0] > 0).all(0)
-                known = values > 0
-                pair = torch.where(known, values, 1.).amin(0)
-                pair = torch.where(known.any(0), pair, 0.)
-            if locations is None and pole:
-                pair = pair.flip(-1)
-            edge_pairs[i] = pair
-        prototype = field.new_zeros(0, B * E)
-        reduced = torch.stack([
-            matrix.fold_presence(prototype, conjunctive=True, start=row, end=row+1,
-                edge_memberships=edge_pairs[..., pole].reshape(matrix.nnz, B * E),
-                own=own[..., pole], own_mask=own_mask, own_known=own.any(-1))
-            for pole in (0, 1)], -1)
-        return torch.stack((reduced[..., 0] * complete.reshape(1, B * E),
-                            reduced[..., 1]), -1)
 
     @torch.no_grad()
     def _refresh_feature_codes(self):
@@ -18515,7 +18179,14 @@ class ConceptualSpace(Space):
             select = ((cols // 2) % 2 == tower).nonzero().flatten()
             if not len(select):
                 continue
-            source = space.subspace.what.getW().index_select(0, cols[select] // 4)
+            # Grouped PS literals use synthetic feature keys. Resolve their
+            # native members before indexing a physical perceptual codebook.
+            native_rows = [alloc.layer(0).feature_groups.get(
+                (matrix._rows[edge], matrix._cols[edge]),
+                (matrix._cols[edge] // 4,))[0] if tower == 0 else matrix._cols[edge] // 4
+                for edge in select.tolist()]
+            source = space.subspace.what.getW().index_select(
+                0, torch.tensor(native_rows, device=dictionary.device, dtype=torch.long))
             if tower == 0:
                 source = source.clone()
                 for local, edge in enumerate(select.tolist()):
@@ -18533,7 +18204,8 @@ class ConceptualSpace(Space):
         if store.values is not None:
             targets, sources = store._indices(dictionary.device)
             source_rows = sources % (store.nOutput + 1)
-            order0 = (targets < self._order_caps()[0]) | (targets >= sum(self._order_caps()))
+            order0 = torch.tensor([self._order0_inventory_row(r) for r in targets.tolist()],
+                                  device=targets.device, dtype=torch.bool)
             chosen = (order0 & (source_rows < len(values))).nonzero().flatten()
             alt_weights = store.values[chosen].to(values) * torch.where(
                 sources[chosen] <= store.nOutput, 1., -1.)
@@ -18646,17 +18318,12 @@ class ConceptualSpace(Space):
                     if (row, col) not in matrix._index:
                         matrix.add_edge(row, col, weight=0.)
                         opposite = (col + offset) % (2 * offset)
-                        locations = getattr(matrix, 'locations', {}).get((row, opposite))
-                        if locations is not None:
-                            matrix.locations[row, col] = locations
                         changed = True
                 for row in sorted({row for row, _ in defined}):
-                    order = next((k for k in range(1, len(self._order_caps()))
-                                  if self.order_slice(k)[0] <= row < self.order_slice(k)[1]), 0)
-                    previous = self.order_slice(order - 1) if order else (0, 0)
+                    order = self._row_order(row)
                     for source in active:
                         if ((order == 1 and self._order0_inventory_row(source))
-                                or (order > 1 and previous[0] <= source < previous[1])):
+                                or (order > 1 and self._row_order(source) == order - 1)):
                             for col in (source, source + offset):
                                 if (row, col) not in matrix._index:
                                     matrix.add_edge(row, col, weight=0.)
@@ -18768,7 +18435,7 @@ class ConceptualSpace(Space):
         if a_0.ndim != 4 or a_0.shape[-1] != 2:
             raise ValueError('snap requires [concept, batch, occurrence, 2]')
         self._ensure_concept_pool()
-        caps = self._order_caps()
+        caps = self._field_caps()
         ly = _concept_alloc_of(self).layer(0)
         S, B, L = sum(caps), a_0.shape[1], a_0.shape[2]
         n0 = int(a_0.shape[0])
@@ -18787,17 +18454,25 @@ class ConceptualSpace(Space):
                 p_rel = priority[addresses.clamp_min(0)] * (addresses >= 0)[:, None]
             p_rel = p_rel.to(field).expand(S, B).detach()
         for k in range(1, min(int(self._symbolic_order) + 1, len(caps))):
-            start, stop = self.order_slice(k)
-            count = min(int(ly._row_next.get(start, 0)), stop - start)
+            start, stop = self._field_order_slice(k)
+            count = stop - start
+            if not hasattr(self, '_cs_field_caps'):
+                inventory_start, _ = self.order_slice(k)
+                count = min(count, int(ly._row_next.get(inventory_start, 0)))
             if count <= 0:
                 level_acts.append(0.)
                 continue
             end = start + count
             rows = torch.arange(start, end, device=field.device)
             raw = self._concept_rung_presence(field, start, end)
-            gate = ly.participation[start:end].clone().to(field)[:, None, None, None]
-            ready = (~ly.provisional[start:end] | ly.assigned[start:end]).to(field)
-            candidate = raw * gate * ready[:, None, None, None]
+            addresses = self._field_inventory_rows(field.device)[start:end]
+            if addresses.ndim == 1:
+                addresses = addresses[:, None].expand(-1, B)
+            valid = addresses >= 0
+            safe = addresses.clamp_min(0)
+            gate = (ly.participation[safe].clone().to(field) * valid)[:, :, None, None]
+            ready = ((~ly.provisional[safe] | ly.assigned[safe]) & valid).to(field)
+            candidate = raw * gate * ready[:, :, None, None]
             rank = symbols(candidate).amax(-1)
             score = None
             if p_rel is not None:
@@ -18814,7 +18489,7 @@ class ConceptualSpace(Space):
                     score = p_rel[start:end] + hop[start:end]
                 rank = rank * (1 + score)
             _, topi = torch.topk(rank, min(int(caps[k]), count), dim=0)
-            mask = torch.zeros_like(rank).scatter(0, topi, 1.) * ready[:, None]
+            mask = torch.zeros_like(rank).scatter(0, topi, 1.) * ready
             field = field.index_copy(0, rows, candidate * mask[:, :, None, None])
             if p_rel is not None:
                 p_rel = p_rel.index_copy(0, rows, score * mask)
@@ -18858,46 +18533,52 @@ class ConceptualSpace(Space):
             inferred = torch.stack((combined[:S], combined[S + 1:2 * S + 1]), -1)
             return torch.maximum(value, inferred.reshape(S, B, E, 2))
 
-        for k in range(len(self._order_caps()) - 1, 0, -1):
-            start, end = self.order_slice(k)
-            result = descend(store, result, start, end)
-        for _ in range(self._order_caps()[0]):
+        for _ in range(S):
             previous = result
-            result = descend(store, result, 0, self._order_caps()[0])
+            result = descend(store, result, 0, S)
             if self.conceptual_pi:
-                result = descend(store.conjunctive, result, 0,
-                                 self._order_caps()[0], conjunctive=True)
+                result = descend(store.conjunctive, result, 0, S, conjunctive=True)
             if torch.equal(previous, result):
                 break
         return result
 
     def cs_percept_attribution(self, field, *, observed=None, inventory_rows=None,
-                              memberships=None, spans=None):
-        """Attribute conceptual demand to the native memberships it defines.
+                              perception=None):
+        """Attribute each requested pole through definitions to percept events.
 
-        Columns retain the feature inventory's PS/WS identity and pole;
-        returned values are one-sided percept memberships [edge,B,E,P].
-        Field coordinates travel separately. The same path serves attention
-        with observations and expectation without observations.
+        Return native pole columns and [edge,batch,reading,event] support.
+        Concept rows have no event coordinates; only the supplied perception
+        can locate a demand. Omitting it gives an unlocated inverse.
         """
         addresses = self._field_inventory_rows(field.device) if inventory_rows is None else inventory_rows
         inferred = self.cs_reverse_presence(field, observed=observed, inventory_rows=addresses)
         features = _concept_alloc_of(self).layer(0).features
         rows, columns = features._indices(field.device)
-        output = field.new_zeros(len(rows), field.shape[1], field.shape[2], 1)
+        count = len(rows)
+        output = field.new_zeros(2 * count, field.shape[1], field.shape[2], 1)
         written = (features.values.to(field) > 0 if features.values is not None
-                   else torch.zeros(len(rows), device=field.device, dtype=torch.bool))
+                   else torch.zeros(count, device=field.device, dtype=torch.bool))
+        native_columns = (columns - columns % 2)[:, None] + torch.arange(2, device=field.device)
         for b in range(field.shape[1]):
             bound = addresses[:, b] if addresses.ndim == 2 else addresses
             inverse = {int(row): slot for slot, row in enumerate(bound.tolist()) if row >= 0}
             slots = torch.tensor([inverse.get(int(row), -1) for row in rows.tolist()], device=field.device, dtype=torch.long)
-            values = inferred[slots.clamp_min(0), b, :, columns % 2]
-            output[:, b, :, 0] = values * (written & (slots >= 0))[:, None]
-        if memberships is not None:
-            if memberships.shape[:3] != output.shape[:3]:
-                raise ValueError('attribution memberships must match the supplied field')
-            output = torch.minimum(output, memberships.to(output))
-        return columns, output, spans
+            for pole in (0, 1):
+                values = inferred[slots.clamp_min(0), b, :, (columns % 2) ^ pole]
+                output[pole::2, b, :, 0] = values * (written & (slots >= 0))[:, None]
+        spans = None
+        if perception is not None:
+            keys = [('ws', col // 4) if (col // 2) % 2 else
+                    ('ps', _concept_alloc_of(self).layer(0).feature_groups.get((row, col), (col // 4,)))
+                    for row, col in zip(features._rows, features._cols)]
+            events = perception.event_evidence(keys)
+            # Same native row, two poles. Repetition cannot increase support.
+            events = events.permute(0, 4, 1, 2, 3).flatten(0, 1).to(output)
+            if events.shape[1:3] != output.shape[1:3]:
+                raise ValueError('percept events must match the supplied field readings')
+            output = torch.minimum(output, events)
+            spans = perception.spans
+        return native_columns.flatten(), output, spans
 
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
 
@@ -18944,12 +18625,15 @@ class ConceptualSpace(Space):
         them afresh into the bounded attended field.
         """
         alloc = _concept_alloc_of(self)
+        if int(order) > 0 and alloc.order_of(concept_id) < int(order):
+            alloc.reference_orders[int(concept_id)] = int(order)
+            alloc.placement[int(concept_id)] = int(order)
         caps = self._order_caps()
         ly = alloc.layer(0)
-        if len(caps) == 1:
-            region, cap = "shared concept inventory", caps[0]
+        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+            region, cap = "shared concept inventory", int(self.nVectors)
             row = ly.assign_row(("shared", int(concept_id)),
-                                capacity=caps[0], base=0)
+                                capacity=cap, base=0)
         elif int(order) == 0:
             region, cap = "concept inventory", int(self.nVectors)
             key = ("snap", int(concept_id))
@@ -19014,7 +18698,7 @@ class ConceptualSpace(Space):
         standing bias. Minimum support is two references, except singletons.
         Object bounds alone supply no perceptual feature membership.
         """
-        if not self._sparse_active():
+        if int(getattr(self, "_symbolic_order", 0)) <= 0:
             return
         if int(concept_id) in getattr(self, '_frozen_concepts', ()):
             return
@@ -19114,35 +18798,33 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def _witness_concept_poles(self):
-        """Write present definition percepts at each co-active concept pole.
-
-        Co-activity is measured at retained occurrences, before extent union.
-        The admitted references bound the association: attention to another
-        percept alone cannot add that percept to every active definition.
-        """
-        refs = getattr(self, '_cs_witness_feature_refs', ())
-        membership = getattr(self, '_cs_feature_memberships', None)
-        evidence = getattr(self, '_cs_position_evidence', None)
-        if not refs or not torch.is_tensor(membership) or not torch.is_tensor(evidence):
+        """Write co-active native poles within the common attention bracket."""
+        perception = getattr(self, '_percept_field', None)
+        evidence = getattr(self, '_cs_order0_raw', None)
+        if perception is None or not torch.is_tensor(evidence):
             return
-        object.__setattr__(self, '_cs_witness_feature_refs', ())
+        store = _concept_alloc_of(self).layer(0)
+        matrix = store.features
         addresses = self._field_inventory_rows()
         pending = set()
-        by_row = {}
-        for i, (row, col, group) in enumerate(refs):
-            by_row.setdefault(row, []).append((i, col, group))
+        lookup = {key: i for i, key in enumerate(perception.keys)}
         for b in range(evidence.shape[1]):
             bound = addresses[:, b] if addresses.ndim == 2 else addresses
-            for slot, row in enumerate(bound[:evidence.shape[0]].tolist()):
-                cid = self.concept_id_at_row(row) if row >= 0 else None
-                if cid is None or self.is_frozen(cid):
+            inverse = {row: slot for slot, row in enumerate(bound.tolist()) if row >= 0}
+            for row, col in tuple(matrix._index):
+                slot = inverse.get(row)
+                cid = self.concept_id_at_row(row)
+                if slot is None or slot >= len(evidence) or cid is None or self.is_frozen(cid):
                     continue
-                active = evidence[slot, b] > 0
-                for i, col, group in by_row.get(row, ()):
-                    present = membership[i, b] > 0
-                    for pole in (0, 1):
-                        if bool((present & active[..., pole]).any()):
-                            pending.add((cid, pole, col, group))
+                group = store.feature_groups.get((row, col), (col // 4,))
+                key = ('ws', col // 4) if (col // 2) % 2 else ('ps', group)
+                index = lookup.get(key)
+                if index is None:
+                    continue
+                present = perception.values[index, b, :, 0] > 0
+                for pole in (0, 1):
+                    if bool((present & (evidence[slot, b, :, pole] > 0)).any()):
+                        pending.add((cid, pole, col, group))
         for cid, pole, col, group in sorted(pending):
             witness = ((), (col // 4,)) if (col // 2) % 2 else (group, ())
             self._populate_concept_weights(cid, witness=witness, pole=pole, coactive=True)
@@ -19205,14 +18887,11 @@ class ConceptualSpace(Space):
         if not getattr(self, '_mereology_raise', False) or not self._sparse_active():
             return []
         field = getattr(self, '_refinement_field', None) if field is None else field
-        positions = getattr(self, '_cs_position_evidence', None)
-        spans = getattr(self, '_cs_position_spans', None)
-        feature_support = getattr(self, '_cs_feature_support', None)
-        if not all(torch.is_tensor(t) for t in (field, positions, spans, feature_support)):
+        perception = getattr(self, '_percept_field', None)
+        if not torch.is_tensor(field) or perception is None:
             return []
         store = _concept_alloc_of(self).layer()
-        spans = spans.to(field.device)
-        feature_support = feature_support.to(field.device)
+        spans = perception.spans.to(field.device)
         addresses = self._field_inventory_rows(field.device)
         both = field.amin(-1)
         residual = both.amax(-1) if both.shape[-1] else both.new_zeros(both.shape[:2])
@@ -19244,27 +18923,14 @@ class ConceptualSpace(Space):
         for slot, batch, extent in (both > 0).nonzero().tolist():
             bound = addresses[:, batch] if addresses.ndim == 2 else addresses
             row = int(bound[slot])
-            if row < 0 or positions.shape[-2] == 0:
+            if row < 0 or spans.shape[1] == 0:
                 continue
             query = torch.zeros_like(field[:, batch:batch+1, extent:extent+1])
             query[slot] = field[slot, batch:batch+1, extent:extent+1]
-            sources = self.cs_reverse_presence(query,
-                observed=field[:, batch:batch+1, extent:extent+1], inventory_rows=bound)
-            # PS containment is extent-wide, but only its matching id tiles
-            # are witnesses. WS support is the pervading property occurrence.
-            # Attribute the requested poles through the current definitions,
-            # then recover those native witnesses without spreading location.
-            inverse = {r: i for i, r in enumerate(bound.tolist()) if r >= 0}
-            refs = self._cs_witness_feature_refs
-            demand = []
-            for inventory_row, column, _ in refs:
-                position = store.features._index.get((inventory_row, column))
-                source_slot = inverse.get(inventory_row)
-                demand.append(source_slot is not None and position is not None
-                    and float(store.features.values[position]) > 0
-                    and float(sources[source_slot, 0, 0, column % 2]) > 0)
-            demand = torch.tensor(demand, dtype=torch.bool, device=feature_support.device)
-            support = (feature_support[:, batch, extent] & demand[:, None]).any(0)
+            _, attribution, _ = self.cs_percept_attribution(query,
+                observed=field[:, batch:batch+1, extent:extent+1], inventory_rows=bound,
+                perception=perception.select(batch, extent))
+            support = (attribution[:, 0, 0] > 0).any(0)
             observation = self.run_structure(spans[batch].float(), valid=support)
             runs = int(observation['n_runs'])
             stalled = int(store.refinement_stale[row]) >= self.mereology_refine_patience
@@ -19282,8 +18948,7 @@ class ConceptualSpace(Space):
         stalled both reading on discontiguous field support. All edges are
         sigma to the preceding order; pi remains in the order-0 field.
         """
-        order = next((k for k in range(1, len(self._order_caps()))
-                      if self.order_slice(k)[0] <= focal < self.order_slice(k)[1]), 0)
+        order = self._row_order(focal)
         if order + 1 >= len(self._order_caps()):
             return None
         if order > 0:
@@ -19627,7 +19292,7 @@ class ConceptualSpace(Space):
         self._maybe_rebuild_optimizer_for_csw()
         if side == "everything":
             ly.remove_edges([(int(c_row), self._bias_col())])
-        elif side in ('part', 'whole') and c_row < self._order_caps()[0]:
+        elif side in ('part', 'whole') and self._order0_inventory_row(c_row):
             col = 4 * int(code) + 2 * (side == 'whole')
             ly.features.remove_edges([(int(c_row), col), (int(c_row), col + 1)])
         if getattr(self, '_frozen_concepts', None):
@@ -19813,7 +19478,7 @@ class ConceptualSpace(Space):
         return out
 
     @torch.no_grad()
-    def _assign_concept_parts(self, order, parts, context, *, conjunctive=False, evidence=None, locations=None):
+    def _assign_concept_parts(self, order, parts, context, *, conjunctive=False, evidence=None):
         """Match definitions or contexts in rows; assignment never mints a copy."""
         ly = _concept_alloc_of(self).layer(0)
         start, end = ((sum(self._order_caps()), ly.nOutput) if order == 0
@@ -19829,12 +19494,6 @@ class ConceptualSpace(Space):
             definitions[rr[selected] - start, cc[selected]] = matrix.values.detach().cpu()[selected].clamp_min(0)
         if conjunctive:
             scores = ((definitions > 0) == (desired > 0)).all(-1).float()
-            desired_locations = locations or {}
-            for candidate in range(start, end):
-                actual = {c: v for (r, c), v in matrix.locations.items()
-                          if r == candidate and (r, c) in matrix._index}
-                if actual != desired_locations:
-                    scores[candidate - start] = -1
         else:
             scores = ly.context_similarities(context)[start:end]
         valid = ly.assigned[start:end].cpu() & (definitions > 0).any(-1)
@@ -19853,8 +19512,6 @@ class ConceptualSpace(Space):
             for m in ly.part_matrices():
                 m.remove_edges([(r, c) for r, c in m._index
                                 if r == best or c % offset == best])
-                if hasattr(m, 'locations'):
-                    m.locations = {key: value for key, value in m.locations.items() if key in m._index}
             ly.clear_context(best)
             ly.refinement_best[best] = float('inf')
             ly.refinement_stale[best] = 0
@@ -19872,8 +19529,7 @@ class ConceptualSpace(Space):
             support = (float(ly.witness_strength[source]) or 1.) if source < ly.nOutput else 1.
             existed = (best, col) in matrix._index
             pos = self.add_concept_edge(best, source, weight=support,
-                                        conjunctive=conjunctive, negated=negative,
-                                        locations=(locations or {}).get(col))
+                                        conjunctive=conjunctive, negated=negative)
             if pos is not None and existed and evidence is not None:
                 matrix.values[pos].add_((1 - self.concept_use_ewma) * float(evidence[col]))
             cid, part = self.concept_id_at_row(best), self.concept_id_at_row(source)
@@ -19883,6 +19539,36 @@ class ConceptualSpace(Space):
             self._normalize_concept_parts(matrix, best)
         self._write_concept_context(best, context)
         return best
+
+    @torch.no_grad()
+    def _observe_native_cases(self):
+        """A recurrent fused PS unit is an exact, location-free order-0 case."""
+        model = getattr(self, '_model', None)
+        ps = getattr(model, 'perceptualSpace', None)
+        native = getattr(ps, 'percept_store', None)
+        presented = getattr(ps, '_forward_input', None)
+        if native is None or not isinstance(presented, dict):
+            return
+        ids = presented.get('native_indices', presented.get('indices'))
+        if not torch.is_tensor(ids):
+            return
+        store = _concept_alloc_of(self).layer()
+        start, end = sum(self._order_caps()), int(self.nVectors)
+        for pid in ids.detach().unique().tolist():
+            if pid < 0 or len(native.bytes_for(pid) or b'') < 2:
+                continue
+            if any(col // 4 == pid and (col // 2) % 2 == 0 and col % 2 == 0
+                   for row, col in store.features._index):
+                continue
+            free = [row for row in range(start, end)
+                    if bool(store.provisional[row]) and not bool(store.assigned[row])]
+            if not free:
+                continue
+            row = free[0]
+            self.add_concept_feature(row, 'ps', pid, 1.)
+            store.assigned[row] = True
+            store.witnessed[row] = True
+        self._maybe_rebuild_optimizer_for_csw()
 
     @torch.no_grad()
     def promotion_observe(self):
@@ -19932,8 +19618,7 @@ class ConceptualSpace(Space):
                 context[focal] = 0
                 if not bool(context.any()):
                     continue
-                order = next((k for k in range(len(self._order_caps()))
-                              if self.order_slice(k)[0] <= focal < self.order_slice(k)[1]), 0)
+                order = self._row_order(focal)
                 if order + 1 >= len(self._order_caps()):
                     continue
                 start, end = self.order_slice(order)
@@ -19946,28 +19631,7 @@ class ConceptualSpace(Space):
                         self.maybe_raise_order(focal, alternatives[int(index)],
                             context, batch=b, evidence=evidence)
             if self.conceptual_pi:
-                # Patterns are joint witnesses in the order-0 position field.
-                # Pooling the poles first would discard the matching brackets.
-                position_pairs = getattr(self, '_cs_position_evidence', None)
-                spans, extents = getattr(self, '_cs_position_spans', None), getattr(self, '_cs_extents', None)
-                for location in range(a.shape[2]) if torch.is_tensor(position_pairs) else ():
-                    literals = {}
-                    lo, hi = extents[b, location].tolist()
-                    for r in witnessed:
-                        if not self._order0_inventory_row(r) or r not in inverse:
-                            continue
-                        for position, (start, end) in enumerate(spans[b].tolist()):
-                            if not lo <= start < end <= hi:
-                                continue
-                            for pole in (0, 1):
-                                if float(position_pairs[inverse[r], b, location, position, pole]) > self.concept_use_floor:
-                                    literals.setdefault(r + pole * offset, set()).add((start - lo, end - lo))
-                    if sum(map(len, literals.values())) >= 2:
-                        parts = tuple(sorted(literals))
-                        locations = {col: tuple(sorted(brackets)) for col, brackets in literals.items()}
-                        context = field.clone()
-                        context[[c % offset for c in parts]] = 0
-                        self._assign_concept_parts(0, parts, context, conjunctive=True, evidence=evidence, locations=locations)
+                self._observe_native_cases()
             for focal in active:
                 context = field.clone()
                 context[focal] = 0
@@ -19979,32 +19643,35 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def observe_concept_use(self, evidence, *, inventory_rows=None, raw_order0=None):
-        """Advance participation from raw use, independently of edge learning."""
+        """Update participation by identity from raw use in the packed field."""
         from ConceptEvidence import symbols
-        ly = _concept_alloc_of(self).layer(0)
+        ly = _concept_alloc_of(self).layer()
         raw0 = getattr(self, '_cs_order0_raw', None) if raw_order0 is None else raw_order0
-        if torch.is_tensor(raw0):
-            addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
-            for b in range(evidence.shape[1]):
-                bound = addresses[:, b] if addresses.ndim == 2 else addresses
-                for slot, address in enumerate(bound[:self._order_caps()[0]].tolist()):
+        all_rows = self._field_inventory_rows() if inventory_rows is None else inventory_rows
+        for b in range(evidence.shape[1]):
+            addresses = (all_rows[:, b] if all_rows.ndim == 2 else all_rows).cpu()
+            if raw0 is not None:
+                for slot, address in enumerate(addresses[:raw0.shape[0]].tolist()):
                     if address < 0 or not bool(ly.managed[address] & ly.assigned[address]):
                         continue
-                    use = float(raw0[slot, min(b, raw0.shape[1]-1)].amax() > self.concept_use_floor)
+                    use = float(raw0[slot, min(b, raw0.shape[1] - 1)].amax() > self.concept_use_floor)
                     ly.participation[address] = self.concept_use_ewma * ly.participation[address] + (1-self.concept_use_ewma) * use
-        for b in range(evidence.shape[1]):
             u = evidence[:, b:b + 1].detach().cpu().clone()
-            for order in range(1, len(self._order_caps())):
-                start, end = self.order_slice(order)
-                addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
-                addresses = addresses[:, b] if addresses.ndim == 2 else addresses
+            for order in range(1, len(self._field_caps())):
+                start, end = self._field_order_slice(order)
+                if start == end:
+                    continue
+                bound = addresses[start:end]
+                valid = bound >= 0
+                safe = bound.clamp_min(0)
                 raw = self._concept_rung_presence(u, start, end, inventory_rows=addresses).cpu()
-                managed = ly.managed[start:end] & ly.assigned[start:end]
+                managed = ly.managed[safe] & ly.assigned[safe] & valid
                 use = (symbols(raw).amax(dim=(1, 2)) > self.concept_use_floor).to(ly.participation)
-                gates = ly.participation[start:end]
-                gates[managed] = self.concept_use_ewma * gates[managed] + (1 - self.concept_use_ewma) * use[managed]
-                ready = (~ly.provisional[start:end] | ly.assigned[start:end]).cpu()
-                u[start:end] = raw * gates.cpu()[:, None, None, None] * ready[:, None, None, None]
+                current = ly.participation[safe].clone()
+                current[managed] = self.concept_use_ewma * current[managed] + (1 - self.concept_use_ewma) * use[managed]
+                ly.participation[bound[managed]] = current[managed]
+                ready = (~ly.provisional[safe] | ly.assigned[safe]) & valid
+                u[start:end] = raw * current[:, None, None, None] * ready[:, None, None, None]
 
     @torch.no_grad()
     def promotion_pass(self):
@@ -20016,8 +19683,7 @@ class ConceptualSpace(Space):
         discovered = []
         for row in (ly.provisional & ly.assigned &
                     (ly.participation >= self.concept_mint_threshold)).nonzero().flatten().tolist():
-            order = next((k for k in range(1, len(self._order_caps()))
-                         if self.order_slice(k)[0] <= row < self.order_slice(k)[1]), 0)
+            order = self._row_order(row)
             if not ConceptualSpace._automatic_concept_admitted(self, 1, reason='used concept'):
                 continue
             for matrix in ly.part_matrices():
@@ -20025,6 +19691,12 @@ class ConceptualSpace(Space):
                                      if r == row and abs(float(matrix.values[pos])) < self.concept_part_floor])
                 if matrix is ly:
                     self._normalize_concept_parts(matrix, row)
+            existing = self.concept_id_at_row(row)
+            if existing is not None:
+                ly.provisional[row] = False
+                ly.participation[row] = 1.
+                discovered.append(existing)
+                continue
             cid = alloc.new_concept()
             old_key = ly._tensor_row_keys.pop(row)
             ly._tensor_rows.pop(old_key)
@@ -20039,6 +19711,9 @@ class ConceptualSpace(Space):
                     part = self.concept_id_at_row(col % (ly.nOutput + 1))
                     if r == row and part is not None:
                         alloc.add(cid, 'part', ('field' if matrix is ly.conjunctive else 'sym', int(part)))
+            for (target, col), pos in ly.features._index.items():
+                if target == row and float(ly.features.values[pos]) > 0:
+                    alloc.add(cid, 'whole' if (col // 2) % 2 else 'part', col // 4)
             alloc.placement[cid] = order
             alloc.raised.add(cid)
             # The distributed code is the normalized evidence-weighted part
@@ -20101,17 +19776,27 @@ class ConceptualSpace(Space):
             return None
         return ConceptualSpace.create_joint_concept(self, ids, key=k)
 
-    def _automatic_word_object_meta(self, word_parts, word_whole, key=None):
-        """Reuse a known surface triple or optionally admit one atomic triple."""
+    @property
+    def interpret(self):
+        operator = self.__dict__.get('_interpret_operator')
+        if operator is None:
+            from Interpret import InterpretLayer
+            operator = InterpretLayer(conceptualSpace=self)
+            object.__setattr__(self, '_interpret_operator', operator)
+        return operator
+
+    def interpret_word(self, word_parts, word_whole, key=None, *, occurrence=None):
+        """Eager word lookup and mandatory grammar admission for this occurrence."""
+        word = self.interpret.lookup_word(word_parts, word_whole, form=key, reserve=3)
+        obj = self.interpret.forward(word, occurrence=occurrence)
         alloc = _concept_alloc_of(self)
-        if key is not None and key in alloc.word_obj_meta:
-            return ConceptualSpace.create_word_object_meta(
-                self, word_parts, word_whole, key=key)
-        if not ConceptualSpace._automatic_concept_admitted(
-                self, 3, reason="word/object/META"):
-            return None
-        return ConceptualSpace.create_word_object_meta(
-            self, word_parts, word_whole, key=key)
+        meta = alloc.interpretations[word, self._concept_source_order(obj)][1]
+        triple = (word, obj, meta)
+        if key is not None:
+            alloc.word_obj_meta[key] = triple
+            self.bind_word_concept(key, obj)
+        self._priming_bridge_put(word, meta, word_parts, word_whole)
+        return triple
 
     def _register_recognized_word(self, A, key, pid, ws=None,
                                   whole_pos=None):
@@ -20216,104 +19901,6 @@ class ConceptualSpace(Space):
         return torch.tensor(sorted({int(p) for p in reg.values()}),
                             dtype=torch.long)
 
-    def create_word_object_meta(self, word_parts, word_whole, key=None):
-        """Create the per-word A / B / C symbols in the relation-only table
-        (Alec, 2026-06-17; doc/specs/mereological-order-raising.md "word /
-        object / meta creation"). PartSpace and WholeSpace are constrained to
-        give the word-PARTS and the word-WHOLE; ConceptualSpace mints the three
-        symbols on top:
-
-          A = WORD-symbol   — Parts(A) = the word-parts (PS codes), Wholes(A) =
-                              the word-whole (WS code). The orthographic word.
-          B = OBJECT-symbol — Parts(B) = {NOTHING}, Wholes(B) = {EVERYTHING},
-                              INITIALLY: the referent is maximally unspecified
-                              and is SUCCESSIVELY REFINED (σ synthesizes the
-                              atoms into higher-order parts; π splits the
-                              universe into finer wholes — the lifecycle loop).
-          C = META-concept  — the sec-4c ORDERED PAIR (P2 convention flip):
-                              ``embed_pair [whole=('sym',A), part=('sym',B)]``
-                              — whole first (word => object, the storage
-                              order). Roles are POSITIONAL SLOTS of an
-                              ordered pair, not containment claims (Alec
-                              2026-07-02 — still a combination, not a
-                              subsumption; the pairing is also kept separately
-                              in references for serial-mode substitution).
-
-        Relation-only: no vectors, no codebook rows — the parts/wholes are
-        references into the EXISTING PartSpace / WholeSpace codebooks (plus the
-        NOTHING / EVERYTHING poles). Idempotent per surface ``key`` (the same word
-        reuses its A/B/C; A still ACCUMULATES any newly-presented word-parts);
-        with ``key=None`` every call mints a fresh triple. Returns ``(A, B, C)``.
-        """
-        # Boundary callers supply the ordered native id group. Recurrence
-        # alone forms percepts; the definition reads the group in the meantime.
-        model = getattr(self, '_model', None)
-        ps = getattr(model, 'perceptualSpace', None)
-        if ps is not None and self._sparse_active():
-            word_parts = ps.fuse_parts(word_parts)
-        if word_whole is None:
-            word_wholes = ()
-        elif isinstance(word_whole, (tuple, list, set, frozenset)):
-            word_wholes = tuple(int(w) for w in word_whole)
-        else:
-            word_wholes = (int(word_whole),)
-        alloc = _concept_alloc_of(self)
-        wom = alloc.word_obj_meta
-        if key is not None and key in wom:
-            A, B, C = wom[key]
-            for p in word_parts:                  # A keeps accruing word-parts
-                self.add_part(A, int(p))
-            for w in word_wholes:                 # dynamic properties accrue too
-                self.add_whole(A, int(w))
-            # Class dispatch: mock harnesses drive this method with a bare
-            # namespace self, which carries no bound helper.
-            ConceptualSpace._priming_bridge_put(
-                self, A, C, word_parts, None, accrue=True)
-            self._populate_concept_weights(A, witness=(word_parts, word_wholes))
-            # Hebbian: word/object co-occurred again -> strengthen the META
-            # tie's edge values (no_grad; codebooks stay EMA-only). Weakening
-            # awaits a dis-occurrence signal (vacuous in a text-only learner).
-            self._hebbian_strengthen(C)
-            ConceptualSpace._record_percept_concept(self, A, B, word_parts)
-            return A, B, C
-        # A/B/C is one identity transaction.  Reserve all three handles before
-        # writing any constituent or cache entry so a capacity boundary can
-        # never leave a half-word in the learned relation store.
-        A, B, C = ConceptualSpace._new_concepts(
-            self, 3, context="word/object/META triple")
-        # the WORD-symbol
-        for p in word_parts:
-            self.add_part(A, int(p))
-        for w in word_wholes:
-            self.add_whole(A, int(w))
-        # the OBJECT-symbol
-        self.add_part(B, _NOTHING)                   # bottom pole — to be refined
-        self.add_whole(B, _EVERYTHING)              # top pole — to be refined
-        # META-concept: the sec-4c ordered pair [whole=word, part=object]
-        # (P2 flip); a reified sym-sym pair persists as relation-table
-        # content (resolve_identities skips it -- stored structure).
-        alloc.store_of(C).embed_pair(C, whole_ref=("sym", A),
-                                     part_ref=("sym", B))
-        alloc.settle(C)
-        if key is not None:
-            wom[key] = (A, B, C)
-            ConceptualSpace.bind_word_concept(self, key, A)
-            ConceptualSpace.bind_word_concept(self, key, B)
-        # The word's order-0 definition reads its native PS/WS features.
-        # The object remains unwritten until testimony supplies its parts.
-        self._populate_concept_weights(A, witness=(word_parts, word_wholes))
-        self._populate_concept_weights(B)
-        self._populate_concept_weights(C)
-        # CS->PS/WS priming-projection bridge (Alec 2026-07-12): the triple's
-        # surface anchors (taxonomy positions), keyed by A and its META C.
-        # Class dispatch: mock harnesses drive this method with a bare
-        # namespace self, which carries no bound helper.
-        ConceptualSpace._priming_bridge_put(
-            self, A, C, word_parts,
-            (word_wholes[0] if len(word_wholes) == 1 else word_wholes))
-        ConceptualSpace._record_percept_concept(self, A, B, word_parts)
-        return A, B, C
-
     def _record_percept_concept(self, A, B, word_parts):
         """Reverse tie percept-id -> the word/object pair ``(A, B)`` (snap
         design doc §ontology, Alec 2026-07-15). The parallel path forms the
@@ -20322,7 +19909,7 @@ class ConceptualSpace(Space):
         and calls ``add_part(A, pid)``; this records the INVERSE so the
         serial per-word path can RESOLVE (light up) the already-known
         concepts from a percept without minting. Runs on BOTH the mint arm
-        and the idempotent reuse/accrue arm of ``create_word_object_meta``.
+        and the idempotent reuse/accrue arm of ``interpret.forward``.
         Host dicts; last write wins. Non-int part refs (``('sym', id)``)
         carry no raw percept and are skipped."""
         idx = getattr(self, '_percept_word_concept', None)
@@ -20399,7 +19986,7 @@ class ConceptualSpace(Space):
         """
         alloc = _concept_alloc_of(self)
         candidates = tuple(cid for cid in self.word_concepts(form)
-                           if int(alloc.placement[cid]) == int(order))
+                           if self._concept_source_order(cid) == int(order))
         if previous is not None and int(previous) in candidates:
             return int(previous)
         return candidates[0] if len(candidates) == 1 else None
@@ -23023,7 +22610,7 @@ class ConceptualSpace(Space):
         object.__setattr__(self.subspace, "_concept_ids", None)
         object.__setattr__(self.subspace, "_concept_inventory_rows", None)
         object.__setattr__(self.subspace, "_thought_occurrence", None)
-        for name in ('position_evidence', 'position_spans', 'extents'):
+        for name in ('where', 'when'):
             object.__setattr__(self.subspace, '_concept_' + name, None)
         object.__setattr__(self.subspace, "_index", None)  # stale top-K clear
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
@@ -28643,11 +28230,7 @@ class WholeSpace(Space):
         return w * (attract.mean() + repel.mean())
 
     def concept_evidence_layout(self, unity, slots):
-        """Subject extents and contained position brackets from the input cut.
-
-        With no word cut the observed unity is one extent. A short input
-        leaves padded slots empty; padding is not an observed zero.
-        """
+        """Native event spans inside one convex attention bracket per input."""
         from PerceptProperties import uniform_spans
         if not torch.is_tensor(unity):
             return None, None
@@ -28656,23 +28239,15 @@ class WholeSpace(Space):
         live_end = torch.where(raw != 0, torch.arange(L, device=raw.device) + 1, 0).amax(-1)
         positions = getattr(self, '_staged_analysis_spans', None)
         if not torch.is_tensor(positions):
-            positions = uniform_spans(B, L, slots, device=raw.device)
-            # Raw carrier regions keep their input coordinates, but a short
-            # row observes only their prefix. Padding supplies no positions.
-            positions = torch.minimum(positions, live_end[:, None, None])
-            positions = positions.masked_fill(
-                (positions[..., 1] <= positions[..., 0])[..., None], 0)
+            # Open attention sees every native byte event, including the tail
+            # beyond the former eight slots. Serial focus narrows the bracket.
+            positions = uniform_spans(B, L, L, device=raw.device)
         else:
-            positions = positions[:, :slots].to(raw.device)
-            positions = F.pad(positions, (0, 0, 0, max(0, slots - positions.shape[1])))
-        extents = getattr(self, '_staged_unit_spans', None)
-        if not torch.is_tensor(extents):
-            extents = torch.stack((torch.zeros_like(live_end), live_end), -1).unsqueeze(1)
-        else:
-            # Only extents containing admitted position slots enter the live
-            # bounded field. Their absolute input brackets remain unchanged.
-            extents = extents[:, :slots].to(raw.device)
-        return positions, extents
+            positions = positions.to(raw.device)
+        positions = torch.minimum(positions, live_end[:, None, None])
+        positions = positions.masked_fill((positions[..., 1] <= positions[..., 0])[..., None], 0)
+        bracket = torch.stack((torch.zeros_like(live_end), live_end), -1).unsqueeze(1)
+        return positions, bracket
 
     def compute_stage0_carrier(self, IS_concepts, spans):
         """Purely compute the stage-0 carrier and optional property weights.
@@ -30251,7 +29826,33 @@ class OutputSpace(Space):
             self.subspace.set_activation(output)
             return self.subspace
 
-        x = self.forwardBegin(vspace, returnVectors=True)
+        evidence = getattr(vspace, '_concept_activations', None)
+        if torch.is_tensor(evidence):
+            # Open conceptual attention is ragged. A vector task head still
+            # reads its declared number of symbols, selected by native support;
+            # this does not truncate or mutate the field used by reconstruction.
+            x = vspace.materialize()
+            capacity, width = map(int, self.inputShape)
+            if x.shape[1] != capacity and x.shape[-1] == width:
+                from ConceptEvidence import symbols
+                paired = symbols(evidence).permute(1, 0, 2)
+                # Native conceptual carriers hold one code per concept;
+                # a symbolized carrier holds a separate code for each pole.
+                scores = (paired.amax(-1) if x.shape[1] == paired.shape[1]
+                          else paired.flatten(1))
+                if scores.shape != x.shape[:2]:
+                    raise ValueError('native head symbols must match the bound evidence')
+                count = min(capacity, x.shape[1])
+                selected = scores.argsort(dim=1, descending=True, stable=True)[:, :count]
+                x = x.gather(1, selected[..., None].expand(-1, -1, width))
+                x = F.pad(x, (0, 0, 0, capacity - count))
+                self.subspace.batch = x.shape[0]
+                self._pre_reshape_input = (capacity, width)
+                x = x.reshape(x.shape[0], 1, capacity * width)
+            else:
+                x = self.forwardBegin(vspace, returnVectors=True)
+        else:
+            x = self.forwardBegin(vspace, returnVectors=True)
         output = self.forwardLinear(x)
         if self._regression_head:
             # Unquantised regression head: NEVER snap (a 1-vector snap is

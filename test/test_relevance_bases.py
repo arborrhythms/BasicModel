@@ -207,10 +207,13 @@ def test_symbol_history_projection():
     them through ('sym', id) constituent records (the SS->CS bridge)."""
     from test_cs_symbol_table import _cs_sparse_active
     cs = _cs_sparse_active()
-    A1, _B1, C1 = cs.create_word_object_meta([1], 2, key="w1")
-    row_meta = cs._csw_row_of(C1)
-    assert row_meta is not None
+    A1, B1, C1 = cs.interpret_word([1], 2, key="w1")
+    # Testimony's object references the word. META is the structural
+    # association and owns no weighted row under the 9b contract.
+    row_object = cs._csw_row_of(B1)
+    assert row_object is not None
+    assert cs._csw_row_of(C1) is None
     p = cs.symbol_history_priority({int(A1): 5.0})
-    assert p is not None and float(p[row_meta]) >= 5.0
+    assert p is not None and float(p[row_object]) >= 5.0
     assert cs.symbol_history_priority({}) is None
     assert cs.symbol_history_priority(None) is None

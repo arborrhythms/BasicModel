@@ -1976,3 +1976,237 @@ across the affected, slow, full and measurement receipts.
 Final documentation-link verification: **88/88 passed**.
 
 Implementation `0e70001` [matches all 650 reviewed source blobs](benchmarks/2026-09-25-item9-bank-sync/committed-source-verification.json); item 9b follows this parity landing, while the expectation-learning gates remain open.
+
+### Item 9b: shared fields, interpretation and fixed capacities
+
+The [implementation receipt](benchmarks/2026-09-25-item9b/README.md) covers the
+latest plan including §4e. Serial and parallel passes share definitions and
+checkpoint identities. Native percept poles pool inside one field bracket
+before concept folds; events retain inverse attribution. The `interpret`
+operator runs before every serial word composes, owns provisional testimony
+and its reverse, and supplies grammar-selected references to the seal.
+The original schedule replayed N serial sentences in parallel and then applied
+label read-back. That order is superseded by the parallel-first follow-up;
+ordinary serial reading now supplies the symbolic processing. All perceptual codebooks have fixed physical
+capacity with logical admission and stable where-space slices.
+
+The three-seed erosion measurement completes all nine conditions. It supports
+the lower native FineWeb CP and higher within-category distance under parallel
+training, but does not establish the full predicted erosion/restoration
+mechanism. Native XOR CP is zero throughout this short measurement, and
+FineWeb label read-back lowers CP in all conditions. The receipt retains every
+ordering, exact inputs, coverage and the [per-run table](benchmarks/2026-09-25-item9b/erosion-table.md);
+these findings are not learning-test failures to tune away. The native XOR
+learning checks remain separate, with their truth and error assertions intact.
+
+Fixture migrations follow the changed contracts: locations belong to native
+events, physical reserves must fit the initial alphabet, and testimony reads
+its naming word instead of ATOM/UNIVERSE bounds. META associations are
+structural; the history-projection test targets the object row that references
+the word. The former refinement fixture already had an exact answer under
+native negative evidence, so it now learns a missing predicate link while
+retaining its initial-loss and refine/raise requirements. Seeds and tolerances
+are unchanged. The receipt preserves development failures and final validation.
+
+The original reviewed full sweep completes **4,888 cases: 4,562 passed, 325 skipped and one
+existing expected failure**. The final affected selection passes **46/46**,
+the explicit slow selection **24/24**, and erosion/native-boundary checks
+**3/3**; all 34 changed XML configurations pass schema validation. The final
+review receipt also passes all **91** documentation-link checks. The
+660-file review source has aggregate SHA-256
+`1c8edd4342c9739de5c2634e1b9d1af63871a55c06c4bb4ebf0cb427de026d51`.
+All runtime and configuration files match these runs. The full sweep precedes
+one assertion correction in a slow test it skips, subsequently verified by the
+46-case run; earlier slow and measurement jobs precede three test-only fixture
+corrections outside their selected cases. The receipt records these differences
+explicitly. Claude accepted this original implementation for commit; the
+[follow-up receipt](benchmarks/2026-09-25-item9b-followup/README.md) tracks the
+subsequent schedule change and its validation.
+
+### Item 9b follow-up: parallel context first
+
+`interleave:N` reads the coming N complete sentences in native parallel mode
+before their serial reading. There is no separate label read-back. The old
+interleave rows are void for this order; the retired three-seed experiment and
+its findings remain in FutureWork. Item 4 keeps the fixed-probe distance reducer
+as a logged measurement with no pass/fail ordering.
+
+The serial seven-update comparison is re-baselined at the reviewed 9b source:
+mean training cost **.0949082300**, after-training cost **.0882481802**. The
+previous values were .0879226878 and .0891618710. The fractional-gradient fix
+changed the training trajectory: insertion credit now applies only to an
+unwritten edge, while an existing fractional edge uses its true exponent
+derivative. This is a new comparison baseline, not a claim of improvement.
+The follow-up rerun reproduces all three phases exactly. Packed and single
+sentence reconstruction also match exactly at **.6839025616645813**.
+
+The [final follow-up receipt](benchmarks/2026-09-25-item9b-followup/README.md)
+completes **4,905 unique cases: 4,580 passed, 324 skipped and one existing
+expected failure**. The affected selection passes **110/110**, and the explicit
+reconstruction selection passes **4/4**, including three ambient initializations.
+All final selections and measurements match the same **662-file source map**,
+SHA-256 `d82a8d00c202e058c218e8a52c7219e08ad41752e4a164700125706d6d195df4`.
+No skip, expected-failure marker, selected seed or tolerance change was added.
+
+Two earlier full attempts stopped at the worker memory cap. The reasoning
+fixture now collects completed cases' model callback cycles; its entire file
+passes in one worker at 3.13 GiB, and the final full run passes under the same
+8 GiB per-worker limit. The receipt preserves both stops and the cleanup
+evidence. The work remains uncommitted, awaiting Claude's review.
+
+Final documentation-link verification: **93/93 passed**.
+
+### Item 9b corrections and the item 9 learning comparison (September 26)
+
+The [current review receipt](benchmarks/2026-09-26-item9b-corrections/README.md)
+covers all four corrections. The parallel context pass now runs without
+gradients or an optimizer step before serial training. `interpret` reuses the
+object already associated with a word, including a kind; order 1 is the
+default only when a new object is needed. Item 3 records the larger physical
+reserves needed for the intended vocabulary and corpus.
+
+The fourth correction restores the spatial and temporal bands themselves.
+One model-owned `.where` ladder spans all preallocated input, part, whole
+and symbol ranges, and captured programs carry that band. Its periods derive
+from total capacity; an integer address is decoded when needed. One shared
+`.when` ladder spans LTM capacity, and all percepts in a field share one time.
+The exact clock remains available. Concepts retain their full content width;
+the later item 7 seal still owns writing field coordinates into LTM rows.
+Red probes and the review patch are preserved in the receipt.
+
+The source-matched serial seven-update baseline is **.1505906619 before,
+.1347484022 during and .1362805218 after training**. The corrected coordinate
+bands change the reconstruction objective's event inputs and the resulting
+training trajectory. The later occurrence/time correction below isolates the
+extra initial .05 as the cost of reconstructing the shared timestamp on every
+word. These values are historical; use the new baseline below for subsequent
+comparisons.
+The serial baseline never enters the parallel context pass. Packed and single
+sentence reconstruction still agree exactly at **.6839025616645813**.
+Earlier packed-answer quality numbers, including September 16 batch-2 runs,
+remain invalid because the saved programs held zero roots rather than the
+sentences' completed states.
+
+The [declared item 9 comparison](benchmarks/2026-09-26-item9/README.md) finishes
+all **12 native arms: three seeds, four conditions, 64 optimizer updates**
+per arm, with 16 identical held-out batches before and after. Ordered
+prediction does not beat both trained controls on feature MSE and presence
+BCE across seeds. Its FineWeb discrimination is worse than reconstruction-only
+in every seed; byte reconstruction also loses that comparison in seed 1.
+No run reaches the 512-candidate basis limit, but incomplete reverse programs
+remain in the losses, with unavailable operators recorded. Each native
+thought comparison has 25 unsupported question pairs: the meanings have no
+grammatical VP, so answer error and work are unmeasured.
+
+The separate frozen-text study retains a **red wording prerequisite: 5/56
+held-out strings fail after the unchanged 9,000 curriculum updates**. Its
+fixture now reserves 4,096 percept rows at construction instead of relying
+on growth from 64; seeds, updates and assertions are unchanged. After
+recording the assertion failure, the diagnostic continues and deliberately
+exits nonzero. Ordered prediction beats its controls and related
+continuations leave smaller remainders in that imperfect frozen encoder,
+but both thought conditions return `(0, 0)` on every question: Brier error
+1.0 and mean work 17. The later follow-up below identifies an invalid truth
+target in this measurement, so these Brier values cannot establish an
+advantage or a null. Alec subsequently required substantial FineWeb training
+before evaluating learning quality.
+
+All final experiments use the same **663-file source snapshot**, SHA-256
+`86c9aa27bed5345a57e253a3f85668066789499555ba145fca0af960173f17d6`.
+The explicit reconstruction selection passes **4/4**, including three ambient
+initializations. The older compose-gradient/cache probe remains unverified
+and assigned to item 1: its assertion fails before reaching the cache check.
+
+The final source-matched default sweep completes **4,920 unique cases:
+4,595 passed, 324 skipped and one existing expected failure**, with no
+unexpected failures. It uses one file and at most 32 cases per fresh worker,
+two workers, and the unchanged 8 GiB per-worker cap. Peak worker memory is
+7.19 GiB; elapsed time is 1,880.10 seconds. This follows an eight-file worker
+that exceeded its cap after 3,731 completed cases. The isolated STM file and
+the final sweep both pass without changing assertions, seeds or source.
+The receipt retains that stop and all earlier development failures.
+
+The global-band probe also passes on CPU and MPS: **6,144 spatial addresses
+and 4,096 temporal addresses per device**, with exact recovery. Its CPU
+spatial check additionally runs through a full Inductor graph. All final
+checks, serial/parity measurements and learning experiments match the source
+hash above. The slow wording failure described above remains separate from
+this passing default sweep. Changes are uncommitted for Claude's review.
+
+Final documentation-link verification: **96/96 passed**.
+
+### Item 9 quality gates require substantial FineWeb training (September 26)
+
+Alec clarified that significant success is not expected from the small,
+undertrained examples. The [follow-up](benchmarks/2026-09-26-item9-followup/README.md)
+makes learning-quality evaluations conditional on a checkpoint with at least
+**one million completed FineWeb training sentences**. The exact count and
+source manifests are recorded at successful main training updates and survive
+checkpoint restoration. Missing evidence skips these evaluations; a qualified
+model runs the assertions normally. Small correctness tests remain unconditional.
+The old wording curriculum is preserved as a development diagnostic, including
+its 5/56 failures; those are not failures of a sufficiently trained model.
+
+The earlier assertion-thought Brier scores above used an invalid target:
+observing a statement does not establish its truth. They provide no answer-error
+or reasoning-utility evidence. The new test scores an executable next-meaning
+forecast after its target arrives. Context-free scoring also now removes role
+masks, matching native training; the old context-free numbers are not a valid
+clean-control comparison. These corrections do not claim a learning benefit.
+
+The final [follow-up receipt](benchmarks/2026-09-26-item9-followup/README.md)
+matches all **668 source files**, aggregate SHA-256
+`a0d8e87bc157c303061eba13798c59908545455d29fcb4a52688c2a2ce03cc20`.
+With slow tests enabled, the affected selection passes **32 checks** and skips
+the **three quality evaluations** for the missing qualified checkpoint.
+The default full sweep completes **4,938 unique cases: 4,611 passed, 326 skipped
+and one existing expected failure**, with no unexpected failures. It takes
+1,408.68 seconds, peaking at 7.19 GiB per worker under the unchanged 8 GiB cap.
+The serial seven-update reconstruction baseline remains
+.1505906619 / .1347484022 / .1362805218. A real restore regression also fixes
+the shape audit rejecting LTM's valid variable-length index column before
+its owner can load it. No qualified model's learning performance was measured.
+Final documentation-link verification passes **98/98**.
+Changes remain uncommitted for Claude's review.
+
+### Item 9b occurrence positions and shared-time loss (September 26)
+
+Claude's reduced-period experiment did not remove the loss jump. The new
+[occurrence/time correction](benchmarks/2026-09-26-item9b-occurrence-fix/README.md)
+implements Alec's resulting decision: input percept and symbol occurrences
+carry their byte starts, symbol poles reserve one address each, and the
+advancing field timestamp stays in the grammar but is excluded from per-word
+reconstruction. D3, leaf distillation and both detached reverse layouts apply
+that exclusion. General event comparisons can still score temporal differences.
+
+The unchanged seven-update serial measurement gives **.1005906649 before,
+.0948241442 during and .0928765051 after training**. At initialization, a zero
+reverse prediction against the new sine/cosine timestamp had added exactly
+`.1 × .5 = .05` through the time-channel weight. Removing that repeated target
+restores the earlier initial cost exactly. The training mean is within 0.1% of
+the earlier .0949082300, but final cost is **5.245% above** the earlier
+.0882481802. The predicted recovery within 1% did not hold for the final phase;
+no seed or budget was changed, and the remaining trajectory difference has not
+been isolated. Use the new values as the baseline, not as a learning claim.
+
+Packed and single runs match exactly in their initial parameters and
+dictionary, four sentence roots, reference/recovered ideas and byte costs.
+Mean byte reconstruction remains **.6839025616645813**. The source-matched
+affected selection has **40 passes and 14 opt-in skips**; the explicit slow
+selection passes **5/5**, including three ambient native parity runs and the
+real D3 position-weight check. The final full sweep completes **4,948 unique
+cases: 4,621 passed, 326 skipped and one existing expected failure**, with no
+unexpected failures. The full and affected selections and measurements use
+the same 669-file source snapshot, SHA-256
+`61bca3d4143303c811ce3a12b1e27067bd418e833e26a376db2568dfb0363ecf`.
+
+The full sweep takes 1442.23 seconds and peaks at 4.81 GiB per worker,
+with no compile-cache retries or memory-limit stops. Three workers use one
+file and at most 32 cases per batch under the unchanged 8 GiB per-worker cap.
+
+The million-sentence FineWeb learning prerequisites remain unchanged. These
+measurements use a tiny training budget and provide no evidence of mature
+prediction or reasoning performance. Final documentation-link verification
+passes **101/101**. Claude accepted the correction after the green sweep, and
+Alec authorized publication; the receipt records the reviewer's local results
+and the known-red item 6 recovery gate separately.

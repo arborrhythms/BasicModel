@@ -65,14 +65,13 @@ def test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories():
     assert root.findtext("./architecture/serialWordBuckets") == "256"
     assert int(root.findtext("./architecture/serialWordCapacity")) == 256
     ps = int(root.findtext("./PartSpace/nVectors"))
-    ps_max = int(root.findtext("./PartSpace/maxVectors"))
+    assert root.find("./PartSpace/maxVectors") is None
     cs = int(root.findtext("./ConceptualSpace/nVectors"))
     ws = int(root.findtext("./WholeSpace/nVectors"))
     # All three dictionaries are separate namespaces. Alignment binds only
     # the two eight-location live fields; it does not equate row capacities.
     assert ps == 32768
-    assert ps_max == 1048576
-    assert cs == 1048576
+    assert cs == 65536
     assert ws == 8
     assert root.findtext("./WholeSpace/propertyBasis") == "true"
     assert int(root.findtext("./ConceptualSpace/activeVectors")) == 32768

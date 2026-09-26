@@ -87,7 +87,7 @@
 
   <PartSpace>
     <nInput>10</nInput>
-    <nVectors>10</nVectors>
+    <nVectors>256</nVectors>
     <nDim>104</nDim>
     <nOutput>10</nOutput>
     <invertible>true</invertible>

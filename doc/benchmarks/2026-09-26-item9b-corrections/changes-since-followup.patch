@@ -1,0 +1,1288 @@
+--- a/bin/Interpret.py
++++ b/bin/Interpret.py
+@@ -58,7 +58,7 @@
+             cs.bind_word_concept(raw, word)
+         return word
+ 
+-    def forward(self, word, *, order=1, occurrence=None,
++    def forward(self, word, *, order=None, occurrence=None,
+                 object_atoms=None, activation=None):
+         if torch.is_tensor(word):
+             if object_atoms is None or activation is None:
+@@ -69,33 +69,59 @@
+         from Spaces import _concept_alloc_of
+         cs = self.owner
+         alloc = _concept_alloc_of(cs)
+-        word, order = int(word), int(order)
+-        if order not in (1, 2):
++        word = int(word)
++        order = None if order is None else int(order)
++        if order not in (None, 1, 2):
+             raise ValueError('interpret resolution must be particular (1) or kind (2)')
+         if word not in alloc.placement or word in alloc.retired:
+             raise ValueError('interpret requires an existing word concept')
++        # The default describes a NEW testimony object, not an instruction to
++        # replace an already known referent. Include witnessed associations,
++        # not only the objects this operator originally minted.
++        candidates = {obj for (w, _), (obj, _) in alloc.interpretations.items()
++                      if w == word and obj not in alloc.retired}
++        for identities in alloc.word_forms.values():
++            if word in identities:
++                candidates.update(cid for cid in identities if cid != word
++                    and cid not in alloc.retired and cs._concept_source_order(cid) > 0)
++        if len(candidates) > 1:
++            matches = ({obj for w, obj, _ in alloc.word_obj_meta.values()
++                        if w == word and obj in candidates} if order is None else
++                       {cid for cid in candidates if cs._concept_source_order(cid) == order})
++            if len(matches) != 1:
++                raise ValueError('ambiguous word association requires a resolving grammar order')
++            candidates = matches
++        obj = next(iter(candidates)) if candidates else None
++        order = cs._concept_source_order(obj) if obj is not None else (order or 1)
+         key = (word, order)
+         record = alloc.interpretations.get(key)
+         if record is None:
+-            obj, meta = cs._new_concepts(2, context='interpret testimony')
+-            alloc.singletons.add(obj)
++            minted = obj is None
++            if minted:
++                obj, meta = cs._new_concepts(2, context='interpret testimony')
++                alloc.singletons.add(obj)
++            else:
++                meta, = cs._new_concepts(1, context='interpret association')
+             # Grammar resolves the referent's order; a testimony placeholder
+             # has just the naming word as its literal, until the seal or a
+             # witnessed field writes more of its definition.
+-            alloc.reference_orders[obj] = order
+-            cs.add_part(obj, ('sym', word))
++            if minted:
++                alloc.reference_orders[obj] = order
++                cs.add_part(obj, ('sym', word))
+             alloc.store_of(meta).embed_pair(meta, whole_ref=('sym', word),
+                                            part_ref=('sym', obj))
+             alloc.settle(meta)
+-            cs._populate_concept_weights(obj)
++            if minted:
++                cs._populate_concept_weights(obj)
+             # The association is structural; it owns no weighted dictionary row.
+             row = cs._csw_concept_row(order, obj)
+             store = alloc.layer()
+             store.ensure_context()
+-            store.provisional[row] = True
+-            store.assigned[row] = True
+-            store.managed[row] = True
+-            store.participation[row] = 0.
++            if minted:
++                store.provisional[row] = True
++                store.assigned[row] = True
++                store.managed[row] = True
++                store.participation[row] = 0.
+             record = (obj, meta)
+             alloc.interpretations[key] = record
+             cs._record_percept_concept(word, obj, cs.concept_parts(word))
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -3903,6 +3903,8 @@
+     _WHEN_WIDTH = 4
+     def _when_encoding(self):
+         from Spaces import event_when_encoding
++        if getattr(self, '_shared_when_encoding', None) is not None:
++            return self._shared_when_encoding
+         return event_when_encoding(self._WHEN_WIDTH)
+     def _split_when(self, x):
+         w = self._WHEN_WIDTH
+@@ -15205,7 +15207,7 @@
+             if cid is None and not associated and word_id is not None and order in (1, 2):
+                 cid = owner.interpret.forward(word_id, order=order)
+             refs[leaf] = -1 if cid is None else cid
+-            orders[leaf] = order
++            orders[leaf] = order if cid is None else owner._concept_source_order(cid)
+         return refs, orders
+ 
+     def program_meaning(self, entry, registry):
+@@ -16527,6 +16529,8 @@
+         object.__setattr__(sub, "_owner_space", self)
+         if source is not None and not isinstance(source, SubSpaceView):
+             sub.copy_context(source)
++        object.__setattr__(sub, 'whereEncoding', self.subspace.whereEncoding)
++        object.__setattr__(sub, 'whenEncoding', self.subspace.whenEncoding)
+         sub.commit_event(self, payload)
+         if prior_symbolic is not None:
+             prior = (prior_symbolic.materialize(mode="event")
+@@ -16612,8 +16616,15 @@
+                 if registry is not None:
+                     rows = concept_sub._concept_inventory_rows
+                     locations = 2 * rows[..., None] + torch.arange(2, device=rows.device)
+-                    object.__setattr__(leg, '_symbol_where', registry.intervals('symbols', locations))
+-                    object.__setattr__(leg, '_symbol_when', getattr(concept_sub, '_concept_when', None))
++                    band = registry.encode('symbols', locations)
++                    object.__setattr__(leg, '_symbol_where', band)
++                    when = self.subspace.whenEncoding.encode(self.subspace.whenEncoding.t)
++                    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
++                    # The SS carrier owns its bands; concept codes stay opaque.
++                    # Broadcast the same identity addresses over batch/readings.
++                    if band.ndim == 3:
++                        leg.set_where(band.flatten(0, 1)[None].expand(symbol_event.shape[0], -1, -1))
++                        leg.set_when(when.expand(symbol_event.shape[0], band.numel() // 4, 4))
+             for name in ('where', 'when', 'ids', 'inventory_rows'):
+                 object.__setattr__(leg, '_concept_' + name,
+                                    getattr(concept_sub, '_concept_' + name, None))
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -12026,13 +12026,12 @@
+         if registry is not None:
+             positions = torch.arange(W, device=rows.device)[None].expand(B, -1)
+             capacity = max(W, int(getattr(self, 'serial_word_capacity', W)))
+-            isp._ar_word_symbol_where = registry.occurrences(
+-                'symbols', 2 * object_rows, positions, capacity)
++            isp._ar_word_symbol_where = registry.encode(
++                'symbols', 2 * object_rows, positions=positions, capacity=capacity)
+             tick = self.when_time.to(device=rows.device)
+-            isp._ar_word_symbol_when = torch.stack((torch.zeros_like(rows) + tick,
+-                                                    torch.zeros_like(rows) + tick + 1), -1)
++            isp._ar_word_symbol_when = self.when_encoding.encode(tick).expand(B, W, -1)
+             isp._ar_word_symbol_when = torch.where((rows >= 0)[..., None],
+-                                                    isp._ar_word_symbol_when, -1)
++                                                    isp._ar_word_symbol_when, 0.)
+         codes = torch.tensor(reference_codes, dtype=torch.long, device=part_ids.device)
+         roles = torch.tensor(reference_roles, dtype=torch.long, device=part_ids.device)
+         isp._ar_percept_reference_codes = codes
+@@ -13013,7 +13012,9 @@
+         candidate_positions = positions.clamp(max=C)
+         bank_tokens = F.pad(bank_bytes, (0, 1)).index_select(-1, candidate_positions)
+         bank_tokens = torch.where(bank_eow, torch.zeros_like(bank_tokens), bank_tokens)
+-        bank_emits = (F.pad(bank_valid, (0, 1)).index_select(-1, candidate_positions)
++        # Integer padding avoids Inductor's mixed VecMask types when a
++        # boolean cumprod mask is fused across the sentinel boundary on ARM.
++        bank_emits = (F.pad(bank_valid.to(torch.int32), (0, 1)).index_select(-1, candidate_positions).bool()
+                       | bank_eow) & present[:, :, None]
+         weights = assign[:, :L].reshape(B, 1, L).expand(B, P + 1, L) \
+             * bank_emits.permute(0, 2, 1).to(assign.dtype)
+@@ -13030,7 +13031,7 @@
+         target_eow = (positions == target_end) & target_present
+         target = F.pad(target, (0, 1))
+         target = torch.where(target_eow, torch.zeros_like(target), target)
+-        pos = (F.pad(valid, (0, 1)) | target_eow).to(idea.dtype)
++        pos = (F.pad(valid.to(torch.int32), (0, 1)).bool() | target_eow).to(idea.dtype)
+         logp = torch.log(pred.gather(2, target.unsqueeze(-1)).squeeze(-1).clamp_min(1e-6))
+         return (-logp * pos).sum(-1) / pos.sum(-1).clamp_min(1.0)
+     _BYTE_ASSIGNMENT_TAU = 0.1
+@@ -14296,17 +14297,12 @@
+         return int(self.when_time)
+ 
+     def _advance_when_time(self):
+-        """Tick the model clock once and propagate ``present()`` to the live
+-        ``WhenRangeEncoding`` instances so their ``.t`` reference equals the
+-        absolute time at stamping. Called exactly once per processed batch in
+-        ``runBatch`` (train AND inference), in eager Python (outside the
+-        compiled forward), so the encoders the forward stamps with already see
+-        the advanced time. The clock is a long buffer; the in-place add keeps
+-        it on-device and serializable. The encoders' ``.t`` is a plain Python
+-        int (no grad, no device tensor) read by ``encode``/``forward``."""
++        """Advance the on-device clock once per processed batch, then give
++        the shared time ladder an owned tensor stamp. Every event in this
++        field uses that stamp; no scalar device-to-host read is needed."""
+         # In-place so the registered buffer (and its device) is preserved.
+         self.when_time += 1
+-        t_now = int(self.when_time)
++        t_now = self.when_time.detach().clone()
+         for sp in getattr(self, "spaces", []) or []:
+             sub = getattr(sp, "subspace", None)
+             enc = getattr(sub, "whenEncoding", None) if sub is not None else None
+@@ -14556,16 +14552,14 @@
+                 if teacher is not None:
+                     teacher.stage_batch_sources(call['split'], None)
+                 raw = isp.prepInput(list(context))
+-                with schedule.parallel_pass(self):
++                with schedule.parallel_pass(self), torch.no_grad():
+                     from What import What
+-                    self._run_batch_once(train=call['train'], optimizer=call['optimizer'],
+-                        batchNum=call['batchNum'], batchSize=len(context), split=call['split'],
++                    self._run_batch_once(train=False, optimizer=None,
++                        batchNum=call['batchNum'], batchSize=len(context), split='runtime',
+                         batch_override=(raw, torch.empty(len(context), 0, device=raw.device)),
+-                        questions=tuple(What.present(b, split=call['split'])
++                        questions=tuple(What.present(b, split='runtime')
+                                         for b in range(len(context))), exploration_trial=True)
+-                    self._last_parallel_pass_loss = (
+-                        None if not call['train'] and call['split'] == 'runtime' else
+-                        self._last_primary_costs['input_reconstruction_reverse'].detach())
++                    self._last_parallel_pass_loss = None
+                 schedule.completed_parallel += 1
+                 schedule.pending = list(context)
+                 self._detach_persistent_state()
+--- a/bin/PerceptField.py
++++ b/bin/PerceptField.py
+@@ -19,15 +19,20 @@
+     spans: torch.Tensor        # [batch, event, 2], perception's coordinates
+     where: torch.Tensor        # [batch, reading, 2], one bracket per reading
+     when: torch.Tensor         # [batch, reading, 2], one interval per reading
++    percept_where: torch.Tensor | None = None  # [feature, member, 4], native percept ladders
++    when_band: torch.Tensor | None = None      # [batch, reading, 4], shared field time
+ 
+     def clone(self):
+-        return type(self)(self.keys, *(getattr(self, name).clone() for name in
+-            ('values', 'events', 'spans', 'where', 'when')))
++        return type(self)(self.keys, *(None if getattr(self, name) is None else
++            getattr(self, name).clone() for name in
++            ('values', 'events', 'spans', 'where', 'when', 'percept_where', 'when_band')))
+ 
+     def select(self, batch, reading):
+         b, e = slice(batch, batch + 1), slice(reading, reading + 1)
+         return type(self)(self.keys, self.values[:, b, e], self.events[:, b, e],
+-                          self.spans[b], self.where[b, e], self.when[b, e])
++                          self.spans[b], self.where[b, e], self.when[b, e],
++                          self.percept_where,
++                          None if self.when_band is None else self.when_band[b, e])
+ 
+     def selected(self, keys):
+         lookup = {key: i for i, key in enumerate(self.keys)}
+@@ -45,7 +50,7 @@
+ 
+ 
+ def read_percepts(percepts, brackets, keys, *, part_reader, native=None,
+-                  dtype=None, when=None):
++                  dtype=None, when=None, registry=None, when_encoding=None):
+     """Read each referenced native percept once, then pool before any fold."""
+     part_ids, part_spans, primitive, raw, whole_spans = percepts
+     raw = raw[:, 0] if raw.ndim == 3 else raw
+@@ -80,4 +85,17 @@
+     values = events.amax(-2) if P else events.sum(-2)
+     if when is None:
+         when = torch.zeros_like(brackets)
+-    return PerceptField(keys, values, events, spans, brackets.clone(), when.clone())
++    bands = None
++    if registry is not None:
++        # A PS definition may reference a native group: retain the band's
++        # address for EVERY member instead of inventing an address for the
++        # conjunction. Padding makes no location claim.
++        groups = [[registry.slices['parts' if role == 'ps' else 'wholes'][0] + member
++                   for member in (row if isinstance(row, tuple) else (row,))]
++                  for role, row in keys]
++        width = max((len(group) for group in groups), default=1)
++        addresses = torch.tensor([group + [-1] * (width - len(group)) for group in groups],
++                                 dtype=torch.long, device=raw.device).reshape(len(keys), width)
++        bands = torch.where((addresses >= 0)[..., None], registry.encoding.encode(addresses), 0.)
++    when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
++    return PerceptField(keys, values, events, spans, brackets.clone(), when.clone(), bands, when_band)
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -1017,24 +1017,51 @@
+     return center - half, center + half
+ 
+ 
+-# .where multi-rung defaults (2026-07-09 multi-rung pass): the LF/HF rung
+-# ratio <whereRungRatio>. 32 puts the HF period at wherePeriod/32 (8192 -> 256,
+-# the fine period Gate-B measured EXACT starts at) while the LF rung keeps the
+-# full-period RANGE -- a single period cannot carry both (range vs resolution).
++# Standalone fixture default. A complete model derives both periods from its
++# global registry capacity and shares that single encoding across all spaces.
+ _WHERE_RUNG_RATIO = 32
++
++
++def _ladder_periods(capacity):
++    """Cover the allocation plus a seam guard, with unit-resolution phases.
++
++    Power-of-two periods permit exact integer modulo on CPU, CUDA and MPS.
++    The fine period grows only when needed to keep coarse float32 rounding
++    comfortably inside half a fine period. No large absolute integer is
++    converted to float before extracting its fine phase.
++    """
++    needed = max(256, (int(capacity) + 1) * 64 // 63 + 1)
++    long = 1 << (needed - 1).bit_length()
++    short = max(256, long // (1 << 20))
++    return long, short
++
++
++def _ladder_phase(start, period, omega):
++    integer_period = int(round(period))
++    exact = abs(period - integer_period) < 1e-6
++    modulus = integer_period if exact and not start.is_floating_point() else period
++    return torch.remainder(start, modulus).to(torch.float32) * omega
++
++
++def _ladder_index(encoded, long, short, div_lf, div_hf, origin=0):
++    """Decode a discrete address from the bands, without an integer sidecar."""
++    coarse = (torch.atan2(encoded[..., 0], encoded[..., 1]) % (2 * math.pi)) / div_lf
++    fine = (torch.atan2(encoded[..., 2], encoded[..., 3]) % (2 * math.pi)) / div_hf
++    branch = torch.round((coarse - fine) / short).to(torch.int64)
++    return (branch * int(round(short)) + fine.round().to(torch.int64) - origin) % long
+ 
+ 
+ class WhereEncoding(QuadratureEncoding):
+     """4-dim `.where` multi-rung: a 2-rung quadrature LADDER over ONE quantity,
+-    the byte START position (2026-07-09 pass; mirrors the `.when` v2 ladder,
++    the registry address (mirrors the `.when` ladder,
+     ``WhenStartDurationEncoding``):
+ 
+       ``[sin(p*w_lf), cos(p*w_lf), sin(p*w_hf), cos(p*w_hf)]``
+ 
+-    with ``w_lf = 2*pi/<wherePeriod>`` (RANGE: the full sentence cap) and
+-    ``w_hf = w_lf * <whereRungRatio>`` (RESOLUTION: default ratio 32 puts one
+-    byte at ~0.0245 rad at the 8192 default -- above the measured ~0.02 rad
+-    reverse-transport noise, the Gate-B closing measurement). ``decode`` =
++    with both periods derived once from the complete registry capacity.
++    The long rung covers the allocation; the short rung resolves one address.
++    ``decode_index`` recovers exact integer addresses even above 2**24;
++    ``decode`` returns continuous floating positions. Both use
+     atan2 per pair + HF branch resolution by LF: a single period trades range
+     against resolution; the ladder carries both. The END is NOT in the band --
+     content terminates the tile (Alec 2026-07-09); the endpoint-sum bracket is
+@@ -1045,10 +1072,9 @@
+     align with the muxed layout ``[what, where, when]``:
+       index = [-(nWhere+nWhen), ..., -(nWhen+1)]
+ 
+-    A monotonic counter ``self.p`` assigns each object a unique position
+-    within a dataset pass; it must be reset between epochs to avoid overflow.
+-    Codebook identity stays the row index (the retired cross-codebook .where
+-    registry note lives in git history).
++    Input positions, part and whole rows, and symbol occurrences occupy
++    disjoint registry ranges. Codebook identity stays the row index.
++    The legacy standalone stamping helper retains a resettable ``self.p``.
+     """
+     p = 0
+ 
+@@ -1074,11 +1100,24 @@
+     def set_period(self, maxP):
+         """The ONE period seam: sets ``maxVal`` and derives both rung omegas
+         (and the legacy ``div_term`` alias = the LF omega, for the period
+-        checks that read it). The raise-to-fit overflow seam calls this."""
++        checks that read it). Model construction calls this via set_capacity."""
+         self.maxVal = max(1, int(maxP))
+         self.div_lf = 2 * math.pi / self.maxVal
+         self.div_hf = self.div_lf * self.rung_ratio
+         self.div_term = self.div_lf
++
++    def set_capacity(self, capacity):
++        long, short = _ladder_periods(capacity)
++        self.rung_ratio = long // short
++        self.set_period(long)
++        self.capacity = int(capacity)
++        return self
++
++    def decode_index(self, encoded):
++        if self.nDim < 4:
++            return self.decode(encoded).round().to(torch.int64)
++        return _ladder_index(encoded, self.maxVal, self.period_hf,
++                             self.div_lf, self.div_hf, self.where_origin)
+ 
+     @property
+     def period_hf(self):
+@@ -1094,7 +1133,7 @@
+         the LF period (LF angle ~0.098 rad, ~5x the measured ~0.02 rad
+         transport noise). The HF rung needs no seam clearance of its own: HF
+         wraps are absorbed by the LF branch resolution. Computed LIVE off
+-        ``maxVal`` so it tracks the raise-to-fit period reset."""
++        ``maxVal`` after construction-time capacity selection."""
+         return max(1, int(self.maxVal) // 64) if self.nDim > 0 else 0
+ 
+     def encode(self, start):
+@@ -1105,12 +1144,12 @@
+         precision at any position). ``nWhere=2`` is the degenerate single-rung
+         (LF-only) band -- the legacy fixture width."""
+         if not isinstance(start, torch.Tensor):
+-            start = torch.tensor(float(start), device=TheDevice.get())
+-        start = start.to(torch.float32) + self.where_origin
+-        a_lf = torch.remainder(start, float(self.maxVal)) * self.div_lf
++            start = torch.as_tensor(start, device=TheDevice.get())
++        start = start + self.where_origin
++        a_lf = _ladder_phase(start, self.maxVal, self.div_lf)
+         parts = [torch.sin(a_lf), torch.cos(a_lf)]
+         if self.nDim >= 4:
+-            a_hf = torch.remainder(start, self.period_hf) * self.div_hf
++            a_hf = _ladder_phase(start, self.period_hf, self.div_hf)
+             parts += [torch.sin(a_hf), torch.cos(a_hf)]
+         return torch.stack(parts, dim=-1)
+ 
+@@ -1208,9 +1247,7 @@
+ # existing construction sites that import / pass it keep working.
+ _WHEN_PERIOD = 65536
+ _WHEN_MAXT = _WHEN_PERIOD
+-# .where period default in input BYTES (2026-07-04 encoding pass): twice the
+-# 4096 inputLength cap; config-derived via <architecture><wherePeriod>,
+-# decoupled from architecture.nObjects (the retired implicit period).
++# Legacy standalone fixture period. Complete models use the registry capacity.
+ _WHERE_PERIOD_DEFAULT = 8192
+ # ``_WHEN_TENSE_DEFAULT`` is RETAINED only as a back-compat constant for the many
+ # construction sites that pass ``encode(t, D=_WHEN_TENSE_DEFAULT)``; the ``D``
+@@ -1339,9 +1376,7 @@
+         print(f"present .when decodes to (center={float(c):.3f}, extent={float(ext):.3f})")
+ 
+ 
+-# .when v2 defaults (2026-07-04 encoding pass): LF horizon <whenPeriod> and
+-# the LF/HF rung ratio <whenRungRatio> (safe branch bound ~pi/dphi ~ 35 at
+-# the dense-support phase floor).
++# Standalone defaults; complete models derive the shared ladder from LTM capacity.
+ _WHEN_PERIOD_V2 = 10 ** 6
+ _WHEN_RUNG_RATIO = 32
+ 
+@@ -1352,18 +1387,18 @@
+ 
+       ``[sin(s*w_lf), cos(s*w_lf), sin(s*w_hf), cos(s*w_hf)]``
+ 
+-    with ``w_lf = 2*pi/<whenPeriod>`` (default 1e6 ticks) and ``w_hf =
+-    w_lf * <whenRungRatio>`` (default 32). Two TRUE pairs => constant norm
++    with periods derived once from LTM capacity. Both phases are constant
++    across a field. Two quadrature pairs have constant norm
+     ``sqrt(2)`` (nothing to calibrate, no validity keying). ``decode`` =
+     atan2 per pair + HF branch resolution by LF (exact once the LF
+-    estimate localizes within half an HF period). The band is the
+-    SIMILARITY channel; ABSOLUTE addressing rides the exact long-int
+-    clock (``BasicModel.when_time`` -> the synced ``self.t``), the Option-C
+-    hybrid. DURATION is REMOVED from the band (write-only in v1:
++    estimate localizes within half an HF period). The band carries the field
++    address within the chain's capacity. The exact long-int clock remains
++    alongside it (``BasicModel.when_time`` -> the synced ``self.t``).
++    DURATION is REMOVED from the band (write-only in v1:
+     ``decode_span`` had zero callers, tense rotates the center only,
+     aspect is retired) -- exact extents belong to the record store when
+     aspect is built. Endpoint-sum bracketing no longer serves `.when`
+-    (``WhereEncoding`` keeps it). Tense (past/present/future) keys on the
++    (the analyzer keeps separate spatial brackets). Tense keys on the
+     LF pair vs ``self.t``. The class name keeps the plan's 4-value
+     lineage; the shipped band carries start only. nDim=4 enabled /
+     0 disabled.
+@@ -1390,6 +1425,18 @@
+         """The HF rung period in ticks (P_lf / rung_ratio)."""
+         return 2 * math.pi / self.div_hf
+ 
++    def set_capacity(self, capacity):
++        self.maxVal, short = _ladder_periods(capacity)
++        self.rung_ratio = self.maxVal // short
++        self.div_lf = 2 * math.pi / self.maxVal
++        self.div_hf = 2 * math.pi / short
++        self.capacity = int(capacity)
++        return self
++
++    def decode_index(self, encoded):
++        return _ladder_index(encoded, self.maxVal, self.period_hf,
++                             self.div_lf, self.div_hf)
++
+     def encode(self, start):
+         """Encode onset(s) to the 4-dim two-pair ladder. ONE quantity --
+         no end/duration, no tense magnitude (both retired from the band).
+@@ -1397,10 +1444,9 @@
+         so the sin/cos argument stays < 2*pi (float32 keeps tick-level
+         precision at any onset; unfolded, s=1e6 costs ~0.08 HF ticks)."""
+         if not isinstance(start, torch.Tensor):
+-            start = torch.tensor(float(start), device=TheDevice.get())
+-        start = start.to(torch.float32)
+-        a_lf = torch.remainder(start, float(self.maxVal)) * self.div_lf
+-        a_hf = torch.remainder(start, self.period_hf) * self.div_hf
++            start = torch.as_tensor(start, device=TheDevice.get())
++        a_lf = _ladder_phase(start, self.maxVal, self.div_lf)
++        a_hf = _ladder_phase(start, self.period_hf, self.div_hf)
+         return torch.stack((torch.sin(a_lf), torch.cos(a_lf),
+                             torch.sin(a_hf), torch.cos(a_hf)), dim=-1)
+ 
+@@ -1474,16 +1520,13 @@
+ 
+ 
+ def event_when_encoding(n_when):
+-    """The ONE `.when` construction seam: build the v2 ladder from the config
+-    knobs <whenPeriod> / <whenRungRatio> (defaults 1e6 / 32). Every event-tail
+-    consumer (Space build, grammar tense ops) constructs through here so all
+-    encoders share one omega pair -- shift_time on a mismatched period would
+-    silently rotate wrong."""
+-    return WhenStartDurationEncoding(
+-        int(TheXMLConfig.get("architecture.whenPeriod", _WHEN_PERIOD_V2)),
+-        n_when=n_when,
+-        rung_ratio=int(TheXMLConfig.get("architecture.whenRungRatio",
+-                                        _WHEN_RUNG_RATIO)))
++    """Construct a standalone ladder from the LTM allocation.
++
++    Model construction replaces these temporary references with one shared
++    model-owned encoding, including the tense operators.
++    """
++    capacity = int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024)
++    return WhenStartDurationEncoding(n_when=n_when).set_capacity(capacity)
+ 
+ 
+ # ``WhenEncoding`` resolves to the v2 start ladder (2026-07-04 encoding
+@@ -6464,8 +6507,9 @@
+         # encoder-driven carve-out for any non-EventEncoding objectEncoding.)
+         _oe = self.objectEncoding
+         if hasattr(_oe, "set_band") and hasattr(_oe, "muxedSize"):
+-            _oe.set_band(self.whereEncoding.nDim, self.whenEncoding.nDim,
+-                         total=outputShape[1])
++            if not hasattr(self.whereEncoding, 'capacity'):
++                _oe.set_band(self.whereEncoding.nDim, self.whenEncoding.nDim,
++                             total=outputShape[1])
+             self.nWhere = _oe.nWhere
+             self.nWhen = _oe.nWhen
+             self.nWhat = _oe.nWhat
+@@ -8224,30 +8268,34 @@
+             objects = self.pad(objects)
+         if what:
+             objects = self.whatEncoding(objects)
+-        if where:
++        if where and self.nWhere > 0:
+             objects = self.whereEncoding(objects)
+-        if when:
++        if when and self.nWhen > 0:
+             objects = self.whenEncoding(objects)
+         return objects
+ 
+     def decode(self, objects):
+         """Extract positional/temporal components. Returns (objects, space, time)."""
+-        objects, space = self.whereEncoding.reverse(objects)
+-        objects, time = self.whenEncoding.reverse(objects)
++        space = torch.zeros(objects.shape[:2], device=objects.device)
++        time = torch.zeros_like(space)
++        if self.nWhere > 0:
++            objects, space = self.whereEncoding.reverse(objects)
++        if self.nWhen > 0:
++            objects, time = self.whenEncoding.reverse(objects)
+         return objects, space, time
+ 
+     def pad(self, objects, where=True, when=True):
+         """Pad vectors with zeros for where/when encoding slots."""
+         size = 0
+-        size += self.whereEncoding.nDim if where else 0
+-        size += self.whenEncoding.nDim if when else 0
++        size += self.nWhere if where else 0
++        size += self.nWhen if when else 0
+         return F.pad(objects, (0, size))
+ 
+     def slice(self, object, where=True, when=True):
+         """Slice off where/when encoding dims from the end of a vector."""
+         size = 0
+-        size += self.whereEncoding.nDim if where else 0
+-        size += self.whenEncoding.nDim if when else 0
++        size += self.nWhere if where else 0
++        size += self.nWhen if when else 0
+         if size == 0:
+             return object
+         return object[0:-size]
+@@ -8432,16 +8480,10 @@
+         self.nWhat = objectEncoding.nWhat
+         self.muxedSize = objectEncoding.muxedSize
+         whatEncoding   = WhatEncoding(inputShape, outputShape)
+-        # Period is config-derived (<wherePeriod>, default 8192), NOT nObjects
+-        # (2026-07-04 encoding pass; the seam below raise-to-fits with a warn).
+-        # <whereRungRatio> (2026-07-09 multi-rung pass): HF period =
+-        # wherePeriod / ratio (default 32 -> 256-byte fine rung at the default).
+-        whereEncoding  = WhereEncoding(
+-            int(TheXMLConfig.get("architecture.wherePeriod",
+-                                 _WHERE_PERIOD_DEFAULT)), _nWhere, _nWhen,
+-            rung_ratio=int(TheXMLConfig.get("architecture.whereRungRatio",
+-                                            _WHERE_RUNG_RATIO)))
+-        whenEncoding   = event_when_encoding(_nWhen)
++        # Standalone spaces have a local fixture ladder. A complete model
++        # installs its single registry-sized ladder after capacities are known.
++        whereEncoding = WhereEncoding(max(256, 2 * inputShape[0]), _nWhere, _nWhen)
++        whenEncoding = event_when_encoding(_nWhen)
+         self.subspace  = SubSpace(
+             nInputDim=self.nInputDim,
+             nOutputDim=self.nOutputDim,
+@@ -10924,8 +10966,12 @@
+             # embedding lookup, chunking).
+             what_buf, where_idx, when_idx, host_tokens = self._lex_batch(input)
+             self.subspace.what.setW(what_buf)
+-            self.subspace.where.setW(where_idx)
+-            self.subspace.when.setW(when_idx)
++            located = hasattr(self.subspace.whereEncoding, 'capacity')
++            self.subspace.where.setW(self.subspace.whereEncoding.encode(where_idx)
++                                    if located else where_idx)
++            when_idx = torch.zeros_like(when_idx) + self.subspace.whenEncoding.t
++            self.subspace.when.setW(self.subspace.whenEncoding.encode(when_idx)
++                                   if located else when_idx)
+             # R3-live (C): in analyse mode InputSpace is NOT the lexer -- it
+             # hands PartSpace the UNANALYZED, UNTRUNCATED surface (one
+             # whole-line token per row), and the meronymic analyzer (the
+@@ -10960,7 +11006,7 @@
+             positions = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+             self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
+         if self.nWhen > 0:
+-            timesteps = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
++            timesteps = torch.zeros((batch, nIdeas), dtype=torch.long, device=dev) + self.subspace.whenEncoding.t
+             self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
+         self.input = self.subspace.materialize()
+         self.subspace.normalize("input", target="what", normalize=True)
+@@ -11179,31 +11225,6 @@
+         else:
+             self.doc_spans = []
+             self.doc_sources = []
+-        # Raise-never-lower period seam -- ALL synthesis modes (2026-07-04:
+-        # was Embedding-only, but the radix path stamps byte offsets too and
+-        # would alias silently past the period).
+-        data = TheData
+-        if data.train_input and self.subspace.whereEncoding.nDim > 0:
+-            period = self.subspace.whereEncoding.maxVal
+-            if (isinstance(data.train_input, list) and data.train_input
+-                    and isinstance(data.train_input[0], str)):
+-                need = max(len(s.encode('utf-8'))
+-                           for s in data.train_input)
+-                maxP = max(period, need * 2)
+-            else:
+-                need = data.inputLength
+-                maxP = max(period, need)
+-            if need > period:
+-                # Overflow warn (2026-07-04): raise-to-fit, never silent.
+-                cfg = str((TheXMLConfig._sources or ["?"])[-1])
+-                warnings.warn(
+-                    f"PartSpace .where period overflow [config {cfg}]: "
+-                    f"input length {need} bytes exceeds the configured "
+-                    f"period {period}; raising the period to {maxP} -- "
+-                    f"increase <wherePeriod> to at least {need} to "
+-                    f"silence this.", RuntimeWarning)
+-            # set_period derives BOTH rung omegas (+ the div_term alias).
+-            self.subspace.whereEncoding.set_period(maxP)
+         # <chunking> was renamed <synthesis>; fail loudly on old configs.
+         try:
+             _legacy_chunking = TheXMLConfig.space(section, "chunking")
+@@ -11979,6 +12000,10 @@
+         # where / when come straight from the upstream buffer.
+         where_raw = upstream_vspace.materialize(mode="where")
+         when_raw = upstream_vspace.materialize(mode="when")
++        if where_raw is not None and where_raw.ndim == 3:
++            where_raw = self.subspace.whereEncoding.decode_index(where_raw)
++        if when_raw is not None and when_raw.ndim == 3:
++            when_raw = self.subspace.whenEncoding.decode_index(when_raw)
+         if self.nWhere > 0:
+             if where_raw is not None:
+                 where_indices = where_raw[:, :nIdeas].long()
+@@ -11990,8 +12015,7 @@
+             if when_raw is not None:
+                 when_indices = when_raw[:, :nIdeas].long()
+             else:
+-                when_indices = torch.arange(
+-                    nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
++                when_indices = torch.zeros((batch, nIdeas), device=dev, dtype=torch.long) + self.subspace.whenEncoding.t
+         else:
+             when_indices = None
+ 
+@@ -12047,9 +12071,14 @@
+             if w_idx and content_width <= w_idx[0] < muxed_width:
+                 offsets = part_offsets.to(
+                     device=event.device, dtype=torch.long)
+-                stamp = w_enc.encode(offsets.clamp(min=0).to(torch.float32))
++                registry = getattr(self, 'where_registry', None)
++                stamp = (registry.encode('parts', ids) if registry is not None else
++                         w_enc.encode(offsets.clamp(min=0)))
+                 stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)
+                 event[..., w_idx] = stamp
++        if self.subspace.nWhen:
++            event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(
++                self.subspace.whenEncoding.t).to(event)
+         return event
+ 
+     def synthesize_word_parts(self, part_ids, part_mask, part_offsets=None):
+@@ -12736,11 +12765,15 @@
+             _w_idx = [int(i) for i in _w_enc.resolve(muxed_width)]
+             # Only stamp when the band lies past the percept content columns.
+             if _w_idx and content_width <= _w_idx[0] < muxed_width:
+-                _stamp = _w_enc.encode(
+-                    word_offset_grid.clamp(min=0).to(torch.float32))
++                registry = getattr(self, 'where_registry', None)
++                _stamp = (registry.encode('parts', pid_grid) if registry is not None else
++                          _w_enc.encode(word_offset_grid.clamp(min=0)))
+                 _stamp = _stamp * (word_offset_grid >= 0).unsqueeze(-1).to(
+                     _stamp.dtype)
+                 what_event[..., _w_idx] = _stamp
++        if self.subspace.nWhen:
++            what_event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(
++                self.subspace.whenEncoding.t).to(what_event)
+         self.subspace.whereEncoding.p = 0
+         self.subspace.set_event(what_event)
+         # The percept ``.where`` belongs on ``subspace.where`` -- the SubSpace
+@@ -13096,13 +13129,17 @@
+         differ only in how the [B,nIdeas,*] word arrays are built."""
+         where_raw = upstream_vspace.materialize(mode="where")
+         when_raw = upstream_vspace.materialize(mode="when")
++        if where_raw is not None and where_raw.ndim == 3:
++            where_raw = self.subspace.whereEncoding.decode_index(where_raw)
++        if when_raw is not None and when_raw.ndim == 3:
++            when_raw = self.subspace.whenEncoding.decode_index(when_raw)
+         where_indices = (where_raw[:, :nIdeas].long()
+                          if (self.nWhere > 0 and where_raw is not None)
+                          else (torch.zeros(batch, nIdeas, dtype=torch.long, device=dev)
+                                if self.nWhere > 0 else None))
+         when_indices = (when_raw[:, :nIdeas].long()
+                         if (self.nWhen > 0 and when_raw is not None)
+-                        else (torch.arange(nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
++                        else (torch.zeros((batch, nIdeas), dtype=torch.long, device=dev) + self.subspace.whenEncoding.t
+                               if self.nWhen > 0 else None))
+ 
+         self.subspace.whereEncoding.p = 0
+@@ -14400,7 +14437,7 @@
+             assert where_enc.maxVal >= buf_size, (
+                 f"WhereEncoding periodicity ({where_enc.maxVal}) must be "
+                 f">= render buffer size ({buf_size}). Increase "
+-                f"<wherePeriod> to at least {buf_size}."
++                f"the construction-time input capacity to at least {buf_size}."
+             )
+         what = self.subspace.what
+         if hasattr(what, "reconstruct_to_buffer"):
+@@ -16196,6 +16233,8 @@
+                 perception.spans[int(batch)] = 0
+                 perception.where[int(batch)] = 0
+                 perception.when[int(batch)] = 0
++                if perception.when_band is not None:
++                    perception.when_band[int(batch)] = 0
+                 object.__setattr__(self, '_percept_field', perception)
+         for name in ('_refinement_field', '_refinement_both', '_refinement_raise_ready'):
+             value = getattr(self, name, None)
+@@ -18030,7 +18069,9 @@
+         when[..., 1] += 1
+         perception = read_percepts(percepts, extents, keys,
+             part_reader=PartSpace.part_memberships, native=native,
+-            dtype=self.similarity_codebook.getW().dtype, when=when)
++            dtype=self.similarity_codebook.getW().dtype, when=when,
++            registry=getattr(model, 'where_registry', None),
++            when_encoding=getattr(model, 'when_encoding', None))
+         object.__setattr__(self, '_percept_field', perception)
+         object.__setattr__(self, '_cs_field_where', perception.where)
+         object.__setattr__(self, '_cs_field_when', perception.when)
+@@ -19746,7 +19787,7 @@
+         word = self.interpret.lookup_word(word_parts, word_whole, form=key, reserve=3)
+         obj = self.interpret.forward(word, occurrence=occurrence)
+         alloc = _concept_alloc_of(self)
+-        meta = alloc.interpretations[word, 1][1]
++        meta = alloc.interpretations[word, self._concept_source_order(obj)][1]
+         triple = (word, obj, meta)
+         if key is not None:
+             alloc.word_obj_meta[key] = triple
+@@ -19942,7 +19983,7 @@
+         """
+         alloc = _concept_alloc_of(self)
+         candidates = tuple(cid for cid in self.word_concepts(form)
+-                           if int(alloc.placement[cid]) == int(order))
++                           if self._concept_source_order(cid) == int(order))
+         if previous is not None and int(previous) in candidates:
+             return int(previous)
+         return candidates[0] if len(candidates) == 1 else None
+--- a/bin/Understanding.py
++++ b/bin/Understanding.py
+@@ -81,8 +81,9 @@
+             raise ValueError("program reference orders must be nonnegative or -1, aligned to leaves")
+         for name in ('symbol_where', 'symbol_when'):
+             value = getattr(self, name)
+-            if value is not None and (not torch.is_tensor(value) or value.shape != (*ids.shape, 2)):
+-                raise ValueError('symbol occurrence brackets must align to program leaves')
++            if value is not None and (not torch.is_tensor(value) or value.shape != (*ids.shape, 4)
++                                      or not value.is_floating_point()):
++                raise ValueError('symbol occurrence bands must align to program leaves')
+         forms = self.lexical_forms
+         if forms is None:
+             forms = (None,) * int(self.rows.numel())
+--- a/bin/WhereRegistry.py
++++ b/bin/WhereRegistry.py
+@@ -23,12 +23,23 @@
+             end += width
+         self.slices = MappingProxyType(slices)
+         self.capacity = end
++        from Spaces import WhereEncoding
++        self.encoding = WhereEncoding(nWhere=4, nWhen=4).set_capacity(end)
++
++    def encode(self, name, indices, *, positions=None, capacity=None):
++        """Located percepts carry these bands; integers are decoded on demand."""
++        intervals = (self.intervals(name, indices) if positions is None else
++                     self.occurrences(name, indices, positions, capacity))
++        bands = self.encoding.encode(intervals[..., 0])
++        return torch.where((indices >= 0)[..., None], bands, 0.)
+ 
+     def __deepcopy__(self, memo):
++        from copy import deepcopy
+         copied = type(self)(((name, (end - start) //
+             (self.symbol_slots if name == 'symbols' else 1))
+             for name, (start, end) in self.slices.items()), symbol_slots=self.symbol_slots)
+         memo[id(self)] = copied
++        copied.encoding = deepcopy(self.encoding, memo)
+         return copied
+ 
+     def intervals(self, name, indices):
+@@ -95,4 +106,34 @@
+             basis.freeze_capacity('perceptual nVectors')
+     object.__setattr__(model, 'where_registry', registry)
+     object.__setattr__(model.symbolSpace, 'where_registry', registry)
++    # One owner; compatibility carriers refer to the same ladders even when
++    # their content-only layout has no muxed tail. Their nWhere/nWhen stays 0.
++    from Spaces import Space, SubSpace, WhenEncoding
++    model.where_encoding = registry.encoding
++    ltm_capacity = int(TheXMLConfig.space('SymbolSpace', 'ltmCapacity', default=1024) or 1024)
++    model.when_encoding = WhenEncoding(n_when=4).set_capacity(ltm_capacity)
++    for module in tuple(model.modules()):
++        if isinstance(module, Space):
++            sub = module.subspace
++            for name, enc in (('whereEncoding', model.where_encoding),
++                              ('whenEncoding', model.when_encoding)):
++                module._owned_encoders._modules.pop(name, None)
++                object.__setattr__(sub, name, enc)
++        if isinstance(module, SubSpace):
++            for name, enc in (('whereEncoding', model.where_encoding),
++                              ('whenEncoding', model.when_encoding)):
++                module._modules.pop(name, None)
++                object.__setattr__(module, name, enc)
++        if callable(getattr(module, '_when_encoding', None)):
++            object.__setattr__(module, '_shared_when_encoding', model.when_encoding)
++    # SymbolSubSpace is a nonregistered compatibility carrier.
++    for sub in (model.symbolSpace.subspace,):
++        object.__setattr__(sub, 'whereEncoding', model.where_encoding)
++        object.__setattr__(sub, 'whenEncoding', model.when_encoding)
++    object.__setattr__(model.perceptualSpace, 'where_registry', registry)
++    for space in model.wholeSpaces:
++        object.__setattr__(space, 'where_registry', registry)
++        if getattr(space, '_symbol_where', None) is not None:
++            rows = torch.arange(space._symbol_where.shape[0])
++            space._symbol_where = registry.encoding.encode(rows + space.subspace.what.where_offset)
+     return registry
+--- a/bin/architecture.py
++++ b/bin/architecture.py
+@@ -14,9 +14,11 @@
+ 
+ 2026-07-09 multi-rung pass: the band is (nWhere=4, nWhen=4) — `.when` is the
+ 4-dim 2-rung start ladder (WhenStartDurationEncoding; slots [-4..-1]) and
+-`.where` is now the SAME 2-rung ladder shape over the byte START
+-(WhereEncoding; slots [-8..-5]; LF = <wherePeriod> range, HF =
+-wherePeriod/<whereRungRatio> sub-byte resolution). The endpoint-sum bracket is
++`.where` uses the same 2-rung shape for registry addresses
++(WhereEncoding; slots [-8..-5]). One model-level ladder covers input positions,
++parts, wholes and symbol occurrences. Its periods derive from the total
++registry capacity; the shared `.when` ladder derives from LTM capacity.
++The endpoint-sum bracket is
+ retired from the muxed band (the analyzer's EndpointSumWhere keeps it).
+ 
+ The TWO principled exceptions stay ``(0, 0)``: there is no positional
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -69,26 +69,8 @@
+            sigma/codebook reads emit conceptual-width activations before CS;
+            there is no PS->WS edge or CS-owned coordinate lift. -->
+       <xs:element name="conceptBinding" type="conceptBindingEnum" minOccurs="0"/>
+-      <!-- wherePeriod (2026-07-04 encoding pass): the .where quadrature
+-           period in input BYTES. Default 8192 (twice the 4096 inputLength
+-           cap). Decoupled from architecture.nObjects (the retired implicit
+-           period, Sigma nVectors). The build seam keeps raise-to-fit for
+-           inputs longer than the period, warning once per build (never
+-           silent aliasing). -->
+-      <xs:element name="wherePeriod" type="xs:positiveInteger" minOccurs="0"/>
+-      <!-- whereRungRatio (2026-07-09 multi-rung pass): LF/HF period ratio of
+-           the .where 2-rung ladder. Default 32 (HF period = wherePeriod/32,
+-           256 bytes at the default, the fine period Gate-B measured exact
+-           starts at; LF keeps the full-period range). -->
+-      <xs:element name="whereRungRatio" type="xs:positiveInteger" minOccurs="0"/>
+-      <!-- whenPeriod (2026-07-04 encoding pass): the .when v2 LF horizon in
+-           clock ticks (the LTM event-addressing range). Default 1000000.
+-           The band is the SIMILARITY channel; absolute addressing rides the
+-           exact long-int clock (BasicModel.when_time), the Option-C hybrid. -->
+-      <xs:element name="whenPeriod" type="xs:positiveInteger" minOccurs="0"/>
+-      <!-- whenRungRatio: LF/HF period ratio of the .when v2 2-rung ladder.
+-           Default 32 (safe branch bound ~35 at the dense-support floor). -->
+-      <xs:element name="whenRungRatio" type="xs:positiveInteger" minOccurs="0"/>
++      <!-- Where/when ladder periods are derived from registry/LTM capacity.
++           They are not independent configuration knobs. -->
+       <!-- serial selects the per-word grammatical body. If omitted, code
+            derives it from symbolicOrder > 0 for legacy configs. New configs
+            should set it explicitly. -->
+--- a/test/test_compiled_word_chunk.py
++++ b/test/test_compiled_word_chunk.py
+@@ -319,7 +319,8 @@
+         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
+         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
+         detached_reverse=False, concept_rows=64, dimension=16,
+-        chooser_depth=None, training_overrides=None, architecture_overrides=None):
++        chooser_depth=None, training_overrides=None, architecture_overrides=None,
++        part_rows=64):
+     """Build the real aligned serial model with 16-coordinate events."""
+     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
+     root = tree.getroot()
+@@ -333,7 +334,7 @@
+     _set("./InputSpace/nDim", 16)
+     _set("./PartSpace/nInput", input_width)
+     _set("./PartSpace/nInputDim", 16)
+-    _set("./PartSpace/nVectors", 64)
++    _set("./PartSpace/nVectors", part_rows)
+     _set("./PartSpace/nDim", 16)
+     _set("./PartSpace/nOutputDim", 16)
+     _set("./ConceptualSpace/nInputDim", 16)
+--- a/test/test_item9b_corrections.py
++++ b/test/test_item9b_corrections.py
+@@ -0,0 +1,193 @@
++"""Alec's four September 26 corrections; no initialization-seed selection."""
++from functools import wraps
++
++import pytest
++import torch
++
++
++def test_default_interpret_reuses_existing_kind_without_minting():
++    from test_item9b_interpret import _operator
++    from Spaces import _concept_alloc_of
++    cs, interpret = _operator()
++    word = interpret.lookup_word([7], [], form='cat')
++    kind = interpret.forward(word, order=2)
++    before = dict(_concept_alloc_of(cs).placement)
++    assert interpret.forward(word) == kind
++    assert interpret.forward(word, order=1) == kind
++    assert dict(_concept_alloc_of(cs).placement) == before
++
++
++def test_default_interpret_reuses_a_witnessed_association():
++    from test_item9b_interpret import _operator
++    from Spaces import _concept_alloc_of
++    cs, interpret = _operator()
++    word = interpret.lookup_word([7], [], form='cat')
++    kind = cs.new_concept()
++    _concept_alloc_of(cs).reference_orders[kind] = 2
++    cs.bind_word_concept('cat', kind)
++    assert interpret.forward(word) == kind
++    assert interpret.reverse(kind) == word
++
++
++def test_context_pass_cannot_backpropagate_or_step(tmp_path, monkeypatch):
++    from ModeSchedule import ModeSchedule
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    model.mode_schedule = ModeSchedule('interleave:2')
++    model._last_primary_costs = {'input_reconstruction_reverse': torch.tensor(0.)}
++    calls = []
++    @wraps(model._run_batch_once)
++    def observe(*args, **kwargs):
++        calls.append((model.serial, kwargs['train'], kwargs['optimizer'],
++                      torch.is_grad_enabled()))
++        return None, 0
++    monkeypatch.setattr(model, '_run_batch_once', observe)
++    optimizer = object()
++    raw = model.inputSpace.prepInput(['the cat sat'])
++    model.runBatch(train=True, optimizer=optimizer, split='runtime',
++        batch_override=(raw, torch.empty(1, 0)),
++        schedule_context=('the cat sat', 'the cat flew'))
++    assert calls == [(False, False, None, False), (True, True, optimizer, True)]
++
++
++def test_model_owns_one_ladder_across_all_spaces(tmp_path):
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    spaces = (model.inputSpace, model.perceptualSpace,
++              *model.wholeSpaces, model.symbolSpace)
++    assert len({id(space.subspace.whereEncoding) for space in spaces}) == 1
++    assert len({id(space.subspace.whenEncoding) for space in spaces}) == 1
++    assert model.where_encoding.maxVal > model.where_registry.capacity
++    assert model.where_encoding.period_hf <= 256
++
++
++def test_large_registry_addresses_roundtrip_through_both_phases():
++    from WhereRegistry import WhereRegistry
++    registry = WhereRegistry([('input', 8192), ('parts', 400_000),
++                              ('wholes', 400_000), ('symbols', 2_000_000)],
++                             symbol_slots=256)
++    encoding = registry.encoding
++    addresses = torch.tensor([0, 8191, 8192, 2**24 + 1, 2**28 - 1,
++                              registry.capacity - 2, registry.capacity - 1])
++    bands = encoding.encode(addresses)
++    assert bands.shape == (7, 4)
++    assert bands.dtype == torch.float32
++    torch.testing.assert_close(encoding.decode_index(bands), addresses)
++    assert not torch.equal(bands[-1], bands[-2])
++
++
++def test_copy_preserves_the_single_registry_ladder():
++    import copy
++    from WhereRegistry import WhereRegistry
++    registry = WhereRegistry([('input', 32), ('parts', 512), ('symbols', 1024)])
++    ladder, copied = copy.deepcopy((registry.encoding, registry))
++    assert copied.encoding is ladder
++    assert ladder is not registry.encoding
++
++
++def test_content_only_encode_decode_preserves_all_coordinates(tmp_path):
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    for space in (model.conceptualSpace, model.outputSpace):
++        sub = space.subspace
++        assert sub.nWhere == sub.nWhen == 0
++        values = torch.arange(1., 2 * 3 * sub.nWhat + 1).reshape(2, 3, sub.nWhat)
++        torch.testing.assert_close(sub.encode(values.clone()), values)
++        decoded, where, when = sub.decode(values.clone())
++        torch.testing.assert_close(decoded, values)
++        assert where.count_nonzero() == when.count_nonzero() == 0
++
++
++def test_reset_clears_only_the_selected_fields_time_band(tmp_path):
++    from test_grounded_xor import grounded_model
++    model, _ = grounded_model(tmp_path)
++    cs = model._concept_owner()
++    cs.add_concept_feature(0, 'ps', 7, 1.)
++    spans = torch.tensor([[[0, 1]], [[0, 1]]])
++    cs.cs_read_memberships((torch.tensor([[7], [7]]), spans, None,
++                           torch.tensor([[65], [65]]), spans), spans)
++    before = cs._percept_field.when_band.clone()
++    cs._clear_percept_field(batch=0)
++    assert cs._percept_field.when_band[0].count_nonzero() == 0
++    torch.testing.assert_close(cs._percept_field.when_band[1], before[1])
++
++
++def test_compiled_byte_reconstruction_handles_lookahead_and_nul():
++    from types import SimpleNamespace
++    from Models import BasicModel
++    owner = SimpleNamespace(_BYTE_ASSIGNMENT_TAU=.1)
++    idea = torch.arange(1., 129.).reshape(2, 64).requires_grad_()
++    bank = torch.nn.functional.normalize(torch.arange(1., 2049.).reshape(2, 16, 64), dim=-1)
++    tokens = torch.arange(2 * 16 * 9).reshape(2, 16, 9) % 256
++    tokens[:, :, 7] = 0
++    valid = torch.ones_like(tokens, dtype=torch.bool)
++    target = tokens[:, :8, :8].clone()
++    target_mask = torch.ones_like(target, dtype=torch.bool)
++    def score(value):
++        return BasicModel._byte_word_cost(owner, value, torch.tensor(0), bank,
++            tokens, valid, target, target_mask, True)
++    expected = score(idea)
++    compiled = torch.compile(score, backend='inductor', fullgraph=True)
++    actual = compiled(idea)
++    torch.testing.assert_close(actual, expected)
++    torch.testing.assert_close(torch.autograd.grad(actual.sum(), idea)[0],
++                               torch.autograd.grad(expected.sum(), idea)[0])
++
++
++def test_native_program_captures_the_symbol_band_and_one_field_time(tmp_path):
++    from test_packed_reconstruction_parity import build_model
++    from What import What
++    model = build_model(tmp_path, word_capacity=8)
++    raw = model.inputSpace.prepInput(['the cat sat'])
++    with torch.no_grad():
++        model.runBatch(train=False, split='validation', batchSize=1,
++            batch_override=(raw, torch.empty(1, 0)),
++            questions=(What.present(0, split='validation'),))
++    program, = model._last_understanding.answer_program
++    assert program.symbol_where.shape == (*program.rows.shape, 4)
++    addresses = model.where_encoding.decode_index(program.symbol_where)
++    expected = model.where_registry.occurrences('symbols', 2 * program.rows,
++        torch.arange(len(program.rows)), 8)[..., 0]
++    torch.testing.assert_close(addresses, expected)
++    assert program.symbol_when.shape == program.symbol_where.shape
++    torch.testing.assert_close(program.symbol_when,
++        model.when_encoding.encode(model.when_time).expand_as(program.symbol_when))
++
++
++def test_native_percepts_encode_their_registry_rows_and_share_time(tmp_path):
++    from test_packed_reconstruction_parity import build_model
++    model = build_model(tmp_path, word_capacity=8)
++    parts = model.perceptualSpace
++    ids = torch.tensor([[1, 2, 3]])
++    offsets = torch.tensor([[0, 8, 16]])
++    model._advance_when_time()
++    event = parts._radix_part_events(ids, offsets)
++    bands = event[..., parts._radix_where_indices]
++    torch.testing.assert_close(model.where_encoding.decode_index(bands),
++        ids + model.where_registry.slices['parts'][0])
++    torch.testing.assert_close(event[..., -4:],
++        model.when_encoding.encode(model.when_time).expand_as(event[..., -4:]))
++    first_time = event[..., -4:].clone()
++    model._advance_when_time()
++    later = parts._radix_part_events(ids, offsets)
++    assert not torch.equal(later[..., -4:], first_time)
++    torch.testing.assert_close(model.when_encoding.decode_index(later[..., -4:]),
++        torch.full_like(ids, 2))
++
++
++def test_percept_group_keeps_each_members_band_and_one_field_time(tmp_path):
++    from test_grounded_xor import grounded_model
++    model, _ = grounded_model(tmp_path)
++    cs = model._concept_owner()
++    cs.add_concept_feature(0, 'ps', 7, 1.)
++    spans = torch.tensor([[[0, 1]]])
++    cs.cs_read_memberships((torch.tensor([[7]]), spans, None, torch.tensor([[65]]), spans), spans)
++    field = cs._percept_field
++    assert field.percept_where.shape[-1] == field.when_band.shape[-1] == 4
++    for key, bands in zip(field.keys, field.percept_where):
++        role, group = key
++        group = group if isinstance(group, tuple) else (group,)
++        expected = torch.tensor(group) + model.where_registry.slices['parts' if role == 'ps' else 'wholes'][0]
++        torch.testing.assert_close(model.where_encoding.decode_index(bands[:len(group)]), expected)
++    torch.testing.assert_close(field.when_band,
++        model.when_encoding.encode(model.when_time).expand_as(field.when_band))
+--- a/test/test_item9b_interpret.py
++++ b/test/test_item9b_interpret.py
+@@ -35,10 +35,13 @@
+     cs, interpret = _operator()
+     word = interpret.lookup_word([7], [1], form='cat')
+     particular = interpret.forward(word, order=1)
+-    kind = interpret.forward(word, order=2)
++    kind = cs.new_concept()
++    _concept_alloc_of(cs).reference_orders[kind] = 2
++    cs.bind_word_concept('cat', kind)
+     assert particular != kind
+     assert cs._concept_source_order(particular) == 1
+     assert cs._concept_source_order(kind) == 2
++    assert interpret.forward(word, order=2) == kind
+     assert interpret.reverse(particular) == interpret.reverse(kind) == word
+     assert interpret.forward(word, order=1) == particular
+     assert interpret.forward(word, order=2) == kind
+@@ -148,6 +151,12 @@
+     words = [cs.interpret.lookup_word([part], [], form=form)
+              for part, form in ((7, 'cats'), (8, 'animals'))]
+     objects = [cs.interpret.forward(word, order=1) for word in words]
++    # Grammar resolves existing associations; it cannot mint a second object
++    # merely because the first has a different order.
++    for form in ('cats', 'animals'):
++        kind = cs.new_concept()
++        _concept_alloc_of(cs).reference_orders[kind] = 2
++        cs.bind_word_concept(form, kind)
+     leaves = torch.stack([registry._payload(('sym', obj)) for obj in objects])
+     entry = make_program(values=leaves, refs=tuple(('sym', obj) for obj in objects))
+     rules = list(language._compose_binary_rules)
+--- a/test/test_item9b_schedule.py
++++ b/test/test_item9b_schedule.py
+@@ -53,10 +53,8 @@
+         monkeypatch.setattr(model, '_backward_training_loss', capture_backward)
+     texts = ('the wug sat', 'the wug flew')
+     if training:
+-        # Keep the original learning probe's prerequisite: its first native
+-        # gradient read followed these two serial training observations.
+-        # The schedule now puts context first, so admit/train that inventory
+-        # explicitly before switching modes. The nonzero assertion stays.
++        # Preserve the same two admission/training observations. Alec's
++        # September 26 correction now requires NO context backward call.
+         for step, text in enumerate(texts):
+             raw = model.inputSpace.prepInput([text])
+             model.runBatch(train=True, optimizer=optimizer, batchNum=step,
+@@ -75,7 +73,7 @@
+                            schedule_context=texts if step == 0 else None)
+         assert model.mode_schedule.completed_parallel == 1
+     if training:
+-        assert parallel_gradients == [True]
++        assert parallel_gradients == []
+     assert model._training_step_count == (4 if training else 0)
+     assert model.serial
+     assert model._concept_owner() is owner
+--- a/test/test_surface_grammar.py
++++ b/test/test_surface_grammar.py
+@@ -102,7 +102,7 @@
+     training = curriculum["train"]
+     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8",
+                                   batch_size=64, concept_rows=2048, dimension=64,
+-                                  chooser_depth=2)
++                                  chooser_depth=2, part_rows=4096)
+     model._tensor_peer_while_eager = True
+     model._chart_compose_per_word = lambda: None
+     model.reconstruct_in_loop = False
+--- a/test/test_when_grammar_rules.py
++++ b/test/test_when_grammar_rules.py
+@@ -124,14 +124,10 @@
+ 
+ 
+ class TestMentalModelWhenEnabled(unittest.TestCase):
+-    """Phase 6 (Task 6.1): MentalModel.xml ships ``.when`` ON. Its Input /
+-    Perceptual subspaces carry a 2-dim WhenRangeEncoding (nWhen == nWhere == 2),
+-    while Conceptual / Symbolic / Output keep it disabled (nWhen == 0). The
+-    plan's "turn it on" flip was already committed (nWhen already matched
+-    nWhere in every space), so this is a guard against a silent later disable
+-    or a hardcoded-width drift, not a new switch. A finite ``.when`` loss on a
+-    real forward is already exercised by test_basicmodel.py's nWhen=2 model
+-    suite; here we lock the structural enablement and the encoding type.
++    """Located events use the one global four-channel time ladder.
++
++    Content-only layouts retain zero band width while referring to the same
++    encoder. Input and perceptual events must still carry the complete band.
+     """
+ 
+     def test_when_enabled_at_width_four_with_start_ladder(self):
+@@ -155,8 +151,8 @@
+             we = mod.whenEncoding
+             # 2026-07-04 encoding pass: the v2 start ladder is in use everywhere.
+             self.assertEqual(type(we).__name__, "WhenStartDurationEncoding", name)
+-            # nWhen and the encoding width agree (no hardcoded-width drift).
+-            self.assertEqual(mod.nWhen, we.nDim, f"{name}: nWhen != encoding nDim")
++            self.assertIs(we, model.when_encoding, name)
++            self.assertIn(mod.nWhen, (0, we.nDim), name)
+             if mod.nWhen == 4:
+                 enabled.append(name)
+         # .when is genuinely ON at width 4 for the input + perceptual subspaces.
+--- a/test/test_where_encoding_period.py
++++ b/test/test_where_encoding_period.py
+@@ -1,19 +1,10 @@
+-"""Task 1 of the `.where`/`.when` encoding pass (2026-07-04 plan):
+-`.where` period decoupled from ``architecture.nObjects``.
+-
+-The period becomes config-derived: ``<architecture><wherePeriod>`` with
+-default 8192 (the input/sentence byte cap), NOT $\\Sigma$ nVectors. The
+-build seam keeps raise-to-fit semantics, but any raise past the
+-configured period WARNS ONCE (config name, length, period, "increase
+-<wherePeriod>") -- never silent aliasing. The runtime guards (the
+-``forward`` counter-overflow assert and the ``reconstruct_to_buffer``
+-periodicity assert) still hold.
+-"""
++"""The model derives one address ladder from its complete registry allocation."""
+ 
+ import os
+ import re
+ import sys
+ import warnings
++from pathlib import Path
+ 
+ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+@@ -66,44 +57,31 @@
+     return model.perceptualSpace.subspace.whereEncoding
+ 
+ 
+-def test_where_period_tag_sets_maxval(tmp_path):
+-    """(a) <wherePeriod>8192</wherePeriod> -> maxVal == 8192 regardless of
+-    nObjects (the fixture's nObjects == 33 would have been the old value)."""
+-    model = _build(_write_config(tmp_path, where_period=8192))
++def test_where_period_is_derived_from_the_registry():
++    model = _build(_FIXTURE)
+     enc = _where_enc(model)
+-    assert enc.maxVal == 8192, enc.maxVal
+-    from util import TheXMLConfig
+-    n_objects = int(TheXMLConfig.get("architecture.nObjects"))
+-    assert enc.maxVal != n_objects, "period must not track nObjects"
++    assert enc is model.where_encoding
++    assert enc.maxVal > model.where_registry.capacity
++    assert enc.period_hf <= 256
++    for name, (start, end) in model.where_registry.slices.items():
++        if end > start:
++            addresses = torch.tensor([start, end - 1])
++            torch.testing.assert_close(enc.decode_index(enc.encode(addresses)), addresses)
+ 
+ 
+-def test_where_period_default_8192():
+-    """(b) absent tag -> default 8192 (the input/sentence cap), not
+-    nObjects; xor's 11-byte inputs never trigger the raise."""
++def test_input_and_inventory_share_the_same_encoding():
+     model = _build(_FIXTURE)
+-    assert _where_enc(model).maxVal == _WHERE_PERIOD_DEFAULT
++    spaces = (model.inputSpace, model.perceptualSpace, *model.wholeSpaces, model.symbolSpace)
++    assert all(space.subspace.whereEncoding is model.where_encoding for space in spaces)
++    assert all(space.subspace.whenEncoding is model.when_encoding for space in spaces)
+ 
+ 
+-def test_where_period_overflow_warns_once_and_raises_to_fit(tmp_path):
+-    """(c) input longer than the configured period -> exactly ONE
+-    RuntimeWarning naming config, length, period, and the remedy -- and the
+-    period is raised to fit (never silent aliasing)."""
+-    cfg = _write_config(tmp_path, where_period=4)
+-    with warnings.catch_warnings(record=True) as caught:
+-        warnings.simplefilter("always")
+-        model = _build(cfg)
+-    hits = [w for w in caught
+-            if "wherePeriod" in str(w.message)
+-            and issubclass(w.category, RuntimeWarning)]
+-    assert len(hits) == 1, [str(w.message) for w in caught]
+-    msg = str(hits[0].message)
+-    assert os.path.basename(cfg) in msg or cfg in msg, msg
+-    # xor's longest train input measures 12 bytes (dataset truth).
+-    assert re.search(r"\b12\b", msg), f"input byte length missing: {msg}"
+-    assert re.search(r"\b4\b", msg), f"configured period missing: {msg}"
+-    assert "increase <wherePeriod>" in msg, msg
+-    # Raise-to-fit: the seam's existing 2x headroom for string inputs.
+-    assert _where_enc(model).maxVal == 24, _where_enc(model).maxVal
++def test_retired_period_knob_is_rejected(tmp_path):
++    # A separately configured period could silently alias the registry. The
++    # schema rejects that old configuration rather than accepting a no-op.
++    from util import XMLConfig
++    with pytest.raises(ValueError, match='wherePeriod'):
++        XMLConfig._validate_against_schema(_write_config(tmp_path, where_period=4))
+ 
+ 
+ def test_forward_overflow_assert_holds():
+@@ -127,7 +105,7 @@
+         model.runEpoch(batchSize=4, split="test")
+     psp = model.perceptualSpace
+     over = _where_enc(model).maxVal + 1
+-    with pytest.raises(AssertionError, match="wherePeriod"):
++    with pytest.raises(AssertionError, match="construction-time input capacity"):
+         psp.reconstruct_to_buffer(buf_size=over)
+ 
+ 

@@ -402,8 +402,7 @@ class TestPersistenceRoundtrip(unittest.TestCase):
         # extend the original).
         cb2 = ss2.subspace.what
         cb1 = ws.subspace.what
-        if cb2.nVectors < cb1.nVectors:
-            cb2.grow_to(int(cb1.nVectors))
+        assert cb2.nVectors == cb1.nVectors
         # Restore.
         ss2.load_vocab_extras(extras)
         # taxonomy / taxonomy_parent / meta_pair_to_idx must match.

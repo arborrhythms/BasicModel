@@ -36,6 +36,7 @@ def _cs(n_vectors=16):
     cs = ConceptualSpace(
         [n_slots, _D], [n_vectors, _D], [n_slots, _D])
     object.__setattr__(cs, "_concept_binding", "aligned")
+    object.__setattr__(cs, "_serial", True)
     return cs
 
 
@@ -77,8 +78,8 @@ def test_explicit_word_triple_capacity_failure_is_atomic():
     before = _allocator_snapshot(cs)
 
     with pytest.raises(
-            RuntimeError, match="word/object/META triple.*No concept"):
-        cs.create_word_object_meta([10, 11], (0,), key="unseated")
+            RuntimeError, match="interpreted word.*No concept"):
+        cs.interpret_word([10, 11], (0,), key="unseated")
 
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
 
@@ -96,27 +97,25 @@ def test_explicit_chain_capacity_failure_is_atomic():
 
 def test_automatic_capacity_mode_reuses_known_identity_without_recycling():
     cs = _cs(8)
-    known = cs.create_word_object_meta([10], (0,), key="known")
+    known = cs.interpret_word([10], (0,), key="known")
     fillers = [cs.new_concept() for _ in range(4)]  # ids 4..7; inventory full
     cs.retire_concept(fillers[-1])             # retirement does not free an id
 
-    reused = cs._automatic_word_object_meta(
+    reused = cs.interpret_word(
         [10, 11], (0,), key="known")
     assert reused == known
     assert set(cs.concept_parts(known[0])) == {10, 11}
 
     before = _allocator_snapshot(cs)
-    assert cs._automatic_word_object_meta(
-        [20], (0,), key="unseen") is None
+    with pytest.raises(RuntimeError, match="No concept was minted"):
+        cs.interpret_word([20], (0,), key="unseen")
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
 
     stats = cs.concept_admission_stats()
-    assert stats["lookup_only"] is True
     assert stats["remaining"] == 0
-    assert stats["dropped"]["word/object/META"] == 1
     assert fillers[-1] in cs._concept_allocator.retired
     with pytest.raises(RuntimeError, match="No concept was minted"):
-        cs.create_word_object_meta([20], (0,), key="explicit-unseen")
+        cs.interpret_word([20], (0,), key="explicit-unseen")
 
 
 def test_serial_property_autobind_does_not_persist_sentence_chain():
@@ -150,17 +149,17 @@ def test_rejected_word_does_not_consume_location_fallback_rows(remaining):
     before = _allocator_snapshot(cs)
     spans = torch.tensor([[[0, 2]]])
 
-    cs._autobind_property_concepts(
-        torch.tensor([[10, 11]]), torch.randn(1, 2, _D),
-        torch.tensor([[0, 0]]), [["new"]], [["new"]],
-        percept_where=torch.tensor([[0, 1]]), percept_when=None,
-        tile_spans=None, percept_store=None, ws=_property_ws(spans))
+    with pytest.raises(RuntimeError, match="No concept was minted"):
+        cs._autobind_property_concepts(
+            torch.tensor([[10, 11]]), torch.randn(1, 2, _D),
+            torch.tensor([[0, 0]]), [["new"]], [["new"]],
+            percept_where=torch.tensor([[0, 1]]), percept_when=None,
+            tile_spans=None, percept_store=None, ws=_property_ws(spans))
 
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
     assert alloc.word_obj_meta.get("new") is None
     stats = cs.concept_admission_stats()
     assert stats["remaining"] == remaining
-    assert stats["dropped"]["word/object/META"] == 1
     assert "location" not in stats["dropped"]
 
 
@@ -173,16 +172,16 @@ def test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span():
     before = _allocator_snapshot(cs)
     ws = _property_ws(torch.tensor([[[0, 3], [3, 4]]]))
 
-    cs._autobind_property_concepts(
-        torch.tensor([[10, 11, 12, 13]]), torch.randn(1, 4, _D),
-        torch.tensor([[0, 0, 0, 0]]), [["abc1"]], [["abc1"]],
-        percept_where=torch.tensor([[0, 1, 2, 3]]), percept_when=None,
-        # Each constituent carries the complete enclosing word tile.
-        tile_spans=[[(0, 4), (0, 4), (0, 4), (0, 4)]],
-        percept_store=None, ws=ws)
+    with pytest.raises(RuntimeError, match="No concept was minted"):
+        cs._autobind_property_concepts(
+            torch.tensor([[10, 11, 12, 13]]), torch.randn(1, 4, _D),
+            torch.tensor([[0, 0, 0, 0]]), [["abc1"]], [["abc1"]],
+            percept_where=torch.tensor([[0, 1, 2, 3]]), percept_when=None,
+            # Each constituent carries the complete enclosing word tile.
+            tile_spans=[[(0, 4), (0, 4), (0, 4), (0, 4)]],
+            percept_store=None, ws=ws)
 
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
     stats = cs.concept_admission_stats()
     assert stats["remaining"] == 1
-    assert stats["dropped"]["word/object/META"] == 1
     assert "location" not in stats["dropped"]

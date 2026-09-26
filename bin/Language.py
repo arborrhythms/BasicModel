@@ -45,6 +45,7 @@ from collections import namedtuple as _namedtuple
 # IsEqualLayer, PartLayer, QueryLayer) physically live in this module
 # below, after the Grammar singleton.
 from Layers import GrammarLayer
+from Interpret import InterpretLayer
 from Layers import EqualLayer
 # true/false/swap/copy/area/luminosity/isaPart were parked in bin/Legacy.py
 # in the 2026-07-17 cleanup (documented-dormant ops, not in this algebra).
@@ -3902,6 +3903,8 @@ class _WhenOpMixin:
     _WHEN_WIDTH = 4
     def _when_encoding(self):
         from Spaces import event_when_encoding
+        if getattr(self, '_shared_when_encoding', None) is not None:
+            return self._shared_when_encoding
         return event_when_encoding(self._WHEN_WIDTH)
     def _split_when(self, x):
         w = self._WHEN_WIDTH
@@ -5084,6 +5087,7 @@ def isa_part_op(child, parent, sigma=None):
 # now live above in this module, the remaining ones (Equal/True/False/
 # Swap/Copy/Area/Luminosity/IsaPart) are imported at the top from Layers.
 GRAMMAR_LAYER_CLASSES = {
+    'interpret':    InterpretLayer,
     'not':          NotLayer,
     'non':          NonLayer,
     'intersection': IntersectionLayer,
@@ -10171,13 +10175,25 @@ class ReverseConstructionChooser(nn.Module):
             return word_mask.to(device=device, dtype=torch.bool)
         return (leaves.detach().abs().sum(dim=-1) > 0).to(device=device)
 
-    def loss(self, S, trace, *, surface_weight=1.0):
+    @staticmethod
+    def _surface_error(pred, target, nWhen):
+        """Content and position credit; the field time is not a word target."""
+        width = min(int(pred.shape[-1]), int(target.shape[-1]))
+        n_when = int(nWhen)
+        if not 0 <= n_when < width:
+            raise ValueError('word reconstruction requires content before its time band')
+        stop = width - n_when
+        return .25 * (torch.tanh(pred[..., :stop])
+                      - torch.tanh(target[..., :stop])).square().mean(dim=-1)
+
+    def loss(self, S, trace, *, surface_weight=1.0, nWhen=0):
         """Return ``(total, components)`` with no gradient into ``S``.
 
         Kind supervision includes structurally relevant inactive slots so the
         student learns when a derivation ends.  Rule CE is applied only where
         forward committed a unary/binary rule.  Surface reconstruction uses a
-        tanh-bounded MSE against exact detached leaves.
+        tanh-bounded MSE against exact detached leaves, excluding the trailing
+        ``nWhen`` field-time dimensions supplied by the model's input layout.
         """
         h = self._hidden(S)
         leaves = trace.leaves() if trace is not None else None
@@ -10243,11 +10259,8 @@ class ReverseConstructionChooser(nn.Module):
         pred = self.leaf_decoder(self._conform_idea(S))[:, :word_count, :]
         target = leaves[:, :word_count, :].detach().to(
             device=pred.device, dtype=pred.dtype)
-        width = min(int(pred.shape[-1]), int(target.shape[-1]))
-        pred = torch.tanh(pred[..., :width])
-        target = torch.tanh(target[..., :width])
         word_f = word_valid.to(pred.dtype)
-        surface_each = 0.25 * (pred - target).square().mean(dim=-1)
+        surface_each = self._surface_error(pred, target, nWhen)
         surface_loss = ((surface_each * word_f).sum()
                         / word_f.sum().clamp_min(1.0))
         total = trace_loss + float(surface_weight) * surface_loss
@@ -10261,7 +10274,7 @@ class ReverseConstructionChooser(nn.Module):
             self, sentence_roots, trace, *,
             word_positions, sentence_end_for_word=None, sentence_ids=None,
             sentence_end_mask,
-            surface_weight=1.0):
+            surface_weight=1.0, nWhen=0):
         """Vectorized detached reconstruction loss for packed sentences.
 
         ``sentence_roots`` is a compact chronological ``[B,S,D]`` FIFO.
@@ -10271,6 +10284,7 @@ class ReverseConstructionChooser(nn.Module):
         The shared LeafDecoderHead is evaluated only once per real packed word
         (using its existing trunk/slot/output parameters), rather than
         expanding every sentence to the full W=512 ceiling.
+        Surface credit excludes the trailing ``nWhen`` field-time dimensions.
         """
         leaves = trace.leaves() if trace is not None else None
         if (trace is None or not torch.is_tensor(sentence_roots)
@@ -10324,11 +10338,8 @@ class ReverseConstructionChooser(nn.Module):
         pred = self.leaf_decoder.out(torch.tanh(leaf_hidden))
         target = leaves.detach().to(
             device=pred.device, dtype=pred.dtype)
-        leaf_width = min(int(pred.shape[-1]), int(target.shape[-1]))
-        pred = torch.tanh(pred[..., :leaf_width])
-        target = torch.tanh(target[..., :leaf_width])
         word_f = word_valid.to(pred.dtype)
-        surface_each = 0.25 * (pred - target).square().mean(dim=-1)
+        surface_each = self._surface_error(pred, target, nWhen)
         surface_loss = (
             (surface_each * word_f).sum()
             / word_f.sum().clamp_min(1.0))
@@ -11984,7 +11995,7 @@ class SymbolSubSpace(SubSpace):
           order 0 -> ``[part, whole]``      : ``relate(part, whole)`` -- one
                      part-percept tied to one whole-percept (constituents carry
                      ``.where`` / ``.when``).
-          order 1 -> ``[object isa word]``  : ``create_word_object_meta(word_parts,
+          order 1 -> ``[object isa word]``  : ``interpret.forward(word)`` after lookup of ``word_parts,
                      word_whole, key)`` -> ``(A=word, B=object, C=meta)``; the
                      constituents' ``.where`` / ``.when`` = 0 (abstract).
           order 2 -> higher-order object    : ``synthesize_higher_order(parts)`` --
@@ -12009,7 +12020,7 @@ class SymbolSubSpace(SubSpace):
         if order == 1:
             if word_parts is None or word_whole is None:
                 return None
-            return cs.create_word_object_meta(word_parts, word_whole, key=key)
+            return cs.interpret_word(word_parts, word_whole, key=key)
         if order == 2:
             if not parts:
                 return None
@@ -13757,7 +13768,8 @@ class SymbolSubSpace(SubSpace):
             if arity not in (1, 2):
                 continue
             rule_name = rule.method_name
-            if not rule_name:
+            if not rule_name or rule_name == 'interpret':
+                # The word transaction always runs interpret before composition.
                 continue
             layer = self._resolve_rule_layer(
                 space_role, _dispatch_method_name_for_rule(rule))
@@ -14099,6 +14111,8 @@ class SymbolSubSpace(SubSpace):
             if fold is not None:
                 builtin_layers['pi'] = fold
                 builtin_layers['sigma'] = fold  # legacy alias
+            if getattr(self, 'conceptualSpace', None) is not None:
+                builtin_layers['interpret'] = self.conceptualSpace.interpret
             negation = getattr(space, 'propositional_negation', None)
             if negation is not None:
                 builtin_layers['not'] = negation
@@ -14965,7 +14979,8 @@ class LanguageSpace(nn.Module):
         # only the learned walk chooser is gated by outputInLoop.
         for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
             arity = len(str(rule.lhs).split(','))
-            if arity not in catalog or not rule.method_name:
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
                 continue
             identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
             if default_only:
@@ -15161,7 +15176,8 @@ class LanguageSpace(nn.Module):
 
         Operator-role metadata supplies the order, never a token list or a
         perceptual depth. Inner reference phrases retain their chosen order.
-        Reads only: absent/ambiguous associations stay unknown.
+        Existing associations are resolved first; an unassociated word can
+        acquire testimony through interpret. Ambiguous associations stay unknown.
         """
         refs = concept_ids.clone()
         orders = refs.new_full(refs.shape, -1)
@@ -15191,9 +15207,14 @@ class LanguageSpace(nn.Module):
             surface = owner.word_surface_for_row(int(word_rows[leaf]))
             if surface is None or not owner.word_concepts(surface):
                 continue
+            word_id = owner.concept_id_at_row(int(word_rows[leaf]))
             cid = owner.resolve_word_concept(surface, order=order, previous=int(refs[leaf]))
+            associated = [identity for identity in owner.word_concepts(surface)
+                          if owner._concept_source_order(identity) == order]
+            if cid is None and not associated and word_id is not None and order in (1, 2):
+                cid = owner.interpret.forward(word_id, order=order)
             refs[leaf] = -1 if cid is None else cid
-            orders[leaf] = order
+            orders[leaf] = order if cid is None else owner._concept_source_order(cid)
         return refs, orders
 
     def program_meaning(self, entry, registry):
@@ -16515,6 +16536,8 @@ class SymbolSpace(Space):
         object.__setattr__(sub, "_owner_space", self)
         if source is not None and not isinstance(source, SubSpaceView):
             sub.copy_context(source)
+        object.__setattr__(sub, 'whereEncoding', self.subspace.whereEncoding)
+        object.__setattr__(sub, 'whenEncoding', self.subspace.whenEncoding)
         sub.commit_event(self, payload)
         if prior_symbolic is not None:
             prior = (prior_symbolic.materialize(mode="event")
@@ -16596,7 +16619,20 @@ class SymbolSpace(Space):
                 # and 2*cid+1. Rebinding a slot cannot rename a symbol.
                 addresses = 2 * ids[..., None] + torch.arange(2, device=ids.device)
                 object.__setattr__(leg, '_symbol_indices', addresses)
-            for name in ('position_evidence', 'position_spans', 'extents', 'ids', 'inventory_rows'):
+                registry = getattr(self, 'where_registry', None)
+                if registry is not None:
+                    rows = concept_sub._concept_inventory_rows
+                    locations = 2 * rows[..., None] + torch.arange(2, device=rows.device)
+                    band = registry.encode('symbols', locations)
+                    object.__setattr__(leg, '_symbol_where', band)
+                    when = self.subspace.whenEncoding.encode(self.subspace.whenEncoding.t)
+                    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                    # The SS carrier owns its bands; concept codes stay opaque.
+                    # Broadcast the same identity addresses over batch/readings.
+                    if band.ndim == 3:
+                        leg.set_where(band.flatten(0, 1)[None].expand(symbol_event.shape[0], -1, -1))
+                        leg.set_when(when.expand(symbol_event.shape[0], band.numel() // 4, 4))
+            for name in ('where', 'when', 'ids', 'inventory_rows'):
                 object.__setattr__(leg, '_concept_' + name,
                                    getattr(concept_sub, '_concept_' + name, None))
             return leg

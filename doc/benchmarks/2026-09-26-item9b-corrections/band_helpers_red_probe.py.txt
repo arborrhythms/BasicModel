@@ -1,0 +1,15 @@
+"""Original red probe; now covered in test/test_item9b_corrections.py."""
+import torch
+
+
+def test_content_only_encode_decode_preserves_all_coordinates(tmp_path):
+    from test_packed_reconstruction_parity import build_model
+    model = build_model(tmp_path, word_capacity=8)
+    for space in (model.conceptualSpace, model.outputSpace):
+        sub = space.subspace
+        assert sub.nWhere == sub.nWhen == 0
+        values = torch.arange(1., 2 * 3 * sub.nWhat + 1).reshape(2, 3, sub.nWhat)
+        torch.testing.assert_close(sub.encode(values.clone()), values)
+        decoded, where, when = sub.decode(values.clone())
+        torch.testing.assert_close(decoded, values)
+        assert where.count_nonzero() == when.count_nonzero() == 0

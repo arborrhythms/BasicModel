@@ -58,13 +58,13 @@ def test_reconstruction_without_owned_evidence_cannot_read_the_latest_field(monk
     model.End()
 
 
-def test_native_understanding_retains_field_evidence_not_percept_events():
+def test_native_understanding_retains_field_and_native_percept_evidence():
     model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
     understanding = model.understand(_bytes(['01']))
     assert set(understanding.reconstruction_carriers) == {'field', 'ir_mask_positions'}
     field = understanding.reconstruction_carriers['field']
     assert field.concept_ids.dtype == torch.long
-    assert field.position_evidence.shape[-1] == 2
+    assert field.percepts.events.shape[-1] == 2
     assert not hasattr(field, 'event')
     model.End()
 
@@ -122,7 +122,8 @@ def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, mo
     assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))
                for r, c in store.conjunctive._index)
     assert not any(r == output for r, _ in store.conjunctive._index)
-    assert all(len(brackets) > 0 for brackets in store.conjunctive.locations.values())
+    assert not hasattr(store.conjunctive, "locations")
+    assert all(any(r == row and (col // 2) % 2 == 0 for r, col in store.features._index) for row in cases)
     x = _bytes(['00', '01', '10', '11'])
     target = torch.tensor([0., 1., 1., 0.])
     optimizer = torch.optim.Adam([store.values], lr=.03)
@@ -142,15 +143,14 @@ def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, mo
     prediction = understanding.execution[2][:, 0, 0]
     assert initial == .5
     torch.testing.assert_close(prediction, target, atol=1e-6, rtol=0)
-    torch.testing.assert_close(cs._cs_extents, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
+    torch.testing.assert_close(cs._cs_field_where, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
     assert len([weight for _, weight in cs.concept_weights(output) if weight > 0]) == 2
     reverse, _ = model.reverseReconstruct(understanding)
     assert model._decode_reconstructed_inputs(reverse, ['00', '01', '10', '11']) == ['00', '01', '10', '11']
     field = understanding.reconstruction_carriers['field']
     # Zero forward evidence cannot recover bytes from perceptual context or
     # the execution adapter. Those products remain present in this record.
-    blank = replace(field, evidence=torch.zeros_like(field.evidence),
-                    position_evidence=torch.zeros_like(field.position_evidence))
+    blank = replace(field, evidence=torch.zeros_like(field.evidence))
     unknown = replace(understanding, reconstruction_carriers={'field': blank})
     absent, _ = model.reverseReconstruct(unknown)
     assert absent.count_nonzero() == 0
@@ -158,8 +158,8 @@ def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, mo
     model.End()
     model.forward(_bytes(['AAAA', 'Z', '222222', '!!!']))
     cs._cs_field_rows = torch.full_like(cs._cs_field_rows, -1)
-    cs._cs_feature_memberships = torch.full_like(cs._cs_feature_memberships, float('nan'))
-    cs._cs_position_spans.zero_()
+    cs._percept_field.events.fill_(float('nan'))
+    cs._percept_field.spans.zero_()
     def forbidden(*args, **kwargs):
         raise AssertionError('native inverse read a percept event or code neighbour')
     for owner in model.conceptualSpaces:
@@ -179,7 +179,10 @@ def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, mo
 
 def test_contained_ordered_group_reconstructs_at_its_extent():
     model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
-    teach_concept_lessons(model)
+    # This probe exercises an ordered *unfused* group. The XOR curriculum
+    # now teaches fused parts, so seed only the atomic native percepts here.
+    model.perceptualSpace.percept_store.promotion_threshold = 100000
+    model.perceptualSpace.percept_store.ensure_atomic_bytes([b'0', b'1'])
     texts = ['00', '01', '10', '11']
     cs = model.conceptualSpaces[0]
     radix = model.perceptualSpace.percept_store

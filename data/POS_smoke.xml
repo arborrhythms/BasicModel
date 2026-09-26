@@ -108,7 +108,7 @@
   <PartSpace>
     <nOutput>8</nOutput>
     <nDim>20</nDim>
-    <nVectors>128</nVectors>
+    <nVectors>256</nVectors>
   </PartSpace>
 
   <ConceptualSpace>

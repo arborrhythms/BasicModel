@@ -33,7 +33,7 @@ def test_unrelated_memberships_stay_exactly_zero_at_every_scope():
         native, extents = binary_features(cs, torch.full((1, length), 65))
         actual = cs.cs_read_memberships(native, extents)
         assert actual.count_nonzero() == 0
-        assert cs._cs_position_evidence.count_nonzero() == 0
+        assert cs._percept_field.events.count_nonzero() == 0
 
 
 def test_parameter_getter_does_not_offer_new_parts():
@@ -63,12 +63,12 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     # The part at [0,1] suffices at [0,2]; the property must hold at both
     # positions. A missing property adds no counterevidence to the present part.
     # Inspect this occurrence before the extent readout union.
-    torch.testing.assert_close(cs._cs_position_evidence[0, :, 0, -1],
-                               torch.tensor([[1., 0.], [1., 0.], [0., 0.]]))
+    torch.testing.assert_close(cs._percept_field.event_evidence([('ws', 0)])[0, :, 0, -1],
+                               torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
     # A missing byte supplies neither pole, including a missing complement.
     raw[2, 1] = 0
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
-    assert cs._cs_position_evidence[0, 2, 0, -1].count_nonzero() == 0
+    assert cs._percept_field.event_evidence([('ws', 0)])[0, 2, 0, -1].count_nonzero() == 0
 
 
 @pytest.mark.parametrize('literal', [(7,), (7, 8)])
@@ -83,8 +83,8 @@ def test_part_containment_belongs_to_the_subject_extent(literal):
     actual = cs.cs_read_memberships((ids, positions, None, raw, positions), extents)
     # Other positions inside a subject do not deny its present part.
     torch.testing.assert_close(actual[0, 0], torch.tensor([[1., 0.], [0., 0.]]))
-    assert cs._cs_position_evidence[0, 0, 0, :, 1].count_nonzero() == 0
-    assert cs._cs_position_evidence[0, 0, 1, :, 0].count_nonzero() == 0
+    assert cs._percept_field.events[0, 0, 0, :, 1].count_nonzero() == 0
+    assert cs._percept_field.events[0, 0, 1, :, 0].count_nonzero() == 0
     # Absent parts supply neither pole, even in a completely observed subject.
     missing = cs.cs_read_memberships((ids[:, :6], positions[:, :6], None,
                                       raw, positions), extents)
@@ -94,7 +94,7 @@ def test_part_containment_belongs_to_the_subject_extent(literal):
         apart = cs.cs_read_memberships((ids, positions, None, raw, positions), separated)
         assert apart[0, 0, :, 0].count_nonzero() == 0
     empty = cs.cs_read_memberships((ids, positions, None, raw, positions), extents[:, :0])
-    assert empty.shape[2] == cs._cs_position_evidence.shape[2] == 0
+    assert empty.shape[2] == cs._percept_field.events.shape[2] == 0
 
 
 def test_raw_analysis_layout_clips_regions_to_observed_input():
@@ -104,10 +104,10 @@ def test_raw_analysis_layout_clips_regions_to_observed_input():
         raw[row, 0, :len(text)] = torch.tensor(list(text), dtype=torch.long)
     positions, extents = Spaces.WholeSpace.concept_evidence_layout(
         SimpleNamespace(), raw, 8)
-    expected = torch.zeros(4, 8, 2, dtype=torch.long)
-    expected[0, 0] = torch.tensor([0, 11])
-    expected[1, 0] = torch.tensor([0, 3])
-    expected[3, :2] = torch.tensor([[0, 512], [512, 600]])
+    expected = torch.zeros(4, 4096, 2, dtype=torch.long)
+    for row, length in enumerate((11, 3, 0, 600)):
+        expected[row, :length, 0] = torch.arange(length)
+        expected[row, :length, 1] = torch.arange(1, length + 1)
     torch.testing.assert_close(positions, expected)
     torch.testing.assert_close(extents[:, 0], torch.tensor([[0, 11], [0, 3], [0, 0], [0, 600]]))
 
@@ -124,7 +124,8 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     extent = torch.tensor([[[0, 2]]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), extent)
     occurrence = torch.tensor([.25 ** .5, .36])
-    torch.testing.assert_close(cs._cs_position_evidence[0, 0, 0, :2], occurrence.expand(2, -1))
+    native = cs._percept_field.event_evidence([('ws', 0), ('ws', 1)])
+    torch.testing.assert_close(native[:, 0, 0, 0], torch.tensor([[.25, .75], [.36, .64]]))
     torch.testing.assert_close(read[0, 0, 0], occurrence)
 
 

@@ -79,6 +79,11 @@ no anonymous global residual stream.
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
+> The sense in which compose, predict, invert, emit is *equivalent* to a
+> token-level language model, with a proof and the four conditions under
+> which it stops holding, is stated once in
+> [LLMEquivalence](LLMEquivalence.md).
+
 BasicModel is best read as an explicit decomposition of functions that a
 transformer LLM usually folds into attention heads, feed-forward blocks, and an
 unrestricted residual stream. The LLM comparison in this document is therefore
@@ -380,7 +385,11 @@ view is averaged in where it has support). For verbal reconstruction of text the
 **parts (PS) should reconstruct the `.what`** and the **wholes (WS) should
 reconstruct the `.where`** — approximately the inverse of what happens at parse
 time. The separate `what_scale` / `where_scale` / `when_scale` reconstruction
-channels already exist to carry this.
+channels already exist to carry this. Per-word reconstruction scores content
+and position only: every word in an input carries the same field timestamp,
+so repeating that timestamp as a target adds no word-specific information.
+The temporal band still passes through grammar operations and their inverses;
+a future field-time objective would score it once per field.
 
 For text, it would be foolish to insist on an *absolute* `.where` from WS: the
 parts already know each word's size, so under a perfect tiling the placement is
@@ -513,22 +522,31 @@ tower's own downward projection, as biased competition prescribes.
 
 ### D. Attention indexing (`.where` / `.when` / codebooks)
 
-The three addressing roles are disjoint: **`.where` indexes over the input
-buffer** (positional; period = config-derived `<wherePeriod>`, default 8192
-input bytes — the 2026-07-04 encoding pass corrected the earlier
-"½·InputSpace" claim here: the pre-change period was actually
-$\Sigma$ nVectors, raised-never-lowered at the build seam, and is now
-decoupled from `nObjects` entirely, with a warn-once raise-to-fit for
-longer inputs), **`.when` indexes over LTM** (the 4-dim start-ladder band
-is the SIMILARITY channel; ABSOLUTE addressing rides the exact long-int
-clock `BasicModel.when_time` — the Option-C hybrid; see
-[Spaces.md](Spaces.md) "Encodings"), and the **codebooks are
-content-addressable** (identity is the row index; the cross-codebook `.where`
-slice registry was retired). Reconstruction re-derives the input tiling
-from the `.where` band alone — the BLIND decode (Gate 2b,
-`test_blind_decode.py`; the forward scaffold survives as the explicit
-debug/regression path and the scaffold-masking curriculum bridges
-scaffold-fed to blind as training allows).
+The **global location registry** assigns disjoint address ranges to input
+positions, part rows, whole rows and symbol poles. A word's percept and symbol
+occurrences use its input byte start in the input range. Repeated words thus
+have different occurrence locations even when they refer to the same stored
+row. A stored percept's location is its row address; a symbol produced by
+thought uses its symbol-row address, with one address per pole. There are no
+extra address slots per occurrence. Each address travels in the event's
+`.where` band: two sine/cosine pairs with different periods.
+The long period covers the entire registry; the short period resolves one
+location. Both periods are derived at construction, and every space shares
+the same encoding. Captured programs retain the bands, from which an integer
+address can be decoded when needed.
+
+Codebook identity remains the row index within its owning codebook. The
+registry adds a distinct location range for each owner; it does not replace
+that identity. An LTM row's address is its `.when`; its `.where` records what
+it was looking at. One shared temporal ladder covers the LTM allocation, and
+everything observed in an input receives the same advancing subjective
+`when_time` stamp. The exact long-integer clock remains alongside this band.
+Per-word reconstruction excludes this shared timestamp. Item 7's seal adds the field
+coordinates to the LTM row schema. See [Spaces.md](Spaces.md) for the encodings.
+
+The spatial band records a start, not an extent. A part's byte length gives
+its end from that start. A whole's end cannot be recovered from the start
+alone; this remains a limitation even though perception retains span metadata.
 
 ## Cognitive grounding: dense-perceptual vs sparse-symbolic (2026-07-02)
 
@@ -1202,11 +1220,10 @@ the narrowing of that one bracket.
 
 **Decided in direction (Alec, 2026-09-25);
 [plan](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md).** This
-section states the conceptual side of the architecture after item 9b. It
-replaces the sentence above about retained occurrence brackets, the 8/8
-attended-field truncation of item 11b, and the per-extent, per-position
-seam read of items 11b/11c; those remain the *landed* code until Codex's
-9b landing and are named there as what it replaces.
+section describes the reviewed item 9b implementation. Native percept
+events own occurrence brackets. The conceptual seam pools their poles before
+reading definitions and includes every supported identity, replacing the
+8/8 candidate truncation and per-position conceptual tensors of 11b/11c.
 
 **Three kinds of thing, and only one chooses its coordinates.**
 
@@ -1219,7 +1236,9 @@ seam read of items 11b/11c; those remain the *landed* code until Codex's
 A concept *in a field* therefore has a where and a when — the field's —
 and a multiplicity of `.what` perceptual codes that are parts or wholes of
 that (where, when) location. A concept *row* has neither coordinate. The
-seal writes the pair once per LTM row, never per concept.
+captured field and answer program retain that pair now. Item 7 owns its
+durable LTM row columns: the seal will write the pair once per row, never
+per concept.
 
 **The conceptual field is a percept activation vector.** For every
 percept row, its presence and its observed complement, each **pooled over
@@ -1274,32 +1293,39 @@ is the reading that prompts the division. Attribution still reaches
 their events carry the brackets, so the refine-before-raise run count
 moves to perception's side.
 
-**When.** A field's time is its position in the LTM chain — the sentence
-being written — plus the exact clock side-band that already rides beside
-`.when`. A recalled row enters thought with its own pair: its bracket in
-the source document and its chain position, the situation the predictor
-anchors. An interval wider than one row is an episode. Tense is the
+**When.** The current input's time is the model's advancing subjective
+`when_time`, encoded with a sinusoidal ladder and retained as an exact integer
+alongside it. Every element of that input shares the stamp. It distinguishes
+successive observations; scoring it again for each word adds no per-word
+information. The item 7 seal will retain the field's coordinates in LTM, so a
+recalled row can enter thought with its own location and time. An interval
+wider than one row is an episode. Tense is the
 relation between the field's interval and the utterance's, a relation
 between two brackets, never a property of a concept row; `lift` extends a
 thing into a process by widening the interval the field reads.
 
 **Consequently (Alec, 2026-09-25): every LTM row carries a `.where` and a
-`.when`**, the field's pair, written once by the seal. **`.where` is one
-unique field over all percepts**: input positions have unique locations by
-construction, and every symbol occurrence — a located percept — has a
-unique `.where` in that same field as well: **symbols' `.where` extends
-the `.where` of the pre-allocated part and whole percepts** — one address
-space with input positions first, then PartSpace's part rows and
-WholeSpace's whole rows at their pre-allocated offsets, then the symbols
-continuing the range; this is the global where-space slice registry of
-before 2026-06-04 revived on the perceptual side as an address space for
-locations only (the `where_offset` stubs mark where it was; codebook
-identity stays the row index per Spaces' Codebook Uniqueness Contract).
-Stable slices need stable capacities: the plan proposes restoring fixed
-physical capacity for every perceptual codebook with logical growth only,
-as the concept inventory already does, in place of the runtime geometric
-growth and its recompiles (plan entry 4e). Symbol occurrences produced by thought take
-their symbols' offsets. LTM is the exception: **a row's address is its
+`.when`**, the field's pair, written once by the seal (item 7). **`.where`
+uses one address space over input and stored percepts**: input positions
+come first, then PartSpace and WholeSpace rows, then one address per symbol
+pole. A word's percept and symbol occurrences carry its input byte start,
+not its stored row's location. Thought-produced symbols use their symbol-row
+address. The same row can therefore appear at several input locations
+without reserving extra symbol slots. Codebook identity stays the row index
+per Spaces' Codebook Uniqueness Contract.
+Stable slices use fixed physical capacity for every perceptual codebook,
+with logical admission into existing rows (plan entry 4e). Exhaustion names
+`nVectors`; it never replaces a Parameter or migrates optimizer state.
+The `.where` band itself carries the registry address.
+One model-owned two-rung ladder is shared by input, part, whole and symbol
+spaces. Its long period covers the entire fixed registry; its short period
+resolves adjacent locations. Captured programs retain these bands, and an
+integer location is decoded from them when needed. There is no second saved
+integer address and no separately configured 8192-byte period. `.when` uses
+one shared ladder sized for the LTM chain: everything in one input has the
+same subjective time. The exact clock side-band remains available. Per-word
+objectives exclude the shared time, while grammar still transports its band.
+LTM is the exception: **a row's address is its
 `.when` alone**, and its `.where` records what it was looking at, so rows
 may share a `.where`.
 
@@ -1308,25 +1334,36 @@ definitions, symbol pairs, memberships — is one for both modes; no mode
 holds a private copy, and a checkpoint from either loads in the other.
 Serial mode is focused attention with the grammar's `lift` and `lower`;
 parallel mode is open attention with the field's sigma, pi and not. The
-mode exclusion of 11c holds **within a pass**; across passes the modes may
-alternate on the same content, each parallel pass ending with
-re-symbolization (every word symbol read back against the field, the
-reverse of `interpret`), which is the mechanical form of label feedback.
+mode exclusion of 11c holds **within a pass**. With `interleave:N`, the
+cursor stages the next N complete sentences and the native parallel pass
+reads them first. The ordinary serial reading then processes those same
+sentences using the shared inventory that the context pass has just updated.
+Context runs under no-grad, without backward or an optimizer step. Its
+updates are ordinary admission, participation and priming.
+There is no extra label read-back after either pass: the serial reading
+provides that symbolic processing. A shorter final group is also processed.
 The psychological reasons — the two modes share one conceptual structure
 in humans, the sharing erodes each side somewhat, the erosion is mostly a
 loss of online maintenance, and meditators gain the ability to switch
 modes rather than losing one — are set out in
 [Philosophy](Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25).
-The interleaving schedule (`modeSchedule`) and the erosion gate are the
-plan's two remaining questions.
+The implementation provides `modeSchedule` as documented in [Params](Params.md).
+The original erosion experiment is archived in
+[FutureWork](FutureWork.md#shared-mode-erosion-measurement-item-9b). Its old
+interleave results do not describe the parallel-first schedule. Categorical
+discrimination remains a descriptive metric for item 4's logger.
 
 **`interpret`: word-concept to object-concept.** In serial mode every
 arriving word is interpreted before it takes part in composition:
 PartSpace looks the word up as the recurring unit the fold ladder
 admitted, and `interpret` maps that word-concept to the object-concept it
-refers to — the order-1 particular when the field holds an occurrence the
-word addresses, otherwise the kind — with the resolution supplied by the
-grammar, never by the surface form. It is not a mode and not
+refers to. If that association already exists, interpretation returns that
+object at its existing order: a word associated with the cat kind returns
+that kind. The order-1 default applies only when a word has no object yet.
+A grammar request selects among multiple known associations or sets the order
+of a new object; it does not manufacture a second object merely because
+the existing one has a different order.
+Spelling does not choose the order. It is not a mode and not
 chooser-routed. An unknown word **mints** a provisional object row whose
 only literal is the word occurrence that named it: that is how
 object-concepts come to exist without direct experience, by testimony,

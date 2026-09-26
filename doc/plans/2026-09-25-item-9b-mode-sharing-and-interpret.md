@@ -1,4 +1,4 @@
-# Item 9b: one conceptual structure across serial and parallel modes — the erosion gate, mode interleaving, and the `interpret` operator
+# Item 9b: one conceptual structure across serial and parallel modes — discrimination measurements, mode interleaving, and the `interpret` operator
 
 **Status (Claude, 2026-09-25).** Written on Alec's instruction after the
 2026-09-25 discussion of whether serial concepts also exist in the parallel
@@ -14,6 +14,12 @@ parity landing; the todo line is added with that landing, since the todo is
 in Codex's working tree at the time of writing. Nothing here reopens 11c
 (`606683a`); the [mode exclusion](../Architecture.md#the-three-cognitive-operations-updated-for-11c)
 recorded there is kept within a pass and relaxed only across passes (entry 4).
+
+**Implementation update (Codex, 2026-09-25).** Alec subsequently requested
+implementation followed by review. This includes the schedule, erosion
+measurement and §4e. Decisions 7a/7b now supersede the original pass order
+and experiment-as-gate proposal; sections 3/4 below describe those decisions. The [implementation receipt](../benchmarks/2026-09-25-item9b/README.md)
+records the changes and validation. No 9b changes are committed before review.
 
 ## 1. Decision: share the structure (decided in direction, Alec 2026-09-25)
 
@@ -79,12 +85,12 @@ remove the narrative one.
 
 **What follows.** Share the structure (entry 1). Expect erosion in both
 directions and measure it (entry 3). Do not keep the modes as permanent
-alternatives; interleave them, and let the label re-sharpen the field after
-parallel passes, as a noting meditator names what arose (entry 4). Give the
+alternatives; follow parallel context with the ordinary serial reading
+(entry 4). Give the
 serial loop one operator that writes the parallel field's objects from
 words, so serial training develops parallel objects (entry 5).
 
-## 3. The erosion gate (proposed; question 7b)
+## 3. Categorical discrimination (logged metric; decision 7b)
 
 **Measure.** A categorical-perception index over the native memberships:
 
@@ -98,8 +104,9 @@ FineWeb launch corpus. Two companions: **alternatives admitted per concept**
 (the Wenk-Sormaz analogue: atypical alternatives) and **within-category
 discrimination alone** (the MacLean analogue).
 
-**Conditions.** (a) serial-only training, (b) parallel-only, (c)
-interleaved per entry 4, each from the same initialization, three seeds.
+**Historical experiment.** (a) serial-only training, (b) parallel-only, (c)
+the original serial-first interleave with label read-back, each from the same
+initialization, three seeds. Entry 4 now specifies the replacement schedule.
 The Winawer analogue is a fourth read, not a condition: the same probes
 read with the symbol leg masked (symbols offline) and unmasked.
 
@@ -110,30 +117,29 @@ discrimination. Interleaved holds `CP` near serial-only while keeping the
 within-category gain. Masking the symbol leg lowers `CP` in every
 condition, most in serial-only.
 
-**Gate.** Ordering claims only, holding across all three seeds; no
-threshold numbers are preregistered and no seed is pinned to pass. A
-violated ordering is a finding about the architecture, recorded, not tuned
-away. Results go to [FutureWork](../FutureWork.md) beside the both-prompt
-section.
+**Current use.** This is a descriptive metric for item 4's logger, not an
+acceptance gate. Keep the fixed probes and report CP and within/between
+category distances when their readout cost fits the logging budget. The
+three-seed job is retired to [FutureWork](../FutureWork.md) with its findings;
+its interleave rows are void after the pass order changes. No ordering is
+required and no seed or threshold is selected to make one hold.
 
-## 4. Interleaving (proposed; question 7a)
+## 4. Interleaving (parallel-first; decision 7a)
 
-**Rule.** Within a pass the 11c mode exclusion stands: the field's sigma, pi
-and not run only in parallel passes; the grammar's lift and lower only in
-serial passes. Across passes the modes **alternate on the same content**.
-A parallel pass over the attended fields of the last `N` sentences follows
-every `N` serial sentences, and each parallel pass ends with
-**re-symbolization**: every word symbol of those sentences is read back
-against the field (reverse pi of the symbol, 11c entry 9), which is the
-reverse face of `interpret` (entry 5) and the mechanical form of label
-feedback. That read-back is what keeps `CP` up after the parallel pass.
+Within each pass, the mode exclusion stands: native field folds belong to
+parallel processing and grammar composition belongs to serial processing.
+`interleave:N` stages the coming N complete sentences. The native parallel
+pass reads that group first, updating the shared inventory before the serial
+reading begins. Serial batches then consume that same group; the final shorter
+group is processed too. The serial reading supplies the symbolic processing,
+so there is no separate re-symbolization or label-feedback pass.
 
-**Knob.** `<architecture><modeSchedule>` with values `serial` (today's
-default), `parallel`, and `interleave:N`. Live, not gated, per the
-live-wiring rule; documented once in Params. `serial` and `parallel`
-reproduce today's two configurations exactly, so existing receipts are
-unaffected. The first FineWeb session (item 0) runs `serial`; the erosion
-gate (entry 3) runs all three.
+`modeSchedule` accepts `serial`, `parallel` and `interleave:N`. Both passes
+share the same model and inventory. The context pass is forward-only under no-grad: it
+updates admission, participation and priming, with no backward or optimizer
+step. It does not advance the external clock or
+append a duplicate LTM observation. The first full FineWeb session remains
+serial. This supersedes the original serial-first/read-back proposal.
 
 ## 4b. Attention: serial is focused, parallel is open (decided, Alec 2026-09-25)
 
@@ -160,8 +166,7 @@ turn (`[B, E, P, referenced rows]`); symbols, thought and checkpoints already
 resolve by concept id (11b), so no addressing changes. (iii) The taper's
 fixed slots remain only as the serial cap. (iv) Open attention admits more
 *both* readings and more alternatives per concept — the erosion entry 3
-measures — so parallel passes need the re-symbolization of entry 4 all the
-more. (v) `subsymbolicLoop` retargeting in parallel mode becomes a choice
+measures. Entry 4 follows open attention with the ordinary serial reading. (v) `subsymbolicLoop` retargeting in parallel mode becomes a choice
 of what to symbolize, not what to read.
 
 **Where the percepts occur (Alec, 2026-09-25).** With every perceptual
@@ -393,6 +398,150 @@ condition for the order-0 inventory. The ConceptualSpace entry of
 against what is physically allocated before the session; if it is dense,
 the same fixed-capacity rule applies and the number needs choosing.
 
+## 4f. The band transported through the grammar: reduced periods, then rungs (proposed, 2026-09-26)
+
+**Status:** the proposal and its prediction below are retained as experimental
+history. Experiment A refuted the loss-regression explanation; the results and
+Alec's decision at the end of this section govern the current correction.
+
+**Alec's direction.** Keep transporting the `.where`/`.when` band through
+the grammar's operators and their inverses — this is what makes it a
+positional encoding in the transformer sense — rather than confining
+coordinates to percept events. First try recovering the lost accuracy with
+reduced periods; adding a rung is the next preferred remedy. (Claude's
+"stop transporting the band" alternative is set aside.)
+
+**Initial hypothesis (refuted below).** The September 26 corrections set the shared
+ladder's periods from the whole registry: long 2²⁹, short 512, so the long
+rung must resolve 2²⁰ cells of 6×10⁻⁶ rad while the learned round trip
+through compose and its inverse perturbs the band by ~0.02 rad (the
+Gate-B measurement the two-rung design was sized against: one coarse cell
+at 0.098 rad, one byte at 0.0245 rad). The learned path can no longer
+recover coarse position, and the serial seven-update reconstruction
+baseline moved from .1006 / .0949 / .0882 (before / mean / after) to
+.1506 / .1347 / .1363. The registry was also inflated by per-occurrence
+symbol slots (2 × concept rows × `serialWordCapacity`): 3.4×10⁷ for the
+small run, 5.4×10⁸ at production scale; without them, 1.7×10⁵ and 2.4×10⁶.
+
+**Experiment A — reduced periods (first).** Keep everything else of the
+corrections landing (no-grad context pass, `interpret` association-first,
+capacity budget, one model-owned encoder shared by all spaces, integers
+decoded from the band). Change two things: (1) drop the per-occurrence
+symbol slots — one address per pole per symbol row; a symbol occurrence
+of an input word is located by the word's input bracket, and a
+thought-produced symbol by its row; (2) set the transported band's
+periods to what the learned path carried before: **long 8,192, short
+256**, i.e. the pre-9b values, with the band encoding `address mod 8,192`.
+Input positions stay unique; percept and symbol addresses alias in the
+transported band but remain exact in the registry integers. Measure the
+seven-update serial baseline and packed/single parity on the same seed
+and workload. **Prediction:** the baseline returns to the reviewed-9b
+values (.1006 / .0949 / .0882) within 1%. If it does, the cause is
+confirmed as coarse-cell size under transport noise; if it does not, the
+regression has another source and is diagnosed before any rung is added.
+
+**Experiment B — add rungs (next).** No four-rung ladder has existed: the
+history is the v2 single-rung band, then the 2026-07-09 two-rung ladder
+("4-dim" = sin/cos × 2). Generalize the ladder to **k rungs with a fixed
+ratio of 32** between neighbours, byte resolution at the finest:
+
+| Rungs | Band dims | Range at ratio 32 | Covers |
+|---:|---:|---:|---|
+| 2 | 4 | 8,192 | one input / field bracket (today) |
+| 3 | 6 | 262,144 | the small registry (1.7×10⁵) |
+| 4 | 8 | 8,388,608 | the production registry (2.4×10⁶) |
+
+Decode is the cascaded branch resolution `_ladder_index` already
+performs, applied from the coarsest rung down: each rung resolves the next
+finer rung's branch, so every cell stays at 0.098 rad, five times the
+transport noise, at every level. `nWhere` becomes `2k`; the operators'
+muxed width grows by the added dims. Measure the same baseline at 3 and
+4 rungs against Experiment A's result. **Prediction:** the transported
+accuracy is unchanged within the same 1% (the learned ops carry two or
+four more dimensions at the same per-cell margin); if it degrades, the
+cost of transporting more coordinate dims through the learned path is the
+finding, and the rotary form below is the remedy. The same k applies to
+`.when` over the LTM chain (256 rows per fine period; three rungs cover
+262,144 rows, four cover 8.4 million).
+
+**Follow-on, if B degrades — rotary transport.** Apply position as an
+exact rotation of content in each operator (the rotary encoding's rule,
+and what the preposition's where-rotation was before September 13):
+learned maps on content, a fixed rotation for the coordinate, relative
+offsets from products, exact decode only from untransported bands.
+
+**Gate for the exploration.** Ordering claims only, no seed selection: A
+must recover the baseline; B must hold it at 3 and 4 rungs. Both are
+re-measured on the item 9 protocol's serial workload before any commit
+of point (iv).
+
+**Results (Claude, 2026-09-26; raw outputs in `output/expA/`, driver
+`doc/benchmarks/2026-09-21-item10/probe.py` on `MM_ladder.xml`, seed 42,
+CPU eager, tree restored byte-identical afterward).**
+
+*Experiment A is refuted.* Forcing the ladder periods to the pre-9b
+values (long 8,192, short 256) leaves the before-training cost **identical
+to ten digits** (.1505906619 in both), trains slightly worse over seven
+updates (mean .1477 against .1347) and ends at .1369 against .1363. The
+periods are not the source of the jump.
+
+*The source, found by bisection.* Restoring the per-word `when` index at
+the four serial sites changes nothing; restoring the byte-offset `where`
+stamp in place of the part row's registry address changes only training
+(.1410 / .1380), not the initial cost. Swapping each changed runtime file
+into the reviewed follow-up's archived source isolates the jump to
+`bin/Spaces.py`; of its 27 hunks, only hunk 20 moves it, and within hunk
+20 only the three lines that **write the constant field `when` band into
+the last four dimensions of every word event** (`event[..., -nWhen:] =
+whenEncoding.encode(t)`): adding just those lines to the follow-up source
+reproduces the full jump (.1007718973 → .1507718995, eval-only phase).
+
+*What the number measures.* On `MM_ladder.xml` the probe's
+"reconstruction" is the idea-only reverse student's loss: separately weighted
+content, position and time means over the muxed word events. Before
+the corrections those four dimensions were the padding zeros; now they
+hold the constant `[sin 0, cos 0, sin 0, cos 0]` for every word, which the
+student at initialisation cannot reproduce and, being constant per field,
+carries no per-word information to reconstruct. The byte-level
+reconstruction is unchanged at .6839025617 across every landing. **The jump
+does not itself demonstrate lost positional accuracy; the objective is scoring
+a constant band.** With time weight .1, a zero prediction against the two
+unit sine/cosine pairs contributes `.1 × .5 = .05`.
+
+*Resolution.* (a) Exclude the field-constant `when` band from the per-word
+reconstruction objective (score content and `where`; the field's `when` is
+one value per field and would be scored once if a field-time objective is
+needed), then re-baseline —
+predicted return to the reviewed-9b values .1006 / .0949 / .0882 within
+1%. (b) Experiment B, more rungs, is **no longer motivated by this
+regression**; it remains the remedy for transporting a global `where`
+address through the learned path under the 0.02 rad noise, a separate
+question, and the reduced-period run's slightly worse training suggests
+the current periods are not hurting learning within a sentence. (c) The
+per-occurrence symbol slots are still dropped, as the registry size is
+unrelated to accuracy but keeps the ladder honest.
+
+*Decided (Alec, 2026-09-26).* `.where` stamps the **start only**: an
+occurrence's input byte offset, never its part row's address. A part's
+end follows from its start and byte length; a whole's does not, and that
+is documented as a limitation rather than worked around. `.when` is the
+incrementing sinusoid of the model's subjective step counter, shared by
+all elements of one input and significant only across LTM rows; it is
+excluded from the per-word reconstruction objective, and its redundancy
+across an input is noted in FutureWork. Codex lands (1)–(4) of the todo's
+9b entry before the commit; the rung question stays open and separate.
+
+*Implementation measurement (Codex, 2026-09-26).* The decided occurrence/time
+fix is implemented in the [review receipt](../benchmarks/2026-09-26-item9b-occurrence-fix/README.md).
+The unchanged serial probe gives .1005906649 / .0948241442 / .0928765051.
+The initial .05 surcharge is removed exactly and the training mean returns
+within 0.1%, but the final value remains 5.245% above .0882481802: the full
+within-1% prediction did not hold. Packed/single states and byte reconstruction
+remain identical. The remaining final difference is not isolated by these
+runs; no seed, budget or tolerance was changed to obtain a closer value.
+The final sweep completes 4,948 cases without unexpected failures. Claude
+accepted the correction on September 26, and Alec authorized publication.
+
 ## 5. The `interpret` operator (decided, Alec 2026-09-25)
 
 **What it is.** A serial-mode `<compose>` operator that takes a
@@ -404,12 +553,14 @@ Unary, like `not`; its second argument is implicit, the current attended
 field. The word-concept is the code the word arrives as (accessible mind
 §2.0: "a word arrives already projected"), a symbol occurrence, hence a
 located percept in the field (11c entry 7). The object-concept is a row of
-the shared inventory: the **order-1 particular** when the field contains an
-occurrence the word addresses (*the cat*, *Felix*), otherwise the **kind**
-(*cat*), per the word-form-to-order rule in
+the shared inventory. A known word returns its existing object, including a
+kind. The **order-1 particular** default applies only when the word has no
+object and one must be created; grammar can request an order-2 kind for that
+new object or resolve multiple existing associations. A default call never
+mints a particular beside an existing kind. See
 [Lexicon](../Lexicon.md#word-forms-and-concept-orders) and 11c entry 11.
-Which it is, is the grammar's resolution (determiner, name, generic); the
-operator does not read the surface form, and no word is anchored to it.
+The operator uses stored associations and the grammar's resolution; it does
+not infer the object's order from its spelling.
 
 **Not a mode, and not optional (Alec, 2026-09-25).** Serial mode is
 forced today; `interpret` is not something to force or to route. In serial
@@ -456,12 +607,12 @@ and return the word's code, that is an optimization concession under the
 serial-mode flag, beside the concessions already there, and is listed with
 the throughput levers in [FutureWork](../FutureWork.md#throughput-levers-for-the-serial-loop-item-1-candidates).
 
-**Relation to what exists.** `create_word_object_meta` already mints an
+**Relation to the previous implementation.** `create_word_object_meta` minted an
 `[object isa word]` triple `(A = word, B = object, C = meta)` at order 1 from
 the host side (`Language.py`, the order-1 branch of the symbol tower). Per
 the no-legacy rule, `interpret` **replaces** that host-side path with a
-declared grammar operator: same triple, same shared inventory, but routed
-by the chooser and reversible through the grammar. The two-truths seal
+declared grammar operator: the same shared inventory, invoked on every serial
+word before composition, with an owned lexical inverse. The two-truths seal
 already writes asserted part rows *between the object concepts the words
 resolve to*; `interpret` is the operator that produces those object
 concepts, so the seal stops resolving them itself.
@@ -470,12 +621,13 @@ concepts, so the seal stops resolving them itself.
 `interpret_I1 = interpret.reverse(interpret_O1)`, object → word, which is
 lexicalization through the owned spelling inverse, the step generation
 already performs implicitly. Thought: not permitted by default; a per-model
-allow-list may add it (a thought that names what is attended is the
-noting meditator's move, and belongs with the re-symbolization of entry 4).
+allow-list may add it for a thought that names what is attended. Entry 4 uses
+the ordinary serial reading and adds no separate naming pass.
 
-**Tests.** (1) After witnessing *the cat sat*, `interpret` on the word
-*cat* addresses the order-1 particular whose events are that sentence's
-occurrences. (2) On *cats are animals* it yields the kind, and the seal
+**Tests.** (1) `interpret` returns a word's existing object at its stored
+order, for both operator-created and witnessed associations. A word without
+an object creates one at order 1 by default. (2) When several associations
+exist, grammar selects the requested kind or particular, and the seal
 writes the part row between the two object rows, as the two-truths contract
 requires. (3) `interpret.reverse` on that object regenerates the word
 through the spelling inverse. (4) **Every word is interpreted**: in a
@@ -505,20 +657,24 @@ field binds for the same input (entry 1's test). (7)
   as the resolution operator.
 - [Params](../Params.md): `modeSchedule`.
 - [Testing](../Testing.md) and a receipt under `doc/benchmarks/`.
-- [FutureWork](../FutureWork.md): the erosion gate results and the
+- [FutureWork](../FutureWork.md): the archived erosion results and the
   literature paragraph of entry 2, cited from Philosophy.
 - [todo](../../todo.md): item 9b line, added with the landing.
 
 ## 7. Questions (Alec's yes/no)
 
-- **7a.** Accept `modeSchedule` = `serial | parallel | interleave:N` with
-  re-symbolization closing every parallel pass?
-- **7b.** Accept the erosion gate as ordering claims across three seeds,
-  with no preregistered thresholds?
-- **7e.** Restore fixed physical capacity for all perceptual codebooks
-  with logical growth only, assign where-space slices at construction,
-  and delete the geometric-growth and optimizer-migration paths and
-  `maxVectors`?
+- **7a.** *Decided (Alec, 2026-09-25, after implementation began):* the
+  **parallel pass runs first**, over the coming N sentences, so that it
+  generates context for the serial processing; the separate
+  re-symbolization step is dropped, because the serial reading that
+  follows is the re-symbolization. The landing implemented serial-first
+  with read-back; the follow-up reverses the order and deletes read-back.
+- **7b.** *Decided (Alec, 2026-09-25):* make the measurement only if it
+  is cheap and theoretically useful, and only if its value is reported
+  somewhere useful — a logged metric in the item 4 harness, never a gate.
+  The landing's three-seed job and its null findings go to FutureWork.
+- **7e.** *Decided (Alec, 2026-09-25): yes, reintroduce the
+  preallocation.* Implemented in the landing.
 
 
 
@@ -542,3 +698,38 @@ field binds for the same input (entry 1's test). (7)
 - Wenk-Sormaz 2005, Meditation can reduce habitual responding. *Alternative Therapies in Health and Medicine* 11, 42–58. https://www.ncbi.nlm.nih.gov/pubmed/15819448
 - Winawer et al. 2007, Russian blues reveal effects of language on color discrimination. *PNAS* 104, 7780–7785. https://www.pnas.org/doi/10.1073/pnas.0701644104
 - Xu 2002, The role of language in acquiring object kind concepts in infancy. *Cognition* 85, 223–250. https://pubmed.ncbi.nlm.nih.gov/12169410/
+
+## September 26 corrections (supersede earlier defaults)
+
+Interpretation first returns the object's existing association, including a
+kind. Order 1 is the default only when a new object must be minted. Grammar
+resolves multiple existing associations or chooses the order of a new mint;
+requesting a missing order does not by itself mint a second referent.
+
+The registry address is encoded in `.where` itself. A complete model owns one
+ladder shared by input, PartSpace, every WholeSpace and SymbolSpace, with its
+long period derived once from the full registry capacity and its short rung
+resolving individual locations. Captured programs carry bands, not a competing
+integer address. One temporal ladder is likewise shared, sized for LTM, and a
+field has one advancing subjective `when_time`. Per-word reconstruction
+excludes that shared timestamp while grammar continues to transport its band.
+The exact clock side-band is retained. Input spans and
+attention brackets still describe extent; they are not replacement addresses.
+
+The later section 4f decision distinguishes an occurrence from a stored row.
+An input word's percept and symbol occurrences carry its input byte start in
+the input slice. Stored percepts and thought-produced symbols use their own
+row ranges, with one address per symbol pole and no extra occurrence slots.
+The band carries the start only: a part's byte length gives its end, but a
+whole's end cannot be recovered from this band. The ladder formula remains
+unchanged; its capacity falls when the extra symbol slots are removed.
+
+Item 3 must size the production reserves for roughly 200,000 English word
+forms, their 200,000 associated objects, and additional non-verbal concepts.
+Plan around one million physical ConceptualSpace rows (about 4.3 GB at width
+1032 in float32; no Adam moments on its rotation-owned dictionary). PartSpace
+needs a few hundred thousand rows; WholeSpace must be measured for the same
+vocabulary and additional percepts. The current 65,536/32,768 reserves serve
+small runs. Record measured occupancy and memory before the full corpus run.
+Also set `ltmCapacity` for the intended million-row run and record the temporal
+range required by the advancing clock; its default 1,024 is a small-run value.

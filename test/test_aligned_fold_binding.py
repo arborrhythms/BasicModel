@@ -210,7 +210,6 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     _set("./InputSpace/nOutput", 128)
     _set("./PartSpace/nInput", 128)
     _set("./PartSpace/nVectors", 256)
-    _set("./PartSpace/maxVectors", 512)
     _set("./ConceptualSpace/nVectors", 128)
     _set("./ConceptualSpace/activeVectors", 32)
     _set("./architecture/training/batchSize", 1)

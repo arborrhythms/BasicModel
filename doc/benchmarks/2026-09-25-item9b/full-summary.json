@@ -1,0 +1,32 @@
+{
+  "reason": "passed",
+  "exit_code": 0,
+  "elapsed_seconds": 974.2088016669732,
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1200.0,
+    "suite_seconds": 7200.0,
+    "batch_size": 128,
+    "max_files": 8
+  },
+  "peak_aggregate_memory_bytes": 8840946520,
+  "compile_cache_retries": [],
+  "selected": 4888,
+  "completed": 4888,
+  "outcomes": {
+    "passed": 4562,
+    "skipped": 325,
+    "xfailed": 1
+  },
+  "source_files": 660,
+  "fixture_only_delta": {
+    "test/test_sparse_concept_e2e.py": {
+      "measured": "b25f7bbc3796cfaa333c2f715d366bbbed9016a8151b944bd4fe7224c67fc7ef",
+      "final": "d69bef7fe2b94b32ecdfa8ac460b159537b2a492be828fda07ce7ccd4ce0d1a8"
+    }
+  },
+  "source_sha256": "847be7471aca937f01ae8bbab7279fa161ca4035fb810aef66095d4ff4b4b18d"
+}

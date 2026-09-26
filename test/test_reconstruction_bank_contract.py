@@ -129,7 +129,7 @@ def test_staging_rejects_missing_or_unusable_reconstruction_bank(tmp_path, monke
 
 def test_failed_first_sight_admission_cannot_become_null_reconstruction(tmp_path, monkeypatch):
     model = build_model(tmp_path)
-    monkeypatch.setattr(model._concept_owner(), "_automatic_word_object_meta", lambda *a, **k: None)
+    monkeypatch.setattr(model._concept_owner(), "interpret_word", lambda *a, **k: None)
     try:
         with pytest.raises(RuntimeError, match="reconstruction.*(admission|candidate)"):
             _stage(model)

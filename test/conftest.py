@@ -124,4 +124,4 @@ def _restore_process_device():
 
 
 # Skip expensive checks before fixture/model construction, using the existing switch.
-pytest_plugins = ["slow_tests"]
+pytest_plugins = ["slow_tests", "fineweb_artifacts"]

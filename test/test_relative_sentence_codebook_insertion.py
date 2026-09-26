@@ -243,8 +243,7 @@ class TestInsertMetaTrustKwarg(unittest.TestCase):
             list(ws.inputShape), list(ws.spaceShape), list(ws.outputShape))
         cb2 = ss2.subspace.what
         cb1 = ws.subspace.what
-        if cb2.nVectors < cb1.nVectors:
-            cb2.grow_to(int(cb1.nVectors))
+        assert cb2.nVectors == cb1.nVectors
         ss2.load_vocab_extras(extras)
         self.assertIn(meta, ss2.meta_trust)
         self.assertAlmostEqual(sum(ss2.meta_trust[meta]), 1.0, places=5)

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item9b-corrections/address_probe.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-corrections-address-release/result.json"
+  ],
+  "pid": 41764,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 669599664,
+  "elapsed_seconds": 4.896721792058088,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-corrections-address-release/process.log"
+}

@@ -94,8 +94,9 @@ def test_wholespace_capacity_exhaustion_is_atomic_and_actionable():
     assert ws._ws_row_to_pos == before_row_map
     assert hasattr(ws, "_paired_orth_to_sem") == had_pair_map
 
+    assert not hasattr(cb, "grow_to")
     with pytest.raises(RuntimeError, match="fixed capacity"):
-        cb.grow_to(cap + 1)
+        cb.replace_W(torch.zeros(cap + 1, W.shape[1]))
     assert cb.getW() is W
     assert tuple(W.shape) == tuple(before_W.shape)
 

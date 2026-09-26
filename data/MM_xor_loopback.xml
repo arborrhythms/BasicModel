@@ -38,7 +38,7 @@
   <PartSpace>
     <nInput>8</nInput>
     <nInputDim>12</nInputDim>
-    <nVectors>8</nVectors>
+    <nVectors>256</nVectors>
 	    <!-- nDim is the codebook prototype width. Post-bivector-
 	         retirement (2026-05-20) nDim was raised from 2 to 4 to
 	         match InputSpace.nDim=4 — the bivector regime previously

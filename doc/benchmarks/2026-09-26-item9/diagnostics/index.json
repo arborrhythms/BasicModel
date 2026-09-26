@@ -1,0 +1,140 @@
+[
+  {
+    "run": "item9-native-complete-0",
+    "files": [
+      "item9-native-complete-0/reconstruction_only-0.process.json.gz",
+      "item9-native-complete-0/reconstruction_only-0.log.gz",
+      "item9-native-complete-0/context_free-0.log.gz",
+      "item9-native-complete-0/context_free-0.process.json.gz",
+      "item9-native-complete-0/ordered-0.log.gz",
+      "item9-native-complete-0/manifest.json.gz",
+      "item9-native-complete-0/ordered-0.process.json.gz",
+      "item9-native-complete-0/shuffled-0.process.json.gz",
+      "item9-native-complete-0/shuffled-0.log.gz",
+      "item9-native-complete-0/shuffled-0/result.json.gz",
+      "item9-native-complete-0/shuffled-0/model.xml.gz",
+      "item9-native-complete-0/reconstruction_only-0/result.json.gz",
+      "item9-native-complete-0/reconstruction_only-0/model.xml.gz",
+      "item9-native-complete-0/ordered-0/result.json.gz",
+      "item9-native-complete-0/ordered-0/model.xml.gz",
+      "item9-native-complete-0/context_free-0/result.json.gz",
+      "item9-native-complete-0/context_free-0/model.xml.gz"
+    ]
+  },
+  {
+    "run": "item9-native-controls-0",
+    "files": [
+      "item9-native-controls-0/reconstruction_only-0.process.json.gz",
+      "item9-native-controls-0/reconstruction_only-0.log.gz",
+      "item9-native-controls-0/context_free-0.log.gz",
+      "item9-native-controls-0/context_free-0.process.json.gz",
+      "item9-native-controls-0/manifest.json.gz",
+      "item9-native-controls-0/shuffled-0.process.json.gz",
+      "item9-native-controls-0/shuffled-0.log.gz",
+      "item9-native-controls-0/shuffled-0/result.json.gz",
+      "item9-native-controls-0/shuffled-0/model.xml.gz",
+      "item9-native-controls-0/reconstruction_only-0/result.json.gz",
+      "item9-native-controls-0/reconstruction_only-0/model.xml.gz",
+      "item9-native-controls-0/context_free-0/result.json.gz",
+      "item9-native-controls-0/context_free-0/model.xml.gz"
+    ]
+  },
+  {
+    "run": "item9-native-eager-first",
+    "files": [
+      "item9-native-eager-first/ordered-0.log.gz",
+      "item9-native-eager-first/manifest.json.gz",
+      "item9-native-eager-first/ordered-0.process.json.gz",
+      "item9-native-eager-first/ordered-0/result.json.gz",
+      "item9-native-eager-first/ordered-0/model.xml.gz"
+    ]
+  },
+  {
+    "run": "item9-native-eager-second",
+    "files": [
+      "item9-native-eager-second/ordered-0.log.gz",
+      "item9-native-eager-second/manifest.json.gz",
+      "item9-native-eager-second/ordered-0.process.json.gz",
+      "item9-native-eager-second/ordered-0/result.json.gz",
+      "item9-native-eager-second/ordered-0/model.xml.gz"
+    ]
+  },
+  {
+    "run": "item9-native-final-0",
+    "files": [
+      "item9-native-final-0/reconstruction_only-0.process.json.gz",
+      "item9-native-final-0/reconstruction_only-0.log.gz",
+      "item9-native-final-0/context_free-0.log.gz",
+      "item9-native-final-0/context_free-0.process.json.gz",
+      "item9-native-final-0/ordered-0.log.gz",
+      "item9-native-final-0/manifest.json.gz",
+      "item9-native-final-0/ordered-0.process.json.gz",
+      "item9-native-final-0/shuffled-0.process.json.gz",
+      "item9-native-final-0/shuffled-0.log.gz",
+      "item9-native-final-0/shuffled-0/result.json.gz",
+      "item9-native-final-0/shuffled-0/model.xml.gz",
+      "item9-native-final-0/reconstruction_only-0/result.json.gz",
+      "item9-native-final-0/reconstruction_only-0/model.xml.gz",
+      "item9-native-final-0/ordered-0/result.json.gz",
+      "item9-native-final-0/ordered-0/model.xml.gz",
+      "item9-native-final-0/context_free-0/result.json.gz",
+      "item9-native-final-0/context_free-0/model.xml.gz"
+    ]
+  },
+  {
+    "run": "item9-native-reviewed-0",
+    "files": [
+      "item9-native-reviewed-0/reconstruction_only-0.process.json.gz",
+      "item9-native-reviewed-0/reconstruction_only-0.log.gz",
+      "item9-native-reviewed-0/context_free-0.log.gz",
+      "item9-native-reviewed-0/context_free-0.process.json.gz",
+      "item9-native-reviewed-0/ordered-0.log.gz",
+      "item9-native-reviewed-0/manifest.json.gz",
+      "item9-native-reviewed-0/ordered-0.process.json.gz",
+      "item9-native-reviewed-0/shuffled-0.process.json.gz",
+      "item9-native-reviewed-0/shuffled-0.log.gz",
+      "item9-native-reviewed-0/shuffled-0/result.json.gz",
+      "item9-native-reviewed-0/shuffled-0/model.xml.gz",
+      "item9-native-reviewed-0/reconstruction_only-0/result.json.gz",
+      "item9-native-reviewed-0/reconstruction_only-0/model.xml.gz",
+      "item9-native-reviewed-0/ordered-0/result.json.gz",
+      "item9-native-reviewed-0/ordered-0/model.xml.gz",
+      "item9-native-reviewed-0/context_free-0/result.json.gz",
+      "item9-native-reviewed-0/context_free-0/model.xml.gz"
+    ]
+  },
+  {
+    "run": "item9-native-smoke",
+    "files": [
+      "item9-native-smoke/ordered-0.log.gz",
+      "item9-native-smoke/manifest.json.gz",
+      "item9-native-smoke/ordered-0.process.json.gz",
+      "item9-native-smoke/ordered-0/result.json.gz",
+      "item9-native-smoke/ordered-0/model.xml.gz"
+    ]
+  },
+  {
+    "run": "item9-semantic-complete",
+    "files": [
+      "item9-semantic-complete/process.log.gz",
+      "item9-semantic-complete/process.json.gz",
+      "item9-semantic-complete/process.process.json.gz"
+    ]
+  },
+  {
+    "run": "item9-semantic-diagnostic",
+    "files": [
+      "item9-semantic-diagnostic/process.log.gz",
+      "item9-semantic-diagnostic/process.json.gz",
+      "item9-semantic-diagnostic/process.process.json.gz"
+    ]
+  },
+  {
+    "run": "item9-semantic-fixed-capacity",
+    "files": [
+      "item9-semantic-fixed-capacity/process.log.gz",
+      "item9-semantic-fixed-capacity/process.json.gz",
+      "item9-semantic-fixed-capacity/process.process.json.gz"
+    ]
+  }
+]

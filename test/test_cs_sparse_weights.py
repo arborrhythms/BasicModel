@@ -100,7 +100,7 @@ def test_shared_untyped_square_store():
     _p, s1 = cs._sparse_families(1)
     assert _p is s1.conjunctive                       # same concepts, conjunctive parts
     assert s1 is cs._sparse_families(2)[1]           # ONE shared store
-    assert (s1.nOutput, s1.nInput) == (14, 30)       # [S+1 inputs x S outputs]
+    assert (s1.nOutput, s1.nInput) == (16, 34)       # [S+1 inputs x S outputs]
     assert s1.roles is None                          # untyped: no role blocks
     cs.add_concept_edge(8, 2)                        # order-1 row <- snap col
     cs.add_concept_edge(8, 16)                       # bias: col nVectors -> S

@@ -14,9 +14,11 @@ space[i+1].nInputDim`` directly comparable for handoff validation.
 
 2026-07-09 multi-rung pass: the band is (nWhere=4, nWhen=4) — `.when` is the
 4-dim 2-rung start ladder (WhenStartDurationEncoding; slots [-4..-1]) and
-`.where` is now the SAME 2-rung ladder shape over the byte START
-(WhereEncoding; slots [-8..-5]; LF = <wherePeriod> range, HF =
-wherePeriod/<whereRungRatio> sub-byte resolution). The endpoint-sum bracket is
+`.where` uses the same 2-rung shape for registry addresses
+(WhereEncoding; slots [-8..-5]). One model-level ladder covers input positions,
+parts, wholes and symbol occurrences. Its periods derive from the total
+registry capacity; the shared `.when` ladder derives from LTM capacity.
+The endpoint-sum bracket is
 retired from the muxed band (the analyzer's EndpointSumWhere keeps it).
 
 The TWO principled exceptions stay ``(0, 0)``: there is no positional

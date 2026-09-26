@@ -1,0 +1,20 @@
+{
+  "source_sha256": "d82a8d00c202e058c218e8a52c7219e08ad41752e4a164700125706d6d195df4",
+  "reviewed_9b": {
+    "before_training": 0.10059066489338875,
+    "training": 0.0949082300066948,
+    "after_training": 0.08824818022549152
+  },
+  "followup": {
+    "before_training": 0.10059066489338875,
+    "training": 0.0949082300066948,
+    "after_training": 0.08824818022549152
+  },
+  "delta": {
+    "before_training": 0.0,
+    "training": 0.0,
+    "after_training": 0.0
+  },
+  "cause": "9b fixed incidence credit on written fractional feature edges; this changes optimizer dynamics.",
+  "scope": "New comparison baseline; no numerical tolerance or improvement claim."
+}

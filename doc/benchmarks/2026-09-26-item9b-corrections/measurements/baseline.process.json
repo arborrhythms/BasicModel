@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-corrections-measurements-release/baseline.json"
+  ],
+  "pid": 39614,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4225012224,
+  "elapsed_seconds": 45.281104416935705,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-corrections-measurements-release/baseline.log"
+}

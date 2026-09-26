@@ -57,8 +57,8 @@
 > small basis of roughly eight ASCII-class properties (letters, capitals,
 > digits, punctuation, whitespace, and the remaining byte classes), one
 > codebook row per property. This is an initial learned basis rather than a
-> permanently closed ontology: dynamic properties may grow the WS inventory,
-> potentially toward PartSpace scale. Such growth never allocates a concept or
+> permanently closed ontology: dynamic properties may activate unused rows within the declared WS capacity,
+> which may be declared at PartSpace scale. Such admission never allocates a concept or
 > symbol in WholeSpace. Property activation may overlap: for example, an ASCII
 > capital activates both `letter` and `capital`; that conjunction does not mint
 > a ninth property row. A whole is a
@@ -542,15 +542,28 @@ signed conceptual weight. Required evidence is min over nonzero
 contributions on each pole; alternative definitions are max. Missing
 percepts assert neither. No projection onto codes or evidence floor occurs
 at the seam. Pi edges above this membership read intersect order-0 field
-readings, retaining designated occurrence brackets before the extent union.
+readings inside the common attention bracket.
 
-*Item 9b (decided in direction, Alec 2026-09-25):* the seam becomes a
-per-bracket read. Each percept row's presence and observed complement are
+*Item 9b (reviewed implementation):* each percept row's presence and observed complement are
 pooled over the occurrences inside the one convex bracket of attention
-before the definition matrix reads them; the per-extent, per-position
-tensors and the retained pairs in the conceptual field go, and exact
+before the definition matrix reads them. Conceptual fields carry no
+per-position tensors or per-concept coordinates. Exact
 co-location stays in perception (fused parts, pervading runs). See
 [Architecture](Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25).
+
+`WhereRegistry` assigns each model fixed, nonoverlapping ranges for input
+positions, PartSpace rows, all WholeSpace rows and symbol poles. Each symbol
+pole has one address. Input percept and symbol occurrences carry the word's
+input byte start; repeated occurrences use their different input locations,
+without extra symbol slots. Thought-produced symbols use their symbol-row
+address. The registry encodes locations through one model-owned `.where` ladder. Its long period
+covers the registry and its short period resolves adjacent locations. The
+band carries the address; an integer location is decoded from it. Codebook
+identity remains the row index. Every perceptual
+codebook reserves physical `nVectors` at construction, and admission changes
+occupancy in that allocation. Old physical-resize APIs and `maxVectors` are
+removed. Checkpoint capacities must match; nonempty legacy concept-location
+definitions require re-teaching their exact cases through native perception.
 
 Concept ids persist; order-0 field rows bind per turn. The field is common
 to all concepts, and precision belongs only to location. Max over occurrences
@@ -798,16 +811,14 @@ Every codebook entry is identified by its **row index** and must carry
 **distinct `.what` (`WhatEncoding`) content**; the old `.where`-keyed
 uniqueness scheme is retired:
 
-- **`.where` --- positional / spatial-extent key (no longer a codebook
-  row key).** The cross-codebook **`.where` slice registry was RETIRED**
-  (modality re-architecture, 2026-06-04; `WhereEncoding`,
-  [`Spaces.py`](../bin/Spaces.py)). `allocate_codebook_slice` /
-  `global_max_val` / `reset_codebook_registry` were removed: there is no
-  shared where-space to allocate disjoint slices in. Codebook identity is
-  now the **row index** (the `_index` selection), `.where` keeps only its
-  positional / spatial-extent role, and CS$\to$WS reverse decode is
-  **content-match** (nearest row). Cross-codebook taxonomy is row/position-keyed
-  via WholeSpace's explicit dicts (`category_ids`, `part_parents`).
+- **`.where` — a location, never a codebook row key.** Item 9b restores a
+  model-owned `WhereRegistry`: input positions, then fixed PartSpace and
+  WholeSpace slices, then symbols. The symbol range reserves the configured
+  number of word-occurrence slots for each row, using exact integer
+  coordinates so repeated occurrences remain distinct on CPU, CUDA and MPS.
+  Constructing another model cannot move these ranges. Codebook identity
+  remains its row index; content lookup and native relation references do not
+  use where coordinates as identities.
 - **`.what` --- distinct prototype content.** Identical `.what` collapses to the
   same parthood identity (`equal(A, A) = 1`) --- a redundant pair the network
   can't distinguish.
@@ -821,8 +832,8 @@ Current enforcement:
 | PartSpace Lexicon | Cosine-margin pode/antipode SBOW training | Active for trained Lexicons |
 | InputSpace vocabulary | Shares PartSpace's Lexicon | Inherited (text); manual (raw) |
 
-`.where` is now a positional / spatial-extent carrier (the slice registry is
-retired — see above); codebook identity is the **row index**. `.what`
+`.where` carries a location in the shared registry; codebook identity remains
+the **row index**. `.what`
 uniqueness is **learned** (encouraged by `ImpenetrableLayer` + antipodal
 quotient) and, together with the distinct row indices, keeps the parthood
 lattice well-formed.
@@ -925,39 +936,25 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
 
 - `nWhat` dims --- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dims (4) --- the **2-rung start LADDER** (`WhereEncoding`,
-  2026-07-09 multi-rung pass; mirrors the `.when` v2 ladder below):
-  $[\sin(p\,\omega_{lf}), \cos(p\,\omega_{lf}), \sin(p\,\omega_{hf}),
-  \cos(p\,\omega_{hf})]$ — two TRUE quadrature pairs over ONE quantity, the
-  byte **START** position $p$ only (the END is NOT in the band; content
-  terminates the tile), with $P_{lf} = $ `<wherePeriod>` (default 8192 input
-  bytes; the full-sentence RANGE) and $P_{hf} = P_{lf} / $ `<whereRungRatio>`
-  (default 32; the fine RESOLUTION rung — one byte at $\approx$ 0.0245 rad at
-  the default period, above the $\approx$ 0.02 rad measured reverse-transport
-  noise, the Gate-B closing measurement). `decode` = atan2 per pair + HF
-  branch resolution by LF (the canonical positional identifier across IS /
-  PS / SS taxonomies). The 2026-06-16 **endpoint-sum BRACKET** form (angle =
-  span center, magnitude = span extent, with a `decode_span`) was RETIRED
-  from `.where` on 2026-07-09 in favor of this start-only ladder;
-  `WhereEncoding` has no `decode_span` (the analyzer-side `EndpointSumWhere`
-  in `bin/perceptual_analyzer.py` is a separate codec that keeps the bracket
-  form for its own span key). The period is config-derived:
-  `<architecture><wherePeriod>`, decoupled from `nObjects`; the build seam
-  raise-to-fits with a warn-once for longer inputs (2026-07-04 encoding
-  pass).
-- `nWhen` dims (4) --- the **2-rung start LADDER** (`WhenStartDurationEncoding`,
-  2026-07-04 encoding pass): $[\sin(s\,\omega_{lf}), \cos(s\,\omega_{lf}),
-  \sin(s\,\omega_{hf}), \cos(s\,\omega_{hf})]$ — two TRUE quadrature pairs
-  over ONE quantity, the event **onset** $s$, with $P_{lf}=$ `<whenPeriod>`
-  (default $10^6$ ticks) and $P_{hf} = P_{lf}/$`<whenRungRatio>` (default 32;
-  safe branch bound $\approx 35$ at the dense-support phase floor). Constant
-  norm $\sqrt 2$; decode = atan2 per pair + HF branch resolution by LF.
-  **Shared-HF caveat:** at the default short HF, start-fine is a LOCAL phase
-  fingerprint (sharp neighbor discrimination), absolute branch unresolved
-  band-only — **absolute addressing rides the exact long-int clock**
-  (`BasicModel.when_time`), the Option-C hybrid side-band. DURATION left the
-  band (it was write-only: `decode_span` had zero callers, tense rotates the
-  onset only, aspect is retired) — exact extents belong to the record store
+- `nWhere` dims (4) — two quadrature pairs encode one registry location.
+  One model-owned encoding serves input positions, PartSpace, every
+  WholeSpace, and symbols. The long period is the next power of two covering
+  the complete registry plus its seam guard. The fine period is at least
+  256 positions and grows with large registries to keep float32 coarse-phase
+  error inside the branch bound. Integer modulo occurs before float conversion;
+  `decode_index` combines the two phases as integers, preserving adjacent
+  addresses above 2²⁴. A word occurrence uses its input byte start in the
+  registry's input slice, not its part row's address. Extent endpoints stay
+  in perception's span metadata. A part's end follows from its start and
+  byte length; a whole's end cannot be recovered from the start-only band.
+- `nWhen` dims (4) — the same two-rung construction over field time, with
+  periods derived from LTM capacity. Every element observed in one field has
+  the same advancing subjective `when_time`. Per-word reconstruction excludes
+  these shared dimensions, while grammar still transports them. Any field-time
+  objective should score the timestamp once per field. Spaces and tense
+  operators share this encoding; the exact
+  long-integer clock remains alongside it. Temporal extents belong to the
+  record store
   when aspect is built. Tense is the onset-vs-`now` relation; `shift_time`
   rotates BOTH pairs coherently, each at its own $\omega$. Both `.where` and
   `.when` are now START-only 2-rung ladders; the endpoint-sum bracket each

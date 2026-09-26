@@ -20,9 +20,9 @@
         leg. Within the conceptual leg, CS->SS->CS runs exactly symbolicOrder
         times to promote conceptual order before CS commits the word/object
         reference and Language tree plan.
-        32768-row initial part dictionary and 1048576-row logical ceiling keep
-        lexical storage proportional to observed growth. Conceptual folds
-        share one physical 1048576-row high-D dictionary rather than allocating
+        32768-row physical part dictionary admits words without resizing.
+        Conceptual folds share one physical 65536-row high-D dictionary
+        (32768 initially active) rather than allocating
         one table per fold. Its indexed-only path omits the unused VQ EMA
         mirror. The table is initialized on the unit sphere and then receives
         one detached, context-owned rotational SBOW update per completed
@@ -217,10 +217,8 @@
     <nInput>8192</nInput>
     <nInputDim>512</nInputDim>
     <nVectors>32768</nVectors>
-    <!-- Allocate only this initial prefix.  Chunk promotion queues new rows
-         during a word pass, then grows geometrically at the post-step boundary
-         without exceeding this logical ceiling. -->
-    <maxVectors>1048576</maxVectors>
+    <!-- Fixed physical reserve. Recurrence activates rows without replacing
+         the parameter or its optimizer state; exhaustion names nVectors. -->
     <nDim>136</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>136</nOutputDim>
@@ -242,7 +240,7 @@
          of PartSpace's allocated prefix, WholeSpace's small property basis,
          and the eight simultaneously live CS/WS locations. All four aligned
          subsymbolic folds address this one shared physical dictionary. -->
-    <nVectors>1048576</nVectors>
+    <nVectors>65536</nVectors>
     <!-- Only this prefix participates in VQ initially.  The remaining rows
          are an optimizer-owned reserve activated in power-of-two steps. -->
     <activeVectors>32768</activeVectors>

@@ -42,14 +42,13 @@
   </InputSpace>
   <PartSpace>
     <nInput>16</nInput>
-    <nVectors>16</nVectors>
-    <maxVectors>256</maxVectors>
+    <nVectors>256</nVectors>
     <nDim>16</nDim>
     <nOutput>16</nOutput>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
     <butterfly>false</butterfly>
-    <chunkPromotionThreshold>100000</chunkPromotionThreshold>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
   </PartSpace>
   <ConceptualSpace>
     <nInput>16</nInput>

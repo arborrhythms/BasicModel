@@ -14,7 +14,8 @@ def test_different_positions_in_one_extent_supply_the_two_symbols():
     extents = torch.tensor([[[0, 2], [2, 4]]])
     read = cs.cs_read_memberships(native, extents)
     torch.testing.assert_close(read[0, 0], torch.tensor([[1., 1.], [1., 0.]]))
-    assert cs._cs_position_evidence.shape == (cs._order_caps()[0], 1, 2, 8, 2)
+    assert cs._percept_field.events.shape[1:] == (1, 2, 8, 2)
+    assert not hasattr(cs, "_cs_position_evidence")
 
 
 def test_live_property_membership_is_a_learned_byte_definition(tmp_path):
@@ -142,27 +143,22 @@ def test_property_priming_projects_direct_surface_rows(tmp_path):
     assert not hasattr(ws, '_pos_kind')
 
 
-def test_located_copresence_writes_each_witnessed_pole():
-    import Spaces
-    from test_attention_promotion import _fixture, _pool_rows
-    cs, rows = _fixture(pi=True)
-    a, b, negative = [r for _, r in rows[:3]]
-    evidence = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
-    evidence[[a, b], 0, 0, 0] = 1.
-    evidence[negative, 0, 0, 1] = 1.
-    cs._promo_last_acts = evidence
-    cs._cs_level_rows = [torch.arange(cs._order_caps()[0])[:, None]]
-    cs._cs_position_evidence = evidence[:cs._order_caps()[0]].unsqueeze(-2)
-    cs._cs_position_spans = torch.tensor([[[0, 1]]])
-    cs._cs_extents = torch.tensor([[[0, 1]]])
-    cs.promotion_observe()
-    assigned = _pool_rows(cs)
-    assert len(assigned) == 1
+def test_native_fused_case_has_no_concept_location(tmp_path):
+    from test_grounded_xor import grounded_model
+    model, _ = grounded_model(tmp_path)
+    ps, cs = model.perceptualSpace, model.conceptualSpaces[0]
+    ps.percept_store.ensure_atomic_bytes([b'1', b'0'])
+    fused = ps.percept_store.insert(b'10')
+    raw = torch.zeros(1, 1, int(model.inputSpace.outputShape[0]), dtype=torch.long)
+    raw[0, 0, :2] = torch.tensor([49, 48])
+    model.forward(raw)
+    cs._observe_native_cases()
     store = Spaces._concept_alloc_of(cs).layer()
-    negative_column = negative + store.nOutput + 1
-    assert dict(cs.concept_weights(assigned[0], conjunctive=True)) == {a: 1., b: 1.}
-    assert dict(cs.concept_weights(assigned[0], conjunctive=True, negated=True)) == {negative: 1.}
-    assert store.conjunctive.locations[assigned[0], negative_column] == ((0, 1),)
+    assert any(col == 4 * fused and float(store.features.values[pos]) > 0
+               for (row, col), pos in store.features._index.items())
+    assert not hasattr(store.conjunctive, 'locations')
+    assert ps.percept_store.bytes_for(fused) == b'10'
+    model.End()
 
 
 def test_extent_read_keeps_missing_distinct_from_observed_zero():
@@ -178,7 +174,7 @@ def test_extent_read_keeps_missing_distinct_from_observed_zero():
         torch.testing.assert_close(field.flatten(), torch.tensor(expected))
 
 
-def test_grounded_read_has_one_owner_and_checkpoint_keeps_positions(tmp_path):
+def test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events(tmp_path):
     from test_grounded_xor import grounded_model
     model, x = grounded_model(tmp_path)
     cs = model.conceptualSpaces[0]
@@ -190,24 +186,24 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_positions(tmp_path):
     assert sum(p is parameter for g in optimizer.param_groups for p in g['params']) == 1
     assert not any(v.data_ptr() == parameter.data_ptr() for v in model.state_dict().values())
     evidence = carrier._concept_activations.clone()
-    positions = carrier._concept_position_evidence.clone()
-    spans = carrier._concept_position_spans.clone()
-    extents = carrier._concept_extents.clone()
+    perception = cs._percept_field.clone()
+    where, when = carrier._concept_where.clone(), carrier._concept_when.clone()
     saved = model._collect_structural_extras()
-    for name in ('activations', 'position_evidence', 'position_spans', 'extents'):
+    for name in ('activations', 'where', 'when'):
         object.__setattr__(carrier, '_concept_' + name, None)
+    cs._percept_field = None
     model._restore_structural_extras(saved)
     restored = model.conceptualSpaces[-1].subspace
     torch.testing.assert_close(restored._concept_activations, evidence)
-    torch.testing.assert_close(restored._concept_position_evidence, positions)
-    torch.testing.assert_close(restored._concept_position_spans, spans)
-    torch.testing.assert_close(restored._concept_extents, extents)
+    torch.testing.assert_close(restored._concept_where, where)
+    torch.testing.assert_close(restored._concept_when, when)
+    torch.testing.assert_close(cs._percept_field.events, perception.events)
+    torch.testing.assert_close(cs._percept_field.spans, perception.spans)
     leg = model.symbolSpace.forward_concept_to_symbol(restored)
-    torch.testing.assert_close(leg._concept_position_spans, spans)
-    assert spans[0, :2].tolist() == [[0, 1], [1, 2]]
+    torch.testing.assert_close(leg._concept_where, where)
+    assert not hasattr(restored, '_concept_position_evidence')
+    assert perception.spans[0, :2].tolist() == [[0, 1], [1, 2]]
     model.End()
-
-
 
 
 def test_candidate_growth_preserves_frozen_field_definitions():

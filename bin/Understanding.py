@@ -52,11 +52,13 @@ class AnswerProgram:
     # leaves retain the tied reconstruction's presented-word provenance.
     reference_ids: Any = None
     reference_orders: Any = None
+    symbol_where: Any = None
+    symbol_when: Any = None
     @property
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
                 "targets", "end_state", "concept_ids")
-        return core + tuple(name for name in ("reference_ids", "reference_orders")
+        return core + tuple(name for name in ("reference_ids", "reference_orders", "symbol_where", "symbol_when")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
@@ -77,6 +79,11 @@ class AnswerProgram:
         if orders is not None and (not torch.is_tensor(orders) or orders.dtype != torch.long
                 or orders.shape != ids.shape or bool((orders < -1).any())):
             raise ValueError("program reference orders must be nonnegative or -1, aligned to leaves")
+        for name in ('symbol_where', 'symbol_when'):
+            value = getattr(self, name)
+            if value is not None and (not torch.is_tensor(value) or value.shape != (*ids.shape, 4)
+                                      or not value.is_floating_point()):
+                raise ValueError('symbol occurrence bands must align to program leaves')
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())
@@ -130,17 +137,17 @@ class InputReconstruction:
 
 @dataclass(frozen=True)
 class ConceptualField:
-    """Forward evidence addressed by concept id, with its spatial brackets.
+    """One field's reading and native attribution, addressed by concept id.
 
-    No percept events or input stack are retained. Clones preserve gradients
-    while insulating reconstruction from the next perception's row binding.
+    The where/when belong to the field. Percept events own their coordinates;
+    no concept-by-position evidence or input byte trace is stored.
     """
 
     concept_ids: Any
     evidence: Any
-    position_evidence: Any
-    position_spans: Any
-    extents: Any
+    where: Any
+    when: Any
+    percepts: Any
 
     def __post_init__(self) -> None:
         for name in self.__dataclass_fields__:

@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]"
+  ],
+  "completed": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-start-doc-links/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-start-doc-links/worker-000.json"
+      ],
+      "pid": 69335,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 427345192,
+      "elapsed_seconds": 3.605029124999419,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-start-doc-links/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]"
+      ],
+      "completed": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004917919868603349,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-start-doc-links",
+  "elapsed_seconds": 5.093561041983776,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 427345192,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-start-doc-links/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-start-doc-links/collect.json"
+    ],
+    "pid": 69324,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 47858240,
+    "elapsed_seconds": 1.3049973329761997,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item9b-start-doc-links/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

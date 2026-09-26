@@ -77,7 +77,6 @@
     <nInput>8192</nInput>
     <nInputDim>512</nInputDim>
     <nVectors>32768</nVectors>
-    <maxVectors>1048576</maxVectors>
     <nDim>136</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>136</nOutputDim>
@@ -89,7 +88,7 @@
     <conceptReadoutL1>0.01</conceptReadoutL1>
     <nInput>8</nInput>
     <nInputDim>1032</nInputDim>
-    <nVectors>1048576</nVectors>
+    <nVectors>65536</nVectors>
     <activeVectors>32768</activeVectors>
     <stmCapacity>8</stmCapacity>
     <nDim>1032</nDim>

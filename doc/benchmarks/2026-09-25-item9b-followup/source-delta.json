@@ -1,0 +1,38 @@
+{
+  "bin/CategoricalDiscrimination.py": {
+    "before": null,
+    "after": "95e9bbde31b5fd27ecc9449ef7571b6d0832ae84bbe55c1c94f96b8d95fa5df3"
+  },
+  "bin/ModeSchedule.py": {
+    "before": "d7bb34133eb6cb0c62c950bf05af62d80bf8cbd0938652f398b634d498d82174",
+    "after": "c00c22c923106bc62903fe6287f154d5e16545a26c4b763b18d961ea78950982"
+  },
+  "bin/Models.py": {
+    "before": "6de5055bde54262d5800bb040cf6f72b163f15067c254276a1ed2d96239c4e07",
+    "after": "c07627fd660d7d1520644b5c22fd487c71d01b9ea2015baa56dde684d6b3e85c"
+  },
+  "bin/bench_mode_erosion.py": {
+    "before": "1f4a55e6e52c23d55cecd2bb74eb69cd84357b86ce6bae71ebda1ca2208c5448",
+    "after": null
+  },
+  "data/categorical_discrimination_probes.json": {
+    "before": null,
+    "after": "5292624469c329f3dbe05611599ab4946f63c3f659f62f974b84ce11678179f8"
+  },
+  "test/test_item9b_erosion.py": {
+    "before": "58c0a9096c6f6630d0c1d9a68c39791f854b70dab2ecacef26791dd947006b3b",
+    "after": "0778b73c46e2c09965ec4c9380f461fd3498a80c8d089db1a5472474f3fd5b54"
+  },
+  "test/test_item9b_followup.py": {
+    "before": null,
+    "after": "08126733f4879ca5e51feef2b8b8ebd24154a8ee1892a7df283e62c633660954"
+  },
+  "test/test_item9b_schedule.py": {
+    "before": "67506e211b7c95e224a3dbb5087dd91ae11bfb0211b9824594e109c143533824",
+    "after": "3fe52fb76dc887c3d0cac0539319f0dcf2abb7b481ce897bcf307bdc0cf68eae"
+  },
+  "test/test_reasoning.py": {
+    "before": "dc7c8074c45cc9b53622e9fcbb2557879b84869b9667cfd9eb3ef2a5a6cf18b2",
+    "after": "5a1e765fe176668c301ea23a6d1df3dab495285a0991c844ff888ce1239445d2"
+  }
+}

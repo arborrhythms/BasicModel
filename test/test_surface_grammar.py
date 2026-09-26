@@ -90,8 +90,8 @@ def test_generate_stack_preserves_infix_order_for_semantic_answers():
     torch.testing.assert_close(operand[1, :3], idea[1].flip(0))
 
 
-@pytest.mark.slow
-def test_real_text_has_a_complete_selected_meaning(tmp_path, monkeypatch):
+def run_wording_curriculum(tmp_path, monkeypatch):
+    """Small, reproducible development diagnostic; not a maturity-gated test."""
     import json
     from pathlib import Path
     from test_compiled_word_chunk import _tiny_canonical_model
@@ -102,7 +102,7 @@ def test_real_text_has_a_complete_selected_meaning(tmp_path, monkeypatch):
     training = curriculum["train"]
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8",
                                   batch_size=64, concept_rows=2048, dimension=64,
-                                  chooser_depth=2)
+                                  chooser_depth=2, part_rows=4096)
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     model.reconstruct_in_loop = False
@@ -137,6 +137,18 @@ def test_real_text_has_a_complete_selected_meaning(tmp_path, monkeypatch):
         optimizer.step()
         if step % 1000 == 0:
             print("TRAIN", step, float(loss.detach()), flush=True)
+    assert_selected_wording(model, curriculum)
+    return model
+
+
+def assert_selected_wording(model, curriculum):
+    """The same held-out meanings, outputs and rereading assertions at any size."""
+    from test_output_walk import _capture_program_probe
+    training = curriculum["train"]
+    def capture(texts):
+        model._tensor_final_end_slots = None
+        model._tensor_sentence_roots_live = None
+        return _capture_program_probe(model, texts)
     evaluation = curriculum["validation"] + curriculum["test"]
     train_wordings = {row.get("relation_wording") for row in training}
     assert all(row["relation_wording"] not in train_wordings
@@ -177,6 +189,16 @@ def test_real_text_has_a_complete_selected_meaning(tmp_path, monkeypatch):
         meaning = model.languageSpace.program_meaning(program, model.grammatical_thoughts)
         assert meaning is not None
         assert meaning.metadata() == prior.metadata()
+
+
+@pytest.mark.slow
+@pytest.mark.artifact_eval
+def test_real_text_has_a_complete_selected_meaning(fineweb_trained_model):
+    import json
+    from pathlib import Path
+    curriculum = json.loads((Path(__file__).resolve().parents[1]
+                             / "data/grammar_wording.json").read_text())
+    assert_selected_wording(fineweb_trained_model, curriculum)
 
 
 def test_normal_batch_trains_supplied_grammar_lessons(tmp_path, monkeypatch):

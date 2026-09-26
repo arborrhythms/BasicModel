@@ -86,8 +86,11 @@ def teach_concept_lessons(model):
                 cs.promotion_observe()
                 cs.promotion_pass()
                 model.End()
-    cases = sorted({r for r, _ in store.conjunctive._index
-                    if cs._order0_inventory_row(r) and not bool(store.provisional[r])})
+    cases = sorted({r for r, col in store.features._index
+                    if (col // 2) % 2 == 0 and cs._order0_inventory_row(r) and not bool(store.provisional[r])})
+    # Exclude directly taught names; cases are the recurrent native parts.
+    cases = [r for r in cases if any(target == r and (col // 2) % 2 == 0
+                                   for target, col in store.features._index)]
     if not cases:
         raise ValueError('concept lessons did not witness any located field conjunctions')
     for concept in model.outputSpace.concept_ids:

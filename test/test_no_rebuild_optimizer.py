@@ -24,6 +24,9 @@ def _build_embedding(capacity=16, dim=4):
     seed_keys = ["\x00", "a", "b"]
     vecs = torch.randn(len(seed_keys), dim)
     wv = WordVectors(vecs, seed_keys)
+    reserve = vecs.new_zeros(capacity, dim)
+    reserve[:len(seed_keys)].copy_(vecs)
+    wv._vectors = nn.Parameter(reserve)
     e.wv = wv
     e.lexicon_capacity = capacity
     e.byte_mode = False
@@ -31,7 +34,7 @@ def _build_embedding(capacity=16, dim=4):
     e._oov_fallback_count = 0
     e._oov_fallback_sample = []
     e._oov_fallback_sample_cap = 16
-    e._inflate_to_capacity()
+    wv._fixed_capacity = e.lexicon_capacity
     e.pretrain = PretrainModel(wv, learning_rate=0.01, neg_samples=2)
     return e
 

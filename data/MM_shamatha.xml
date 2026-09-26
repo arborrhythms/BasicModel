@@ -70,7 +70,7 @@
   <PartSpace>
     <nOutput>16</nOutput>
     <nDim>16</nDim>
-    <nVectors>16</nVectors>
+    <nVectors>256</nVectors>
   </PartSpace>
 
   <!-- ConceptualSpace: hierarchical mode computes per-level shapes from

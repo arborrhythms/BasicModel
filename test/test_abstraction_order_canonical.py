@@ -245,12 +245,11 @@ def test_fold_path_preserves_route_order_and_noop_gaps():
 
 def test_order_stable_across_growth_and_remove():
     cb = Codebook()
-    cb.create(4, 6, _D, customVQ=False, monotonic=False)
+    cb.create(4, 12, _D, customVQ=False, monotonic=False)
     cb.enable_ramsification(2)
     cb.record_fold(2, 0, Codebook.FOLD_SIGMA)
     assert cb.abstraction_order(2) == 1
     # grow_to: appended rows are order 0, stamped row keeps its order.
-    cb.grow_to(12)
     assert int(cb.ramsification.shape[0]) == 12
     assert cb.abstraction_order(2) == 1
     assert cb.abstraction_order(11) == 0

@@ -40,8 +40,7 @@
 
   <PartSpace>
     <nInput>8</nInput>
-    <nVectors>8</nVectors>
-    <maxVectors>256</maxVectors>
+    <nVectors>256</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>

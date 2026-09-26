@@ -151,16 +151,16 @@ def test_populate_then_resolve_identities_live_lifecycle():
 
 # -- word / object / meta creation (Alec 2026-06-17) -------------------------
 
-def test_create_word_object_meta_structure():
+def test_interpret_word_structure():
     cs = _cs()
     # PS gives the word-parts (pids 65,66,67); WS gives the word-whole (WORD).
-    A, B, C = cs.create_word_object_meta([65, 66, 67], WORD)
+    A, B, C = cs.interpret_word([65, 66, 67], WORD)
     # A = WORD-symbol: parts = the word-parts, whole = the word-whole.
     assert set(cs.concept_parts(A)) == {65, 66, 67}
     assert cs.concept_wholes(A) == [WORD]
     # B = OBJECT-symbol: maximally unspecified -- ATOM <= UNIVERSE, to be refined.
-    assert cs.concept_parts(B) == [ATOM]
-    assert cs.concept_wholes(B) == [UNIVERSE]
+    assert cs.concept_parts(B) == [("sym", A)]
+    assert cs.concept_wholes(B) == []
     # C = META-concept (P2 flip, sec 4c): the ORDERED PAIR
     # [whole=word-symbol, part=object-symbol] -- roles are positional slots
     # of an ordered pair, not containment claims.
@@ -174,7 +174,7 @@ def test_meta_pair_is_discretizable_and_persists_resolve():
     row is unit-set/pair STRUCTURE, not an id-of-indiscernibles tie) -- it
     survives resolve_identities."""
     cs = _cs()
-    A, B, C = cs.create_word_object_meta([65, 66], WORD)
+    A, B, C = cs.interpret_word([65, 66], WORD)
     alloc = cs._concept_allocator
     assert alloc.store_of(C).discretize_row(C) == (("sym", A), ("sym", B))
     resolved = cs.resolve_identities()
@@ -203,7 +203,7 @@ def test_singleton_populates_one_untyped_edge():
     """Min-support exemption: the singleton's weighted reading is its ONE
     untyped edge onto the constituent's global row (v3)."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # order-0 sym
+    A, _B, _C = cs.interpret_word([1], 2, key="w")   # order-0 sym
     S = cs.singleton_concept(A)
     assert cs._concept_source_order(S) == 1
     row = cs._csw_rows[(1, S)]
@@ -215,53 +215,53 @@ def test_meta_word_object_recovers_by_intersection():
     from intersecting the meta's sym constituents with the word-symbol
     class, not from slot order."""
     cs = _cs()
-    A, B, C = cs.create_word_object_meta([65, 66], WORD, key="w")
+    A, B, C = cs.interpret_word([65, 66], WORD, key="w")
     assert cs.meta_word_object(C) == (A, B)
     assert cs.meta_word_object(A) is None            # not a two-sym meta
 
 
-def test_create_word_object_meta_idempotent_per_key():
+def test_interpret_word_idempotent_per_key():
     cs = _cs()
-    A1, B1, C1 = cs.create_word_object_meta([65, 66], WORD, key="ab")
-    A2, B2, C2 = cs.create_word_object_meta([65, 66], WORD, key="ab")
+    A1, B1, C1 = cs.interpret_word([65, 66], WORD, key="ab")
+    A2, B2, C2 = cs.interpret_word([65, 66], WORD, key="ab")
     assert (A1, B1, C1) == (A2, B2, C2)              # same word -> same triple
     # a different surface text mints a fresh triple
-    A3, _, _ = cs.create_word_object_meta([67], WORD, key="c")
+    A3, _, _ = cs.interpret_word([67], WORD, key="c")
     assert A3 != A1
     # no key -> always fresh
-    A4, _, _ = cs.create_word_object_meta([65, 66], WORD)
-    assert A4 != A1
+    A4, _, _ = cs.interpret_word([65, 66], WORD)
+    assert A4 == A1  # native ordered parts resolve without a surface cache
 
 
-def test_create_word_object_meta_accumulates_word_parts():
+def test_interpret_word_accumulates_word_parts():
     cs = _cs()
-    A, _, _ = cs.create_word_object_meta([65], WORD, key="grows")
+    A, _, _ = cs.interpret_word([65], WORD, key="grows")
     # the same word re-presented with a new spelled-out part accrues it onto A.
-    A2, _, _ = cs.create_word_object_meta([66], WORD, key="grows")
+    A2, _, _ = cs.interpret_word([66], WORD, key="grows")
     assert A2 == A
     assert set(cs.concept_parts(A)) == {65, 66}
 
 
 def test_object_symbol_is_refinable_not_yet_identity():
     cs = _cs()
-    _, B, _ = cs.create_word_object_meta([65, 66, 67], WORD)
+    _, B, _ = cs.interpret_word([65, 66, 67], WORD)
     # B starts as a 1-part/1-whole tie (ATOM <= UNIVERSE) -- structurally an
     # identity SHAPE, but it is the unspecified poles awaiting refinement, so it
     # is still in the active set until the lifecycle specializes it.
-    assert cs.concept_is_identity(B)                  # one pole each
+    assert not cs.concept_is_identity(B)              # testimony has no whole yet
     assert B in cs.symbols_needing_processing()      # poles not yet resolved
 
 
 def test_resolve_identities_does_not_collapse_unspecified_object():
     cs = _cs()
-    A, B, C = cs.create_word_object_meta([65, 66, 67], WORD)
+    A, B, C = cs.interpret_word([65, 66, 67], WORD)
     resolved = cs.resolve_identities()
     # B (ATOM <= UNIVERSE) is the unspecified object -> NOT collapsed; it stays
     # active for refinement and is not recorded as a resolved identity.
     assert B not in resolved
     assert cs.symbol_identity(B) is None
     assert B in cs.symbols_needing_processing()
-    assert cs.concept_parts(B) == [ATOM] and cs.concept_wholes(B) == [UNIVERSE]
+    assert cs.concept_parts(B) == [("sym", A)] and cs.concept_wholes(B) == []
     # once refined to a CONCRETE part + whole, it DOES resolve to an identity.
     cs._concept_parts[B] = {65}
     cs._concept_wholes[B] = {WORD}
@@ -355,7 +355,7 @@ def test_prune_removes_bias_edge_of_dropped_everything():
     physical edge pruning can retire is the EVERYTHING bias -- global
     (row, nVectors) -- of a pool concept once a tighter whole is linked."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # A: order-0 sym
+    A, _B, _C = cs.interpret_word([1], 2, key="w")   # A: order-0 sym
     c = cs.new_concept()
     cs.add_part(c, ("sym", A))                       # order 1
     cs.add_whole(c, EVERYTHING)
@@ -400,9 +400,9 @@ def test_refine_over_collected_runs_pruning_round():
 
 def test_assert_relation_replaces_poles_and_enters_embedding():
     cs = _cs_sparse_active()
-    A, B, C = cs.create_word_object_meta([1], 2, key="cat")
-    assert set(cs.concept_parts(B)) == {ATOM}
-    assert set(cs.concept_wholes(B)) == {UNIVERSE}
+    A, B, C = cs.interpret_word([1], 2, key="cat")
+    assert set(cs.concept_parts(B)) == {("sym", A)}
+    assert set(cs.concept_wholes(B)) == set()
     # "a cat has whiskers" (whiskers-object = another concept, id 9):
     cs.assert_concept_relation(B, sym_part=9)
     assert ATOM not in cs.concept_parts(B)           # pole replaced
@@ -431,7 +431,7 @@ def test_assert_relation_sym_weight_lands_on_edge():
     (relation_row, constituent_row) (no_grad evidence, not a backprop
     target)."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # order-0 sym
+    A, _B, _C = cs.interpret_word([1], 2, key="w")   # order-0 sym
     c = cs.new_concept()
     cs.assert_concept_relation(c, sym_part=A, whole=7, weight=0.5)
     order = cs._concept_source_order(c)
@@ -453,15 +453,12 @@ def test_pole_rename_aliases_hold():
     assert ATOM == NOTHING and UNIVERSE == EVERYTHING
 
 
-def test_fresh_object_concept_reserves_order0_row_no_edges():
+def test_fresh_object_concept_reads_its_naming_word_at_order1():
     cs = _cs_sparse_active()
-    A, B, C = cs.create_word_object_meta([1, 2], 3, key="cat")
-    order = cs._concept_source_order(B)
-    assert order == 0                                # newly minted: zeroth order
-    row = cs._csw_rows[(0, B)]                       # snap row reserved
-    assert cs.concept_weights(row) == []             # order 0: no edges
-    # A likewise reserves its own order-0 row (a distinct one).
-    assert cs._csw_rows[(0, A)] != row
+    A, B, _ = cs.interpret_word([1, 2], 3, key="cat")
+    assert cs._concept_source_order(B) == 1
+    row = cs._csw_row_of(B)
+    assert cs.concept_weights(row) == [(cs._csw_row_of(A), 1.)]
 
 
 def test_assert_concrete_whole_retires_everything_bias_edge():
@@ -469,7 +466,7 @@ def test_assert_concrete_whole_retires_everything_bias_edge():
     edge when a concrete whole replaces the pole (the wide-open object
     narrows)."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.create_word_object_meta([1, 2], 3, key="cat")
+    A, _B, _C = cs.interpret_word([1, 2], 3, key="cat")
     c = cs.new_concept()
     cs.add_part(c, ("sym", A))                       # order 1
     cs.add_whole(c, EVERYTHING)
@@ -497,20 +494,16 @@ def test_prune_drops_everything_when_other_whole_linked():
 
 # -- Hebbian word/object tie strengthening (2026-07-02 plan, Task 11) ----------
 
-def test_word_object_tie_strengthens_on_reoccurrence():
+def test_word_object_testimony_participation_strengthens_on_reoccurrence():
     cs = _cs_sparse_active()
-    A, B, C = cs.create_word_object_meta([1, 2], 3, key="cat")
-    order = cs._concept_source_order(C)
-    row = cs._csw_rows[(order, C)]
-    before = dict(cs.concept_weights(row))
-    assert before                                    # C holds sym-ref edges
-    A2, B2, C2 = cs.create_word_object_meta([1, 2], 3, key="cat")  # re-mint
-    assert (A2, B2, C2) == (A, B, C)
-    after = dict(cs.concept_weights(row))
-    assert any(after[c] > before[c] for c in before)  # Hebbian bump
-    assert all(v <= 4.0 for v in after.values())      # clamped
-
-
+    A, B, C = cs.interpret_word([1, 2], 3, key="cat", occurrence=(0, 0))
+    row = cs._csw_row_of(B)
+    store = cs._concept_allocator.layer()
+    before = float(store.participation[row])
+    assert cs.concept_weights(row) == [(cs._csw_row_of(A), 1.)]
+    assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B, C)
+    assert before < float(store.participation[row]) <= 1.
+    assert cs.concept_weights(row) == [(cs._csw_row_of(A), 1.)]
 
 
 def test_joint_concept_is_bias_bounded_chain():
@@ -519,8 +512,8 @@ def test_joint_concept_is_bias_bounded_chain():
     the EVERYTHING bias -- a proper hidden unit over untyped edges (v3:
     direction lives in the records/nesting, not in typed columns)."""
     cs = _cs_sparse_active()
-    A1, _B1, _C1 = cs.create_word_object_meta([1], 2, key="w1")
-    A2, _B2, _C2 = cs.create_word_object_meta([3], 4, key="w2")
+    A1, _B1, _C1 = cs.interpret_word([1], 2, key="w1")
+    A2, _B2, _C2 = cs.interpret_word([3], 4, key="w2")
     J = cs.create_joint_concept([A1, A2], key=("w1", "w2"))
     assert cs._concept_source_order(J) == 1
     # The head link is the ordered pair [whole=A1 (current), part=A2 (rest)].

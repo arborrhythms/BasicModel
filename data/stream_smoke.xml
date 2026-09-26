@@ -37,7 +37,7 @@
   <PartSpace>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
-    <nVectors>128</nVectors>
+    <nVectors>256</nVectors>
     <invertible>true</invertible>
   </PartSpace>
 

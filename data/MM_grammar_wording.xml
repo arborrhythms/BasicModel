@@ -78,7 +78,6 @@
     <nInput>128</nInput>
     <nInputDim>64</nInputDim>
     <nVectors>256</nVectors>
-    <maxVectors>2048</maxVectors>
     <nDim>64</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>64</nOutputDim>

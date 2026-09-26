@@ -244,7 +244,7 @@ class TestSpacePrediction(unittest.TestCase):
         Models.TheData.load("xor")
 
         _pdim = Models.TheXMLConfig.space("PartSpace", "nDim")
-        _pvec = Models.TheXMLConfig.space("PartSpace", "nVectors")
+        _pvec = 256  # Fixed physical reserve holds the initial byte alphabet.
         _obj = _obj_size("PartSpace")
         psp = Models.PartSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
                          model_type="embedding")
@@ -295,7 +295,7 @@ class TestSpacePrediction(unittest.TestCase):
         Models.TheData.load("xor")
 
         _pdim = Models.TheXMLConfig.space("PartSpace", "nDim")
-        _pvec = Models.TheXMLConfig.space("PartSpace", "nVectors")
+        _pvec = 256  # Fixed physical reserve holds the initial byte alphabet.
         _obj = _obj_size("PartSpace")
         psp = Models.PartSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
                          model_type="embedding")
@@ -349,7 +349,7 @@ class TestNullEOS(unittest.TestCase):
         Models.TheData.load("xor")
 
         _pdim = Models.TheXMLConfig.space("PartSpace", "nDim")
-        _pvec = Models.TheXMLConfig.space("PartSpace", "nVectors")
+        _pvec = 256  # Fixed physical reserve holds the initial byte alphabet.
         cls.psp = Models.PartSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim],
                              model_type="embedding")
         cls.emb = cls.psp.vocabulary
