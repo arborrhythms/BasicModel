@@ -46,9 +46,6 @@ conference number, should be read as a claim about the performance of the
 grammar as a set yet; a poor result on wording, parse depth or free
 generation is expected at this stage and is recorded, not tuned away.
 
-- **9b. Shared fields, interpretation and fixed capacities.** Claude accepted
-   the implementation; the required final sweep is green. Ready to record the
-   implementation commit under Done ([review receipt](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md)).
 - **9. Mature-checkpoint learning evidence.** The mechanism, checkpoint exposure
    counter and quality-evaluation machinery are reviewed and implemented
    ([receipt](doc/benchmarks/2026-09-26-item9-followup/README.md)). Learning
@@ -265,6 +262,9 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- `8bc710a` Item 9b: shared fields, parallel-first context, association-first interpretation, fixed capacities and corrected occurrence/time objectives; Claude accepted the source-matched 4,948-case sweep ([receipt](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md)).
+- `8bc710a` Item 9 evaluation machinery: verified FineWeb exposure and maturity-gated wording/prediction/predictive-thought checks; empirical acceptance remains open above ([receipt](doc/benchmarks/2026-09-26-item9-followup/README.md)).
 
 - `0e70001` Item 9 parity landing: sentence-owned reconstruction candidates, final saved roots, first-sight bank checks without scalar host reads, and the historical-answer warning ([receipt](doc/benchmarks/2026-09-25-item9-bank-sync/README.md)); expectation-learning gates remain open.
 

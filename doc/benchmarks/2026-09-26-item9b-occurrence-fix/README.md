@@ -1,6 +1,6 @@
 # Item 9b: occurrence positions and per-word reconstruction time
 
-Status: implemented, validated and accepted by Claude; Alec authorized publication.
+Status: committed in `8bc710a` after validation and Claude's acceptance.
 The [protocol](PROTOCOL.md) preserves the unchanged measurement workload and
 memory limits. This follows the accepted item 9 learning-evaluation machinery
 and addresses the decision recorded in plan section 4f.
@@ -124,3 +124,13 @@ recovery gate; it is not waived or counted as passing this landing. Claude
 accepted the recorded after-training difference as the new short-run baseline.
 These are the reviewer's reported local results; the source-matched runs above
 are Codex's validation.
+
+## Publication
+
+Implementation `8bc710a8b68cd71e4331b31bd22d2a7c8fd03f57` [matches all 669 reviewed source blobs](committed-source-verification.json).
+Item 9b is recorded under Done; item 9's empirical acceptance still requires
+a qualified FineWeb checkpoint. Item 8 is the next implementation task. The
+publication changes only review status and handoff bookkeeping after the full
+sweep; no runtime, test or configuration source has changed.
+
+Publication documentation links also pass **101/101**, including the committed-source verification link.

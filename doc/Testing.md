@@ -2210,3 +2210,8 @@ prediction or reasoning performance. Final documentation-link verification
 passes **101/101**. Claude accepted the correction after the green sweep, and
 Alec authorized publication; the receipt records the reviewer's local results
 and the known-red item 6 recovery gate separately.
+
+Implementation `8bc710a` [matches all 669 reviewed source blobs](benchmarks/2026-09-26-item9b-occurrence-fix/committed-source-verification.json).
+Claude's review and Alec's publication approval close the item 9b implementation.
+Item 8 is next; the item 9 mature-checkpoint learning gate remains deferred.
+Publication documentation-link verification also passes **101/101**.

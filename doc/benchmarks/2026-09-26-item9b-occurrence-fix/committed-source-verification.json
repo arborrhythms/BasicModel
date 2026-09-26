@@ -1,0 +1,14 @@
+{
+  "implementation_commit": "8bc710a8b68cd71e4331b31bd22d2a7c8fd03f57",
+  "implementation_tree": "ae84c8a7cf4763a5290b75e45aa508c1e9609cc6",
+  "reviewed_source_files": 669,
+  "committed_source_files_verified": 669,
+  "source_map_sha256": "61bca3d4143303c811ce3a12b1e27067bd418e833e26a376db2568dfb0363ecf",
+  "committed_blobs_match_reviewed_source": true,
+  "working_source_matches_reviewed_source": true,
+  "mismatches": [],
+  "method": "SHA-256 of every committed source blob read with git cat-file --batch, compared with source-manifest.json.",
+  "validation_summary": "validation-summary.json",
+  "publication_approval": "Alec, September 26, 2026: Claude accepts: commit and give me a handoff paragraph for item 8",
+  "receipt_whitespace": "Archived patch context, logs and copied measurement XML retain their original bytes; live runtime/config/test changes pass the whitespace check."
+}

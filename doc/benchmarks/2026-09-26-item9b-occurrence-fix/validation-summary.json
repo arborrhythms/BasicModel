@@ -1,7 +1,7 @@
 {
   "source_files": 669,
   "source_sha256": "61bca3d4143303c811ce3a12b1e27067bd418e833e26a376db2568dfb0363ecf",
-  "stage": "complete; accepted by Claude; publication authorized by Alec",
+  "stage": "complete; accepted by Claude; implementation committed",
   "changed_files": [
     "bin/Language.py",
     "bin/Models.py",
@@ -305,5 +305,14 @@
     },
     "predicted_final_recovery_within_one_percent": false
   },
-  "publication_approval": "Alec: Claude accepts: commit and give me a handoff paragraph for item 8"
+  "publication_approval": "Alec: Claude accepts: commit and give me a handoff paragraph for item 8",
+  "implementation_commit": "8bc710a8b68cd71e4331b31bd22d2a7c8fd03f57",
+  "committed_source_verification": "committed-source-verification.json",
+  "publication_documentation_check": {
+    "result": "publication-docs/result.json.gz",
+    "source": "publication-docs/source-manifest.json.gz",
+    "exit_code": 0,
+    "passed": 101,
+    "runtime_source_unchanged": true
+  }
 }

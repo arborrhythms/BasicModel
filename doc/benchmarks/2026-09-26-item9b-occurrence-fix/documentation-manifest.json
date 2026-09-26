@@ -1,6 +1,6 @@
 {
   "doc/AccessibleMind.md": "1a860b6e38de445f27c2a4c27ea71fe0453798b3074babfda7c0531fea8a938f",
-  "doc/Architecture.md": "acf09a11b21476c53adaef9e8f743072f65db7015c9d8606c1ebf2026d26c36b",
+  "doc/Architecture.md": "753abbce4af4c8a40774ae39fbf35d766ed11e433ae1a8d19b6dbb5ed9c6fb11",
   "doc/BasicModel.md": "8874fa7d0a3958312c2343823ed02f89fbfebef3dd1c2f5d8fdb5914a1da9db7",
   "doc/BasicModelStabilityPlan.md": "987c3671f06115444b2a618e21a3a80136641235b74e83715470c942329c9ea9",
   "doc/Componentization.md": "79f63ac59adcdc20e07f09e949cb45c4da0d9799e5ffacb74a40cf2ae36087dc",
@@ -27,10 +27,10 @@
   "doc/Reasoning.md": "43b12bbecdb26b4ca2d8c12029f5bbd06e89953746aec318fa06f1084fa52539",
   "doc/STM.md": "eb33074389f5c986440c62f66bd2fcc734177425138d17afff33554d5cabd4f2",
   "doc/SelectedMeaning.md": "2e44ddd9b65deb0aa7c19abbc0d5ad959c3119d918c7db3d818842fae5c1bbbb",
-  "doc/Spaces.md": "a23a44101aa67bf6c2814764275f3d1bd05d851c1939375cedd0de0c01fb7c7c",
+  "doc/Spaces.md": "ff0660c2e530010db55f1b5b1be6ad93e23322927885db48367fb562d1e4df77",
   "doc/SymbolFirewall.md": "8423d6039cefb24456e594a06396056adf17c7bef6c7f3e7aee2ddca26fe63d6",
   "doc/TaxonomyQueries.md": "df1f1c3b185eb3a74350427cddc823c6bfd69dcd67d370f32cfc8b2b6ec696a8",
-  "doc/Testing.md": "424fa6622dac80b0a0fcd1b74144899710225535e7706ba264d848863deb3531",
+  "doc/Testing.md": "6322e4e41a8a15dbf642a34b46cc8b63fe9260c7f5bdaf174545eddfb16fa030",
   "doc/ThoughtHistory.md": "35bf126e107a5c159c25e3892b1f88b3aad5fd9863281a9ae4f2a86244f37874",
   "doc/Training.md": "f71d32c40607c5187b9e234d96599656b4c1efa129408c75ba64dc0d9b6832ee",
   "doc/WhatSpacetimeDesign.md": "4fb758d3d0ccfc5642740371b1562ceb0a9b6d7dfeb9fa494cd6a66b8ac85972",
@@ -71,7 +71,7 @@
   "doc/benchmarks/2026-09-26-item9-followup/README.md": "a45592ebd50ee21b4f9083602b9741248b11f05485222b0bc7c42d0930993605",
   "doc/benchmarks/2026-09-26-item9b-corrections/README.md": "267bcd8d3fa6ce664678246048b6c7224f9f76cae0b36d686f3ca76ffc995d18",
   "doc/benchmarks/2026-09-26-item9b-occurrence-fix/PROTOCOL.md": "4ae0a676c59459028d440e72aaf32e2319c08d6729b133cd54fa4cb64e4aa8a3",
-  "doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md": "af433d41d8202832dc2a736950baffc0ef17a3b40b157e02d315ef32cbfdf41e",
+  "doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md": "cb457bb5b417f9d99bb8f4d3503c827dae292befcfa413ebd4f6de485d06bcb1",
   "doc/checkpoints/2026-09-17-production-spec/README.md": "6cb41932e32e6721c39a0c90d1bb2896233d187b2f9c697d1c065ee47bb871a8",
   "doc/plans/2026-07-16-sparse-subspace-carrier-design.md": "e1b9d4af02fb65015dd2f12ffe5d22ffb02e568cf303fe6e016134b395fa026e",
   "doc/plans/2026-09-08-what-spec-deliverables.md": "2e72c22ff72dc610a1e18ca9e49cfd625524e3d5ce28248865f9db4f2b468cd0",
@@ -85,7 +85,7 @@
   "doc/plans/2026-09-18-thought-operator-unification.md": "4781a83b95a2a9f6efb7eccf45986404232e81be82a71abecee2fc78cb5af52c",
   "doc/plans/2026-09-20-selected-thought-completion.md": "2277252b38950b98a4e780397e5bd2dfcbde700606080e34d844acce1059308e",
   "doc/plans/2026-09-24-item-11c.md": "9befacc7dc9de0a9859dff5f115b5969c8d2e6fa46761ca9e55d6033b4e2de06",
-  "doc/plans/2026-09-25-item-9b-mode-sharing-and-interpret.md": "29ac3cf4c1812232344ed3525ef85a57b9dd8ebd8abfeed0296e9fcbe5fa960d",
+  "doc/plans/2026-09-25-item-9b-mode-sharing-and-interpret.md": "839fbfa06fa6747569c421513a77f27bd025137659b11daf248470e1e6d87b73",
   "doc/research/2017-jang-gumbel-softmax.md": "52c306355413a54e1c76f51f6d6694cb3d0632dd53cc4e39e6c6c86588cb928c",
   "doc/research/2019-kim-compound-pcfg.md": "47ab120af4780d6279d22398c3c7cf3f03d7285e6486bfaa0a3fef8aef2304d6",
   "doc/research/2022-yang-rank-space-pcfg.md": "948a31ea98cb073d36416844faac699a52f8f86f9d7e23686c95a5bd5586dae1",
@@ -99,5 +99,5 @@
   "doc/specs/2026-09-16-two-truths-ideas-and-relations.md": "734d8379824bce5a114956c128eb25b60402ba17133da52c34d45c1785714563",
   "doc/specs/2026-09-18-thought-operations-in-compose.md": "321bfec4d552fdf89cb656a649c6fb67b41e8e17370e567b56ac61fe1e6cb4d4",
   "doc/specs/2026-09-20-accessible-mind-subsystems.md": "403aff3193a0317c8c685081320d87dfda802b0ef48c91891bfb7ef0ab90ff88",
-  "todo.md": "8e085e6fed6ce89da5b89a3fd8246c00cd42aecda56bc7ea151b2133834b1c50"
+  "todo.md": "e556d4481828e52f509c5e6c928d5c099141ad3e1a9ca81b65af46a26d32d3c1"
 }
