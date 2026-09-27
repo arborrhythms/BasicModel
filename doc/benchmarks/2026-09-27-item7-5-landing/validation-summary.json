@@ -59,6 +59,31 @@
       "peak_worker_bytes": 6619355544,
       "peak_aggregate_memory_bytes": 15232580944,
       "compile_cache_retries": []
+    },
+    "documentation": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 115,
+      "completed": 115,
+      "counts": {
+        "passed": 115
+      },
+      "seconds": 11.47343233297579,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 1800.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 431785304,
+      "peak_aggregate_memory_bytes": 1295159280,
+      "compile_cache_retries": []
     }
   },
   "source_files": 671,
@@ -77,12 +102,13 @@
   "complete_unique_full_coverage": 4989,
   "protected_contracts_unchanged": true,
   "source_archive_verified": true,
-  "documentation_snapshot_matches": false,
+  "documentation_snapshot_matches": true,
   "depth3_campaign": "red; unchanged assertion retained",
   "learned_utility": "unproven",
   "deferred_decisions": [
     "nonzero training temperature",
     "sentence parsimony/work term"
   ],
-  "publication": "accepted by Alec after Claude round 3; documentation check pending"
+  "publication": "accepted by Alec after Claude round 3; validated for the reviewed landing",
+  "implementation_commit": "69067272d823096a101b543ae0af714d12acc67e"
 }

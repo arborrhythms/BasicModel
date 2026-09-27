@@ -18,6 +18,14 @@
     },
     "completed": 4989,
     "seconds": 5674.496463667019
+  },
+  "documentation": {
+    "exit_code": 0,
+    "counts": {
+      "passed": 115
+    },
+    "completed": 115,
+    "seconds": 11.47343233297579
   }
 }
 a98b0f4e98b6959c3c60f01567c87dd419a09842c047f6e304a752d230171bf7

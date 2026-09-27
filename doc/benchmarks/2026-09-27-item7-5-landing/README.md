@@ -77,3 +77,12 @@ Restating the shared-operator diagnostic assertion around actual seal
 contributions and renaming the native context-read `exploration_trial` flag are
 also follow-up work. This landing applies only the two accepted fixture patches
 on top of the reviewed implementation.
+
+## Committed source verification
+
+Implementation commit `69067272d823096a101b543ae0af714d12acc67e` contains exactly
+all 671 files in the frozen source manifest, with every blob hash matching the
+full sweep. The [verification record](committed-source-verification.json) and
+[verification driver](verify_commit.py) bind the commit to this receipt.
+The implementation is accepted with the depth-three campaign red; the separate
+follow-up record contains publication metadata and the reconciled task list.

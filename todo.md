@@ -62,7 +62,7 @@ generation is expected at this stage and is recorded, not tuned away.
    causal result, and fused AMP conservatively undercounts exposure. Preserve the
    tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
    development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
-   old context-free and assertion-thought scores are invalid controls. Item 8 is
+   old context-free and assertion-thought scores are invalid controls. Item 7 is
    the next implementation task while this empirical gate waits for training.
 - **8. Evidence: learned utility and structural preference.** Prefer
    understandable structural operators when they carry the meaning; any opaque
@@ -103,6 +103,13 @@ generation is expected at this stage and is recorded, not tuned away.
    single 4,980-case full sweep: 4,653 passed, 326 skipped and one expected
    failure. Reconstruction exactly matches reviewed 9b. The review corrections
    are validated for the requested commit; item 8's empirical gates remain open.
+- **7.5. Deferred compose follow-ups (non-blocking).** Specify the nonzero
+   training temperature and sentence parsimony/work term accepted for a later
+   spec; evaluation remains deterministic. Restate the shared-operator report
+   assertion around seal contributions or forced parametric selection, and
+   rename the native context-read `exploration_trial` flag in housekeeping.
+   The unchanged depth-three campaign remains red; retain its assertion and
+   the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
 - **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
    new session. One S = one LTM row: an absolute S fuses to one point and
    writes an idea row with derivation and `refs`; a relative S (generic
@@ -279,6 +286,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence seal, reduction pressure/deadlines and seal-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
 - `8bc710a` Item 9b: shared fields, parallel-first context, association-first interpretation, fixed capacities and corrected occurrence/time objectives; Claude accepted the source-matched 4,948-case sweep ([receipt](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md)).
 - `8bc710a` Item 9 evaluation machinery: verified FineWeb exposure and maturity-gated wording/prediction/predictive-thought checks; empirical acceptance remains open above ([receipt](doc/benchmarks/2026-09-26-item9-followup/README.md)).
 

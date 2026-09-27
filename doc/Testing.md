@@ -2530,3 +2530,8 @@ test fixtures. Serial reconstruction remains the recorded
 historical MM **.21757** failure remain visible. No million-sentence campaign
 ran. Nonzero training temperature and a sentence work term await later specs;
 the diagnostic assertion and native context-read flag have recorded follow-ups.
+
+Implementation `6906727` contains all 671 frozen source files with every
+committed blob verified against the full-sweep manifest. The landing receipt
+records that verification; the deferred compose decisions remain in the task
+list, with item 7 the next implementation task.

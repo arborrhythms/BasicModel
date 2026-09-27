@@ -1,0 +1,9 @@
+{
+  "commit": "69067272d823096a101b543ae0af714d12acc67e",
+  "source_files": 671,
+  "source_sha256": "a98b0f4e98b6959c3c60f01567c87dd419a09842c047f6e304a752d230171bf7",
+  "all_committed_source_blobs_match": true,
+  "source_paths_match": true,
+  "full_receipt": "full/result.json.gz",
+  "depth3_campaign": "red; unchanged assertion retained"
+}
