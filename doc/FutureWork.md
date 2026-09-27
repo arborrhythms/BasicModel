@@ -420,3 +420,17 @@ refuted reduced periods as a remedy for the September 26 loss jump: the extra
 cost came from scoring a shared timestamp on every word. More rungs or rotary
 transport therefore need their own measured positional-error problem and
 evaluation; the occurrence/time correction does not implement them.
+
+## The dynamic stop: glossing above words, descending at novelty (item 6.8-2)
+
+Item 6.8 makes attention one mechanism — a bracket over the input, narrowed
+until each bracket's encoding is pure — with the stop pinned at words for
+the first session. The dynamic stop removes the pin: a known multi-word
+unit that reads purely at its wider bracket is glossed as one symbol, and
+narrowing descends below a word only where the reading is *neither*
+(unknown content) or *both* (heterogeneous). This is speed reading that
+slows at novelty. It is decided against item 1's per-word throughput
+baseline: it pays for itself only if glossing known units saves more than
+the open read costs, which on FineWeb should hold once the recurring units
+are admitted, and it depends on the field's *both* being reliable, which
+the logged categorical-discrimination index and both-rate monitor.

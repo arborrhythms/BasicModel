@@ -97,7 +97,16 @@ of `f`, its use, and `f⁻¹`
 ## Empirical anchor
 
 Meta's Large Concept Models (December 2024) are this pipeline literally:
-sentences to fixed embeddings, next-embedding prediction, a decoder back
-to text. Their plain MSE predictor underperformed, and they moved to
+sentences to fixed SONAR embeddings, next-embedding prediction, a decoder
+back to text. Their plain MSE predictor underperformed, and they moved to
 diffusion and quantized variants to obtain a distribution over the next
-embedding — condition 2 observed in practice.
+embedding — condition 2 observed in practice. Meta published no successor
+as of September 2026; FAIR was reorganised into Meta Superintelligence
+Labs in August 2025 and LeCun left in November 2025 for a world-model
+lab. The line was continued elsewhere: SONAR-LLM (FusionBrain Lab, August
+2025, revised May 2026) keeps the sentence-embedding state but trains it
+with token-level cross-entropy propagated through the frozen SONAR
+decoder — dropping the diffusion sampler and restoring a likelihood
+signal, which is conditions 2 and 4 addressed together: the sentence
+model is made scorable and trainable by routing the objective through
+the token marginals it otherwise cannot compute.

@@ -656,14 +656,14 @@ def make_mm5m():
 # Data for doc/specs/2026-09-20-accessible-mind-subsystems.md. Monochrome and
 # sans-serif so the sheet prints and takes ink; the blank rows are for the pen.
 
-GO_REV = "2026-09-20 (rev 10)"
+GO_REV = "2026-09-27 (rev 11)"
 
 # (id, title, three body lines, dashed = reducible or derived)
 GO_SUBSYSTEMS = [
     ("1", "Perceptual knowing",
-     ["activation of the two meronymic", "towers (PartSpace, WholeSpace);", "the word stream"], False),
+     ["activation of the two meronymic", "towers (PartSpace, WholeSpace);", "the word stream, read by bracket"], False),
     ("2", "Conceptual · order 0",
-     ["FIELD: one activation per 0-order", "symbol, whole codebook at once;", "parallel"], False),
+     ["FIELD: whole 0-order codebook at", "once; TWO symbols per concept,", "c⁺/c⁻; memberships over bytes"], False),
     ("3", "Conceptual · higher",
      ["FIELD over higher-order symbols;", "one point = a REGION of order 0,", "possibly discontinuous (rows as in 2)"], False),
     ("4", "Serial thinking",
@@ -671,116 +671,154 @@ GO_SUBSYSTEMS = [
     ("5", "Priming",
      ["spreading activation over the", "concept store's edges; lives with", "the codebook; decays"], False),
     ("6", "Expectation",
-     ["NEGATIVE IMAGE: predicted idea,", "sign-reversed, added at the seal:", "c = o − g·ê (order 1+); learns o − ê"], True),
+     ["NEGATIVE IMAGE: predicted idea,", "sign-reversed, added at the seal;", "learns o − ê. ▸ per bracket at 6.8"], True),
     ("7", "LTM",
-     ["serial form ONLY: ideas, any order", "episodes = chained NP/VP;", "reached by CUE only (no last-N)"], False),
+     ["serial form ONLY: ideas, any order;", "▸ one row per S with (c⁺, c⁻) at 7;", "reached by CUE only (no last-N)"], False),
     ("8", "Budget",
      ["remaining work + closure pressure;", "READ to know cutoff is near,", "CHARGED by every thought op"], False),
     ("9", "Meronymic access",
      ["residual of part(x,y)=x·(y/|y|),", "left as an idea VECTOR (serial, 4),", "not a 1/0); order 0; no store"], True),
     ("10", "Taxonomic access",
-     ["relations over higher-order symbols;", "emits a SYMBOLIC value (graded);", "every symbol participates; bounded"], False),
+     ["relations over higher-order symbols;", "emits a SYMBOLIC value (graded);", "▸ at 7 it is the store's sigma rows"], False),
 ]
 
 GO_SUBSYSTEM_NOTE = (
     "field (parallel, graded) → CODE = nearest-row projection; words arrive as codes → "
     "operators compose an IDEA: one off-codebook vector that must regenerate its codes + "
     "operations (generativity)   ·   stores: perceptual, conceptual, priming, LTM   ·   "
-    "resource: budget   ·   relation: taxonomy")
+    "resource: budget   ·   relation: taxonomy   ·   ▸ = decided and specified, not yet landed")
 
 GO_GRAMMARS = [
     ("<compose>  ·  understanding", [
         "reads: 1 perceptual knowing (word stream, row-owned), 2/3, 4, 5, 9",
         "never 6: PURITY — the composed idea o is the same whatever was predicted",
-        "writes: 4 (push / fold), 2/3 (the composed idea)",
-        "never: 7 LTM, 10 taxonomy, allocation, subgoals, 8",
-        "gradient: live — operands, outputs, shared operator parameters",
-        "cost: not metered (reading is not thinking)"]),
+        "writes: 4 (push / fold), 2/3 (the composed idea); never 7, 10, 8",
+        "7.5 ONE operation per round: one softmax over every operator × every location;",
+        "binary shortens the sequence by one, unary does not; a fixed round budget;",
+        "STOP is a candidate only once the sequence fits its LTM row; no DP of any kind",
+        "two hard derivations: exploit (tempered argmax, item 8's tie rule on logits)",
+        "and one distinct sampled explore, which trains and is not recorded",
+        "gradient: live — straight-through, weighted by the chooser's own softmax"]),
     ("<thought>  ·  thinking  (per-model allow-list)", [
         "reads: 4 the completed idea + recency buffer, 2/3, 6 (what is conceived), 8, 9, 10,",
         "and 7 only as frames a what() brought into STM by cue",
         "writes: effects on 2/3 and 4; the controller alone records / writes 7",
-        "chooser: (operator, operands, open roles, level) | conclude",
+        "chooser: the SAME selection layer as compose and generate (7.5) —",
+        "(operator, operands, open roles, level) | conclude",
         "gradient: none through effects; chooser on policy credit only",
-        "cost: every choice / execute / descend / return charges 8"]),
+        "cost: every choice / execute / descend / return charges 8",
+        "▸ 6.8 adds the bracket candidates and 6.5 identity binding to this same",
+        "softmax, credited the same way; neither is a separate policy"]),
     ("<generate>  ·  speech production", [
         "reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3,",
         "its OWN emitted prefix — never the input stream or a parse trace",
         "writes: 1 the output stream (words via the reverse chain)",
         "never: 7, 10, thought execution",
+        "policy: the same selection layer once more; the serial STM reducer is",
+        "that layer with a two-slot window, not a second mechanism",
         "gradient: live in generate; stops at the concluded idea",
-        "cost: output walk budget (not 8)"]),
+        "cost: output walk budget (not 8)",
+        ""]),
 ]
 
 GO_GRAMMAR_NOTE = (
     "one vocabulary of operator identities; shared operators are the ONE gradient "
     "coupling between objectives (dissonance = per-operator gradient cosine); a compose face "
-    "alone grants no thought permission   ·   the SEAL (not an operator) adds the negative image")
+    "alone grants no thought permission   ·   the SEAL (not an operator) adds the negative "
+    "image and, per sentence, commits the better of the two derivations")
 
-# group -> rows of (operator, faces, roles, {subsystem id: access}, note); W* = FutureWork §7
+# group -> rows of (operator, faces, operand kind, roles, {subsystem id: access}, note)
+# kind: F = a pooled reading over a bracket, S = one identified concept (6.8, 6a).
+# W* = FutureWork §7; ▸ = decided and specified, not yet landed.
 GO_OPERATORS = [
-    ("structural only (compose + generate)", [
-        ("not / non", "C G", "I1→O1", {"2": "RW", "3": "RW", "4": "RW"},
+    ("field operands — order-independent, over a whole bracket at once (compose + generate)", [
+        ("not / non", "C G", "F", "I1→O1", {"2": "RW", "3": "RW", "4": "RW"},
          "not = sign reversal, order 1+ (expectation's image); non = withdrawal, any order "
          "(attention's exclusion)"),
-        ("conjunction / disjunction", "C G", "I1,I2→O1", {"2": "R", "3": "RW", "4": "RW"},
-         "symbolic tier"),
-        ("intersection / union", "C G", "I1,I2→O1", {"2": "RW", "4": "RW"}, "subsymbolic tier"),
-        ("sum / product", "C G", "I1,I2→O1", {"2": "RW", "4": "RW"},
+        ("conjunction / disjunction", "C G", "F", "I1,I2→O1", {"2": "R", "3": "RW", "4": "RW"},
+         "symbolic tier; a plural bracket is aggregated directly — no multi-argument operator "
+         "is declared for it"),
+        ("intersection / union", "C G", "F", "I1,I2→O1", {"2": "RW", "4": "RW"},
+         "subsymbolic tier"),
+    ]),
+    ("symbol operands — order-dependent, between brackets (compose + generate)", [
+        ("sum / product", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW"},
          "additive / multiplicative concept ops"),
-        ("lift · verb · adverb · lower", "C G", "I1,I2→O1", {"2": "RW", "4": "RW", "5": "R"},
-         "VP application; lift = eig edit"),
-        ("preposition · bind · tense · morphology", "C G", "I1(,I2)→O1",
+        ("lift · verb · adverb · lower", "C G", "S", "I1,I2→O1",
+         {"2": "RW", "4": "RW", "5": "R"}, "VP application; lift = eig edit"),
+        ("preposition · bind · tense · morphology", "C G", "S", "I1(,I2)→O1",
          {"1": "R", "2": "RW", "4": "RW"}, "bind: referents from the serial stream"),
+        ("interpret", "C G", "S", "I1→O1 (word → object)",
+         {"1": "R", "2": "RW", "4": "W", "7": "R"},
+         "the word→object operator: mints on a new word, returns the seen one, resolves "
+         "ambiguity only from the chain — set logic outside autograd until 6.5"),
     ]),
     ("two-faced (compose + thought + generate)", [
-        ("part / whole (one family, I2,I1)", "C T G", "I1,I2→O1; open I1=parts, I2=wholes",
+        ("part / whole (one family, I2,I1)", "C T G", "S",
+         "I1,I2→O1; open I1=parts, I2=wholes",
          {"2": "R", "3": "R", "4": "RW", "8": "W", "9": "R", "10": "R"},
          "effect = idea-vector residual left in 4 (9); scalar truth derived; "
          "higher order → symbolic value via 10"),
-        ("equal", "C T G", "I1,I2→O1", {"2": "R", "3": "R", "4": "RW", "8": "W"},
+        ("equal", "C T G", "S", "I1,I2→O1", {"2": "R", "3": "R", "4": "RW", "8": "W"},
          "mutual parthood on payloads"),
-        ("exist", "C T G", "I1→O1", {"2": "R", "4": "RW", "7": "R", "8": "W"},
+        ("exist", "C T G", "S", "I1→O1", {"2": "R", "4": "RW", "7": "R", "8": "W"},
          "T reads facts among frames in STM"),
-        ("quantize", "C T G", "I1→O1", {"2": "R", "3": "W", "8": "W"},
-         "snap to the codebook; keeps ideas on-manifold"),
-        ("arma", "C T G", "I1→O1", {"4": "R", "6": "W", "8": "W"},
+        ("quantize", "C T G", "S", "I1→O1", {"2": "R", "3": "W", "8": "W"},
+         "snap to the codebook; keeps ideas on-manifold; ▸ 6.8's gloss is this projection "
+         "taken at a bracket"),
+        ("arma", "C T G", "S", "I1→O1", {"4": "R", "6": "W", "8": "W"},
          "reads the recency buffer; its estimate, sign-reversed, is the NEGATIVE IMAGE the seal "
          "adds; positive as the <generate> seed; never a fact"),
-        ("what (Q)", "C T G", "I1→O1",
+        ("what (Q)", "C T G", "S", "I1→O1",
          {"2": "W*", "3": "W*", "4": "RW", "7": "R", "8": "W"},
          "what(Q, where?, when?): wh-word = open role; cue → code postings → rank → frames; "
          "episodes return frame by frame  (* FutureWork §7)"),
     ]),
     ("asymmetric / deferred / planned", [
-        ("lookup", "C T –", "I1,I2→O1", {"4": "W", "7": "R", "8": "W"},
+        ("lookup", "C T –", "S", "I1,I2→O1", {"4": "W", "7": "R", "8": "W"},
          "same retrieval as what / parts / wholes — one mechanism; no generate face?"),
-        ("true", "– T? –", "I1→O1 (sealed clause NP→REF(S))", {"7": "R", "10": "R"},
-         "deferred to two-truths"),
-        ("(subsymbolic LM operator)", "C   G", "I1..In→O1",
+        ("true", "– T –", "S", "I1→O1 (sealed clause NP→REF(S))", {"7": "R", "10": "R"},
+         "▸ item 7, next: declared in <thought> and executable over the clause the seal "
+         "stored as (c⁺, c⁻)"),
+        ("(subsymbolic LM operator)", "C   G", "S", "I1..In→O1",
          {"1": "R", "2": "RW", "4": "RW", "5": "R"}, "SAME row as structural faces; nothing more"),
     ]),
-    ("not operators", [
-        ("thought chooser", "– T –", "(op, operands, open roles, level) | conclude",
-         {"2": "R", "3": "R", "4": "R", "6": "R", "7": "R", "8": "R"},
-         "context = recency buffer (live STM + last 8 ideas) + cued LTM frames; reads 6 as c "
-         "per role; policy credit only, never residual credit"),
-        ("the seal", "– – –", "o → c = o − g·(1 − m)·κ·ê",
-         {"4": "R", "6": "RW", "7": "W"},
-         "AFTER composition (purity); κ = predicted presence; m = open roles (object spared); "
-         "empty expected role = absence, concluded in thought"),
+    ("▸ further candidates in the SAME 7.5 softmax (specified, not yet landed)", [
+        ("divide · descend · gloss    (6.8)", "C – –", "F", "bracket → brackets / one symbol",
+         {"1": "R", "2": "R", "3": "R", "8": "W"},
+         "narrowing: both → divide, neither → descend and let interpret mint; gloss projects a "
+         "bracket that is pure and singular"),
+        ("STOP    (7.5)", "C – G", "—", "— (ends the rounds)", {"7": "R"},
+         "no no-operation candidate exists while the sequence is longer than its LTM row's slots"),
+        ("bind to a column · mint    (6.5)", "C T –", "S", "I1→O1 (identity)",
+         {"2": "R", "4": "RW", "6": "R", "7": "R"},
+         "frame = A·a: an individual is a column of A, identity is its fixedness over the "
+         "chain; credited by surprise through the seal"),
     ]),
-    ("… (add)", [("", "", "", {}, "")] * 3),
+    ("not operators", [
+        ("the selection layer  (7.5)", "C T G", "—",
+         "one softmax over candidates × locations | STOP",
+         {"2": "R", "3": "R", "4": "R", "6": "R", "7": "R", "8": "R"},
+         "ONE object for compose, the STM reducer, thought's chooser and generate's policy; "
+         "context = recency buffer + cued LTM frames; policy credit only"),
+        ("the seal", "– – –", "—", "o → c = o − g·(1 − m)·κ·ê",
+         {"4": "R", "6": "RW", "7": "W"},
+         "AFTER composition (purity); κ = predicted presence; m = open roles; and the "
+         "transaction point: per sentence, the better derivation commits here"),
+    ]),
+    ("… (add)", [("", "", "", "", {}, "")] * 3),
 ]
 
 GO_QUESTIONS = [
-    "Open questions for the pen:  (1) negating a 0-order point gives a REGION, so the image −ê "
-    "is order 1+ even for a bare noun — right?   (2) is priming read by thought, or only as a "
-    "retrieval cue + by compose?   (3) lookup without a generate face — intended?",
-    "(4) which structural operators may a model think with — `not`, to conclude absences?   "
-    "(5) why / how as walks over implies / operator rows — wait for two-truths?   "
-    "(6) rows keep o with the estimate linked (c derived) — or should a row hold only its "
-    "residual?",
+    "Open questions for the pen:  (1) is priming read by thought, or only as a retrieval cue "
+    "and by compose?   (2) lookup without a generate face — intended?   (3) which structural "
+    "operators may a model think with — `not`, to conclude absences?",
+    "(4) why / how as walks over implies / operator rows — wait for two truths (item 7)?   "
+    "(5) 7.5 deferred two levers: a nonzero training temperature, and a parsimony / work term "
+    "against the round budget — take either up after the conference?",
+    "(6) forgetting of the concept inventory itself — order-0 definitions, alternatives, "
+    "feature groups — has no rule (item 5 or FutureWork?)   (7) item 8's propertyBasis: port "
+    "it to XOR_grammar, or leave that gate as written?",
 ]
 
 
@@ -806,7 +844,7 @@ def _helv_width(s, fs, bold=False):
 def make_grammar_operators():
     INK, SOFT, FAINT, MUTE = "#111", "#333", "#444", "#666"
     SANS = "Helvetica, Arial, sans-serif"
-    W, X0 = 1760, 40
+    W, X0 = 1820, 40
 
     def t(x, y, s, fs=13, fill=INK, bold=False, italic=False, right=None):
         # right = the x the text must not pass (default: the sheet's right margin)
@@ -828,7 +866,7 @@ def make_grammar_operators():
     parts.append(t(X0, y, "A.  The accessible mind — ten subsystems (dashed = reducible or "
                    "derived; every access is bounded)", fs=16, bold=True))
     y += 14
-    bw, bh, gap = 160, 98, 8
+    bw, bh, gap = 166, 98, 8
     for i, (sid, title, body, dashed) in enumerate(GO_SUBSYSTEMS):
         x = X0 + i * (bw + gap)
         parts.append(rect(x, y, bw, bh, "#fff", stroke=SOFT, sw=1.2,

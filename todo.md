@@ -17,6 +17,13 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
+**Current sequence (Alec, 2026-09-27):** 7 → the
+conference freeze (with item 4's pulled-forward word-level evaluator) →
+6.8 → 6.5 → 6 → 5 → 4 → 3 → 2 → 1 → 0. Items 9 and 8 are implemented and
+reviewed; what remains of them is empirical and waits for the
+million-sentence checkpoint that item 0's run provides, so they are not
+in the implementation queue.
+
 Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
 §10 and its completion gates. Current contracts, limits and receipts are in
@@ -156,6 +163,99 @@ generation is expected at this stage and is recorded, not tuned away.
    docs, the reconstruction baseline of `d4dc385`
    unchanged, and the `true` operator over the sealed clause declared in
    `<thought>` and executable.
+- **6.8. One attention: brackets, narrowing, and expectation at every bracket**
+   ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
+   after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
+   The simplification: attention is one mechanism, a bracket over the input.
+   Open awareness is the bracket set to the whole input, read by the field,
+   whose only operations are the order-independent ones — and, or, not —
+   because a pooled reading admits nothing else; that is the criterion for
+   what belongs to the field. Everything order-dependent (lift, lower, verb,
+   preposition) is the grammar and acts *between* brackets, over the
+   sequence of readings that narrowing produces. Mode exclusion stops being
+   a rule and becomes a theorem. The word loop is the narrowing schedule:
+   the four corners give the reading policy already decided in pieces —
+   true or false, move on; *both*, divide the bracket; *neither*, look
+   closer, descend, mint if nothing is there — so serial reading is
+   "narrow until each bracket's encoding is pure". A known word reads
+   purely at its word bracket and narrowing stops; an unknown word reads
+   neither and narrowing continues to bytes, where `interpret` mints; a
+   known multi-word unit reads purely at the wider bracket and is glossed
+   (speed reading that slows at novelty). Parallel-first falls out: the
+   open read is the first bracket. **Expectation** (Alec: the mathematical
+   sense; applied with the opposite sign so that surprise is what is
+   processed; held for any subject of attention — past, current or future
+   frames, a whole sentence, the next concept) becomes one mechanism at
+   every bracket level — next byte in a word, next word in a sentence,
+   next sentence in a document, next row in the chain — the same ARMA
+   machinery, negative image and surprise column with the level as an
+   argument, giving a training target at every bracket instead of one per
+   sentence, and making the pilot's next-word gate this predictor at the
+   word bracket rather than a separate scorer.
+   **Landing 6.8-1 (the fast loop is kept):** the stop is pinned at
+   words, so the compiled per-word step keeps its shape; narrowing and
+   glossing enter as candidates in the 7.5 softmax (the same chooser and
+   straight-through learning, no separate policy), which is why this
+   follows 7.5; the seal's sentence-bracket row with its `.where`/`.when`
+   is the terminal encoding, which is why it follows 7; 6.5 then adds
+   identity binding as further candidates in the same softmax, which is
+   why it precedes 6.5. Deletions, per the no-legacy rule: `modeSchedule`,
+   `serial` as a mode (the bracket schedule replaces it), the
+   subsymbolic-versus-symbolic loop distinction and the two order budgets
+   (one narrowing budget replaces them), and the boundary-only sentence
+   predictor as a separate object (expectation at every bracket replaces
+   it). Exit: the XOR gate and exact-zero controls unchanged; the serial
+   reconstruction baseline within the reviewed-9b tolerance; the
+   word-level predictor scoring the frozen NanoChat item manifest; the
+   both-rate and categorical-discrimination fields logged per level (item
+   4); item 9's prediction gates re-declared at the word bracket. Costs to
+   measure, not assume: the open pass against item 1's per-word baseline;
+   the reliability of the field's *both* that the policy turns on.
+   **6.8-2, after the conference (FutureWork):** the dynamic stop —
+   glossing above the word bracket and descending below it only at
+   novelty — decided against item 1's throughput baseline.
+   **Conference sequencing (Alec, 2026-09-27):** finish 7.5, land 7,
+   freeze the demo checkpoint; before the freeze pull forward only the
+   word-level predictor as the NanoChat gate's evaluator (recorded under
+   item 4); start 6.8 after the freeze.
+- **6.5. Independent components: identity as columns, verbs as change**
+   ([spec](doc/specs/2026-09-26-independent-components.md)), after item 7
+   (needs the seal writing every S as a row and §3.5's reference chain).
+   Today identity is bookkeeping and prediction trains only the predictor:
+   `interpret` binds a word to its object by set logic outside autograd,
+   `resolve_word_concept` carries a referent by rule, the inter-sentence loss
+   (weight .1) detaches both target and context although accessible-mind
+   §2.6.4 requires live source ideas, and every policy, contrastive and
+   trial knob is zero — so nothing pulls the encoder toward "same NP → same
+   object" or "same VP → same encoding" (spec §1). **Decided (Alec,
+   2026-09-26): ICA, not SIGReg**, is the model: the isotropic Gaussian is
+   rotation-invariant and can only whiten; independence picks the axes. At
+   the symbol level a frame already has the classical mixing form,
+   `frame = A·a` with A's columns the codebook rows and `a` the sparse signed
+   activations, so an individual is a column and identity across sentences
+   is the fixedness of A over the LTM chain; verbs are the columns of a
+   second matrix over the surprise residual `o − ê` in those coordinates,
+   one-sparse per S (a learned codebook of change patterns). Gradient form
+   only — maximum-likelihood / Infomax with a heavy-tailed prior,
+   overcomplete so sparse coding, no fixed-point iteration (as 7.5) —
+   over the LTM population, not the batch of two, on the content band only.
+   Priors on the number of sources come from the grammar (roles per S)
+   bounded by STM capacity; the total is nonparametric: mint on unexplained
+   surprise under the 9b recurrence gate, prune by item 5's value with an
+   automatic-relevance scale. Identity binding becomes a candidate in the
+   7.5 softmax (bind to a column in the recency buffer or cued frames, or
+   mint), credited by surprise through the seal; the inter-frame predictor's
+   source ideas go live, target detached. ICA binds across frames and within
+   an object; it does **not** bind roles within a sentence — the three slots
+   do, and a test asserts the superposition catastrophe rather than hiding
+   it. Exit: the ten §5 mechanism tests unconditional; the learning gates
+   (held-out anaphora against the rule baseline, verb reuse across streams,
+   prediction against the detached-target control, shuffled-order and
+   renamed-vocabulary controls, seeds 0/1/2) follow item 9's
+   million-sentence prerequisite and are recorded, never tuned.
+   *Compatibility:* 7.5's exploit/explore derivations and tie rule are
+   unchanged in form; item 5 consumes the relevance scale; item 6's recovery
+   measurements are unaffected.
 - **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
    on it. Item 1c's probe reports zero compound recovery
    ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
@@ -198,7 +298,14 @@ generation is expected at this stage and is recorded, not tuned away.
    of the concept inventory itself — order-0 definitions, alternatives and
    feature groups — is not in the spec; discovered rows are never recycled
    (item 11), so their retirement needs a rule here or in FutureWork.
-- **4. Run harness and resume test.** One logger per interval: reconstruction
+- **4. Run harness and resume test.** *Pulled forward for the conference
+   (Alec, 2026-09-27):* the word-level predictor as the NanoChat gate's
+   evaluator — the model's own expectation of the next word scored on the
+   frozen item manifest (top-1, reciprocal rank, shuffled-prefix control),
+   living in `eval_nanochat_grammar.py` rather than the training loop; it
+   is the first level of item 6.8's expectation at every bracket. Also logged
+   per bracket level once 6.8 lands: the both-rate and the
+   categorical-discrimination index. One logger per interval: reconstruction
    loss; expectation discrepancy; LTM occupancy and forgetting passes;
    [categorical discrimination](bin/CategoricalDiscrimination.py) from the
    fixed four XOR and 68 FineWeb probes, reporting CP and within/between
