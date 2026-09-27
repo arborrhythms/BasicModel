@@ -1,0 +1,24 @@
+--- a/test/test_ltm_consolidation.py
++++ b/test/test_ltm_consolidation.py
+@@ -675,7 +675,7 @@
+         m = _make_model(_SERIAL_CONFIG)
+         return m, m.symbolSpace.ltm_store, m.symbolSpace.truth_layer
+ 
+-    def test_incomplete_user_truth_does_not_write_an_ltm_row(self):
++    def test_unary_preference_still_seals_and_records_user_truth(self):
+         from Layers import TernaryTruthStore as T
+         m, store, _ = self._fresh()
+         m.provision_ltm()
+@@ -691,9 +691,9 @@
+         with warnings.catch_warnings():
+             warnings.filterwarnings('ignore')
+             m.store_truths([{'content': 'hello world', 'trust': .9}])
+-        self.assertTrue(bool((m._stm_post_depth < 0).all()))
+-        self.assertEqual(len(store), before)
+-        self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 0)
++        self.assertTrue(bool((m._stm_post_depth == 1).all()))
++        self.assertEqual(len(store), before + 1)
++        self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
+ 
+     def test_user_rows_land_alongside_provisioned(self):
+         from Layers import TernaryTruthStore as T

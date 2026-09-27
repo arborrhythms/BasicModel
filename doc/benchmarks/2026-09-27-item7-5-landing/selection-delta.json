@@ -1,0 +1,11 @@
+{
+  "previous_cases": 4988,
+  "current_cases": 4989,
+  "removed": [
+    "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_incomplete_user_truth_does_not_write_an_ltm_row"
+  ],
+  "added": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-landing/README.md]",
+    "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth"
+  ]
+}

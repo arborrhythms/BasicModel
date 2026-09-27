@@ -129,7 +129,7 @@ def test_new_model_configs_enable_word_grain_boundary():
         root = ET.parse(data_dir / name).getroot()
         assert root.findtext("./architecture/serialObjectMeta") == "true"
         assert int(root.findtext("./architecture/serialWordCapacity")) == 64
-        assert float(root.findtext("./architecture/stmReduceTau")) == 0.75
+        assert root.find("./architecture/stmReduceTau") is None
         assert root.find("./architecture/conceptualWidth") is None
         assert int(root.findtext("./PartSpace/nOutput")) == 8
         assert int(root.findtext("./ConceptualSpace/stmCapacity")) == 8
@@ -155,20 +155,16 @@ def test_64_word_trace_reduces_online_in_stm8_without_part_truncation():
     assert trace["max_raw_parts_per_word"] == 20
     assert trace["word_constituents_truncated"] is False
     assert trace["sentence_truncated"] is False
-    # Grammar and boundary operators account for every one of the 63 depth
-    # decreases needed to turn 64 shifted words into one root.  The untrained
-    # chooser is initially near 50/50, so the 0.75 low-pressure threshold lets
-    # several words coexist instead of spuriously reducing every adjacent pair.
-    assert trace["total_reductions"] == 63
-    assert (trace["soft_pressure_reductions"]
-            + trace["capacity_demand_reductions"]
-            + trace["boundary_reductions"]) == 63
-    assert (sum(trace["operators"].values())
-            + sum(trace["boundary_operators"].values())) == 63
-    assert trace["unlicensed_reductions"] == 0
-    assert 2 < trace["peak_depth"] <= trace["stm_capacity"]
-    assert trace["final_depth"] == 1
-    assert len(trace["timeline"]) == 64
+    # The operation budget is fixed. Random unary choices can leave an
+    # incomplete forest, which the diagnostic must report accurately.
+    assert trace['total_reductions'] == trace['online']['binary'] + trace['seal']['binary']
+    assert 1 <= trace['final_depth'] <= trace['stm_capacity']
+    assert trace['complete'] == bool((model._stm_post_depth > 0).all())
+    assert len(trace['timeline']) == sum(trace['online'].values()) + sum(trace['seal'].values())
+    assert all(step['arity'] in (0, 1, 2) for step in trace['timeline'])
+    if trace['complete']:
+        assert trace['total_reductions'] == 63
+        assert trace['final_depth'] == 1
 
 
 def test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory():

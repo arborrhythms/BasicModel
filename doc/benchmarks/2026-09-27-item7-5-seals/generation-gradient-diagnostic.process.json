@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-c",
+    "\nfrom pathlib import Path\nimport tempfile\nimport torch\nimport pytest\nfrom Models import BasicModel\nfrom util import init_device\nfrom test_generation_catalog import test_normal_supervised_output_respects_gradient_contract\ninit_device('cpu')\nwalk=BasicModel._output_generate_walk\ndef observed_walk(self,*args,**kwargs):\n    out=walk(self,*args,**kwargs)\n    print('OUTPUT_WALK', 'emitted',out[1].tolist(),'truncated',out[2].tolist(), 'word_norms',out[0].detach().norm(dim=-1).tolist(),flush=True)\n    return out\nBasicModel._output_generate_walk=observed_walk\nmaterialize=BasicModel._materialize_answer_idea\ndef observed_idea(self,*args,**kwargs):\n    out=materialize(self,*args,**kwargs)\n    print('MATERIALIZED',out[0].detach().norm(dim=-1).tolist(),out[1].tolist(),flush=True)\n    return out\nBasicModel._materialize_answer_idea=observed_idea\nwith pytest.MonkeyPatch.context() as patch:\n    test_normal_supervised_output_respects_gradient_contract(Path(tempfile.mkdtemp()),patch,True)\n"
+  ],
+  "pid": 31898,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2182745064,
+  "elapsed_seconds": 6.984691875055432,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/generation-gradient-diagnostic.log"
+}

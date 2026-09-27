@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/profile_baseline.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/serial-baseline.json"
+  ],
+  "pid": 22554,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 5016262008,
+  "elapsed_seconds": 147.69139495806303,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/serial-baseline.log"
+}

@@ -643,8 +643,8 @@ def test_live_router_adapters_receive_the_owner_built_structural_context():
     router.compose(torch.randn(1, 2, 4), word_space=None,
                    grammar_context=context)
 
-    assert unary.contexts == [context]
-    assert binary.contexts == [context]
+    assert unary.contexts and all(value is context for value in unary.contexts)
+    assert binary.contexts and all(value is context for value in binary.contexts)
 
 
 def test_syntactic_executor_uses_the_same_structural_context_dispatcher():
@@ -728,13 +728,13 @@ def test_recorded_compose_step_keeps_the_same_structural_context_contract():
     nn.Module.__init__(language)
     object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner))
     object.__setattr__(
-        language, "_language_layer_ref", SimpleNamespace(_binary_layers={"CS": binary}))
+        language, "_language_layer_ref", SimpleNamespace(operation_layer=binary))
 
     parent = language.forward_binary_step(
         torch.ones(1, 4), torch.full((1, 4), 2.0),
         torch.zeros(1, dtype=torch.long), torch.ones(1, dtype=torch.bool))
     torch.testing.assert_close(parent, torch.full((1, 4), 3.0))
-    assert capture.contexts == [owner._last_structural_compose_context]
+    assert capture.contexts and all(c is owner._last_structural_compose_context for c in capture.contexts)
 
 
 def test_live_tree_choice_keeps_the_same_structural_context_contract():
@@ -743,7 +743,7 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
     import torch
     import torch.nn as nn
     from Language import (
-        BinaryStructuredReductionLayer, LanguageSpace, _BinaryGrammarOpAdapter,
+        OperationSelectionLayer, LanguageSpace, _BinaryGrammarOpAdapter,
     )
     from Queries import StructuralGrammarContext
 
@@ -766,22 +766,22 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
         word_stream=("older", "newer"), conceptual_space=ConceptualSpaceCapability(4),
         primed_symbols=(), phase="compose")
     owner = SimpleNamespace(_last_structural_compose_context=context)
-    reducer = BinaryStructuredReductionLayer(
-        d_model=4, ops=[_BinaryGrammarOpAdapter(capture)], r_copy=1)
+    reducer = OperationSelectionLayer(
+        d_model=4, ops=[_BinaryGrammarOpAdapter(capture)],)
     language = LanguageSpace.__new__(LanguageSpace)
     nn.Module.__init__(language)
     object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner))
     object.__setattr__(
-        language, "_language_layer_ref", SimpleNamespace(_binary_layers={"CS": reducer}))
+        language, "_language_layer_ref", SimpleNamespace(operation_layer=reducer))
     buffer = torch.randn(1, 2, 4)
     state = (
         buffer, torch.tensor([2]), torch.zeros(1, 2, dtype=torch.long),
         torch.zeros(1, 2, dtype=torch.long), torch.full((1, 2), -1, dtype=torch.long),
         torch.ones(1, 2),
     )
-    choice = language.choose_sentence_seal_binary(
-        state, torch.ones(1, dtype=torch.bool), base_tau=0.5)
-    assert choice.parent.shape == (1, 4)
+    choice = language.choose_operation(
+        state, torch.ones(1, dtype=torch.bool), slots=1)
+    assert choice.candidate.shape == (1, 4)
     assert capture.contexts == [context]
 
 

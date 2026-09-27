@@ -196,18 +196,22 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         resolved = FunctionalPeerSTM.resolve_top_reference(
             pushed_word, object_idea, object_row, object_order,
             source_activation, object_gate)
-        post_choice = language.choose_post_binary(
-            resolved, commit, pre_applied, base_tau=model.stm_reduce_tau)
-        (post_state, _post_applied, post_op,
-         post_valid, _post_loss) = cs.apply_binary_language_choice(
-            resolved, post_choice)
-        unary_choice = language.choose_unary(post_state, commit)
-        (final_state, _unary_applied, unary_op,
-         unary_valid, _unary_loss) = cs.apply_unary_language_choice(
-            post_state, unary_choice)
+        final_state = resolved
+        active = commit.reshape(batch)
+        binary_ops, binary_valid = [], []
+        unary_op = torch.zeros_like(stm_state[1])
+        unary_valid = torch.zeros_like(active)
+        for _ in range(3):
+            choice = language.choose_operation(final_state, active, slots=1)
+            final_state = cs.apply_language_choice(final_state, choice)
+            binary_ops.append(choice.local_op)
+            binary_valid.append(choice.applied & (choice.kind == 1))
+            selected_unary = choice.applied & (choice.kind == 2)
+            unary_op = torch.where(selected_unary, choice.local_op, unary_op)
+            unary_valid = unary_valid | selected_unary
+            active = active & choice.applied
         grammar = language.feedback_from_local_choices(
-            (pre_op, post_op), (pre_valid, post_valid),
-            unary_op, unary_valid, like=word_idea)
+            binary_ops, binary_valid, unary_op, unary_valid, like=word_idea)
         resolved_idea = torch.where(
             object_gate.reshape(batch, 1), object_idea, word_idea)
         contribution = torch.where(

@@ -1,0 +1,41 @@
+{
+  "data/XOR_grammar.xml": {
+    "unchanged": true,
+    "sha256": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d"
+  },
+  "data/MM_grammar.xml": {
+    "unchanged": true,
+    "sha256": "a7a880cdc8b07fc2081e37d1ae2e37a2d8db99f73036d30c9345b02434e62386"
+  },
+  "test/test_mm_xor.py": {
+    "unchanged": true,
+    "sha256": "f31b7717533ebe163c0f1d6c9460fb8095415295b8ffc88737908d094fab382a"
+  },
+  "test/test_explicit_dimensions.py": {
+    "unchanged": true,
+    "sha256": "7dc6fe7d1d5fa1a47f62cefdb09ec57d3ca71224a642bdc6f23bedfcdfdd4805"
+  },
+  "pytest.ini": {
+    "unchanged": true,
+    "sha256": "fd2c736dc663af060e6a62112524794e709b01ca240da47480f1262344cf1dc1"
+  },
+  "test/test_thinking_kernel.py": {
+    "unchanged": true,
+    "sha256": "029071ba50b8b35b2e19a77749862bf276cfab8626eb2d7abe7e2b10452f010e"
+  },
+  "test/test_expectation_defaults.py": {
+    "unchanged": true,
+    "sha256": "40015d4e3c32c63db726b81815a89c887fa10aede9d80806c6f20b788302f89d",
+    "baseline": "2026-09-27-item7-5-seals"
+  },
+  "test/test_gradient_factorization.py": {
+    "unchanged": true,
+    "sha256": "d27d2e7f098eb139906a8e649ff34d5b970d55bb8802406ba472146ac0e723ff",
+    "baseline": "2026-09-27-item7-5-seals"
+  },
+  "test/test_generation_catalog.py": {
+    "unchanged": true,
+    "sha256": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28",
+    "baseline": "2026-09-27-item7-5-seals"
+  }
+}

@@ -25,8 +25,7 @@ import torch.nn as nn
 
 from Language import (
     TransformChooser, AnchorDotTransformChooser, MLPTransformChooser,
-    make_transform_chooser, UnaryStructuredLayer,
-    BinaryStructuredReductionLayer,
+    make_transform_chooser, OperationSelectionLayer,
 )
 
 
@@ -70,18 +69,17 @@ def test_feeds_the_binary_router_layer():
         def forward(self, left, right):
             return left + right
 
-    layer = BinaryStructuredReductionLayer(
+    layer = OperationSelectionLayer(
         d_model=4,
         ops=[_AddOp(), _AddOp(), _AddOp()],
-        r_copy=1,
         chooser="mlp",
     )
     x = torch.randn(1, 5, 4)
     hard, soft, routing = layer(x)
     assert hard.shape == x.shape
     assert soft.shape == x.shape
-    assert routing["reduce_score"].shape == (1, 4, 3)
-    assert torch.isfinite(routing["reduce_score"]).all()
+    assert routing["binary_probabilities"].shape == (1, 4, 3)
+    assert torch.isfinite(routing["binary_probabilities"]).all()
 
 
 def test_degenerate_shapes():
@@ -109,7 +107,7 @@ def test_factory_selects_and_validates():
 
 def test_layers_select_chooser_and_state_dict_reflects_it():
     # Default (anchordot): no chooser params in the state_dict.
-    u_ad = UnaryStructuredLayer(d_model=4, ops=[], r_copy=1)
+    u_ad = OperationSelectionLayer(d_model=4, ops=[],)
     assert isinstance(u_ad.chooser, AnchorDotTransformChooser)
     assert not any("chooser" in k for k in u_ad.state_dict())
 
@@ -118,8 +116,8 @@ def test_layers_select_chooser_and_state_dict_reflects_it():
         def forward(self, a, b):
             return a + b
 
-    b_mlp = BinaryStructuredReductionLayer(
-        d_model=4, ops=[_AddOp(), _AddOp()], r_copy=1, chooser="mlp")
+    b_mlp = OperationSelectionLayer(
+        d_model=4, ops=[_AddOp(), _AddOp()], chooser="mlp")
     assert isinstance(b_mlp.chooser, MLPTransformChooser)
     keys = list(b_mlp.state_dict())
     assert any("chooser.tool_embedding" in k for k in keys)
@@ -144,7 +142,6 @@ def _build_model(kind):
     import Models, Language
     from util import init_config, init_device
     init_device("cpu")
-    torch.manual_seed(0)
     with open(_GRAMMAR_CONFIG) as f:
         text = f.read()
     text = re.sub(
@@ -173,7 +170,7 @@ def _build_model(kind):
 
 def _router_choosers(m):
     ll = m.symbolSpace.languageLayer
-    layers = list(ll._unary_layers.values()) + list(ll._binary_layers.values())
+    layers = [ll.operation_layer]
     assert layers, "no structured layers attached"
     return [type(l.chooser).__name__ for l in layers]
 

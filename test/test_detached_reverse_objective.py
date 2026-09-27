@@ -3,10 +3,9 @@
 import torch
 
 from Language import (
-    BinaryStructuredReductionLayer,
+    OperationSelectionLayer,
     ReconstructionStack,
     ReverseConstructionChooser,
-    UnaryStructuredLayer,
 )
 
 
@@ -101,14 +100,14 @@ def test_packed_reverse_loss_matches_serial_sentence_layout():
                 index, torch.tensor([rule]), arity=arity,
                 mask=torch.tensor([True]))
     # The serial trace compacts its NULL-seal choices immediately after 3W.
-    # Packed storage places the same choices in the group owned by the
-    # sentence's end-word column.
+    # The final sentence uses group zero in both layouts. Intermediate
+    # packed sentences use end-word+1; no final group aliases an earlier seal.
     for offset, rule in enumerate((3, 4)):
         serial.record_choice(
             3 * words + offset, torch.tensor([rule]), arity=2,
             mask=torch.tensor([True]))
         packed.record_choice(
-            3 * words + (words - 1) * seal_width + offset,
+            3 * words + offset,
             torch.tensor([rule]), arity=2, mask=torch.tensor([True]))
 
     idea = torch.randn(1, idea_dim, requires_grad=True)
@@ -148,31 +147,9 @@ def test_fixed_forward_loss_slab_preserves_chooser_gradient():
     assert torch.allclose(parameter.grad, torch.tensor(2.0))
 
 
-def test_unary_local_contrast_is_bounded_and_truncated():
-    layer = UnaryStructuredLayer(
-        d_model=4, ops=[_UnaryScale(0.5), _UnaryScale(1.5)],
-        chooser="anchordot").to("cpu")
-    layer.local_objective_enabled = True
-    child = torch.randn(2, 1, 4, device="cpu", requires_grad=True)
-    _hard, _soft, routing = layer(child)
-    loss = routing["local_structural_loss"].mean()
-    assert 0.0 <= float(loss.detach()) <= 1.0
-    loss.backward()
-    assert child.grad is None
-    assert layer.apply_anchor.grad is not None
-    assert torch.isfinite(layer.apply_anchor.grad).all()
-
-
-def test_binary_local_contrast_is_bounded_and_truncated():
-    layer = BinaryStructuredReductionLayer(
-        d_model=4, ops=[_BinaryMix(0.25), _BinaryMix(0.75)],
-        chooser="anchordot").to("cpu")
-    layer.local_objective_enabled = True
-    children = torch.randn(2, 2, 4, device="cpu", requires_grad=True)
-    _hard, _soft, routing = layer(children)
-    loss = routing["local_structural_loss"].mean()
-    assert 0.0 <= float(loss.detach()) <= 1.0
-    loss.backward()
-    assert children.grad is None
-    assert layer.reduce_anchor.grad is not None
-    assert torch.isfinite(layer.reduce_anchor.grad).all()
+def test_compose_has_no_auxiliary_local_policy_objective():
+    layer = OperationSelectionLayer(d_model=4, ops=[_BinaryMix(.5)],
+                                     unary_ops=[_UnaryScale(.5)])
+    assert not hasattr(layer, 'local_objective_enabled')
+    _, _, routing = layer(torch.ones(1, 2, 4))
+    assert 'local_structural_loss' not in routing

@@ -41,6 +41,18 @@ BasicModel is a parameterized neural architecture that answers the question "wha
 
 Model configurations are specified in XML. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
 
+Compose fires one operation per round from a joint operation/location softmax.
+At each sentence seal, exploit and explore take separate optimizer steps from
+the same cached word vectors. Each row retains the strictly lower sentence
+loss, with ties to exploit, before the next sentence begins. Batch-end answer
+loss keeps its own backward and does not choose the sentence winner.
+`architecture.composeTemperature` defaults to `0` (argmax) and controls both
+training draws. Model credit remains untempered. Evaluation runs exploit alone
+with deterministic logit argmax. `architecture.reducePressure` defaults to `1`
+and raises binary logits as occupancy and deadline urgency grow. Hard deadlines
+reserve a slot for the next word and finish each sentence within its one-slot
+absolute or three-slot relative row. See [Language](doc/Language.md#one-operation-per-round-item-75).
+
 ## Files
 
 | File | Description |

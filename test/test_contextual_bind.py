@@ -97,14 +97,15 @@ def test_class_contract():
 
 # --- Task 2.4: live-fold stash --------------------------------------------
 def test_reduction_layer_stashes_live_slab_on_bind():
-    from Language import (BinaryStructuredReductionLayer, ContextualBindLayer,
+    from Language import (OperationSelectionLayer, ContextualBindLayer,
                           _BinaryGrammarOpAdapter)
     bind = ContextualBindLayer()
-    layer = BinaryStructuredReductionLayer(d_model=4, ops=[_BinaryGrammarOpAdapter(bind)])
+    layer = OperationSelectionLayer(d_model=4, ops=[_BinaryGrammarOpAdapter(bind)])
     alice = torch.tensor([1.,0,0,0]); bind_m = torch.tensor([0.,1,0,0]); run = torch.tensor([0.,0,1,0])
     x = torch.stack([alice, bind_m, run]).unsqueeze(0)         # [1, 3, 4]
     layer.forward(x)                                           # triggers the stash
-    assert bind._bind_context is not None and bind._bind_context['slab'] is x
+    assert bind._bind_context is not None
+    torch.testing.assert_close(bind._bind_context['slab'], x)
     out = bind.compose(x[:, :-1, :], x[:, 1:, :])
     assert torch.allclose(out[:, 1, :], alice)
 

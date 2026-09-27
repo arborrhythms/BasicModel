@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-c",
+    "import torch\nfrom SentenceCompose import saved_sentence_values, fork_perception\np = torch.nn.Parameter(torch.tensor([.4, .7]))\no = torch.nn.Parameter(torch.tensor([.3, .8]))\nx = torch.tensor([.2, .6])\ninitial_p = p.detach().clone()\noptimizer = torch.optim.SGD([p, o], lr=.05)\nwith saved_sentence_values((p, o)):\n cache = [(p*x).square()]\n for target in (torch.tensor([.1, .2]), torch.tensor([.3, .1])):\n  trial, backward_perception = fork_perception(cache)\n  error = cache[0].detach() * o.detach() - target\n  expected_p = 2*error*o.detach()*2*initial_p*x.square()\n  expected_o = 2*error*cache[0].detach()\n  optimizer.zero_grad()\n  (trial[0]*o-target).square().sum().backward()\n  backward_perception()\n  torch.testing.assert_close(p.grad, expected_p)\n  torch.testing.assert_close(o.grad, expected_o)\n  optimizer.step()\nprint('Both gradients match the analytic chain rule across optimizer updates.')\n"
+  ],
+  "pid": 30127,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 231982040,
+  "elapsed_seconds": 2.2999103750335053,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/pullback-gradient.log"
+}

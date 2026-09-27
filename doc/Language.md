@@ -488,8 +488,7 @@ and records the argmax. It has **zero production callers**: every call
 site is `test/_stm_test_fixtures.py`, which keeps the surface alive as a
 compat shim for tests written before the 2026-05-21 SymbolSubSpace
 refactor. The live parsing mechanism is `LanguageLayer.compose`'s
-soft-DP / Viterbi weighted deduction (`binary_tiling_soft_dp` /
-`binary_tiling_viterbi`); see [STM.md Section 5](STM.md#routing-parser)
+single softmax over operations and locations; see [STM.md Section 5](STM.md#routing-parser)
 for the accurate, audited account of SS-analysis vs CS-execution.
 
 `ConceptualSpace.stm` (a `ShortTermMemory` instance) is, in the live
@@ -646,8 +645,8 @@ idea interrogative; only the completed-row boundary dispatcher can execute it.
 The historical `_SURFACE_TO_KIND` aliases remain an isolated compatibility
 adapter for the older reasoner. They do not define a production grammar
 operator, native VP, selected thought action, or learned feature.
-The operator codebook, soft
-superposition, and participation clustering are live and tested.
+The operator-codebook utilities and participation clustering are live and tested.
+Production compose uses the hard derivations described below.
 
 ### Participation Categories as the Chooser's Syntactic-Category Context
 
@@ -740,127 +739,83 @@ dormant declared-POS tables (`category_embedding`, `category_logits`/
 `category_ids`, the order-taxonomy admissibility gate) are superseded and slated
 for follow-up retirement, not reuse.
 
-## Shared Weighted-Deduction Framework
+## One operation per round (item 7.5)
 
-PartSpace analysis and WholeSpace parsing are two readings of
-the *same* item graph under semiring-weighted dynamic programming
-(weighted deduction). The graph is scored once; the semiring chosen
-selects the quantity:
+`OperationSelectionLayer` scores every binary operator at every adjacent live
+pair and every unary operator at every live position. One model softmax
+covers all of those candidates and, once the sequence fits its LTM row, STOP.
+Exactly one candidate fires per active round. Binary operations remove one
+operand; unary operations preserve length. Above the row's slot limit there
+is no COPY, wait, or other no-operation candidate. STOP is eligible at depth
+one for an absolute row and at depth three or below for a relative row.
 
-- **sum-product** gives soft inside / forward marginals (every viable
-  rule keeps positive mass, and gradient flows through $\log Z$);
-- **max-plus** gives the single Viterbi route used for the hard forward
-  value.
+The tensor slab and round budget stay fixed. An active mask freezes a row after
+STOP; it does not change the compiled shape. The parallel budget is at least
+twice the slab width. Serial STM uses this same owned layer on its newest two
+slots, with three rounds after each word and a seal budget of twice STM capacity
+(bounded by a positive `syntacticOrder`). Occupancy and the STOP test use the
+whole STM's depth, not just the two-slot window. Online rounds allow `K - 1`
+occupied slots, reserving admission for the next word. Seals allow one absolute
+slot or three relative slots; two slots are a transient state, not an allowance.
 
-Both spaces share the same direction-agnostic primitives in
-`bin/Language.py`:
+With depth `d`, allowance `a`, and `r` rounds left including the current round,
+the required reductions are `n = max(0, d - a)`. When `r - n <= 0`, only binary
+candidates remain legal. Before that deadline, unary operations remain legal;
+STOP also requires both the row limit and the phase allowance to fit. Every
+binary logit receives `reducePressure * (d/a + n/r)`, with zero pressure on an
+empty stack. `architecture.reducePressure` defaults to `1.0`; the fixed prior
+adds no learned parameters and enters the model's gradient credit. See
+[Params](Params.md) for the numerical guards and the declared measurement value.
+Three online rounds and `2K` seal rounds suffice to admit every word and finish
+each row. A deliberately infeasible initial budget may still yield an incomplete
+forest that trains without publishing a row. Arrival at a full stack is an
+assertion failure; compose has no overflow-dropping or overflow-incomplete path.
 
-- `binary_tiling_viterbi` --- max-plus best route.
-- `binary_tiling_soft_dp` --- sum-product marginals
-  (`reduce_marginal_op`, `logZ`).
+Training produces exploit and explore hard derivations. One XML parameter,
+`architecture.composeTemperature` (finite, nonnegative, default `0`), controls
+both hard choices. At zero the greatest logit wins; exact logit ties retain item
+8's structural preference. Positive temperature samples
+`softmax(logits / composeTemperature)`. The 90/10 mixture is deleted.
+Explore uniformly selects one round used by exploit and masks its candidate.
+At zero temperature it replays exploit's prefix even after the first optimizer
+step changes the weights, chooses the best alternative at the forced round,
+then takes argmax from its changed state. At positive temperature the other
+rounds sample freely; earlier divergence or STOP already distinguishes paths.
+Packed sentences each receive their own forced round. A catalog with no legal
+alternative at that round raises explicitly.
 
-The WholeSpace reducer (`BinaryStructuredReductionLayer`) scores
-copy / reduce items over rule columns; the PartSpace analyzer
-(`MeronymicRouter`, `bin/perceptual_analyzer.py`) scores merge evidence
-over perceptual atoms. Because the soft marginals are retained even when
-the Viterbi route hardens to one rule, two tied reduce rules both keep
-positive mass and both receive gradient --- the property pinned by
-`test/test_signal_router_layer.py::test_layer_keeps_soft_superposition_over_reduce_rules`.
+At each eager sentence seal between compiled word bricks, exploit runs compose,
+sentence reconstruction and prediction loss, backward and optimizer step.
+Explore repeats compose from the same cached pre-compose word vectors and the
+committed context after the preceding sentence, using updated parameters.
+Perception runs once. Each row independently retains the strictly lower sentence
+loss; ties retain exploit. Scratch STM and trace tensors are swapped into the
+winning program, STM, LTM and observations before the next sentence is perceived.
+There is no whole-batch snapshot or full-batch exploration forward. The retained
+discourse chain supplies later prediction context. Batch-end-only objectives,
+including teacher answer loss, keep their own backward and never enter the
+sentence comparison. The batch clock and public training counter advance once.
+Evaluation runs exploit alone, with deterministic logit argmax,
+no exploration and no optimizer. This replaces the flattened-temperature pass.
 
-The packed value uses a second dynamic program over source boundaries and
-output ordinals. At a visited boundary, COPY and REDUCE probabilities are
-their marginal masses divided by their sum. Each transition writes one
-output slot and advances the source by one or two positions. This computes
-the expected packed slab exactly for the tiling distribution; one-hot
-marginals reproduce the hard route, including several reductions in a row.
-The former cumulative one-position-shift approximation could reuse consumed
-operands during recursive composition. Hard rounds now carry per-row live
-lengths, zero padded inputs before candidate evaluation, and forbid reductions
-involving padded slots.
-Pure soft rounds keep the full expected slab rather than clipping it to the
-Viterbi length. Exhaustive small tilings, output/gradient enumeration and a
-fullgraph capture check this contract in `test_signal_router_compaction.py`. The
-[item 10 record](benchmarks/2026-09-21-item10/README.md) bounds the observed
-MentalModel failure without clamping the grammar's arithmetic operators.
+For selected candidate `c` with probability `p`, the straight-through value is
+`detach(c) + (p*c - detach(p*c))`: forward execution is hard while both the
+operator and chooser receive the probability-weighted derivative. `p` is the
+untempered model softmax including reduction pressure and deadline masks, before explore's forced exclusion;
+neither temperature nor that exclusion changes the credit distribution. Reconstruction
+and the existing task costs train compose directly. Compose has no advantage,
+policy-gradient, or DP-prior objective. There is no tiling forward/backward,
+Viterbi pass, expected tile compaction, length DP, separate unary layer, or
+retained switch to run them.
 
-### Soft-superposition route (the `<learning>` two-pass)
-
-The straight-through forward above is the **default** (and the byte-identical
-basin when `<architecture><learning>` is off): the forward value commits to
-the Viterbi route while the soft marginals carry the gradient. Under the
-two-pass `<learning>` mode the structured layers instead run a **pure
-sum-product superposition at a temperature**, and the chooser sits in the
-gradient path *directly* --- no argmax, no `.detach()`, no straight-through.
-
-A single scalar `superposition_temperature` $t \in [0, 1]$ drives it
-(`BinaryStructuredReductionLayer` / `UnaryStructuredLayer`):
-
-- the route scores are scaled by `superposition_scale(t)` $= 1 - t$ before
-  the soft DP / softmax, so $t = 0$ is the chooser's own (sharp) softmax and
-  $t = 1$ collapses the scores to uniform (flat, maximally exploratory);
-- the forward value **is** `binary_tiling_soft_dp`'s temperature-scaled
-  marginals (binary) or the temperature-scaled action softmax (unary). The
-  op blend is the pure `op_soft` posterior, not the hardened one-hot.
-
-`binary_tiling_viterbi` is still computed, but only to read off the routing
-masks for the tree (below) --- that read-off is outside the gradient path in
-both modes. When `superposition_temperature` is unset (`None`) every branch
-falls back to the legacy straight-through, object-for-object, so the
-default basin is unchanged.
-
-**Two passes as two trials.** With `<learning>` on, `runEpoch` runs each
-sentence through `runBatch` *twice*, as two independent forward/loss/backward
-trials (no `loss_A + loss_B`, no shared graph):
-
-1. **pass A** at $t = 0$ (sharp / deterministic) --- recorded into the
-   batch error like any ordinary step;
-2. **pass B** at $t =$ `<exploreTemperature>` (default `0.5`, flatter) ---
-   an exploration trial whose value is trimmed from the per-batch error and
-   does **not** increment the batch count.
-
-Pass B is temperature sampling, not a separate objective: a flatter route
-lets the chooser escape a local commitment that pass A's sharp argmax would
-otherwise lock in, and because the chooser is differentiable in both passes
-the exploration gradient updates the same anchors. `BasicModel`
-`_set_superposition_temperature(t)` walks the router's `_unary_layers` /
-`_binary_layers` (and the STM reducer) to stamp $t$; `runBatch` sets it
-before the forward and resets to `None` in a `finally`.
-
-> **Canonical single-pass target.** `<learning>false>` does **not** freeze the
-> grammar chooser. The default structured layer already scores each candidate
-> once, reads one Viterbi route for the hard forward, and uses the sum-product
-> marginals as its straight-through backward surface. The Boolean `learning`
-> flag controls the additional full exploration trial described above.
->
-> The current online CSLang controller presents only the newest two STM slots
-> to that shared Viterbi/sum-product computation. It therefore explores every
-> legal local COPY/REDUCE rule alternative, but not every complete
-> sentence-level derivation. Canonical grammar learning is to replace that
-> local scope with one LanguageSpace-owned packed derivation forest:
->
-> - score each legal span/split/rule hyperedge once;
-> - compute max-semiring backpointers for the committed tree;
-> - compute log-sum-exp inside/outside marginals over the entire forest for
->   learning, using the same hyperedge scores and no second parse;
-> - retain the forest so a later top-k/diverse-semiring readout can expose
->   multiple interpretations for metaphor without rescoring or reparsing.
->
-> ConceptualSpace applies only the selected immutable plan(s); it does not own
-> or mutate the syntax forest. Until the sentence-wide forest is implemented,
-> the production canonical configuration keeps the costly two-trial Boolean
-> mode off and uses the existing single-pass straight-through marginals.
-
-**Reading a tree.** A hard derivation is always recoverable on demand: pin
-$t = 0$, run a temp-0 analysis, and read the argmax routing trace
-(`action_kind` / `action_op` / the copy / reduce masks) that
-`BasicModel.write_syntax_tree()` already walks. Running several sentences
-through a temp-0 pass yields one tree each.
-
-This is the standard semiring-parsing pattern (Goodman 1999, *Semiring
-Parsing*; the SCFG inside-outside line of Lari and Young 1990; weighted
-logic programming / parsing transformations, Eisner and Blatz 2006; and
-neural grammar induction, Kim, Dyer, and Rush 2019). See the plan's
-section 5.6 for the full mapping.
+Alec's rationale: training by softmax lets one gradient do all the optimization;
+DP is the pre-backprop symbolic solution and should not be mixed into a working
+MLP. The sampled alternative is a tractable approximation to the full
+superposition over operators and locations, not an exact marginalization.
+See the [7.5 specification](specs/2026-09-26-one-operation-per-round.md) and
+[validation record](benchmarks/2026-09-27-item7-5-pressure/README.md). Reconstruction changes
+are recorded without tuning; the XOR_grammar and MM learning gates retain their
+original assertions.
 
 ## Future work: nouns from PartSpace, adjectives from WholeSpace
 

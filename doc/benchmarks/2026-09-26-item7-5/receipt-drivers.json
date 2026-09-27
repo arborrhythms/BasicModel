@@ -1,0 +1,12 @@
+{
+  "doc/benchmarks/2026-09-26-item7-5/package_receipt.py": "7c337ff59db7d8502bf9b0b455fe62fe48208073cdd39ddb7e36145e98c16c28",
+  "doc/benchmarks/2026-09-26-item7-5/run_measurements.py": "7995a69be33de7327aa1cbbc8185d1fca55bab169e266bde380dc5348c6c2ec6",
+  "doc/benchmarks/2026-09-26-item7-5/run_review_checks.py": "dfdfc5852e52b78ff1378e4a8f58b8ae14da4c0a76e29ed4319915ff89b8f398",
+  "doc/benchmarks/2026-09-26-item7-5/run_full_after_checks.py": "5dc78c7e49d9e5531e8a1c84fa1aabd1f18e10ea7357505868e4f027f3ecc387",
+  "doc/benchmarks/2026-09-26-item7-5/continue_full.py": "c48ce93482e636ff86c662e8035e4e64cd99c7f31b09babdb9e18f0f813cdc24",
+  "doc/benchmarks/2026-09-26-item7-5/full-schedule.json": "e22e2c3991c9d85073ef3021e235cef87c6111e7cd4f1151f3f7ee3c01f7906b",
+  "doc/benchmarks/2026-09-26-item7-5/parity.xml": "e0834433542b6b7f1d039b0c8734ddaf95cd216d7979a880723d60656342bc9a",
+  "doc/benchmarks/2026-09-26-item8/measure.py": "6d22c4f7cdd6f3d94d2b67ac5bebf1919d9ed8b0995704bea78ef7c9c84c4699",
+  "doc/benchmarks/2026-09-21-item10/probe.py": "5c7382e9106ecf14fc6607674d0e60906c0b03b376de8f712719e0147aad0cc2",
+  "doc/benchmarks/2026-09-21-item10/parity.py": "2d8eb7b0e70f60cc534b84e25697571be238b0f34665ec6b756ee5bcf4903222"
+}

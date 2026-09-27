@@ -690,74 +690,17 @@ def test_model_trains_with_teacher_detached(synth_config):
     assert m.inputSpace.data.what(What.supervised(0)).provenance == "data"
 
 
-@pytest.fixture(scope="module")
-def synth_policy_config(tmp_path_factory):
-    # MM_phrase_decode has 5 unary / 15 binary rules: real chooser
-    # decisions, so the bounded local (policy) objective fires on its STM
-    # reduce pass. MM_xor has one rule per arity and nothing to choose.
-    src = (_DATA / "MM_phrase_decode.xml").read_text()
-    assert "<transformChooser>" not in src
-    patched = src.replace(
-        "<architecture>",
-        "<architecture>\n    <answerSynthesis>true</answerSynthesis>"
-        "\n    <transformChooser>mlp</transformChooser>", 1)
-    patched = patched.replace(
-        "</training>",
-        "      <forwardGrammarWeight>0.5</forwardGrammarWeight>\n    </training>", 1)
-    path = tmp_path_factory.mktemp("cfg") / "MM_xor_policy.xml"
-    path.write_text(patched)
-    return path
-
-
-@pytest.mark.slow
-def test_chooser_question_bias_trains_through_the_policy_objective(synth_policy_config):
-    """The chooser's hard choice is credited by its bounded local (policy)
-    objective, reported distinctly from the continuous answer credit (spec
-    section 11); the question context reaches it through what_projection."""
-    import Language
+def test_compose_auxiliary_policy_setting_is_retired(tmp_path):
     from util import init_config
-    from data import TheData
-    import Models
-    init_config(path=str(synth_policy_config), defaults_path=str(_DATA / "model.xml"))
-    Language.TheGrammar._configured = False
-    TheData.load("phrases")
-    torch.manual_seed(0)
-    m, _ = Models.BaseModel.from_config(str(synth_policy_config), data=TheData)
-    m = m.to("cpu")
-    assert m.forward_grammar_weight > 0.0
-    opt = m.getOptimizer(lr=1e-2)
-    batch = _batch(m)
-    seen = {}
-    orig = m._backward_training_loss
-
-    def spy(total_loss, *a, **k):
-        wp = {name: mod.what_projection.weight for name, mod in m.named_modules()
-              if type(mod).__name__ == "MLPTransformChooser"}
-        grads = torch.autograd.grad(total_loss, list(wp.values()),
-                                    retain_graph=True, allow_unused=True)
-        seen["grads"] = {name: (None if g is None else float(g.abs().sum()))
-                         for name, g in zip(wp, grads)}
-        return orig(total_loss, *a, **k)
-
-    m._backward_training_loss = spy
-    try:
-        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-                   batch_override=batch,
-                   questions=(What.supervised(0), What.supervised(1)))
-    finally:
-        m._backward_training_loss = orig
-    # The chooser whose choices the policy objective credited (the binary
-    # reduce chooser on this grammar) receives gradient through its What
-    # bias; a chooser with a single rule records no choice and none is due.
-    credited = {n: g for n, g in seen["grads"].items() if g is not None}
-    assert credited, seen["grads"]
-    assert any(g > 0.0 for g in credited.values()), seen["grads"]
-    assert any("_binary_layers" in n for n in credited), seen["grads"]
-    report = m.what_report()
-    assert report["policy"]["forward_grammar_weight"] == 0.5
-    assert report["policy"]["batches"] == 1
-    assert report["policy"]["credit"] == report["policy"]["credit"]   # finite
-    assert "answer_construction" in report["families"]["supervised"]
+    import Language, Models
+    src = (_DATA / 'MM_phrase_decode.xml').read_text()
+    src = src.replace('</training>', '<forwardGrammarWeight>0.5</forwardGrammarWeight></training>', 1)
+    path = tmp_path / 'retired-policy.xml'
+    path.write_text(src)
+    with pytest.raises((ValueError, RuntimeError, SystemExit), match='forwardGrammarWeight|schema|validate'):
+        init_config(path=str(path), defaults_path=str(_DATA / 'model.xml'))
+        Language.TheGrammar._configured = False
+        Models.BasicModel.from_config(str(path))
 
 
 def test_fresh_model_deep_copies_after_another_model_trained(synth_config):

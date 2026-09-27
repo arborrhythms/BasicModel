@@ -1,0 +1,15 @@
+--- a/test/test_compiled_word_chunk.py
++++ b/test/test_compiled_word_chunk.py
+@@ -583,10 +583,8 @@
+     stm = model.conceptualSpace.stm
+     stm._depth.fill_(int(stm.capacity))
+ 
+-    model._run_tensor_peer_word_pipeline(int(model.inputSpace._ar_embedded_N.shape[1]))
+-    assert model._compose_overflow.all()
+-    _root, depth = model._stm_reduce_to_single_S()
+-    assert (depth < 0).all()
++    with pytest.raises(RuntimeError, match='compose admission reached a full stack'):
++        model._run_tensor_peer_word_pipeline(int(model.inputSpace._ar_embedded_N.shape[1]))
+ 
+ 
+ def test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies(

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "--rootdir",
+    "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item75-transaction-8m0xm7sg",
+    "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item75-transaction-8m0xm7sg/test/test_compose_records.py"
+  ],
+  "pid": 97306,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 514721136,
+  "elapsed_seconds": 4.6549819589126855,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/transaction-preview.log"
+}

@@ -103,11 +103,11 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
                 calls.append(result.detach().clone())
             return result
         monkeypatch.setattr(space.interpret, 'forward', observed)
-    choose = model.languageSpace.choose_post_binary
+    choose = model.languageSpace.choose_operation
     def composition(*args, **kwargs):
         assert calls, 'composition ran before the mandatory interpretation'
         return choose(*args, **kwargs)
-    monkeypatch.setattr(model.languageSpace, 'choose_post_binary', composition)
+    monkeypatch.setattr(model.languageSpace, 'choose_operation', composition)
     with torch.no_grad():
         model.understand(model.inputSpace.prepInput(['the wug sat']))
     ids = model.inputSpace._ar_word_concept_ids

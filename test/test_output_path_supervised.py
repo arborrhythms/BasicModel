@@ -95,7 +95,7 @@ def serial_synth_config(tmp_path_factory):
     src = (_DATA / "MM_phrase_decode.xml").read_text()
     src = src.replace("<ideaDecode>true</ideaDecode>",
                       "<ideaDecode>true</ideaDecode>\n    <answerSynthesis>true</answerSynthesis>\n"
-                      "    <stmReduceTau>0.05</stmReduceTau>\n    <transformChooser>mlp</transformChooser>")
+                      "    <transformChooser>mlp</transformChooser>")
     path = tmp_path_factory.mktemp("cfg") / "MM_phrase_synth.xml"
     path.write_text(src)
     return path
@@ -217,6 +217,9 @@ def _answer_training_probe(m, opt, questions):
         return record(name, value, **kwargs)
 
     def backward_probe(total, amp_scaler=None):
+        if getattr(m, '_sentence_backward', False):
+            assert 'output' not in recorded
+            return backward(total, amp_scaler)
         params = _dedicated_answer_parameters(m)
         observed["params"] = params
         observed["before"] = [p.detach().clone() for p in params]

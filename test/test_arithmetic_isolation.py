@@ -119,7 +119,7 @@ def test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes(tmp_pat
     steps = []
     real_step = optimizer.step
     def step(*args, **kwargs):
-        steps.append(1)
+        steps.append(getattr(model, '_sentence_trial', None) or 'batch')
         return real_step(*args, **kwargs)
     monkeypatch.setattr(optimizer, 'step', step)
     try:
@@ -128,7 +128,7 @@ def test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes(tmp_pat
         result, _ = model.runBatch(train=True, batchSize=2, split='train',
             optimizer=optimizer, batch_override=batch,
             questions=(What.supervised(0), What.supervised(1)))
-        assert steps == [1]
+        assert steps == ['exploit', 'explore', 'batch']
         assert bool(torch.isfinite(result.lossOut))
         assert model._last_answer_mask.tolist() == [True, True]
     finally:

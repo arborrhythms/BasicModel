@@ -1,0 +1,11 @@
+{
+  "doc/benchmarks/2026-09-27-item7-5-pressure/package_receipt.py": "64935657f4e9abe6e3fd0760c5c824c6860208b52ce8b23d42f07e98328b2224",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/profile_baseline.py": "10bd5e99c919915c073e1f19df80ac4000cda48211af79d1a328334d127b9d89",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/run_full.py": "411f21c1080aa39420f6afee68d71a80173df3401fd66e85b0d19f7f167680c6",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/run_measurements.py": "b037905e5304ac5826305d351d2f8b37905088d82d1b51320774096d958f41b0",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/verify_receipt.py": "a3df911409ac0b57a5836ee85faede6b9977ebf36a77187863ed812b8f4a9ed3",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/overflow-fixture-followup.patch": "4ee26e7823aa1d799554903e0f8f08c49bc72e0f055da218aa4b2fcbb6dcf728",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/user-truth-fixture-followup.patch": "3d688356dd8b5a3a7039662164a02c210ffbe3376dbba4190ca3b94719156765",
+  "doc/benchmarks/2026-09-26-item7-5/package_receipt.py": "7c337ff59db7d8502bf9b0b455fe62fe48208073cdd39ddb7e36145e98c16c28",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/full-schedule.json": "39a1e893881afd04f2aa12550700c76a64dbe320ac1249eb241f1c4548f4a849"
+}

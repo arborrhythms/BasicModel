@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-pressure/profile_baseline.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-pressure/measurements/serial-baseline.json"
+  ],
+  "pid": 47121,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 6414866672,
+  "elapsed_seconds": 739.7128631250234,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-pressure/measurements/serial-baseline.log"
+}

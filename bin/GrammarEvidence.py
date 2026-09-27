@@ -24,7 +24,7 @@ class RoutingCoverage:
         for kind, arity, label in ((1, 2, 'binary'), (2, 1, 'unary')):
             rules = getattr(language, f'_compose_{label}_rules')
             layer = language._tree_layer(arity)
-            ops = () if layer is None else layer.ops
+            ops = () if layer is None else (layer.ops if arity == 2 else layer.unary_ops)
             if len(rules) != len(ops):
                 raise ValueError('routing measurement requires the owned grammar catalog')
             self.catalog[kind] = [dict(name=rule.method_name,

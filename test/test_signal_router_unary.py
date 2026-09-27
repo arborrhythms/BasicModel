@@ -1,57 +1,41 @@
-import os, sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
-
+"""Unary candidates share one round and one location selector."""
 import torch
-import torch.nn as nn
+from torch import nn
+from Language import OperationSelectionLayer
 
-from Language import UnaryStructuredLayer
-
-
-class _NegateOp(nn.Module):
+class Negate(nn.Module):
     def forward(self, x):
         return -x
 
-
-class _AbsOp(nn.Module):
+class Abs(nn.Module):
     def forward(self, x):
         return x.abs()
 
+def test_unary_output_shape_and_one_global_softmax():
+    step = OperationSelectionLayer(d_model=4, unary_ops=[Negate(), Abs()])
+    x = torch.randn(2, 5, 4)
+    hard, path, route = step(x)
+    assert hard.shape == path.shape == x.shape
+    assert route['probabilities'].shape == (2, 11)
+    torch.testing.assert_close(route['probabilities'].sum(-1), torch.ones(2))
+    assert route['depth'].tolist() == [5, 5]
 
-def test_unary_layer_output_shape_unchanged():
-    B, N, D = 2, 5, 4
-    layer = UnaryStructuredLayer(d_model=D, ops=[_NegateOp(), _AbsOp()],
-                                 r_copy=1)
-    x = torch.randn(B, N, D)
-    hard, soft, routing = layer(x)
-    assert hard.shape == (B, N, D)
-    assert soft.shape == (B, N, D)
-    # action axis = R_copy + R_apply = 1 + 2 = 3
-    assert routing["action_logits"].shape == (B, N, 3)
-    assert routing["action_probs"].shape == (B, N, 3)
-    assert torch.allclose(routing["action_probs"].sum(-1),
-                          torch.ones(B, N), atol=1e-5)
+def test_exactly_one_unary_position_changes():
+    step = OperationSelectionLayer(d_model=1, unary_ops=[Negate()])
+    x = torch.tensor([[[1.], [2.], [3.], [4.]]])
+    with torch.no_grad():
+        step.apply_anchor.fill_(-1)
+    _, path, route = step(x)
+    assert (path != x).any(-1).sum(-1).tolist() == [1]
+    assert route['position'].tolist() == [3]
 
-
-def test_unary_layer_hard_one_hot_per_position():
-    B, N, D = 1, 4, 3
-    layer = UnaryStructuredLayer(d_model=D, ops=[_NegateOp()], r_copy=1)
-    x = torch.randn(B, N, D)
-    _, _, routing = layer(x)
-    cm = routing["copy_mask"]      # [B, N, R_copy]
-    am = routing["apply_mask"]     # [B, N, R_apply]
-    fired = cm.sum(-1) + am.sum(-1)
-    assert torch.all(fired == 1.0)
-
-
-def test_unary_layer_gradient_into_op_and_input():
-    B, N, D = 1, 4, 3
-    op = _NegateOp()
-    layer = UnaryStructuredLayer(d_model=D, ops=[op], r_copy=1)
-    x = torch.randn(B, N, D, requires_grad=True)
-    hard, soft, _ = layer(x)
-    (hard.sum() + soft.sum()).backward()
-    assert x.grad is not None and x.grad.abs().sum() > 0
-    # Anchors carry the placement signal; check their gradients.
-    assert layer.copy_anchor.grad is not None and layer.copy_anchor.grad.abs().sum() > 0
-    if layer.r_apply > 0:
-        assert layer.apply_anchor.grad is not None and layer.apply_anchor.grad.abs().sum() > 0
+def test_unary_and_stop_anchors_receive_gradient():
+    step = OperationSelectionLayer(d_model=1, unary_ops=[Negate()])
+    with torch.no_grad():
+        step.stop_anchor.zero_(); step.apply_anchor.fill_(-1)
+    x = torch.tensor([[[1.]]], requires_grad=True)
+    _, path, _ = step(x)
+    path.sum().backward()
+    assert x.grad.abs().sum() > 0
+    assert step.stop_anchor.grad.abs().sum() > 0
+    assert step.apply_anchor.grad.abs().sum() > 0

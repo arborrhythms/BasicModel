@@ -26,7 +26,7 @@ import torch.nn as nn
 import Language
 from Language import (
     TransformChooser, AnchorDotTransformChooser,
-    UnaryStructuredLayer, BinaryStructuredReductionLayer,
+    OperationSelectionLayer,
 )
 
 
@@ -102,8 +102,8 @@ def test_binary_score_no_pairs():
 
 
 def test_layers_use_a_stateless_chooser_no_state_dict_keys():
-    u = UnaryStructuredLayer(d_model=4, ops=[], r_copy=1)
-    b = BinaryStructuredReductionLayer(d_model=4, ops=[], r_copy=1)
+    u = OperationSelectionLayer(d_model=4, ops=[],)
+    b = OperationSelectionLayer(d_model=4, ops=[],)
     for layer in (u, b):
         assert isinstance(layer.chooser, AnchorDotTransformChooser)
         keys = list(layer.state_dict().keys())
@@ -122,19 +122,18 @@ def test_anchordot_unary_uses_category_role_prior(monkeypatch):
         def forward(self, x):
             return x
 
-    layer = UnaryStructuredLayer(
-        d_model=2, ops=[_Neg()], r_copy=1,
-        chooser="anchordot", op_names=["negate"])
+    layer = OperationSelectionLayer(
+        d_model=2, unary_ops=[_Neg()],
+        chooser="anchordot", unary_names=["negate"])
     with torch.no_grad():
-        layer.copy_anchor.zero_()
+        layer.stop_anchor.zero_()
         layer.apply_anchor.zero_()
     x = torch.zeros(1, 2, 2)
     cat_ctx = torch.tensor([[[4.0], [0.0]]])
     _hard, _soft, routing = layer(x, cat_ctx=cat_ctx)
-    expected = torch.tensor([[[0.0, 4.0], [0.0, 0.0]]],
-                            dtype=routing["action_logits"].dtype)
+    expected = torch.tensor([[4.0, 0.0, -torch.inf]], dtype=x.dtype)
     assert torch.equal(
-        routing["action_logits"], expected)
+        routing["logits"], expected)
 
 
 def test_anchordot_binary_uses_labelled_left_right_category_prior(monkeypatch):
@@ -150,11 +149,11 @@ def test_anchordot_binary_uses_labelled_left_right_category_prior(monkeypatch):
         def forward(self, left, right):
             return left + right
 
-    layer = BinaryStructuredReductionLayer(
-        d_model=2, ops=[_Add(), _Add()], r_copy=1,
+    layer = OperationSelectionLayer(
+        d_model=2, ops=[_Add(), _Add()],
         chooser="anchordot", op_names=["lift", "other"])
     with torch.no_grad():
-        layer.copy_anchor.zero_()
+        layer.stop_anchor.zero_()
         layer.reduce_anchor.zero_()
     x = torch.zeros(1, 3, 2)
     cat_ctx = torch.tensor([[
@@ -164,5 +163,5 @@ def test_anchordot_binary_uses_labelled_left_right_category_prior(monkeypatch):
     ]])
     _hard, _soft, routing = layer(x, cat_ctx=cat_ctx)
     expected = torch.tensor([[[3.0, 0.0], [0.0, 0.0]]],
-                            dtype=routing["reduce_score"].dtype)
-    assert torch.equal(routing["reduce_score"], expected)
+                            dtype=x.dtype)
+    assert torch.equal(routing["logits"][:, :-1].reshape(1, 2, 2), expected)

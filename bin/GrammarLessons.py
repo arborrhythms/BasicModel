@@ -7,7 +7,6 @@ and its own trace remains authoritative, including when its choices are wrong.
 """
 from __future__ import annotations
 
-import math
 import torch
 from torch.nn import functional as F
 
@@ -16,8 +15,9 @@ def compose_examples(language, program, tree, *, variables=()):
     """Teacher-forced states for one annotated tree, over real forward leaves.
 
     A leaf is its zero-based ordinal; a node is [declared_form, children...].
-    Every word must occur exactly once in order. One post-word binary and one
-    unary are allowed, followed by sentence seals, matching the live parser.
+    Every word must occur exactly once in order. The annotation schedule
+    supplies binary and unary teacher states after each word, followed by
+    sentence seals; each target is scored by the live joint selector.
     Targets stay on this scoring side of the completed forward boundary.
     """
     leaves = program.leaves.detach()
@@ -85,7 +85,7 @@ def compose_examples(language, program, tree, *, variables=()):
         unary.append((value.detach(), target))
         if target >= 0:
             with torch.no_grad():
-                value = language._tree_layer(1).ops[target](value)
+                value = language._tree_layer(1).unary_ops[target](value)
             stack[-1] = (parent, value)
     while len(stack) > 1:
         reduce(seal=True)
@@ -94,56 +94,32 @@ def compose_examples(language, program, tree, *, variables=()):
     return binary, unary
 
 
-def compose_loss(language, programs, lessons, *, base_tau=.75, capacity=8):
-    """Cross entropy for the EXISTING binary/unary grammar MLPs."""
+def compose_loss(language, programs, lessons):
+    """Supervise supplied forms in the same joint compose softmax.
+
+    A lesson's unlabelled waiting sites are not no-operation targets. Only
+    its explicitly supplied operators contribute, after the student's own
+    forward path has been captured.
+    """
     if len(programs) != len(lessons):
         raise ValueError("one optional grammar lesson is required per forward row")
-    binary, unary = [], []
+    layer = language._tree_layer(2)
+    costs = []
     for program, lesson in zip(programs, lessons):
         if lesson is None:
             continue
         if program is None:
             raise ValueError("grammar supervision requires an actual captured forward program")
-        b, u = compose_examples(language, program, lesson["tree"],
-                                variables=lesson.get("variables", ()))
-        binary.extend(b)
-        unary.extend(u)
-    costs = []
-    if binary:
-        layer = language._tree_layer(2)
-        values = torch.stack([entry[0] for entry in binary])
-        with torch.no_grad():
-            candidates = layer._stacked_reduced(values)
-        copy, reduce = layer.chooser.score_binary(
-            values[..., :layer.d_model], candidates[..., :layer.d_model],
-            layer.copy_anchor, layer.reduce_anchor)
-        # This is exactly the live bounded parser's copy/reduce confidence.
-        copy = (copy.logsumexp(-1) - math.log(copy.shape[-1])).sum(-1)
-        seals = torch.tensor([entry[2] for entry in binary], device=values.device)
-        depth = torch.tensor([entry[3] for entry in binary], device=values.device)
-        pressure = ((depth.float() - 2) / max(1, capacity - 2)).clamp(0, 1) if capacity > 2 else torch.zeros_like(copy)
-        threshold = (float(base_tau) * (1 - pressure)).clamp(1e-5, 1 - 1e-5)
-        seals = seals | (depth >= capacity)
-        if any(entry[1] < 0 and entry[3] >= capacity for entry in binary):
-            raise ValueError("grammar lesson requires more STM capacity")
-        keep = copy + math.log(layer.r_reduce) + torch.logit(threshold)
-        logits = torch.cat((keep[:, None], reduce[:, 0]), -1)
-        logits = torch.cat((logits[:, :1].masked_fill(seals[:, None], -1e4), logits[:, 1:]), -1)
-        targets = torch.tensor([entry[1] + 1 for entry in binary], device=values.device)
-        costs.append(F.cross_entropy(logits, targets))
-    if unary:
-        layer = language._tree_layer(1)
-        values = torch.stack([entry[0] for entry in unary])[:, None]
-        with torch.no_grad():
-            candidates = layer._stacked_applied(values)
-        copy, apply = layer.chooser.score_unary(
-            values[..., :layer.d_model], candidates[..., :layer.d_model],
-            layer.copy_anchor, layer.apply_anchor)
-        # One aggregate copy action, just as for the bounded binary decision.
-        keep = copy.logsumexp(-1) - math.log(copy.shape[-1])
-        logits = torch.cat((keep[:, :, None], apply), -1)[:, 0]
-        targets = torch.tensor([entry[1] + 1 for entry in unary], device=values.device)
-        costs.append(F.cross_entropy(logits, targets))
+        binary, unary = compose_examples(language, program, lesson["tree"],
+                                         variables=lesson.get("variables", ()))
+        for window, target, _seal, _depth in binary:
+            if target >= 0:
+                _, _, route = layer(window.detach()[None], slots=1)
+                costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
+        for value, target in unary:
+            if target >= 0:
+                _, _, route = layer(value.detach()[None, None], slots=1)
+                costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
     return torch.stack(costs).mean() if costs else None
 
 

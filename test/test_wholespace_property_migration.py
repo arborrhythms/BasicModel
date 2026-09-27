@@ -212,9 +212,9 @@ def test_property_model_stm_grammar_resolves_from_symbolspace(tmp_path):
     assert reducer is not None
     assert reducer is model._stm_reducer()  # cached, not re-minted
 
-    expected_unary = symbols.languageLayer._unary_layers["CS"]
+    expected_unary = symbols.languageLayer.operation_layer
     assert expected_unary is not None
-    assert model._stm_unary_rewriter() is expected_unary
+    assert model._stm_reducer() is expected_unary
 
 
 def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):

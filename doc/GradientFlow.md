@@ -113,8 +113,8 @@ reporting cost and one proximal optimizer update, not duplicate autograd loss.
 
 ## Per-operator agreement
 
-`branchDiagnosticsEvery` samples before backward, at one parameter version.
-Zero disables it; BasicModel sets 100 and the supplied-answer tied benchmark
+`branchDiagnosticsEvery` samples before backward. Zero disables it; BasicModel
+sets 100 and the supplied-answer tied benchmark
 sets 1. The existing state-branch report remains
 available; the run log also emits `[operator-gradients]` JSON. Each named
 shared operator reports weighted gradient norms, the cosines of reconstruction
@@ -125,6 +125,16 @@ when the gradients point in the same direction. A zero reconstruction norm
 gives a null ratio; a zero other norm with nonzero reconstruction gives zero.
 [Diagnostic implementation](../bin/GradientDiagnostics.py),
 [run harness](../bin/Models.py).
+
+Sentence reconstruction and prediction now train at each sentence seal, before
+the batch-end output backward. On a diagnostic batch, the report captures the
+weighted gradients from both exploit and explore before each seal graph is
+released, then sums those vectors with the batch-end objective gradients. The
+sum follows the actual optimizer updates across parameter versions; it is not
+a gradient evaluated at one common parameter state. Cached perception contributes
+through its exact pullback. Norms and cosines are calculated after vector
+aggregation, so cancellation and agreement remain visible. The diagnostic keeps
+no live seal graphs and does not add an optimizer step.
 
 Names come from the actual grammar registry and registered parameter owners.
 Aliases/tied parameters are counted once, and only optimizer-owned parameters

@@ -277,6 +277,13 @@ def _policy_training_probe(m, opt, questions):
         return record(name, value, **kwargs)
 
     def backward_probe(total, amp_scaler=None):
+        if getattr(m, '_sentence_backward', False):
+            assert m._output_policy_cost is None
+            assert 'output_policy' not in recorded
+            observed['total_grads'] = torch.autograd.grad(
+                total, params, retain_graph=True, allow_unused=True)
+            assert all(g is None for g in observed['total_grads'])
+            return backward(total, amp_scaler)
         cost = m._output_policy_cost
         observed["raw_grads"] = torch.autograd.grad(
             cost.sum(), params, retain_graph=True, allow_unused=True)
@@ -882,7 +889,9 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path):
     try:
         with torch.no_grad():
             _stage_packed(m, [["12 plus 1", "3 plus 4"], ["8 plus 2"]])
+            layout = m.inputSpace._packed_sentence_slot_mask.clone()
             out = m._forward_with_compiled_sentence_state(None)
+            assert torch.equal(m.inputSpace._packed_sentence_slot_mask, layout)
             u = m._capture_understanding(out)
             assert u.sentence_programs[0][0] is not None
             assert u.sentence_programs[1][0] is not None

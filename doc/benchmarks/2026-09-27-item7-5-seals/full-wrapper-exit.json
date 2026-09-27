@@ -1,0 +1,8 @@
+{
+  "command": ".venv/bin/python doc/benchmarks/2026-09-27-item7-5-seals/run_full.py",
+  "exit_code": 1,
+  "stage": "after bounded.run_suite completed and saved its complete result",
+  "error": "ValueError: too many values to unpack (expected 2)",
+  "explanation": "The one-off wrapper unpacks the dictionary returned by bounded.run_suite as a pair. The durable supervised result had already been saved with test_failure, exit 1, all 4,968 selected cases completed exactly once, and no active workers. The wrapper error did not cancel or rerun any case. run_full.py is retained exactly as executed.",
+  "traceback": "\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/run_full.py\", line 76, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/run_full.py\", line 67, in main\n    code, _ = bounded.run_suite(root=ROOT, selectors=[], run_dir=HERE / 'full',\n    ^^^^^^^\nValueError: too many values to unpack (expected 2)\n"
+}

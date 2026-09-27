@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/memory_probe.py", line 37, in <module>
+    instrument(name)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/memory_probe.py", line 23, in instrument
+    original = getattr(Models.BasicModel, name)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'BasicModel' has no attribute '_forward_stem'. Did you mean: '_forward_body'?

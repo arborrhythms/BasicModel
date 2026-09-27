@@ -1,0 +1,23 @@
+{
+  "history": [
+    {
+      "value": [
+        1,
+        2
+      ]
+    },
+    {
+      "value": [
+        3
+      ]
+    }
+  ],
+  "expected": [
+    {
+      "value": [
+        1
+      ]
+    }
+  ],
+  "source_sha256": "c1be9247e3f5557d78aaef34d17ea29079ecdbad629e9e147c996219586aa3e1"
+}

@@ -26,8 +26,6 @@
     <whatCurriculumDistance>1</whatCurriculumDistance>
     <whatCurriculumRatio>0.25</whatCurriculumRatio>
     <categoryCodebook>true</categoryCodebook>
-    <stmReduceTau>0.75</stmReduceTau>
-    <learning>false</learning>
     <data>
       <dataType>embedding</dataType>
       <dataset>math</dataset>
@@ -53,7 +51,6 @@
       <teacherReconstruction>true</teacherReconstruction>
       <detachedReverse>false</detachedReverse>
       <leafDistillWeight>0.0</leafDistillWeight>
-      <forwardGrammarWeight>0.0</forwardGrammarWeight>
       <sentenceExpectation>true</sentenceExpectation>
       <armaScale>0.0</armaScale>
       <intraLossWeight>0.0</intraLossWeight>

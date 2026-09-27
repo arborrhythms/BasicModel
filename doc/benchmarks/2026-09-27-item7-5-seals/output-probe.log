@@ -1,0 +1,84 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+IDEA_END_DIFF [[0.0, 0.0, 0.0], [0.2690536379814148, 0.17750053107738495, 0.0]]
+REPLAY_END_DIFF [[0.0, 0.0, 0.0], [0.2690536379814148, 0.17750053107738495, 0.0]]
+IDEA_REPLAY_DIFF [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+DEPTH tensor([1, 2])
+PROGRAM 0 [[0, -1, 0], [2, 0, -1], [2, 5, -1], [2, 5, -1], [0, -1, 1], [1, 3, -1], [2, 0, -1], [2, 0, -1], [0, -1, 2], [1, 4, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [0, -1, 3], [0, -1, 4], [1, 14, -1], [1, 5, -1], [2, 0, -1], [0, -1, 5], [1, 13, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1]]
+PROGRAM 1 [[0, -1, 0], [2, 0, -1], [2, 0, -1], [2, 0, -1], [0, -1, 1], [1, 12, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [0, -1, 2], [0, -1, 3], [1, 14, -1], [1, 4, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [2, 0, -1], [0, -1, 4]]
+_choice_positions tensor([[ 0,  0,  0,  1,  0,  0,  1,  0,  0,  1,  1,  1,  1,  1,  0,  1,  0,  0,
+         -1, -1, -1, -1, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+          0,  0,  0,  0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1],
+        [ 0,  0,  0,  1,  0,  0,  1,  1,  1,  1,  1,  0,  1,  1,  1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+          1,  1,  1,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1]])
+_choice_actions tensor([[16, 21, 21,  3, 16, 16,  4, 16, 16, 16, 16, 16, 14,  5, 16, 13, 16, 16,
+         -1, -1, -1, -1, -1, -1, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+         16, 16, 16, 16, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1],
+        [16, 16, 16, 12, 16, 16, 16, 16, 16, 14,  4, 16, 16, 16, 16, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+         16, 16, 16, 16, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1]])
+_choice_mask tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True, False, False,
+         False, False, False, False,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False],
+        [ True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True, False, False, False, False, False,
+         False, False, False, False,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False]])
+PACK_VALID [[True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], [True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]]
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/output_probe.py", line 55, in <module>
+    print('PACK_DEPTHS', m._tensor_sentence_depths.tolist(), flush=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1972, in __getattr__
+    raise AttributeError(
+AttributeError: 'BasicModel' object has no attribute '_tensor_sentence_depths'

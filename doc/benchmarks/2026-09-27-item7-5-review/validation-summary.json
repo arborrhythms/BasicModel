@@ -1,0 +1,829 @@
+{
+  "runs": {
+    "affected": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 145,
+      "completed": 145,
+      "counts": {
+        "passed": 132,
+        "skipped": 13
+      },
+      "seconds": 62.59485483309254,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 2156038832,
+      "peak_aggregate_memory_bytes": 2842104512,
+      "compile_cache_retries": []
+    },
+    "depth3": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 1,
+      "completed": 1,
+      "counts": {
+        "failed": 1
+      },
+      "seconds": 10.262984625063837,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 1,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+          "phase": "call",
+          "message": "test/test_thinking_kernel.py:52: in test_first_trained_read_reaches_depth3_end_state\n    self.assertIn(3, flat,\nE   AssertionError: 3 not found in [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] : no depth-3 relative end-state in sweeps: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]"
+        }
+      ],
+      "peak_worker_bytes": 3707064184,
+      "peak_aggregate_memory_bytes": 3707064184,
+      "compile_cache_retries": []
+    },
+    "documentation": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 109,
+      "completed": 109,
+      "counts": {
+        "passed": 109
+      },
+      "seconds": 5.404437917051837,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 128,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 430703936,
+      "peak_aggregate_memory_bytes": 430703936,
+      "compile_cache_retries": []
+    },
+    "explicit-and-gates": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 7,
+      "completed": 7,
+      "counts": {
+        "passed": 5,
+        "failed": 2
+      },
+      "seconds": 110.79157954198308,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 1,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25307: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25414: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3909: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11370: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16953: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16218: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25307: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25414: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3909: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11370: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16953: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16218: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+        }
+      ],
+      "peak_worker_bytes": 7445944536,
+      "peak_aggregate_memory_bytes": 9434047320,
+      "compile_cache_retries": []
+    },
+    "selector-fixed": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 34,
+      "completed": 34,
+      "counts": {
+        "passed": 34
+      },
+      "seconds": 12.841635000077076,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "README.md": {
+          "measured": "e7784a37420ab1196f1c457861b5e11a4057859f12782aa0de5007215378bd38",
+          "current": "30309be305c58c6e2f30736638f068af7b15181ce24d6e42d7d93c69732a92ea"
+        },
+        "bin/Language.py": {
+          "measured": "df8b0d56b4000ab8ca66cf52ebbaa375a4b804a6a58d7e8c3c47882b43297b5a",
+          "current": "137504691077b34ffc4d6f08766c2ad351240d1a960c31968b15a2aeb8148f4d"
+        },
+        "bin/Models.py": {
+          "measured": "4b87f18d53c816b86326a372653951f60de41f2f55f7263ee4b0c8c48c51d75c",
+          "current": "dbd523f95b1d76cff3dd2342a43e365298f82086bd9c23465c8e47e1ebc218ac"
+        },
+        "test/test_compose_pair_driver.py": {
+          "measured": "ed2cdb04eeac1972cf5dfc227e384efac99d3cab1d78ffdbc5957414a32a3506",
+          "current": "8c545764c5e176dc989747c20bba609e9014d6ba89e43c955454cef10a110ccd"
+        },
+        "test/test_compose_records.py": {
+          "measured": "14fcb3ae02843d557b8b771bda38776b4f04f8711dc51e49fdac5b29e504aec4",
+          "current": "0b25e67ea95e0f008ea1928ca7000c3f5e6f48c3afcf871c014be9758e95bbe1"
+        },
+        "test/test_compose_review.py": {
+          "measured": "01316e75aeee471fad0f8417aeb6d9469eadb386918c7d867b1492fc42e30d36",
+          "current": "137cf6e7414955d4a16f4687495a8d0c9dbd8677e7d576e02052ca8df8f07855"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 541558656,
+      "peak_aggregate_memory_bytes": 916884216,
+      "compile_cache_retries": []
+    },
+    "selector-red": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 9,
+      "completed": 9,
+      "counts": {
+        "failed": 8,
+        "passed": 1
+      },
+      "seconds": 15.242143374984153,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "README.md": {
+          "measured": "e7784a37420ab1196f1c457861b5e11a4057859f12782aa0de5007215378bd38",
+          "current": "30309be305c58c6e2f30736638f068af7b15181ce24d6e42d7d93c69732a92ea"
+        },
+        "bin/Language.py": {
+          "measured": "2c3fb6853257362bd4a3211b34d14e6c9a20befdc18eb40e10f2b7d1062e73a2",
+          "current": "137504691077b34ffc4d6f08766c2ad351240d1a960c31968b15a2aeb8148f4d"
+        },
+        "bin/Models.py": {
+          "measured": "12038a18811ec165d29ade57806496a8d60a32c059ab8cb6bc8ddc72182b75b8",
+          "current": "dbd523f95b1d76cff3dd2342a43e365298f82086bd9c23465c8e47e1ebc218ac"
+        },
+        "bin/Spaces.py": {
+          "measured": "63f9e8c507b57b2da926b00478e668b65a061bd02c6b4da14241cc71f6f4eeab",
+          "current": "c010759f6ad7504a4d2c6f46d435f63f584088bd569552bc100bdc547aa5a26c"
+        },
+        "data/model.xml": {
+          "measured": "275a234d6ca39b76b29f1404921e59fbd72c091944668de122b43d100362a4b0",
+          "current": "fb5f4525050ae50e96f318f24eea3ea66e5df925a45eea69c801f28b67ff3156"
+        },
+        "data/model.xsd": {
+          "measured": "f2a761e2d187b6f617fce03dfbf571001db927a30155ae1b7c9a8710baff25ee",
+          "current": "abb8f0a6430dd33e745621e43904be976367fc3ff9b903d5ab8d984cf4a67bdb"
+        },
+        "test/test_compose_pair_driver.py": {
+          "measured": "ed2cdb04eeac1972cf5dfc227e384efac99d3cab1d78ffdbc5957414a32a3506",
+          "current": "8c545764c5e176dc989747c20bba609e9014d6ba89e43c955454cef10a110ccd"
+        },
+        "test/test_compose_records.py": {
+          "measured": "14fcb3ae02843d557b8b771bda38776b4f04f8711dc51e49fdac5b29e504aec4",
+          "current": "0b25e67ea95e0f008ea1928ca7000c3f5e6f48c3afcf871c014be9758e95bbe1"
+        },
+        "test/test_compose_review.py": {
+          "measured": "01316e75aeee471fad0f8417aeb6d9469eadb386918c7d867b1492fc42e30d36",
+          "current": "137cf6e7414955d4a16f4687495a8d0c9dbd8677e7d576e02052ca8df8f07855"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_compose_review.py::test_zero_temperature_is_valid_and_keeps_the_chooser_gradient",
+          "phase": "call",
+          "message": "test/test_compose_review.py:10: in test_zero_temperature_is_valid_and_keeps_the_chooser_gradient\n    step = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()],\nbin/Language.py:7536: in __init__\n    raise ValueError(\"compose temperature must be positive\")\nE   ValueError: compose temperature must be positive"
+        },
+        {
+          "nodeid": "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+          "phase": "call",
+          "message": "test/test_compose_review.py:30: in test_temperature_and_forced_mask_do_not_change_model_credit\n    _, _, route = step(x, masked_action=torch.tensor([1]))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7610: in forward\n    torch._assert_async((~active | has_choice).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: compose has no legal alternative at the selected exploration round"
+        },
+        {
+          "nodeid": "test/test_compose_review.py::test_zero_temperature_explore_is_identical_until_the_forced_round",
+          "phase": "call",
+          "message": "test/test_compose_review.py:40: in test_zero_temperature_explore_is_identical_until_the_forced_round\n    exploit = step.derive(x, slots=1, rounds=6)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7661: in derive\n    _, x, route = self(\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7610: in forward\n    torch._assert_async((~active | has_choice).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: compose has no legal alternative at the selected exploration round"
+        },
+        {
+          "nodeid": "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+          "phase": "call",
+          "message": "test/test_compose_review.py:58: in test_evaluation_ignores_sampling_temperature_and_does_not_explore\n    first, unused = step.derive_pair(x, slots=1, rounds=6)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7676: in derive_pair\n    exploit = self.derive(x, slots=slots, rounds=rounds, depth=depth, **kwargs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7661: in derive\n    _, x, route = self(\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7601: in forward\n    noise = -torch.log(-torch.log(torch.rand_like(logits).clamp(\n                                  ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_compose_review.py:54: in forbidden\n    raise AssertionError('evaluation requested a random draw')\nE   AssertionError: evaluation requested a random draw"
+        },
+        {
+          "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+          "phase": "call",
+          "message": "test/test_compose_review.py:66: in test_sampling_temperature_must_be_finite_and_nonnegative\n    with pytest.raises(ValueError, match='temperature'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE ValueError"
+        },
+        {
+          "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+          "phase": "call",
+          "message": "test/test_compose_review.py:66: in test_sampling_temperature_must_be_finite_and_nonnegative\n    with pytest.raises(ValueError, match='temperature'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE ValueError"
+        },
+        {
+          "nodeid": "test/test_structural_preference.py::test_compose_probability_rounding_does_not_overturn_a_better_logit",
+          "phase": "call",
+          "message": "test/test_structural_preference.py:40: in test_compose_probability_rounding_does_not_overturn_a_better_logit\n    assert routing['op'].tolist() == [0]\nE   assert [1] == [0]\nE     \nE     At index 0 diff: 1 != 0\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_signal_router_scorer.py::test_scores_and_probabilities_match_explicit_enumeration",
+          "phase": "call",
+          "message": "test/test_signal_router_scorer.py:26: in test_scores_and_probabilities_match_explicit_enumeration\n    torch.testing.assert_close(route['logits'], expected)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 6 / 6 (100.0%)\nE   Greatest absolute difference: 6.0 at index (0, 1) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.5 at index (0, 0) (up to 1.3e-06 allowed)"
+        }
+      ],
+      "peak_worker_bytes": 477332752,
+      "peak_aggregate_memory_bytes": 477332752,
+      "compile_cache_retries": []
+    },
+    "winner-fixed": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 32,
+      "completed": 32,
+      "counts": {
+        "passed": 31,
+        "failed": 1
+      },
+      "seconds": 13.412104375078343,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "README.md": {
+          "measured": "e7784a37420ab1196f1c457861b5e11a4057859f12782aa0de5007215378bd38",
+          "current": "30309be305c58c6e2f30736638f068af7b15181ce24d6e42d7d93c69732a92ea"
+        },
+        "bin/Models.py": {
+          "measured": "21f3cf263e17ffda12b645def5e46ce220ba7441585434a74a229d6fcf71a1fe",
+          "current": "dbd523f95b1d76cff3dd2342a43e365298f82086bd9c23465c8e47e1ebc218ac"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+          "phase": "call",
+          "message": "test/test_compose_pair_driver.py:83: in test_pair_trains_twice_and_commits_once\n    m.runBatch(train=True, batchSize=4, optimizer=optimizer, batch_override=batch)\nbin/Models.py:14498: in runBatch\n    return self._run_batch_pair(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14819: in _run_batch_pair\n    self._compose_prefix_slots = (self._exploration_prefix_slots(actions, forced, owners)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19309: in _exploration_prefix_slots\n    words = self.inputSpace._word_active_mask.shape[1]\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'InputSpace' object has no attribute '_word_active_mask'"
+        }
+      ],
+      "peak_worker_bytes": 600180152,
+      "peak_aggregate_memory_bytes": 878856808,
+      "compile_cache_retries": []
+    },
+    "winner-fixed-b": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 32,
+      "completed": 32,
+      "counts": {
+        "passed": 32
+      },
+      "seconds": 13.031853041960858,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "README.md": {
+          "measured": "e7784a37420ab1196f1c457861b5e11a4057859f12782aa0de5007215378bd38",
+          "current": "30309be305c58c6e2f30736638f068af7b15181ce24d6e42d7d93c69732a92ea"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 494798168,
+      "peak_aggregate_memory_bytes": 878299776,
+      "compile_cache_retries": []
+    },
+    "winner-red": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 13,
+      "completed": 13,
+      "counts": {
+        "passed": 12,
+        "failed": 1
+      },
+      "seconds": 7.372150750015862,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "README.md": {
+          "measured": "e7784a37420ab1196f1c457861b5e11a4057859f12782aa0de5007215378bd38",
+          "current": "30309be305c58c6e2f30736638f068af7b15181ce24d6e42d7d93c69732a92ea"
+        },
+        "bin/Language.py": {
+          "measured": "df8b0d56b4000ab8ca66cf52ebbaa375a4b804a6a58d7e8c3c47882b43297b5a",
+          "current": "137504691077b34ffc4d6f08766c2ad351240d1a960c31968b15a2aeb8148f4d"
+        },
+        "bin/Models.py": {
+          "measured": "4b87f18d53c816b86326a372653951f60de41f2f55f7263ee4b0c8c48c51d75c",
+          "current": "dbd523f95b1d76cff3dd2342a43e365298f82086bd9c23465c8e47e1ebc218ac"
+        },
+        "test/test_compose_pair_driver.py": {
+          "measured": "ed2cdb04eeac1972cf5dfc227e384efac99d3cab1d78ffdbc5957414a32a3506",
+          "current": "8c545764c5e176dc989747c20bba609e9014d6ba89e43c955454cef10a110ccd"
+        },
+        "test/test_compose_records.py": {
+          "measured": "14fcb3ae02843d557b8b771bda38776b4f04f8711dc51e49fdac5b29e504aec4",
+          "current": "0b25e67ea95e0f008ea1928ca7000c3f5e6f48c3afcf871c014be9758e95bbe1"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-explore]",
+          "phase": "call",
+          "message": "test/test_compose_review.py:149: in test_only_a_strictly_lower_loss_commits_the_alternative\n    assert result.program == model.trace.program == expected\nE   AssertionError: assert 'exploit' == 'explore'\nE     \nE     - explore\nE     + exploit"
+        }
+      ],
+      "peak_worker_bytes": 439354760,
+      "peak_aggregate_memory_bytes": 439354760,
+      "compile_cache_retries": []
+    }
+  },
+  "measurements": {
+    "source_delta": {},
+    "processes": {
+      "serial-baseline": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/profile_baseline.py",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/serial-baseline.json"
+        ],
+        "pid": 22554,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5016262008,
+        "elapsed_seconds": 147.69139495806303,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/serial-baseline.log"
+      },
+      "packed": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+          "--parity",
+          "packed",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/packed.json"
+        ],
+        "pid": 22653,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5091889856,
+        "elapsed_seconds": 120.68765008391347,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/packed.log"
+      },
+      "single": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+          "--parity",
+          "single",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/single.json"
+        ],
+        "pid": 22723,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5119365776,
+        "elapsed_seconds": 118.89531920803711,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-review/measurements/single.log"
+      }
+    },
+    "serial": {
+      "reviewed": {
+        "before_training": 0.10405020788311958,
+        "training": 0.10417700409889222,
+        "after_training": 0.10392807051539421
+      },
+      "current": {
+        "before_training": 0.1040863823145628,
+        "training": 0.10699735879898072,
+        "after_training": 0.10230774991214275
+      }
+    },
+    "training_sentences_per_second": 0.1429868374500704,
+    "batch_timing": {
+      "clock": "time.perf_counter; CPU synchronous wall time",
+      "forward_scope": "BasicModel._what_or_think: forward, understanding and answer construction",
+      "backward_scope": "BasicModel._backward_training_loss; optimizer steps are in other",
+      "snapshot_scope": "both pre-exploit and exploit-end runtime snapshots",
+      "restore_scope": "pre-explore restore plus exploit-end restore when exploit wins",
+      "other_scope": "loss assembly, optimizer steps, staging, housekeeping and remaining batch work",
+      "epoch_tail": "excluded here; unchanged baseline throughput includes epoch tails",
+      "rows": [
+        {
+          "exploit_forward": 8.57815054198727,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 0,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 8.857834542053752,
+          "other": 0.27968400006648153,
+          "winner": null,
+          "losses": null
+        },
+        {
+          "exploit_forward": 0.3217895830748603,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 1,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.3241663329536095,
+          "other": 0.0023767498787492514,
+          "winner": null,
+          "losses": null
+        },
+        {
+          "exploit_forward": 0.321453292039223,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 2,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.3237937910016626,
+          "other": 0.0023404989624395967,
+          "winner": null,
+          "losses": null
+        },
+        {
+          "exploit_forward": 0.2990385410375893,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 3,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.3013794170692563,
+          "other": 0.002340876031666994,
+          "winner": null,
+          "losses": null
+        },
+        {
+          "exploit_forward": 8.508368333918042,
+          "explore_forward": 8.775809583021328,
+          "exploit_backward": 6.8042884580791,
+          "explore_backward": 6.578459750046022,
+          "snapshot": 0.024822042090818286,
+          "restore": 0.0010516250040382147,
+          "index": 4,
+          "train": true,
+          "split": "train",
+          "warmup": true,
+          "total": 30.712481459020637,
+          "other": 0.01968166686128825,
+          "winner": "explore",
+          "losses": {
+            "exploit": 0.06628455221652985,
+            "explore": 0.04862576723098755
+          }
+        },
+        {
+          "exploit_forward": 8.789797459030524,
+          "explore_forward": 0.3829394170315936,
+          "exploit_backward": 6.606177874957211,
+          "explore_backward": 6.7126794590149075,
+          "snapshot": 0.02494095789734274,
+          "restore": 0.0009172080317512155,
+          "index": 5,
+          "train": true,
+          "split": "train",
+          "warmup": true,
+          "total": 22.536727707949467,
+          "other": 0.019275331986136734,
+          "winner": "explore",
+          "losses": {
+            "exploit": 0.11226334422826767,
+            "explore": 0.0909956693649292
+          }
+        },
+        {
+          "exploit_forward": 0.35073279100470245,
+          "explore_forward": 0.3501046249875799,
+          "exploit_backward": 6.496778917033225,
+          "explore_backward": 6.668721207999624,
+          "snapshot": 0.025153417023830116,
+          "restore": 0.0010591669706627727,
+          "index": 6,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 13.911965708015487,
+          "other": 0.01941558299586177,
+          "winner": "explore",
+          "losses": {
+            "exploit": 0.2704429030418396,
+            "explore": 0.26989907026290894
+          }
+        },
+        {
+          "exploit_forward": 0.3753696250496432,
+          "explore_forward": 0.38374933297745883,
+          "exploit_backward": 6.594775583012961,
+          "explore_backward": 6.708948332932778,
+          "snapshot": 0.025137834018096328,
+          "restore": 0.002066498971544206,
+          "index": 7,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 14.10917408298701,
+          "other": 0.019126876024529338,
+          "winner": "exploit",
+          "losses": {
+            "exploit": 0.05094298720359802,
+            "explore": 0.07200488448143005
+          }
+        },
+        {
+          "exploit_forward": 0.35058104200288653,
+          "explore_forward": 0.35777841706294566,
+          "exploit_backward": 6.587773167062551,
+          "explore_backward": 6.722741540987045,
+          "snapshot": 0.025015167077071965,
+          "restore": 0.0010821670293807983,
+          "index": 8,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 14.061439582961611,
+          "other": 0.016468081739731133,
+          "winner": "explore",
+          "losses": {
+            "exploit": 0.05099727585911751,
+            "explore": 0.048081956803798676
+          }
+        },
+        {
+          "exploit_forward": 0.34949158306699246,
+          "explore_forward": 0.35413095902185887,
+          "exploit_backward": 6.550944708986208,
+          "explore_backward": 6.756616250029765,
+          "snapshot": 0.025496998918242753,
+          "restore": 0.001009583007544279,
+          "index": 9,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 14.057396750082262,
+          "other": 0.019706667051650584,
+          "winner": "explore",
+          "losses": {
+            "exploit": 0.0570901557803154,
+            "explore": 0.05367722734808922
+          }
+        },
+        {
+          "exploit_forward": 0.3718922499101609,
+          "explore_forward": 0.3759870840003714,
+          "exploit_backward": 6.709566041943617,
+          "explore_backward": 6.248208291013725,
+          "snapshot": 0.025679167127236724,
+          "restore": 0.0010282080620527267,
+          "index": 10,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 13.751149542047642,
+          "other": 0.018788499990478158,
+          "winner": "explore",
+          "losses": {
+            "exploit": 0.0537339486181736,
+            "explore": 0.049507562071084976
+          }
+        },
+        {
+          "exploit_forward": 8.159719374962151,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 11,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 8.164887290913612,
+          "other": 0.0051679159514606,
+          "winner": null,
+          "losses": null
+        },
+        {
+          "exploit_forward": 0.32499962497968227,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 12,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.3273758339928463,
+          "other": 0.0023762090131640434,
+          "winner": null,
+          "losses": null
+        },
+        {
+          "exploit_forward": 0.32186908402945846,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 13,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.3242117080371827,
+          "other": 0.0023426240077242255,
+          "winner": null,
+          "losses": null
+        },
+        {
+          "exploit_forward": 0.3001510000322014,
+          "explore_forward": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "snapshot": 0.0,
+          "restore": 0.0,
+          "index": 14,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.30251325003337115,
+          "other": 0.002362250001169741,
+          "winner": null,
+          "losses": null
+        }
+      ],
+      "summaries": {
+        "warmup_training": {
+          "batches": 2,
+          "mean_seconds": {
+            "exploit_forward": 8.649082896474283,
+            "explore_forward": 4.579374500026461,
+            "exploit_backward": 6.7052331665181555,
+            "explore_backward": 6.645569604530465,
+            "snapshot": 0.024881499994080514,
+            "restore": 0.000984416517894715,
+            "other": 0.019478499423712492,
+            "total": 26.624604583485052
+          },
+          "fraction": {
+            "exploit_forward": 0.32485300840258163,
+            "explore_forward": 0.17199784078171798,
+            "exploit_backward": 0.25184348355270364,
+            "explore_backward": 0.24960256531481553,
+            "snapshot": 0.0009345303107154588,
+            "restore": 3.697393945543656e-05,
+            "other": 0.000731597698010313
+          }
+        },
+        "warmed_training": {
+          "batches": 5,
+          "mean_seconds": {
+            "exploit_forward": 0.3596134582068771,
+            "explore_forward": 0.36435008361004295,
+            "exploit_backward": 6.587967683607713,
+            "explore_backward": 6.621047124592588,
+            "snapshot": 0.025296516832895577,
+            "restore": 0.0012491248082369566,
+            "other": 0.018701141560450198,
+            "total": 13.978225133218803
+          },
+          "fraction": {
+            "exploit_forward": 0.02572668953172512,
+            "explore_forward": 0.026065546958760642,
+            "exploit_backward": 0.47130215895232785,
+            "explore_backward": 0.47366865689248927,
+            "snapshot": 0.0018097087857584448,
+            "restore": 8.93621898583141e-05,
+            "other": 0.001337876689080328
+          }
+        },
+        "evaluation": {
+          "batches": 8,
+          "mean_seconds": {
+            "exploit_forward": 2.3283963802678045,
+            "explore_forward": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "snapshot": 0.0,
+            "restore": 0.0,
+            "other": 0.037373890489107,
+            "total": 2.3657702707569115
+          },
+          "fraction": {
+            "exploit_forward": 0.9842022317419901,
+            "explore_forward": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "snapshot": 0.0,
+            "restore": 0.0,
+            "other": 0.015797768258009888
+          }
+        }
+      }
+    },
+    "parity": {
+      "initial_parameters_sha256": true,
+      "initial_dictionary_sha256": true,
+      "sentences": false,
+      "mean_sentence_byte_cost": false
+    },
+    "byte_cost": {
+      "reviewed": {
+        "packed": 0.787799209356308,
+        "single": 0.6835970133543015
+      },
+      "current": {
+        "packed": 0.7846425250172615,
+        "single": 1.1408610492944717
+      }
+    }
+  },
+  "source_files": 667,
+  "source_sha256": "d26b69d625856af785f159bac485da382d19d4de6ae65c68e3c1eeea6f8088a5",
+  "learned_utility": "unproven",
+  "publication": "work in progress; winner granularity requires clarification; full sweep pending"
+}

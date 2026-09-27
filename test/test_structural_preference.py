@@ -3,7 +3,7 @@ import pytest
 import torch
 from torch import nn
 
-from Language import BinaryStructuredReductionLayer, SelectedThoughtChooser
+from Language import OperationSelectionLayer, SelectedThoughtChooser
 from Models import StaticPeerPipeline
 from GrammarPreference import structural_argmax
 
@@ -18,14 +18,26 @@ class _Candidate(nn.Module):
 
 
 def test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp():
-    layer = BinaryStructuredReductionLayer(d_model=4, chooser='mlp',
+    layer = OperationSelectionLayer(d_model=4, chooser='mlp',
         ops=[_Candidate('opaque'), _Candidate('structural')])
     with torch.no_grad():
         for parameter in layer.chooser.parameters():
             parameter.zero_()
     _, _, routing = layer(torch.randn(2, 2, 4))
-    assert routing['reduce_mask'][:, 0, 1].tolist() == [1., 1.]
-    assert routing['reduce_mask'][:, 0, 0].tolist() == [0., 0.]
+    assert routing['op'].tolist() == [1, 1]
+    assert routing['kind'].tolist() == [1, 1]
+
+
+def test_compose_probability_rounding_does_not_overturn_a_better_logit(monkeypatch):
+    layer = OperationSelectionLayer(d_model=1, chooser='mlp',
+        ops=[_Candidate('opaque'), _Candidate('structural')])
+    def score(x, reduced, *_args, **_kwargs):
+        logits = x.new_tensor([1e-8, 0.]).expand(x.shape[0], x.shape[1] - 1, 2)
+        return x.new_zeros(x.shape[0], x.shape[1], 1), logits
+    monkeypatch.setattr(layer.chooser, 'score_binary', score)
+    _, _, routing = layer(torch.ones(1, 2, 1))
+    assert routing['probabilities'].tolist() == [[.5, .5, 0.]]
+    assert routing['op'].tolist() == [0]
 
 
 def test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit():
@@ -61,18 +73,18 @@ def test_preference_never_overturns_a_better_score_or_unmasks_a_rule(dtype):
 
 def test_opaque_candidates_cannot_select_an_anchor_only_scorer():
     with pytest.raises(ValueError, match='ordinary mlp'):
-        BinaryStructuredReductionLayer(d_model=4, chooser='anchordot',
+        OperationSelectionLayer(d_model=4, chooser='anchordot',
             ops=[_Candidate('opaque'), _Candidate('structural')])
 
 
 def test_unary_and_generate_use_the_same_exact_tie_order():
-    from Language import UnaryStructuredLayer, LanguageSpace
+    from Language import OperationSelectionLayer, LanguageSpace
     from types import SimpleNamespace as NS
     class Unary(_Candidate):
         def forward(self, x):
             return x
     ops = [Unary('opaque'), Unary('structural')]
-    layer = UnaryStructuredLayer(d_model=4, chooser='mlp', ops=ops)
+    layer = OperationSelectionLayer(d_model=4, chooser='mlp', unary_ops=ops)
     with torch.no_grad():
         for p in layer.chooser.parameters():
             p.zero_()
@@ -81,7 +93,7 @@ def test_unary_and_generate_use_the_same_exact_tie_order():
         layer.chooser.mlp[0].weight[0, 8] = 1
         layer.chooser.mlp[-1].weight[0, 0] = 1
     _, _, routing = layer(torch.randn(2, 1, 4))
-    assert routing['action_op'].reshape(-1).tolist() == [1, 1]
+    assert routing['op'].reshape(-1).tolist() == [1, 1]
     owner = NS(_generate_binary_ops=(), _generate_unary_ops=ops)
     scores = torch.tensor([[2., 2., -1.], [3., 2., -1.]])
     assert LanguageSpace.choose_generate(owner, scores).tolist() == [1, 0]
@@ -96,7 +108,7 @@ def test_preference_compiles_fullgraph_without_host_reads():
 
 
 def test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout():
-    layer = BinaryStructuredReductionLayer(d_model=4, chooser='mlp',
+    layer = OperationSelectionLayer(d_model=4, chooser='mlp',
         ops=[_Candidate('opaque'), _Candidate('structural')])
     keys = set(layer.state_dict())
     with torch.no_grad():
@@ -104,7 +116,7 @@ def test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout()
         layer.chooser.mlp[-1].bias.zero_()
     x = torch.randn(2, 2, 4)
     _, _, routing = layer(x)
-    scores = routing['reduce_score']
+    scores = routing['logits'][:, :-1]
     scores.retain_grad()
     loss = -scores.log_softmax(-1)[..., 1].sum()
     loss.backward()
@@ -154,47 +166,30 @@ def test_coverage_comparison_reuses_maturity_and_matches_corpus_before_quality()
         compare_coverage([base, later], [{}, {}])
 
 
-@pytest.mark.parametrize('path', ['functional', 'trace'])
-@pytest.mark.parametrize('flags, expected', [
-    ((False, True), [0, 1, 1]),
-    ((True, True), [0, 0, 1]),
-    ((False, False), [0, 0, 1]),
-])
-def test_committed_marginal_controls_selection_for_every_catalog(path, flags, expected):
+def test_trace_records_the_choice_without_another_argmax():
     from types import SimpleNamespace as NS
-    from Language import _FunctionalLanguageChooser, ReconstructionStack
+    from Language import ReconstructionStack
+    from Spaces import LanguageOperationChoice
     from Models import BasicModel
-
-    class CommittedReducer(nn.Module):
-        structural_ops = flags
-
-        def forward(self, window):
-            parent = window.sum(dim=1, keepdim=True)
-            routing = dict(chosen_reduced=parent,
-                copy_score=window.new_zeros(3, 2, 1),
-                # Adapters may publish a committed marginal distinct from
-                # their scoring workspace. Catalog kind must not switch it.
-                reduce_score=window.new_tensor([[[-1, 1]], [[1, -1]], [[1, -1]]]),
-                reduce_marginal_op=window.new_tensor([[[.8, .2]], [[.5, .5]], [[.2, .8]]]),
-                action_kind=torch.ones(3, 1, dtype=torch.long),
-                src_left=torch.full((3, 1), -1, dtype=torch.long))
-            return parent, parent, routing
-
-    reducer = CommittedReducer()
-    window = torch.ones(3, 2, 4)
-    if path == 'functional':
-        state = (window, torch.full((3,), 2), None, None, None, None)
-        choice = _FunctionalLanguageChooser.choose_binary(
-            state, reducer, torch.ones(3, dtype=torch.bool), base_tau=.75)
-        assert choice[2].tolist() == expected
-    else:
-        trace = ReconstructionStack(batch=3, max_depth=4)
-        trace.prepare_choices(3, 1, device='cpu', binary_rule_ids=(17, 23))
-        owner = NS(_reconstruction_stack=lambda: trace, _stm_reducer=lambda: reducer)
-        routing = reducer(window)[2]
-        BasicModel._record_reconstruction_choice(owner, 0, routing,
-            torch.ones(3, dtype=torch.bool), arity=2)
-        ids, arities, active = trace.choices()
-        assert ids[:, 0].tolist() == [[17, 23][i] for i in expected]
-        assert arities[:, 0].tolist() == [2, 2, 2]
-        assert active[:, 0].tolist() == [True, True, True]
+    trace = ReconstructionStack(batch=3, max_depth=4)
+    trace.prepare_choices(3, 1, device='cpu', binary_rule_ids=(17, 23), unary_rule_ids=(29,))
+    owner = NS(_reconstruction_stack=lambda: trace,
+               _tensor_record_operands=BasicModel._tensor_record_operands,
+               languageSpace=NS(record_category_observations=lambda *_: None),
+               inputSpace=NS(_word_active_mask=None))
+    choice = LanguageOperationChoice(torch.ones(3, 4), torch.tensor([1, 2, 0]),
+        torch.tensor([0, 1, 0]), torch.tensor([1, 0, 0]),
+        torch.tensor([True, True, False]), torch.ones(3), torch.tensor([1, 2, 4]),
+        torch.ones(3, dtype=torch.bool))
+    state = (torch.ones(3, 2, 4), torch.full((3,), 2),
+             torch.zeros(3, 2, dtype=torch.long), torch.zeros(3, 2, dtype=torch.long),
+             torch.tensor([[7, 5], [11, 9], [17, 13]]), torch.ones(3, 2))
+    BasicModel._record_operation_choice(owner, 0, choice, state)
+    ids, arities, active = trace.choices()
+    assert ids[:, 0].tolist() == [23, 29, -1]
+    assert arities[:, 0].tolist() == [2, 1, 0]
+    assert active[:, 0].tolist() == [True, True, False]
+    assert trace._choice_positions[:, 0].tolist() == [0, 1, 0]
+    assert trace._choice_attempted[:, 0].all()
+    assert trace._choice_left_rows[:, 0].tolist() == [5, -1, -1]
+    assert trace._choice_right_rows[:, 0].tolist() == [7, -1, -1]

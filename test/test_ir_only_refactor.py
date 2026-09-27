@@ -270,7 +270,8 @@ class TestReconstructConceptsLoss(unittest.TestCase):
         _orig_concepts = m._reverse_input_surface
 
         def _spy_concepts(x):
-            seeds.append(x.materialize().detach().clone())
+            seeds.append((x.materialize().detach().clone(),
+                          m._last_understanding.conceptual_state.detach().clone()))
             return _orig_concepts(x)
 
         m._reverse_input_surface = _spy_concepts
@@ -285,7 +286,8 @@ class TestReconstructConceptsLoss(unittest.TestCase):
         # Concepts-seeded reverse fired; head-seeded reverse did NOT --
         # reconstruction no longer dispatches on the (gone) enum.
         self.assertTrue(seeds, "input reconstruction must realize the conceptual seed")
-        for seed in seeds:
+        for seed, owned_state in seeds:
+            torch.testing.assert_close(seed, owned_state, rtol=0, atol=0)
             torch.testing.assert_close(
                 seed, m._last_understanding.conceptual_state, rtol=0, atol=0)
         # The concepts reconstruction term is present and finite.

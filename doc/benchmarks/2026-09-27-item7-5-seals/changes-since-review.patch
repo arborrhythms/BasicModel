@@ -1,0 +1,2927 @@
+--- a/README.md
++++ b/README.md
+@@ -40,6 +40,15 @@
+ 
+ 
+ Model configurations are specified in XML. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
++
++Compose fires one operation per round from a joint operation/location softmax.
++At each sentence seal, exploit and explore take separate optimizer steps from
++the same cached word vectors. Each row retains the strictly lower sentence
++loss, with ties to exploit, before the next sentence begins. Batch-end answer
++loss keeps its own backward and does not choose the sentence winner.
++`architecture.composeTemperature` defaults to `0` (argmax) and controls both
++training draws. Model credit remains untempered. Evaluation runs exploit alone
++with deterministic logit argmax. See [Language](doc/Language.md#one-operation-per-round-item-75).
+ 
+ ## Files
+ 
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -5680,7 +5680,7 @@
+     """
+ 
+     def __init__(self, n_input, n_output, *, hidden_dim, feature_dim,
+-                 max_depth, temperature=1.0):
++                 max_depth, temperature=0.0):
+         super().__init__(int(n_input), int(n_output))
+         self.n_input, self.n_output = int(n_input), int(n_output)
+         self.hidden_dim, self.feature_dim = int(hidden_dim), int(feature_dim)
+@@ -5693,9 +5693,6 @@
+         self._last_input = self._last_output = None
+         self._last_space_role_routings = {}
+         self._last_rules = {}
+-        self.exploration_trial = False
+-        self._exploit_derivations = []
+-        self._derivation_cursor = 0
+ 
+     def _attach_ops(self, arity, ops, rule_ids, op_names, op_space_roles, space_role):
+         ops = tuple(ops)
+@@ -5753,7 +5750,7 @@
+         self._attach_ops(2, ops, rule_ids, op_names, op_space_roles, space_role)
+ 
+ 
+-    def compose(self, data, word_space, subspace=None, grammar_context=None):
++    def compose(self, data, word_space, subspace=None, grammar_context=None, *, exploit=None):
+         """Select one operation each round and publish only the exploit program."""
+         if self.operation_layer is None:
+             raise RuntimeError("LanguageLayer.compose needs attach_layer_ops or attach_unary_ops")
+@@ -5764,17 +5761,11 @@
+         # The row contract is one absolute slot or three relative slots.
+         slots = torch.where(sentence_relative_mask(word_space, data.shape[0], device=data.device), 3, 1)
+         budget = max(1, self.max_depth, 2 * data.shape[1])
+-        previous = None
+-        if self.exploration_trial:
+-            previous = self._exploit_derivations[self._derivation_cursor]
+-            self._derivation_cursor += 1
+         derivation = self.operation_layer.derive(
+-            data, slots=slots, rounds=budget, exploit=previous, cat_ctx=cat,
++            data, slots=slots, rounds=budget, exploit=exploit,
++            greedy=not self.training, cat_ctx=cat,
+             what_ctx=getattr(self, '_what_context', None), grammar_context=grammar_context)
+         self._last_derivation = derivation
+-        if not self.exploration_trial:
+-            self._exploit_derivations.append({k: v.detach() for k, v in derivation.items()
+-                                              if k in ('actions', 'used')})
+         traces = derivation['traces']
+         roles = sorted(set(self.binary_roles + self.unary_roles))
+         rules = {role: [[] for _ in range(data.shape[0])] for role in roles}
+@@ -5789,12 +5780,12 @@
+         self._last_root_state = derivation['value'][:, :1]
+         self._last_output = self._last_root_state.expand(-1, data.shape[1], -1).contiguous()
+         # These are this trial's transient reconstruction/feedback carriers.
+-        # runBatch restores exploit's carriers after exploration trains.
++        # runBatch keeps the lower-loss trial's carriers after both train.
+         complete = derivation['complete'].detach().tolist()
+         self._last_rules = {role: [row if complete[b] else [] for b, row in enumerate(rows)]
+                             for role, rows in rules.items()}
+         self._last_space_role_routings = {'operations': {'rounds': traces}}
+-        if not self.exploration_trial and owner is not None and cat is not None:
++        if owner is not None and cat is not None:
+             owner._category_role_obs = self._collect_round0_role_obs()
+         return self._last_rules
+ 
+@@ -7520,7 +7511,7 @@
+     through gradient. There is no compose policy/advantage objective.
+     """
+ 
+-    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=1.0,
++    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0,
+                  op_names=None, unary_names=None, op_space_roles=None,
+                  chooser="anchordot", n_role_cats=0):
+         super().__init__()
+@@ -7532,8 +7523,8 @@
+         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
+         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
+         self.temperature = float(temperature)
+-        if self.temperature <= 0:
+-            raise ValueError("compose temperature must be positive")
++        if not math.isfinite(self.temperature) or self.temperature < 0:
++            raise ValueError("compose temperature must be finite and nonnegative")
+         self.stop_anchor = nn.Parameter(torch.randn(1, self.d_model) * .02)
+         self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * .02)
+         self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * .02)
+@@ -7547,7 +7538,7 @@
+ 
+     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
+                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+-                grammar_context=None, exploit=False):
++                grammar_context=None, replay_action=None):
+         B, N, D = x.shape
+         if N < 1:
+             raise ValueError("compose needs a nonempty static slab")
+@@ -7587,26 +7578,28 @@
+         limit = torch.as_tensor(slots, device=x.device)
+         stop = stop.masked_fill(depth > limit, -torch.inf)
+         logits = torch.cat((binary_scores.reshape(B, -1),
+-                            unary_scores.reshape(B, -1), stop[:, None]), -1) / self.temperature
++                            unary_scores.reshape(B, -1), stop[:, None]), -1)
++        # Credit always uses the model's own distribution over legal actions.
++        # A forced counterfactual constrains selection, not its probability
++        # weight; neither that exclusion nor sampling temperature changes it.
++        probabilities = _masked_softmax_lastdim(logits)
++        selection_logits = logits
+         if masked_action is not None:
+             ids = torch.arange(logits.shape[-1], device=x.device)[None, :]
+-            logits = logits.masked_fill(ids == masked_action[:, None], -torch.inf)
+-        probabilities = _masked_softmax_lastdim(logits)
++            selection_logits = selection_logits.masked_fill(
++                ids == masked_action[:, None], -torch.inf)
+         flags = (self.structural_ops * (N - 1)
+                  + self.unary_structural_ops * N + (True,))
+-        greedy_action = structural_argmax(probabilities, flags)
+-        if sample or exploit:
+-            # Gumbel-max samples exactly from the tempered categorical and
+-            # supports fixed-shape compiled execution, including inactive rows.
++        action = structural_argmax(selection_logits, flags)
++        if self.training and sample and self.temperature > 0:
++            # Only the hard selection is tempered. Evaluation and temperature
++            # zero use exact-logit structural argmax without a random draw.
+             noise = -torch.log(-torch.log(torch.rand_like(logits).clamp(
+                 torch.finfo(logits.dtype).tiny, 1 - torch.finfo(logits.dtype).eps)))
+-            sampled = (logits + noise).argmax(-1)
+-            action = (sampled if sample else torch.where(
+-                torch.rand(B, device=x.device) < .1, sampled,
+-                greedy_action))
+-        else:
+-            action = greedy_action
+-        has_choice = torch.isfinite(logits).any(-1)
++            action = (selection_logits / self.temperature + noise).argmax(-1)
++        if replay_action is not None:
++            action = torch.where(replay_action >= 0, replay_action, action)
++        has_choice = torch.isfinite(selection_logits.gather(1, action[:, None])).squeeze(1)
+         torch._assert_async((~active | has_choice).all(),
+                             "compose has no legal alternative at the selected exploration round")
+         active = active & has_choice
+@@ -7658,9 +7651,11 @@
+         for i in range(int(rounds)):
+             mask = (torch.where(forced == i, exploit['actions'][:, i], -1)
+                     if exploit is not None else None)
++            replay = (torch.where(i < forced, exploit['actions'][:, i], -1)
++                      if exploit is not None and self.temperature == 0 else None)
+             _, x, route = self(
+                 x, depth=depth, slots=slots, active=active,
+-                sample=exploit is not None, exploit=exploit is None and not greedy, masked_action=mask,
++                sample=not greedy, masked_action=mask, replay_action=replay,
+                 cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
+                 grammar_context=grammar_context)
+             actions.append(torch.where(active & route['valid'], route['action'], -1))
+@@ -7674,6 +7669,8 @@
+ 
+     def derive_pair(self, x, *, slots=1, rounds, depth=None, **kwargs):
+         exploit = self.derive(x, slots=slots, rounds=rounds, depth=depth, **kwargs)
++        if not self.training:
++            return exploit, None
+         explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+                               exploit=exploit, **kwargs)
+         explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
+@@ -10261,11 +10258,8 @@
+         # indirection is gone.
+         _assert_retired_chart_knobs_absent()
+         chart_hidden = self._resolve_hidden_dim(nSymbols)
+-        try:
+-            _signal_temperature = float(TheXMLConfig.get(
+-                "SymbolSpace.signal.temperature", 1.0))
+-        except Exception:
+-            _signal_temperature = 1.0
++        compose_temperature = float(TheXMLConfig.get(
++            "architecture.composeTemperature", 0.0))
+         self.languageLayer = LanguageLayer(
+             n_input=nSymbols, n_output=nSymbols,
+             hidden_dim=chart_hidden,
+@@ -10274,7 +10268,7 @@
+             # a semantic slice of those codes.
+             feature_dim=self.muxedSize,
+             max_depth=max(nSymbols - 1, 1),
+-            temperature=_signal_temperature,
++            temperature=compose_temperature,
+         )
+         # The signal router's grammar reference (read by per-rule gating
+         # and the diagnostics that used to call ``chart.grammar``).
+@@ -13639,7 +13633,7 @@
+         return self.language_layer.operation_layer
+ 
+     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
+-                         sample=False, masked_action=None):
++                         sample=True, masked_action=None, replay_action=None):
+         """The shared compose layer with the two newest occupied STM slots."""
+         buffer, depth = state[:2]
+         B, K, D = buffer.shape
+@@ -13652,7 +13646,8 @@
+         stop_slots = torch.where(depth <= limit, n, 0)
+         _, _, route = self.language_layer.operation_layer(
+             window, depth=window_depth, slots=stop_slots,
+-            active=row_gate.reshape(B), sample=sample, exploit=not sample, masked_action=masked_action,
++            active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
++            replay_action=replay_action,
+             op_prior=op_prior, grammar_context=self._structural_context(
+                 phase='compose', input_stream=buffer))
+         position = (window_depth - 1 - route['position']).clamp_min(0)
+@@ -13663,7 +13658,7 @@
+ 
+ 
+     @torch.compiler.disable
+-    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions):
++    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, admit=True):
+         """Resolve the selected grammar's reference orders at capture time.
+ 
+         Operator-role metadata supplies the order, never a token list or a
+@@ -13703,7 +13698,7 @@
+             cid = owner.resolve_word_concept(surface, order=order, previous=int(refs[leaf]))
+             associated = [identity for identity in owner.word_concepts(surface)
+                           if owner._concept_source_order(identity) == order]
+-            if cid is None and not associated and word_id is not None and order in (1, 2):
++            if admit and cid is None and not associated and word_id is not None and order in (1, 2):
+                 cid = owner.interpret.forward(word_id, order=order)
+             refs[leaf] = -1 if cid is None else cid
+             orders[leaf] = order if cid is None else owner._concept_source_order(cid)
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -11384,7 +11384,7 @@
+         return prediction
+ 
+     def _observe_meanings(self, depths, payloads, tetralemmas, mask,
+-                          layout, role_masks):
++                          layout, role_masks, train_prediction=True):
+         for b, payload in enumerate(payloads):
+             if mask is not None and not bool(mask[b]):
+                 continue
+@@ -11432,7 +11432,7 @@
+                     (pending.stream
+                      if isinstance(pending, _PendingMeaningExpectation) else None))
+                 train_roles, train_logits = prediction.roles, prediction.presence_logits
+-                if (self.training and torch.is_grad_enabled()
++                if (train_prediction and self.training and torch.is_grad_enabled()
+                         and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
+                     if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
+                             and (not prediction.roles.requires_grad or pending.versions != tuple(
+@@ -11443,7 +11443,7 @@
+                         # old parameter version's graph.
+                         replay, logits = self._inter_predictor(*(v.detach() for v in pending.inputs))
+                         train_roles, train_logits = replay[0], logits[0]
+-                if self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
++                if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
+                     step = (train_roles - target).square().mean() + F.binary_cross_entropy_with_logits(
+                         train_logits, target_mask.to(train_logits))
+                     self._inter_loss_accum = (step if self._inter_loss_accum is None
+@@ -11453,12 +11453,12 @@
+                         and self.training and torch.is_grad_enabled()):
+                     self._expectation_policy_outcomes.append((
+                         pending.policy, -float((mse + presence).detach()), pending.work))
+-                if self._inter_contrastive_weight > 0:
++                if train_prediction and self._inter_contrastive_weight > 0:
+                     self._accumulate_inter_contrastive(
+                         train_roles.flatten(), target.flatten(),
+                         [p.detach().to(target).flatten() for _, p, _ in self._inter_context[b]])
+             context = roles.clone()
+-            if (not self.training or not torch.is_grad_enabled()
++            if (not train_prediction or not self.training or not torch.is_grad_enabled()
+                     or (self._inter_loss_weight <= 0 and self._inter_contrastive_weight <= 0)):
+                 context = context.detach()
+             depth = int(occupied.sum())
+@@ -11547,7 +11547,7 @@
+     @torch.compiler.disable
+     def observe_stm_end_state(
+             self, depths, payloads, tetralemmas=None, mask=None, *,
+-            documents=None, layout="stm", role_masks=None):
++            documents=None, layout="stm", role_masks=None, train_prediction=True):
+         """Append one STM end-state PER ROW to the LTM chain.
+ 
+         Called from the sentence-boundary hook AFTER the reduce /
+@@ -11584,7 +11584,7 @@
+         self._prepare_expectation_documents(documents, mask, len(payloads))
+         if self.expectation_scope == "structured":
+             return self._observe_meanings(
+-                depths, payloads, tetralemmas, mask, layout, role_masks)
++                depths, payloads, tetralemmas, mask, layout, role_masks, train_prediction)
+         # Normalise ``depths`` to a python list of ints without forcing
+         # a per-row host sync inside any captured region (this method is
+         # ``@torch.compiler.disable``'d and boundary-only, so a single
+@@ -11635,7 +11635,7 @@
+                 # preceding context may train its encoder. Score before the
+                 # payload's slot-0 is available; the target is detached
+                 # regardless.
+-                if (self._inter_predictor is not None
++                if (train_prediction and self._inter_predictor is not None
+                         and b < len(self._inter_last_pred_root)
+                         and self._inter_last_pred_root[b] is not None):
+                     pd = payload.detach()
+@@ -11679,7 +11679,7 @@
+                 if self._ltm_store is not None and context.dim() == 2 and depth >= 3:
+                     context = torch.stack(
+                         (context[depth - 2], context[depth - 1], context[0]))
+-                if (not self.training or not torch.is_grad_enabled()
++                if (not train_prediction or not self.training or not torch.is_grad_enabled()
+                         or (self._inter_loss_weight <= 0
+                             and self._inter_contrastive_weight <= 0)):
+                     context = context.detach()
+@@ -11995,6 +11995,76 @@
+         self._inter_last_pred_root[bi] = root_vec
+         payload_hat = root_vec.unsqueeze(0).expand(depth_hat, -1)
+         return depth_hat, payload_hat
++
++    def sentence_prediction_cost(self, depths, payloads, mask, *,
++                                 documents=None, layout="stm", role_masks=None):
++        """Preview one sentence per row without observing either candidate.
++
++        Only the pending predictions are scratch. Context, occurrences, LTM,
++        counters and policy outcomes are written once, when the winner arrives.
++        The returned pending records retain the estimate belonging to that trial.
++        """
++        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
++        like = next((p for p in payloads if p is not None), self._s_history)
++        if self._external_observations_suspended or not self.expectation_enabled:
++            zero = like.new_zeros(len(payloads))
++            return zero, zero.clone(), before
++        self._prepare_expectation_documents(documents, mask, len(payloads))
++        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
++        costs, contrastive = [], []
++        try:
++            for b, payload in enumerate(payloads):
++                cost, contrast = like.new_zeros(()), like.new_zeros(())
++                if payload is not None and bool(mask[b]) and self._inter_predictor is not None:
++                    self.predict_next_end_state(b)
++                    negatives = []
++                    pred = target = None
++                    if self.expectation_scope == "structured":
++                        roles, occupied = self._canonical_meaning(
++                            payload, depths[b], layout,
++                            None if role_masks is None else role_masks[b])
++                        pending = self._inter_last_meaning[b]
++                        prediction = (pending.prediction if isinstance(
++                            pending, _PendingMeaningExpectation) else pending)
++                        if prediction is not None:
++                            pred, logits = prediction.roles, prediction.presence_logits
++                            if (isinstance(pending, _PendingMeaningExpectation)
++                                    and pending.inputs is not None
++                                    and (not pred.requires_grad or pending.versions != tuple(
++                                        p._version for p in self._inter_predictor.parameters()))):
++                                replay, presence = self._inter_predictor(
++                                    *(v.detach() for v in pending.inputs))
++                                pred, logits = replay[0], presence[0]
++                            target = roles.detach().to(pred)
++                            cost = (pred - target).square().mean() + F.binary_cross_entropy_with_logits(
++                                logits, occupied.to(logits))
++                            negatives = [p.detach().to(target).flatten()
++                                         for _, p, _ in self._inter_context[b]]
++                    else:
++                        pred = self._inter_last_pred_root[b]
++                        pd = payload.detach()
++                        if self._ltm_store is not None and pd.dim() == 2 and pd.shape[0] >= 2:
++                            pd = pd[pd.shape[0] - 2].unsqueeze(0)
++                        target = self._reduce_end_state_to_root(pd)
++                        if pred is not None and target is not None:
++                            target = target.to(pred)
++                            cost = F.mse_loss(pred, target)
++                            negatives = [root.detach().to(pred) for _, p, _ in self._inter_context[b]
++                                         if (root := self._reduce_end_state_to_root(p)) is not None]
++                    if (self._inter_contrastive_weight > 0 and pred is not None
++                            and target is not None and negatives):
++                        q = F.normalize(pred.reshape(-1), dim=0)
++                        candidates = torch.stack([target.flatten()] + [n.flatten() for n in negatives])
++                        logits = (F.normalize(candidates, dim=-1) @ q) / self._inter_contrastive_temp
++                        contrast = F.cross_entropy(logits[None], logits.new_zeros(1, dtype=torch.long))
++                if not bool(torch.isfinite(cost) and torch.isfinite(contrast)):
++                    raise FloatingPointError('non-finite sentence prediction cost')
++                costs.append(cost)
++                contrastive.append(contrast)
++            pending = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
++            return torch.stack(costs), torch.stack(contrastive), pending
++        finally:
++            self._inter_last_meaning, self._inter_last_pred_root = before
+ 
+     def _accumulate_inter_loss(self, pred_root, actual_root):
+         """Accumulate one sentence of ``L_inter = MSE(pred_root,
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -1636,11 +1636,9 @@
+     _optimizer     = None
+     checkpoint_every_batches = 0
+     _training_step_count = 0
+-    # Two-pass learning pass B (the explore trial) sets this True so the
+-    # per-sentence side effects (model clock, discourse ARMA rings, LTM
+-    # end-state chain, step/checkpoint counter) do NOT fire a second time
+-    # on the same sentence -- B trains the chooser but must not advance the
+-    # sequence state pass A already committed. See runBatch(exploration_trial).
++    # Trials keep independent runtime records until their losses are compared.
++    # A non-recording context read is separate from a training pair: both
++    # candidate trials may record privately, but only the winner survives.
+     _exploration_trial = False
+     # Class-level defaults for ``serial`` / ``symbolicOrder`` so that
+     # BasicModel()
+@@ -2903,7 +2901,11 @@
+         Operator diagnostics only read the graph before this call.
+         """
+         loss = amp_scaler.scale(total_loss) if amp_scaler is not None else total_loss
++        pullback = (getattr(self, '_sentence_pullback', None)
++                    if getattr(self, '_sentence_backward', False) else None)
+         loss.backward()
++        if pullback is not None:
++            pullback()
+ 
+     def _configure_concept_readout_l1(self, optimizer):
+         """Stage one weak-L1 update and return its detached reporting cost.
+@@ -8464,7 +8466,8 @@
+             raise RuntimeError(
+                 "model forward must return a tuple or list of tensors")
+         if len(result) == 4:
+-            self._packed_sentence_roots = None
++            if not getattr(self, '_packed_prediction_drained', False):
++                self._packed_sentence_roots = None
+             return tuple(result)
+         # Keep accepting the pre-packing explicit-state contract for small
+         # harnesses and external callers that produce no root slab. Canonical
+@@ -8509,7 +8512,7 @@
+             object.__setattr__(self, "_tensor_final_end_depth", recon_end_depth)
+             if (getattr(self, "_compiled_word_loop_fullgraph", False)
+                     and getattr(self, "_active_compiled_step", None) is not None
+-                    and not getattr(self, "_exploration_trial", False)
++                    and self._compose_records_enabled()
+                     and not getattr(self.inputSpace, "_sentence_pack_enabled", False)):
+                 # Attribute-only graph escapes may be eliminated. Publish
+                 # the unpacked observation from the same explicit sealed
+@@ -12438,7 +12441,9 @@
+                 slots = torch.cat((slots, S.new_zeros(B, 3 - k, D)), dim=1)
+             depth = post_depth.reshape(B).to(torch.long).clamp(-1, 3)
+             # the single-root case reads S itself (the buffer's root slot)
+-            single = depth <= 1
++            # Negative depth marks an incomplete forest; preserve its slots
++            # for reconstruction rather than treating it as a single root.
++            single = post_depth.reshape(B).abs() == 1
+             slots = torch.where(
+                 single.reshape(B, 1, 1),
+                 torch.cat((S.reshape(B, 1, D), S.new_zeros(B, 2, D)), dim=1), slots)
+@@ -12485,7 +12490,12 @@
+         import util as _util
+         backend = getattr(_util, "TheCompileBackend", "none")
+         fn = self._reconstruct_sentences
+-        if backend and backend != "none" and self._recon_placement() == "compiled":
++        placement = self._recon_placement()
++        # Sentence seals are eager optimizer boundaries. A reconstruction
++        # formerly inside the batch graph is now its own numerical brick.
++        separate = placement == "compiled" or (
++            placement == "graph" and getattr(self, '_sentence_seals', False))
++        if backend and backend != "none" and separate:
+             # "auto" is our backend policy, not a torch backend name. Match
+             # util.compile's first choice before resolving the torch compiler.
+             backend = _util._COMPILE_BACKENDS[0] if backend == "auto" else backend
+@@ -12521,7 +12531,7 @@
+         return fn
+ 
+     def _reconstruct_sentences(self, S, reference, roots_live, roots_depth=None,
+-                               end_slots=None, end_depth=None):
++                               end_slots=None, end_depth=None, sentence_slot=None):
+         """Reconstruct completed sentences with bounded compiled traversals.
+ 
+         An integer-only prepass replays operand occurrence positions. The two
+@@ -12549,6 +12559,11 @@
+         """
+         if not torch.compiler.is_compiling():
+             self._validate_reconstruction_bank()
++        # Targets and inverse witnesses are constants. Detach before the
++        # higher-order loops capture their inputs: detaching only inside a
++        # loop body still gives its backward a zero edge to perception and
++        # consumes that shared graph before the sentence's explicit pullback.
++        reference = reference.detach()
+         isp = self.inputSpace
+         language = self.languageSpace
+         trace = self._reconstruction_stack()
+@@ -12587,6 +12602,8 @@
+         cont = torch.cat((cont, torch.zeros(B, 1, dtype=torch.bool, device=dev)), dim=1)
+         is_end = torch.logical_and(active, torch.logical_not(cont))       # [B, W]
+         last_index = torch.where(active, positions, torch.full_like(positions, -1)).amax(dim=1)
++        if sentence_slot is not None:
++            active = active & (ids == sentence_slot)
+         keep_ideas = bool(self.reconstruct_in_loop or getattr(self, "_recon_keep_ideas", False))
+         required = ((rule_ids.unsqueeze(-1) == binary_map.reshape(1, 1, -1))
+                     & (mask & (arities == 2)).unsqueeze(-1)).any(dim=(0, 1))
+@@ -12626,7 +12643,7 @@
+         # occurrence supplied each leaf operand. Composite/unary positions
+         # remain -1; they cannot borrow the current word as a witness.
+         steps = int(rule_ids.shape[1])
+-        bound = (last_index.max() + 1).clamp_min(0)
++        bound = (torch.where(active, positions, -1).amax() + 1).clamp_min(0)
+ 
+         def metadata_fold(stack, depth, lefts, rights, bad, slot, ready, arity):
+             recorded_arity = _col_rows(arities, slot)
+@@ -12787,7 +12804,8 @@
+             pre_bad = torch.where(sel, bad.reshape(B, 1), pre_bad)
+             return s_idx + 1, pre_stack.clone(), pre_depth.clone(), pre_bad.clone()
+ 
+-        s0 = torch.tensor(0, dtype=torch.long, device=dev)
++        s0 = (torch.tensor(0, dtype=torch.long, device=dev)
++              if sentence_slot is None else sentence_slot.clone())
+         _s, pre_stack, pre_depth, pre_bad = torch.while_loop(
+             cond_a, body_a, _carries_with_grad(
+                 (s0, S.new_zeros(B, slots, cap, D),
+@@ -12801,7 +12819,7 @@
+         pre_bad = pre_bad.clone()
+ 
+         # Pass B: the words, latest first, one loop step per word index.
+-        T = (last_index.max() + 1).clamp_min(0)
++        T = (torch.where(active, positions, -1).amax() + 1).clamp_min(0)
+ 
+         def cond(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+             return t < T
+@@ -13314,7 +13332,7 @@
+         program = self._derivation_program(t, budget)
+         return None if program is None else program[2]
+ 
+-    def _capture_answer_programs(self):
++    def _capture_answer_programs(self, sentence_slot=None, *, admit=True):
+         """Capture one program per sentence, sharing final rows with their slot.
+ 
+         This is the eager boundary after forward publication. The whole brick's
+@@ -13357,11 +13375,15 @@
+             last_ids = torch.where(last >= 0, last_ids, -1).tolist()
+         else:
+             slots, last_ids = [0], [0] * B
+-        captured = {}
++        captured = dict(getattr(self, '_sentence_programs', {})) if getattr(self, '_sentence_seals', False) else {}
++        if sentence_slot is not None:
++            slots = [sentence_slot]
+         bank = getattr(self, "_tensor_sentence_roots_live", None)
+         for slot in slots:
++            if sentence_slot is None and slot in captured:
++                continue
+             program = self._derivation_program(slot if packed else None)
+-            if packed:
++            if packed or sentence_slot is not None:
+                 end = (bank[:, slot].reshape(B, 3, D)
+                        if torch.is_tensor(bank) and bank.dim() == 3
+                        and slot < bank.shape[1] and bank.shape[-1] == 3 * D
+@@ -13371,7 +13393,7 @@
+             captured[slot] = (
+                 self._program_entries(program, leaves, rows, word_rows, activations, end,
+                                       concept_ids=concept_ids,
+-                                      lexical_forms=lexical_forms)
++                                      lexical_forms=lexical_forms, admit=admit)
+                 if program is not None and torch.is_tensor(end)
+                 else (None,) * B)
+         current = tuple(captured.get(int(t), (None,) * B)[b]
+@@ -13379,7 +13401,7 @@
+         return current, captured
+ 
+     def _program_entries(self, program, leaf_slab, rows, word_rows, activations, end_state,
+-                         *, concept_ids=None, lexical_forms=None):
++                         *, concept_ids=None, lexical_forms=None, admit=True):
+         """Own compact row references and compose actions for each batch row.
+ 
+         ``lexical_forms`` is frozen grammar provenance aligned to the original
+@@ -13411,8 +13433,8 @@
+                               'resolve_lexical_references', None)
+             owner = getattr(self, '_concept_owner', None)
+             if callable(resolve) and callable(owner) and selected_ids is not None:
+-                reference_ids, reference_orders = resolve(
+-                    owner(), selected_words, selected_ids, acts[:L])
++                args = (owner(), selected_words, selected_ids, acts[:L])
++                reference_ids, reference_orders = resolve(*args) if admit else resolve(*args, admit=False)
+                 if not bool((reference_orders >= 0).any()):
+                     reference_ids = reference_orders = None
+             entry = AnswerProgram(
+@@ -14157,7 +14179,7 @@
+         for t in range(int(positions.shape[1])):
+             sentence = roots[:, t, :]
+             mask = valid[:, t].to(
+-                device=roots.device, dtype=torch.bool)
++                device=roots.device, dtype=torch.bool).clone()
+             payloads, depths = [], []
+             for b in range(B):
+                 if b >= len(counts) or t >= int(counts[b]) or not bool(mask[b]):
+@@ -14496,13 +14518,13 @@
+     def runBatch(self, *args, schedule_context=None, **kwargs):
+         schedule = getattr(self, 'mode_schedule', None)
+         if schedule is None or not schedule.every:
+-            return self._run_batch_pair(*args, **kwargs)
++            return self._run_sentence_batch(*args, **kwargs)
+         import inspect
+         arguments = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+         arguments.apply_defaults()
+         call = arguments.arguments
+         if call['exploration_trial']:
+-            return self._run_batch_pair(*args, **kwargs)
++            return self._run_sentence_batch(*args, **kwargs)
+         isp = self.inputSpace
+         packed = getattr(isp, '_packed_sentence_rows', None)
+         texts = (tuple(text for row in packed for text in row) if packed is not None
+@@ -14540,174 +14562,9 @@
+                     isp.prepInput(list(texts))
+                 if teacher is not None:
+                     teacher.stage_batch_sources(staged_split or call['split'], staged_rows)
+-        result = self._run_batch_pair(*args, **kwargs)
++        result = self._run_sentence_batch(*args, **kwargs)
+         del schedule.pending[:len(texts)]
+         return result
+-
+-    def _compose_state_snapshot(self):
+-        """Snapshot runtime state, sharing parameters and module ownership.
+-
+-        Exploration trains those same parameters but cannot publish a second
+-        program, STM, LTM row or observation. Learning survives the transaction;
+-        sparse optimizer rows follow their surviving edge identities. Container
+-        copies preserve aliasing within the snapshot.
+-        """
+-        from dataclasses import fields, is_dataclass
+-        from copy import copy, deepcopy
+-        from collections import deque
+-        from Layers import RadixTrie, SparseLayer, RadixLayer
+-        objects = list(self.modules()) + self._synthesis_state_objects()
+-        # These owners intentionally live outside nn.Module registration.
+-        for owner in tuple(objects):
+-            allocator = getattr(owner, '_concept_allocator', None)
+-            if allocator is not None:
+-                objects.append(allocator)
+-                for layer in allocator._layers.values():
+-                    objects.extend(layer.modules())
+-            for name in ('_where_registry', 'taxonomy', '_category_learner'):
+-                value = getattr(owner, name, None)
+-                if value is not None and hasattr(value, '__dict__'):
+-                    objects.append(value)
+-        for value in (self._reconstruction_stack(), self._what_memory(),
+-                      getattr(self, 'teacher', None), self.errors):
+-            if value is not None and hasattr(value, '__dict__'):
+-                objects.append(value)
+-        # Contextual dictionaries own fixed, non-grad storage. Keep that
+-        # object (including VQ/peer aliases) while snapshotting its values;
+-        # replacing it would invalidate fixed-capacity and compiled readers.
+-        owned_buffers = {}
+-        for obj in objects:
+-            if bool(getattr(obj, 'contextual_rotation_only', False)):
+-                value = getattr(obj, '_buffers', {}).get('W')
+-                if torch.is_tensor(value) and id(value) not in owned_buffers:
+-                    owned_buffers[id(value)] = (value, value.detach().clone())
+-        seen, memo, saved, sparse = set(), {}, [], {}
+-        def clone(value):
+-            if isinstance(value, (nn.Parameter, nn.Module, torch.optim.Optimizer)):
+-                return value
+-            key = id(value)
+-            if key in owned_buffers:
+-                return value
+-            if key in memo:
+-                return memo[key]
+-            if torch.is_tensor(value):
+-                result = value.detach().clone()
+-            elif isinstance(value, dict):
+-                result = value.copy(); memo[key] = result
+-                for k, v in value.items():
+-                    result[k] = clone(v)
+-            elif isinstance(value, list):
+-                result = []; memo[key] = result
+-                result.extend(clone(v) for v in value)
+-            elif isinstance(value, deque):
+-                result = deque(maxlen=value.maxlen); memo[key] = result
+-                result.extend(clone(v) for v in value)
+-            elif isinstance(value, tuple):
+-                parts = [clone(v) for v in value]
+-                result = type(value)(*parts) if hasattr(value, '_fields') else tuple(parts)
+-            elif isinstance(value, set):
+-                result = value.copy()
+-            elif isinstance(value, RadixTrie):
+-                # The trie's slotted nodes mutate on percept admission. Its
+-                # IDs must roll back together with the owner's inverse table.
+-                result = deepcopy(value)
+-            elif is_dataclass(value) and not isinstance(value, type):
+-                if value.__dataclass_params__.frozen:
+-                    return value   # immutable forward artifacts retain their identity/graph
+-                result = copy(value); memo[key] = result
+-                for field in fields(value):
+-                    object.__setattr__(result, field.name, clone(getattr(value, field.name)))
+-            else:
+-                return value
+-            memo[key] = result
+-            return result
+-        for obj in objects:
+-            if id(obj) in seen:
+-                continue
+-            seen.add(id(obj))
+-            state = {k: clone(v) for k, v in vars(obj).items()
+-                     if k not in ('_modules', '_parameters', '_zeroed_channel_warned')}
+-            saved.append((obj, state))
+-            if isinstance(obj, SparseLayer):
+-                values = obj.values
+-                optimizer = obj._optimizer
+-                leaves = () if optimizer is None else RadixLayer._optimizer_leaves(optimizer)
+-                sparse[obj] = dict(
+-                    keys=tuple(obj._edge_ids),
+-                    values=None if values is None else values.detach().clone(),
+-                    requires_grad=False if values is None else values.requires_grad,
+-                    moments={leaf: clone(leaf.state.get(values, {})) for leaf in leaves})
+-        return saved, tuple(owned_buffers.values()), sparse
+-
+-    @staticmethod
+-    def _restore_compose_state(snapshot, *, sparse_scope=None):
+-        """Restore runtime ownership, retaining learning on shared sparse edges."""
+-        from copy import deepcopy
+-        from Layers import RadixLayer
+-        saved, owned_buffers, sparse = snapshot
+-        allowed_sparse = None if sparse_scope is None else sparse_scope[2]
+-        with torch.no_grad():
+-            for storage, value in owned_buffers:
+-                storage.copy_(value)
+-            for matrix, target in sparse.items():
+-                current = matrix.values
+-                live_keys = tuple(matrix._edge_ids)
+-                keys = target['keys']
+-                allowed = (set(keys) if allowed_sparse is None else
+-                           set(allowed_sparse.get(matrix, {}).get('keys', ())))
+-                if live_keys == keys and set(keys) <= allowed:
+-                    continue
+-                positions = {key: i for i, key in enumerate(live_keys)}
+-                pairs = [(i, positions[key]) for i, key in enumerate(keys)
+-                         if key in allowed and key in positions]
+-                values = target['values']
+-                restored = None if values is None else values.clone()
+-                if pairs and current is not None:
+-                    dst, src = zip(*pairs)
+-                    restored[list(dst)] = current.detach()[list(src)].to(restored)
+-                optimizer = matrix._optimizer
+-                leaves = [] if optimizer is None else list(RadixLayer._optimizer_leaves(optimizer))
+-                moments = {}
+-                for leaf in leaves:
+-                    old = leaf.state.get(current, {})
+-                    fallback = target['moments'].get(leaf, {})
+-                    merged = {}
+-                    for name in set(old) | set(fallback):
+-                        value = old.get(name, fallback.get(name))
+-                        if (name != 'step' and torch.is_tensor(value)
+-                                and current is not None and value.shape == current.shape
+-                                and restored is not None):
+-                            prior = fallback.get(name)
+-                            result = (prior.clone() if torch.is_tensor(prior)
+-                                      and prior.shape == restored.shape else torch.zeros_like(restored))
+-                            if pairs:
+-                                dst, src = zip(*pairs)
+-                                result[list(dst)] = value[list(src)].to(result)
+-                            merged[name] = result
+-                        else:
+-                            merged[name] = value.detach().clone() if torch.is_tensor(value) else deepcopy(value)
+-                    moments[leaf] = merged
+-                gradient = None
+-                if restored is not None and current is not None and current.grad is not None:
+-                    gradient = torch.zeros_like(restored)
+-                    if pairs:
+-                        dst, src = zip(*pairs)
+-                        gradient[list(dst)] = current.grad[list(src)].to(gradient)
+-                # SparseLayer owns parameter replacement and optimizer membership.
+-                # Restore topology before its pending-gradient relay runs, then
+-                # install the moment mapping, including exploit-only fallback rows.
+-                matrix._edge_ids = list(keys)
+-                replacement = (None if restored is None else
+-                               nn.Parameter(restored, requires_grad=target['requires_grad']))
+-                matrix._replace_values(replacement, [])
+-                if replacement is not None:
+-                    replacement.grad = gradient
+-                    for leaf, state in moments.items():
+-                        if state:
+-                            leaf.state[replacement] = state
+-        for obj, state in saved:
+-            owned = {k: v for k, v in vars(obj).items() if k in ('_modules', '_parameters', '_zeroed_channel_warned')}
+-            vars(obj).clear(); vars(obj).update(state); vars(obj).update(owned)
+ 
+     def _compose_completed_rows(self):
+         """Completion mask for the serial or parallel derivation, if present."""
+@@ -14717,6 +14574,9 @@
+         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
+         derivation = getattr(language, '_last_derivation', None)
+         return derivation.get('complete') if isinstance(derivation, dict) else None
++
++    def _compose_records_enabled(self):
++        return not getattr(self, '_exploration_trial', False)
+ 
+     def _compose_round_owners(self, actions):
+         """Sentence identity for every fixed word/seal operation slot."""
+@@ -14736,6 +14596,7 @@
+             seal_ids = torch.cat((last_id, ids[:, :-1]), dim=1)
+             owners[:, 3 * W:] = seal_ids.repeat_interleave(seal_width, 1)[:, :T - 3 * W]
+         return owners, ids, last_id
++
+ 
+     def _exploration_constraints(self):
+         """One uniformly selected used round per row-owned sentence."""
+@@ -14757,61 +14618,47 @@
+                 1, selected[:, None], eligible.any(-1)[:, None])
+         return actions, forced, owners
+ 
+-    def _run_batch_pair(self, *args, **kwargs):
++    def _run_sentence_batch(self, *args, **kwargs):
++        """One public batch, with two local training trials at each seal."""
+         import inspect
++        from contextlib import nullcontext
++        from SentenceCompose import saved_sentence_values
+         bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+         bound.apply_defaults()
+         call = dict(bound.arguments)
+-        if call['exploration_trial']:
+-            return self._run_batch_once(**call)
+         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
+-        if language is None or language.operation_layer is None:
+-            return self._run_batch_once(**call)
+-        before = self._compose_state_snapshot()
+-        language.exploration_trial = False
+-        language._exploit_derivations = []
+-        result = self._run_batch_once(**call)
+-        if result[0] is None:
+-            return result
+-        actions, forced, owners = self._exploration_constraints()
+-        complete = self._compose_completed_rows()
+-        if torch.is_tensor(complete):
+-            self._compose_incomplete_count = int((~complete).sum())
+-            stm = self.conceptualSpace.stm
+-            state = (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+-                     stm._concept_rows, stm._concept_activations)
+-            (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+-             stm._concept_rows, stm._concept_activations) = FunctionalPeerSTM.soft_reset_rows(
+-                 state, ~complete)
+-            stm._wholes = ShortTermMemory.functional_wholes_reset(
+-                stm.ensure_whole_state(), ~complete)
+-        parallel_paths = list(language._exploit_derivations)
+-        committed = self._compose_state_snapshot()
+-        committed_time = self.when_time.detach().clone()
++        self._sentence_seals = (self.serial and not call['exploration_trial']
++            and getattr(language, 'operation_layer', None) is not None)
++        # Word-major sentences use the tied traversal at both training seals,
++        # including configurations that retain the older event-loss report.
++        # A reporting switch must not turn both compose objectives into zero.
++        self._sentence_reconstruction = self._sentence_seals and (
++            self.reconstruct_in_loop or (self.serial_object_meta
++                and not self.detached_reverse and self.loss.reconstruction_scale > 0))
++        keep_ideas = self._recon_keep_ideas
++        self._recon_keep_ideas = keep_ideas or self._sentence_reconstruction
++        self._sentence_optimizer = call['optimizer'] if call['train'] else None
++        self._sentence_trial_costs = []
++        self._sentence_winners = []
++        self._sentence_programs = {}
++        self._sentence_reconstructions = []
++        # Perception is shared by two backward/step pairs. Saved values must
++        # remain those of its one forward even when the first update mutates
++        # parameters. The graph itself still credits the perception parameters.
++        hooks = (saved_sentence_values(self.parameters(), self.buffers())
++                 if call['train'] and self._sentence_seals else nullcontext())
+         try:
+-            self._restore_compose_state(before)
+-            self.when_time.copy_(committed_time)
+-            self._compose_exploit_actions, self._compose_forced_slots = actions, forced
+-            language.exploration_trial = True
+-            language._exploit_derivations = parallel_paths
+-            language._derivation_cursor = 0
+-            call['exploration_trial'] = True
+-            # The transaction restored the exact Teacher staging consumed
+-            # by exploit. source_rows can be grammar metadata without corpus
+-            # addresses and must not replace that already-restored staging.
+-            self._run_batch_once(**call)
+-            explored = getattr(self._reconstruction_stack(), '_choice_actions', None)
+-            if actions is not None and torch.is_tensor(explored):
+-                for sid in range(int(owners.max().detach()) + 1):
+-                    rounds = (owners == sid) & (actions >= 0)
+-                    different = ((actions != explored) & rounds).any(-1)
+-                    if not bool((different | ~rounds.any(-1)).all()):
+-                        raise RuntimeError('exploration repeated an exploit sentence derivation')
++            with hooks:
++                return self._run_batch_once(**call)
+         finally:
+-            self._restore_compose_state(committed, sparse_scope=before)
++            self._sentence_seals = False
++            self._sentence_reconstruction = False
++            self._recon_keep_ideas = keep_ideas
++            self._sentence_optimizer = None
++            self._sentence_amp_scaler = None
++            self._sentence_pullback = None
+             self._compose_exploit_actions = self._compose_forced_slots = None
+-            language.exploration_trial = False
+-        return result
++            self._compose_prefix_slots = None
+ 
+     def _run_batch_once(self, train=True, batchNum=0, batchSize=10, split="train",
+                  optimizer=None, batch_override=None, progress=None,
+@@ -14820,15 +14667,9 @@
+                  source_rows=None, attach_outputs=False):
+         """Run a single batch: forward pass, loss, and (if training) backward + step.
+ 
+-        ``exploration_trial`` (the sampled alternative derivation): when True this is
+-        the non-recorded explore trial over a sentence already processed by
+-        pass A. It still trains the chooser (forward / loss / backward /
+-        step), but the per-sentence side effects are SKIPPED so B does not
+-        double-commit the same sentence: the model clock is not advanced
+-        (``_advance_when_time``), the discourse ARMA observe and the LTM
+-        end-state append are not re-run, and ``_training_step_count`` (the
+-        periodic-checkpoint cadence) is not incremented. Default False is the
+-        ordinary recorded pass.
++        Sentence trials are completed by the eager seal driver during forward.
++        ``exploration_trial`` is the non-recording mode-schedule context read;
++        it does not run a second batch derivation.
+ 
+         Args:
+             train: whether to compute gradients and update parameters.
+@@ -14861,6 +14702,7 @@
+             the dataset is exhausted.
+         """
+         self._install_unit_span_fn()
++        record_trial = not exploration_trial
+         self._packed_prediction_drained = False
+         self._compose_overflow = None
+         self._compose_complete = None
+@@ -14945,8 +14787,8 @@
+         # below). Done here, in eager Python before the forward, so the live
+         # WhenRangeEncoding(s) the forward stamps already carry the advanced
+         # absolute time (``.t == present()``). See ``_advance_when_time``.
+-        # Skipped on the explore trial (pass B): it re-processes a sentence
+-        # pass A already clocked, so a second tick would double-advance time.
++        # The mode schedule's internal context read does not consume an
++        # external batch. Compose's sentence trials run inside this one tick.
+         if not exploration_trial:
+             self._advance_when_time()
+ 
+@@ -14975,7 +14817,7 @@
+ 
+         if train:
+             optimizer.zero_grad()
+-        if not exploration_trial:
++        if record_trial:
+             with torch.set_grad_enabled(bool(train)):
+                 self._stage_expectation_queries(training=bool(train))
+ 
+@@ -15003,6 +14845,7 @@
+         # ModelFactory.run). bf16 returns scaler=None; fp16+CUDA returns
+         # the process-wide GradScaler used in the backward path below.
+         amp_cm, amp_scaler = amp_context()
++        self._sentence_amp_scaler = amp_scaler
+         with torch.set_grad_enabled(bool(train)), amp_cm:
+             # Forward pass returns a 4-tuple.  IR-only contract:
+             # ``predictions`` is ``[B, N, predDim]`` (one head emission
+@@ -15175,7 +15018,7 @@
+                         if self.symbolSpace is not None else None)
+                 self._stage_legacy_discourse_prediction(
+                     disc, fullgraph_word_loop=_fullgraph_word_loop)
+-            _fwd = (self.forward if exploration_trial else
++            _fwd = (self.forward if exploration_trial or getattr(self, '_sentence_seals', False) else
+                     (self._active_compiled_step if torch.is_grad_enabled()
+                      and self._active_compiled_step is not None else self.forward))
+             self._exploration_trial = bool(exploration_trial)
+@@ -15185,7 +15028,7 @@
+                 # the returned execution is the ordinary forward tuple.
+                 _what_answers = self._what_or_think(
+                     what_questions, inputTensor, executor=_fwd,
+-                    record=not exploration_trial)
++                    record=record_trial)
+                 _forward_result = _what_answers[0].execution
+                 (forwardInput, symbols, predictions,
+                  _) = self._publish_compiled_sentence_state(_forward_result)
+@@ -15424,8 +15267,12 @@
+                 # (reverse(S) -> table -> input) does not run.
+                 d3_loss, d3_metric = None, None
+             else:
+-                d3_loss, d3_metric = (self._d3_reconstruction_loss()
+-                                      if _per_word else (None, None))
++                # The historical event metric remains comparable, but the
++                # sentence's tied objective has already trained both paths.
++                with torch.set_grad_enabled(torch.is_grad_enabled() and not
++                        getattr(self, '_sentence_reconstruction', False)):
++                    d3_loss, d3_metric = (self._d3_reconstruction_loss()
++                                          if _per_word else (None, None))
+             if self.reconstruct_in_loop:
+                 # Completion belongs to understanding, before reasoning and
+                 # output can change staging. Training and evaluation consume
+@@ -15475,7 +15322,8 @@
+             # train and evaluation skip a duplicate reconstruction objective.
+             # Explicit legacy D3 configurations deduplicate during training.
+             lossRev = torch.zeros((), device=TheDevice.get())
+-            _rev_dedupe = self.reconstruct_in_loop or (train and bool(self._d3_active))
++            _rev_dedupe = (self.reconstruct_in_loop or
++                getattr(self, '_sentence_reconstruction', False) or (train and bool(self._d3_active)))
+             try:
+                 if forwardInput is not None and not _rev_dedupe:
+                     # reverseReconstruct owns the input inverse and its seed;
+@@ -15558,15 +15406,13 @@
+             # commits the new rep + residual into the rings (vectorized,
+             # sync-free). Cold-start rows return ``None``. Computed here,
+             # post-body / pre-backward, so the term trains the predictor.
+-            # Skip on the explore trial (pass B): _discourse_arma_loss both
+-            # trains the inter-predictor AND commits the sentence rep/residual
+-            # into the persistent ARMA rings (disc.observe). Re-running it on a
+-            # sentence pass A already observed would double-push the rings and
+-            # corrupt the lagged history the next batch reads.
++            # Each paired trial starts from the same prior runtime. Its
++            # private observation and prediction context survive only if that
++            # trial wins; both trials are scored under the same objective.
+             legacy_prediction = bool(getattr(self, "legacy_prediction_enabled", False))
+             arma_loss = (self._discourse_arma_loss()
+                          if (train and legacy_prediction
+-                             and not exploration_trial) else None)
++                             and record_trial) else None)
+ 
+             # Intra-sentence prediction loss term (Task 3, STM serial/
+             # parallel modes) -- ``ConceptualSpace.forward`` ran the
+@@ -15591,13 +15437,13 @@
+             # scored sentence this batch.
+             inter_loss = (
+                 self._discourse_inter_loss()
+-                if train and not exploration_trial else None
++                if train and record_trial else None
+             )
+-            expectation_policy_loss = self._expectation_policy_loss() if train and not exploration_trial else None
++            expectation_policy_loss = self._expectation_policy_loss() if train and record_trial else None
+             # InfoNCE next-idea contrastive term (the discourse layer's second
+             # accumulator; populated during the forward boundary observe).
+             inter_contrastive = None
+-            if train and not exploration_trial and self.symbolSpace is not None:
++            if train and record_trial and self.symbolSpace is not None:
+                 _disc = getattr(self.symbolSpace, "discourse", None)
+                 if _disc is not None and hasattr(
+                         _disc, "consume_inter_contrastive_loss"):
+@@ -15937,7 +15783,11 @@
+             if (_every > 0 and int(getattr(
+                     self, "_training_step_count", 0) or 0) % _every == 0):
+                 self._sample_gradient_diagnostics(gradient_objectives, optimizer)
+-            if amp_scaler is not None:
++            if not totalLoss.requires_grad:
++                # An input-only batch already trained at its sentence seals.
++                # With no batch-end teacher term there is no third backward.
++                _fineweb_step_performed = bool(self._sentence_trial_costs)
++            elif amp_scaler is not None:
+                 # fp16 on CUDA: scale grads to avoid underflow, then unscale
+                 # inside scaler.step() before the actual optimizer update.
+                 self._backward_training_loss(
+@@ -15962,29 +15812,15 @@
+                     self.paramUpdate()
+                 optimizer.step()
+                 _fineweb_step_performed = True
+-            # Project learned exponents onto the nonnegative orthant. The
+-            # source column owns polarity, so an update never flips a part.
+-            with torch.no_grad():
+-                for ws in self.wholeSpaces:
+-                    primitives = getattr(getattr(ws.subspace, 'what', None), 'primitive_properties', None)
+-                    if primitives is not None:
+-                        primitives.project()
+-                for cs in self.conceptualSpaces:
+-                    allocator = getattr(cs, '_concept_allocator', None)
+-                    if allocator is not None:
+-                        for layer in allocator._layers.values():
+-                            layer.project_parts()
++            self._project_sentence_parameters()
+             self._assert_finite_train_state("after optimizer.step")
+             # The episode credit boundary (spec 8.2): durable LTM detaches
+             # here, after the one optimizer step of the episode.
+             self._end_what_episodes()
+             self._flush_partspace_promotions(optimizer=optimizer)
+             self._clamp_symbolic_codebook()
+-            # Context-owned concept atoms are updated exactly once from the
+-            # completed sentence snapshot.  The optional exploration pass is
+-            # a second optimizer trial over the same sentence, not a second
+-            # observation, so it intentionally does not rotate the table.
+-            if not exploration_trial:
++            # Contextual learning consumes only committed sentence evidence.
++            if record_trial:
+                 self._update_contextual_concept_codebooks()
+             self._normalize_conceptual_codebooks()
+             # 2026-05-28: enforce the |W| <= 1 invariant on the
+@@ -15998,10 +15834,8 @@
+             # unbounded target rows.
+             self._normalize_perceptual_embedding()
+             self._advance_codebook_parameter_versions()
+-            # Don't count the explore trial (pass B): the step counter drives
+-            # the periodic-checkpoint cadence, which should count sentences,
+-            # not the two trials per sentence.
+-            if not exploration_trial:
++            # Sentence updates never advance this public batch counter.
++            if record_trial:
+                 self._training_step_count = (
+                     int(getattr(self, "_training_step_count", 0) or 0) + 1
+                 )
+@@ -19194,8 +19028,9 @@
+         gate = (state[1] > 0 if row_gate is None else row_gate.reshape(B).bool())
+         slots = 1 if protect_depth is None else protect_depth
+         choice = self.languageSpace.choose_operation(
+-            state, gate, slots=slots, sample=bool(getattr(self, '_exploration_trial', False)),
++            state, gate, slots=slots,
+             masked_action=self._compose_masked_action(trace_slot, state[1]),
++            replay_action=self._compose_replayed_action(trace_slot, state[1]),
+             op_prior=self._chunk_structural_prior(stm.ensure_whole_state(), B, state[0]))
+         next_state = self.conceptualSpace.apply_language_choice(state, choice)
+         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+@@ -19250,14 +19085,44 @@
+             active = active & applied
+ 
+     def _compose_masked_action(self, slot, like):
++        return self._compose_action_constraint(slot, like, '_compose_forced_slots')
++
++    def _compose_replayed_action(self, slot, like):
++        return self._compose_action_constraint(slot, like, '_compose_prefix_slots')
++
++    def _compose_action_constraint(self, slot, like, constraint):
+         actions = getattr(self, '_compose_exploit_actions', None)
+-        forced = getattr(self, '_compose_forced_slots', None)
++        forced = getattr(self, constraint, None)
+         if slot is None or actions is None or forced is None:
+             return None
+-        index = torch.as_tensor(slot, device=like.device, dtype=torch.long).reshape(1)
+-        chosen = actions.index_select(1, index.clamp(0, actions.shape[1] - 1)).reshape(-1)
+-        mask = forced.index_select(1, index.clamp(0, forced.shape[1] - 1)).reshape(-1)
++        index = torch.as_tensor(slot, device=like.device, dtype=torch.long).reshape(-1, 1).expand(actions.shape[0], 1)
++        chosen = actions.gather(1, index.clamp(0, actions.shape[1] - 1)).reshape(-1)
++        mask = forced.gather(1, index.clamp(0, forced.shape[1] - 1)).reshape(-1)
+         return torch.where(mask, chosen, -1)
++
++    def _exploration_prefix_slots(self, actions, forced, owners):
++        """Chronological prefix per sentence, including interleaved seal slots.
++
++        Exploit already updated the parameters. Replaying its hard choices
++        preserves the zero-temperature counterfactual's prefix under those
++        updated weights, while recomputing candidates and their live credit.
++        """
++        words = self.inputSpace._word_active_mask.shape[1]
++        seal = max(1, 2 * int(self.conceptualSpace.stm.capacity))
++        order = []
++        for word in range(words):
++            order.extend(range(3 * word, 3 * word + 3))
++            if word + 1 < words:
++                begin = 3 * words + (word + 1) * seal
++                order.extend(range(begin, begin + seal))
++        order.extend(range(3 * words, 3 * words + seal))
++        order = [slot for slot in order if slot < actions.shape[1]]
++        ranks = torch.tensor(order, device=actions.device).argsort()[None, :]
++        prefix = torch.zeros_like(forced)
++        for sid in range(int(owners.max().detach()) + 1):
++            chosen = torch.where(forced & (owners == sid), ranks, actions.shape[1]).amin(1)
++            prefix |= (owners == sid) & (ranks < chosen[:, None]) & (actions >= 0)
++        return prefix
+ 
+     def _record_operation_choice(self, slot, choice, state):
+         trace = self._reconstruction_stack()
+@@ -20587,7 +20452,7 @@
+                     out_slot[p] = contribution
+         return CS_sub, idea_bd
+ 
+-    def _peer_stage_b(self, a_result, p, grammar_feedback):
++    def _peer_stage_b(self, a_result, p, grammar_feedback, *, cache_only=False):
+         """Finish one delayed symbolic/STM word stage.
+ 
+         A result is a tensor snapshot, not a live carrier.  By the time this
+@@ -20642,6 +20507,8 @@
+             cs_sym, prior_symbolic_event, a_result.gate_b_1)
+         object.__setattr__(cs, "_peer_prev_sym", cs.CSsym)
+ 
++        if cache_only:
++            return event, a_result.concept_orders, a_result.word_concept_row, a_result.word_concept_activation
+         idea_bd = None
+         grammar_snapshot = None
+         if event.dim() == 3 and event.shape[1] >= 1:
+@@ -20857,9 +20724,9 @@
+         left = torch.where(active, rows[:, 1] if int(rows.shape[1]) > 1 else torch.full_like(rows[:, 0], -1),
+                            torch.full_like(rows[:, 0], -1))
+         right = torch.where(active, rows[:, 0], torch.full_like(rows[:, 0], -1))
+-        column = index.clamp(0, width - 1).reshape(1, 1).expand(B, 1)
+-        return (left_slab.scatter(1, column, left.reshape(B, 1).to(torch.long)),
+-                right_slab.scatter(1, column, right.reshape(B, 1).to(torch.long)))
++        column = index.clamp(0, width - 1).reshape(-1, 1).expand(B, 1)
++        return (left_slab.scatter(1, column, torch.where(active[:, None], left[:, None], left_slab.gather(1, column))),
++                right_slab.scatter(1, column, torch.where(active[:, None], right[:, None], right_slab.gather(1, column))))
+ 
+     @staticmethod
+     def _tensor_record_choice(trace_state, index, local_op, valid,
+@@ -20883,7 +20750,7 @@
+         ).index_select(0, safe_local)
+         chosen = torch.where(
+             active, chosen, torch.full_like(chosen, -1))
+-        safe_column = index.clamp(0, width - 1).reshape(1, 1).expand(B, 1)
++        safe_column = index.clamp(0, width - 1).reshape(-1, 1).expand(B, 1)
+         next_ids = rule_ids.scatter(1, safe_column, chosen.reshape(B, 1))
+         chosen_arity = torch.where(
+             active,
+@@ -20916,13 +20783,304 @@
+             if mapping.numel():
+                 mapped = mapping.index_select(0, choice.local_op.clamp(0, mapping.numel() - 1))
+                 chosen = torch.where(choice.applied & (choice.kind == kind), mapped, chosen)
+-        column = index.clamp(0, width - 1).reshape(1, 1).expand(B, 1)
++        column = index.clamp(0, width - 1).reshape(-1, 1).expand(B, 1)
+         def write(slab, value):
+-            return slab.scatter(1, column, value.to(slab.dtype).reshape(B, 1))
++            value = torch.where(choice.valid.reshape(B, 1), value.to(slab.dtype).reshape(B, 1), slab.gather(1, column))
++            return slab.scatter(1, column, value)
+         arity = torch.where(choice.applied, torch.where(choice.kind == 1, 2, 1), 0)
+         return ((write(ids, chosen), write(arities, arity), write(mask, choice.applied), losses, loss_mask),
+                 write(position_slab, choice.position), write(action_slab, choice.action),
+                 write(attempted_slab, choice.valid))
++
++    def _project_sentence_parameters(self):
++        with torch.no_grad():
++            for ws in self.wholeSpaces:
++                primitives = getattr(getattr(ws.subspace, 'what', None), 'primitive_properties', None)
++                if primitives is not None:
++                    primitives.project()
++            for cs in self.conceptualSpaces:
++                allocator = getattr(cs, '_concept_allocator', None)
++                if allocator is not None:
++                    for layer in allocator._layers.values():
++                        layer.project_parts()
++        self._clamp_symbolic_codebook()
++        self._normalize_conceptual_codebooks()
++        self._normalize_perceptual_embedding()
++
++    def _sentence_train_step(self, loss):
++        """Train one derivation; public time/episode accounting stays at batch end."""
++        optimizer = self._sentence_optimizer
++        if optimizer is None:
++            raise RuntimeError('sentence training requires the live optimizer')
++        optimizer.zero_grad()
++        self._sentence_backward = True
++        try:
++            self._backward_training_loss(loss, self._sentence_amp_scaler)
++        finally:
++            self._sentence_backward = False
++            self._sentence_pullback = None
++        self._assert_finite_train_state('after sentence backward')
++        if self.ergodic:
++            self.paramUpdate()
++        if self._sentence_amp_scaler is not None:
++            from LearningEvaluation import scaler_step_performed
++            scaler_step_performed(self._sentence_amp_scaler, optimizer)
++        else:
++            preflight_finite_gradients(optimizer, self.named_parameters(),
++                cache_for_step=hasattr(optimizer, '_step_without_finite_preflight'))
++            optimizer.step()
++        self._project_sentence_parameters()
++        self._advance_codebook_parameter_versions()
++        self._assert_finite_train_state('after sentence optimizer.step')
++        optimizer.zero_grad()
++
++    @staticmethod
++    def _snapshot_sentence_state(state):
++        return state
++
++    def _restore_sentence_state(self, state):
++        self._publish_sentence_scratch(state)
++
++    def _publish_sentence_scratch(self, state):
++        """Install bounded STM/trace values for scoring, without observing them."""
++        current_stm, lang, feedback = state
++        stm = self.conceptualSpace.stm
++        (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
++         stm._concept_rows, stm._concept_activations) = current_stm
++        stm._wholes = lang[10]
++        trace = self._reconstruction_stack()
++        for name, value in zip(('_choice_rule_ids', '_choice_arities', '_choice_mask',
++                                '_forward_losses', '_forward_loss_mask'), lang[4:9]):
++            setattr(trace, name, value)
++        for name, value in zip(('_choice_left_rows', '_choice_right_rows',
++                                '_choice_positions', '_choice_actions', '_choice_attempted'), lang[15:20]):
++            setattr(trace, name, value)
++        self._compose_overflow = lang[20]
++        self._packed_sentence_roots = lang[9]
++        self._tensor_sentence_roots_live = lang[13]
++        self._tensor_sentence_roots_depth = lang[14]
++        B, W = lang[0].shape[:2]
++        D = current_stm[0].shape[-1]
++        self._tensor_pushed_ideas = self._pushed_word_slab(B, W, D, current_stm[0], lang[0])
++        isp = self.inputSpace
++        object_rows = getattr(isp, '_ar_word_object_rows', None)
++        concept_rows = getattr(isp, '_ar_word_concept_rows', None)
++        if torch.is_tensor(object_rows) and torch.is_tensor(concept_rows):
++            rows = torch.where(object_rows >= 0, object_rows, concept_rows)
++            orders = torch.where(object_rows >= 0, isp._ar_word_object_orders, isp._ar_word_concept_orders)
++            self.symbolSpace.commit_word_reference_slab(rows, lang[0],
++                isp._word_active_mask, orders=orders)
++
++    def _sentence_observation(self, state, sid, active, *, admit=False):
++        current_stm, lang, _feedback = state
++        B, _K, D = current_stm[0].shape
++        depths = lang[14][:, sid]
++        mask = active & (depths > 0)
++        slots = lang[13][:, sid].reshape(B, 3, D)
++        payloads = [slots[b, :int(depths[b])] if bool(mask[b]) else None for b in range(B)]
++        depth_list = [int(d) if bool(m) else 0 for d, m in zip(depths, mask)]
++        _current, programs = self._capture_answer_programs(sentence_slot=sid, admit=admit)
++        entries = programs.get(sid, (None,) * B)
++        disc = getattr(self.symbolSpace, 'discourse', None)
++        meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
++            self.languageSpace, _boundary_registry(self), entries, payloads, depth_list,
++            structured=getattr(disc, 'expectation_scope', None) == 'structured')
++        return dict(payloads=payloads, depths=depth_list, mask=mask, entries=entries,
++                    meanings=meanings, observed=observed, observed_depths=observed_depths,
++                    layout=layout, roles=roles)
++
++    def _sentence_path_cost(self, state, sid, active):
++        """The same reconstruction and prediction objective for either trial."""
++        self._publish_sentence_scratch(state)
++        current_stm, lang, _feedback = state
++        B, W, D = self._tensor_pushed_ideas.shape
++        slots = lang[13][:, sid].reshape(B, 3, D)
++        depths = lang[14][:, sid]
++        root = lang[9][:, sid]
++        if getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop):
++            reconstruction = self._compiled_reconstruct()(
++                root.clone(), self._tensor_pushed_ideas, lang[13], lang[14], slots.clone(), depths.clone(),
++                torch.tensor(sid, device=root.device))
++            cost = self.loss.reconstruction_scale * reconstruction[2]
++        else:
++            # Configurations without the tied traversal retain their existing
++            # batch-end objectives. Their sentence cost has no reconstruction
++            # contribution; the zero edge keeps the two training calls valid.
++            cost = root.sum(-1) * 0
++            reconstruction = (root.new_zeros(B, W, D), cost, cost,
++                              torch.zeros(B, dtype=torch.bool, device=root.device),
++                              lang[14].to(root) * 0)
++        observation = self._sentence_observation(state, sid, active)
++        disc = getattr(self.symbolSpace, 'discourse', None)
++        pending = None
++        if disc is not None:
++            inter, contrast, pending = disc.sentence_prediction_cost(
++                observation['observed_depths'], observation['observed'], observation['mask'],
++                documents=self._expectation_documents_for_slot(sid, B),
++                layout=observation['layout'], role_masks=observation['roles'])
++            if self.inter_loss_weight > 0:
++                cost = cost + self.inter_loss_weight * inter
++            if self.inter_contrastive_weight > 0:
++                cost = cost + self.inter_contrastive_weight * contrast
++        return cost, reconstruction, observation, pending
++
++    def _commit_sentence(self, state, sid, active, observations, predictions, wins):
++        """Publish only the chosen rows before the next sentence's perception."""
++        self._publish_sentence_scratch(state)
++        rows = wins.detach().cpu().tolist()
++        view = self._sentence_observation(state, sid, active, admit=True)
++        self._sentence_programs[sid] = tuple(view['entries'])
++        disc = getattr(self.symbolSpace, 'discourse', None)
++        # The preview owns each trial's estimate. Commit its comparison and
++        # prior-query policy outcome without training prediction twice.
++        if disc is not None:
++            pending_a, pending_b = predictions[0], predictions[-1]
++            disc._inter_last_meaning = [pending_b[0][b] if win else pending_a[0][b]
++                                       for b, win in enumerate(rows)]
++            disc._inter_last_pred_root = [pending_b[1][b] if win else pending_a[1][b]
++                                         for b, win in enumerate(rows)]
++            disc.observe_stm_end_state(view['observed_depths'], view['observed'],
++                mask=view['mask'], documents=self._expectation_documents_for_slot(sid, len(rows)),
++                layout=view['layout'], role_masks=view['roles'], train_prediction=False)
++            disc.detach_prediction_context()
++        store = getattr(self.symbolSpace, 'ltm_store', None)
++        if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
++            retain = _is_external_expectation_observation(disc)
++            for b, payload in enumerate(view['payloads']):
++                if payload is None:
++                    continue
++                comparison = (disc.last_expectation_comparison(b) if retain else None)
++                row = _append_observed_meaning(store, payload, view['depths'][b],
++                    meaning=view['meanings'][b], expectation=comparison,
++                    program=view['entries'][b], stream=b)
++                if row >= 0 and retain:
++                    disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
++
++    def _run_sealed_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
++                                lang, empty_feedback, perceive, symbolize, compose_word):
++        from SentenceCompose import sentence_pair, fork_perception
++        B, W = active.shape
++        slots = self.inputSpace._packed_sentence_slot_mask
++        feedback = empty_feedback
++        for sid in range(slots.shape[1]):
++            present = slots[:, sid].to(torch.bool)
++            if not bool(present.any()):
++                continue
++            disc = getattr(self.symbolSpace, 'discourse', None)
++            if disc is not None:
++                disc._prepare_expectation_documents(self._expectation_documents_for_slot(sid, B), present, B)
++                for b in range(B):
++                    if bool(present[b]):
++                        disc.predict_next_end_state(b)
++            questions = getattr(self, '_active_what_questions', None)
++            if questions:
++                context, detail = self._what_grammar_context(questions, device=words.device, dtype=words.dtype)
++                for module in self.symbolSpace.modules():
++                    if hasattr(module, '_what_context'):
++                        module._what_context, module._what_ltm_context = context, detail
++            # A sentence is perceived once, after its predecessor's commit.
++            cache = []
++            for w in range(W):
++                gate = active[:, w] & (sentence_ids[:, w] == sid)
++                if not bool(gate.any()):
++                    continue
++                index = torch.tensor(w, device=words.device)
++                payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
++                payload, sym = symbolize(payload, empty_feedback, index, None, sym)
++                cache.append((index, payload))
++            before = self._snapshot_sentence_state((stm, lang, feedback))
++            observations, predictions = [], []
++            def compose(cached, exploit):
++                self._sentence_trial = 'exploit' if exploit is None else 'explore'
++                if self.training and torch.is_grad_enabled():
++                    cached, self._sentence_pullback = fork_perception(cached)
++                if exploit is not None:
++                    self._publish_sentence_scratch(exploit)
++                    actions, forced, owners = self._exploration_constraints()
++                    forced = forced & (owners == sid)
++                    self._compose_exploit_actions = actions
++                    self._compose_forced_slots = forced
++                    self._compose_prefix_slots = (
++                        self._exploration_prefix_slots(actions, forced, owners)
++                        if self.languageSpace._tree_layer(2).temperature == 0 else None)
++                self._restore_sentence_state(before)
++                current_stm, current_lang, current_feedback = before
++                latches = [empty_feedback, empty_feedback]
++                for index, payload in cached:
++                    # Grammar feedback changes with this derivation, while
++                    # the cached pre-compose word representation stays fixed.
++                    payload = (*payload[:-2], *latches[0])
++                    current_lang, current_stm, current_feedback = compose_word(
++                        payload, index, None, current_lang, current_stm)
++                    latches = [latches[1], current_feedback]
++                return current_stm, current_lang, current_feedback
++            def score(path, alternative):
++                if alternative:
++                    owners, _, _ = self._compose_round_owners(path[1][18])
++                    rounds = (owners == sid) & (self._compose_exploit_actions >= 0)
++                    different = ((self._compose_exploit_actions != path[1][18]) & rounds).any(-1)
++                    if not bool((different | ~present).all()):
++                        raise RuntimeError('exploration repeated an exploit sentence derivation')
++                cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
++                if self.training and self.legacy_prediction_enabled:
++                    numerator = path[1][1] - before[1][1]
++                    denominator = path[1][2] - before[1][2]
++                    cost = cost + self.conceptualSpace.intra_loss_weight * numerator / denominator.clamp_min(1)
++                observations.append(observation)
++                predictions.append(pending)
++                return cost, (path, reconstruction)
++            try:
++                (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
++                    self._sentence_train_step, active=present,
++                    training=self.training and torch.is_grad_enabled())
++            finally:
++                self._compose_exploit_actions = self._compose_forced_slots = None
++                self._compose_prefix_slots = None
++            self._sentence_trial = None
++            self._sentence_trial_costs.append(costs)
++            self._sentence_winners.append(wins)
++            # Each compose graph has already trained and been freed. The
++            # durable path is discrete history; word activations still expose
++            # the original perception to the separate batch-end answer loss.
++            chosen = (tuple(v.detach() for v in chosen[0]),
++                      tuple(v.detach() for v in chosen[1]),
++                      tuple(v.detach() for v in chosen[2]))
++            activations = chosen[1][0]
++            for index, payload in cache:
++                value = torch.where(payload[7], payload[3].reshape(B, 1), 0.)
++                activations = self._tensor_write_word_column(activations, index, value)
++            chosen = (chosen[0], (activations, *chosen[1][1:]), chosen[2])
++            self._commit_sentence(chosen, sid, present, observations, predictions, wins)
++            self._sentence_reconstructions.append(tuple(v.detach() for v in reconstruction))
++            stm, lang, feedback = chosen
++            # The next seal starts with the committed discrete history and
++            # detached context. No gradient crosses optimizer versions via STM.
++            stm = tuple(v.detach() for v in stm)
++            lang = tuple(v.detach() for v in lang)
++            reset = present & ((sentence_ids.amax(-1) > sid) | (lang[14][:, sid] <= 0))
++            stm = FunctionalPeerSTM.soft_reset_rows(stm, reset)
++            lang = (*lang[:10], ShortTermMemory.functional_wholes_reset(lang[10], reset),
++                    *lang[11:20], lang[20] & ~present)
++        self._publish_sentence_scratch((stm, lang, feedback))
++        depth = stm[1]
++        self._stm_single_S = stm[0][torch.arange(B, device=words.device),
++                                     (depth - 1).clamp(0, stm[0].shape[1] - 1)]
++        final_ids = sentence_ids.amax(-1).clamp_min(0)
++        self._stm_post_depth = lang[14].gather(1, final_ids[:, None]).reshape(B)
++        self._tensor_final_end_slots = lang[13].gather(1,
++            final_ids[:, None, None].expand(B, 1, lang[13].shape[-1])).reshape(B, 3, -1)
++        self._tensor_final_end_depth = self._stm_post_depth
++        self._packed_prediction_drained = True
++        if self._sentence_reconstruction and self._sentence_reconstructions:
++            values = self._sentence_reconstructions
++            self._recon_ideas = torch.stack([v[0] for v in values]).sum(0)
++            self._recon_sentence_costs = torch.stack([v[4] for v in values]).sum(0)
++            count = slots.sum(-1).clamp_min(1)
++            self._recon_idea_cost = torch.stack([v[1] for v in values]).sum(0) / count
++            self._recon_cost = self._recon_sentence_costs.sum(-1) / count
++            self._recon_truncated = torch.stack([v[3] for v in values]).any(0)
++            self._recon_completed = True
++        return stm, sub, sym, lang, feedback, words.new_tensor(W, dtype=torch.long)
+ 
+     def _run_tensor_peer_word_pipeline(self, width):
+         """Run the aligned word transaction in one tensor ``while_loop``.
+@@ -20948,34 +21106,52 @@
+         capacity = int(stm.capacity)
+         concept_dim = int(stm.concept_dim)
+         symbolic_passes = tuple(range(max(0, int(self.symbolicOrder))))
+-
+-        part_ids = isp._ar_word_part_ids
+-        part_mask = isp._ar_word_part_mask
+-        part_offsets = isp._ar_word_part_offsets
+-        concept_rows = isp._ar_word_concept_rows
+-        concept_orders = isp._ar_word_concept_orders
+-        object_rows = isp._ar_word_object_rows
+-        object_orders = isp._ar_word_object_orders
+-        object_atoms = isp._ar_word_object_atoms
+-        lookup_rows = isp._ar_concept_lookup_rows
+-        lookup_atoms = isp._ar_concept_lookup_atoms
+-        word_property_weights = ws._staged_word_primitive_counts
+-        reference_codes = isp._ar_percept_reference_codes
+-        reference_roles = isp._ar_percept_reference_roles
+-        part_reference_vectors = isp._ar_part_reference_vectors
+-        whole_reference_vectors = isp._ar_whole_reference_vectors
+-        readout_coefficients = isp._ar_readout_coefficients
+-        whole_reference_presence = isp._ar_whole_reference_presence
++        canonical = self._tensor_peer_while_ready(width)
++
++        part_ids = getattr(isp, '_ar_word_part_ids', None)
++        part_mask = getattr(isp, '_ar_word_part_mask', None)
++        part_offsets = getattr(isp, '_ar_word_part_offsets', None)
++        concept_rows = getattr(isp, '_ar_word_concept_rows', None)
++        concept_orders = getattr(isp, '_ar_word_concept_orders', None)
++        object_rows = getattr(isp, '_ar_word_object_rows', None)
++        object_orders = getattr(isp, '_ar_word_object_orders', None)
++        object_atoms = getattr(isp, '_ar_word_object_atoms', None)
++        lookup_rows = getattr(isp, '_ar_concept_lookup_rows', None)
++        lookup_atoms = getattr(isp, '_ar_concept_lookup_atoms', None)
++        word_property_weights = getattr(ws, '_staged_word_primitive_counts', None)
++        reference_codes = getattr(isp, '_ar_percept_reference_codes', None)
++        reference_roles = getattr(isp, '_ar_percept_reference_roles', None)
++        part_reference_vectors = getattr(isp, '_ar_part_reference_vectors', None)
++        whole_reference_vectors = getattr(isp, '_ar_whole_reference_vectors', None)
++        readout_coefficients = getattr(isp, '_ar_readout_coefficients', None)
++        whole_reference_presence = getattr(isp, '_ar_whole_reference_presence', None)
++        if not torch.is_tensor(getattr(isp, '_packed_sentence_end_mask', None)):
++            positions = torch.arange(width, device=words.device).expand(B, -1)
++            last = torch.where(active, positions, -1).amax(-1)
++            isp._packed_sentence_end_mask = active & (positions == last[:, None])
++            isp._packed_sentence_intermediate_end_mask = torch.zeros_like(active)
++            isp._packed_sentence_ids = torch.where(active, 0, -1)
++            isp._packed_sentence_slot_end_positions = last[:, None]
++            isp._packed_sentence_slot_mask = (last >= 0)[:, None]
++            isp._packed_sentence_counts_host = tuple((last >= 0).to(torch.long).tolist())
+         sentence_end_mask = isp._packed_sentence_end_mask.to(
+             dtype=torch.bool)
+         intermediate_end_mask = (
+             isp._packed_sentence_intermediate_end_mask.to(dtype=torch.bool))
++        sentence_transactions = bool(getattr(self, '_sentence_seals', False))
+         sentence_ids = isp._packed_sentence_ids.to(dtype=torch.long)
+         commit_mask = getattr(isp, "_word_last_slot_mask", None)
+         if not torch.is_tensor(commit_mask):
+             commit_mask = active
+         else:
+             commit_mask = commit_mask.to(dtype=torch.bool)
++
++        if not canonical:
++            empty_rows = torch.full((B, width), -1, device=words.device, dtype=torch.long)
++            concept_rows = concept_rows if torch.is_tensor(concept_rows) else empty_rows
++            concept_orders = concept_orders if torch.is_tensor(concept_orders) else empty_rows.clone()
++            object_rows = object_rows if torch.is_tensor(object_rows) else empty_rows.clone()
++            object_orders = object_orders if torch.is_tensor(object_orders) else empty_rows.clone()
+ 
+         percept_dim = int(ps.subspace.muxedSize)
+         whole_dim = int(ws.subspace.muxedSize)
+@@ -21091,7 +21267,7 @@
+             isp._packed_sentence_slot_end_positions.shape[1])
+         zero_sentence_roots = words.new_zeros(
+             B, root_slots, concept_dim)
+-        zero_scalar = words.new_zeros(())
++        zero_scalar = words.new_zeros(B)
+         zero_whole = words.new_zeros(
+             B, whole_locations, whole_dim)
+         cs_sub_state = (
+@@ -21376,12 +21552,14 @@
+             post_op = unary_op = torch.full_like(current_stm[1], -1)
+             post_valid = unary_valid = torch.zeros_like(round_active)
+             for round_index in range(3):
++                if not torch.compiler.is_compiling() and not bool(round_active.any()):
++                    break
+                 before = final_stm
+                 slot = 3 * index + round_index
+                 choice = language.choose_operation(
+                     before, round_active, slots=slots_from_trace(trace_state, index),
+-                    sample=bool(getattr(self, '_exploration_trial', False)),
+                     masked_action=self._compose_masked_action(slot, before[1]),
++                    replay_action=self._compose_replayed_action(slot, before[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, before[0]))
+                 final_stm = cs.apply_language_choice(before, choice)
+                 binary = choice.applied & (choice.kind == 1)
+@@ -21422,19 +21600,25 @@
+             # stored at that sentence's end-word column, then only those rows
+             # receive the CS-owned soft reset before the next word arrives.
+             intermediate_end = _gather_word(
+-                intermediate_end_mask, index).reshape(B)
++                sentence_end_mask if sentence_transactions else intermediate_end_mask, index).reshape(B)
+             sealed_stm = final_stm
+             seal_width = max(1, 2 * capacity)
+             syntactic_budget = int(getattr(self, 'syntacticOrder', 0) or 0)
+             seal_budget = min(seal_width, syntactic_budget) if syntactic_budget > 0 else seal_width
+             seal_active = intermediate_end
+             for seal_index in range(seal_budget):
++                if not torch.compiler.is_compiling() and not bool(seal_active.any()):
++                    break
+                 pre_seal = sealed_stm
+-                slot = 3 * width + ((index + 1) % width) * seal_width + seal_index
++                group = ((index + 1) % width).expand(B)
++                if sentence_transactions:
++                    final = _gather_word(sentence_end_mask & ~intermediate_end_mask, index).reshape(B)
++                    group = torch.where(final, 0, group)
++                slot = 3 * width + group * seal_width + seal_index
+                 choice = language.choose_operation(
+                     pre_seal, seal_active, slots=slots_from_trace(trace_state, index),
+-                    sample=bool(getattr(self, '_exploration_trial', False)),
+                     masked_action=self._compose_masked_action(slot, pre_seal[1]),
++                    replay_action=self._compose_replayed_action(slot, pre_seal[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, pre_seal[0]))
+                 sealed_stm = cs.apply_language_choice(pre_seal, choice)
+                 binary = choice.applied & (choice.kind == 1)
+@@ -21481,10 +21665,9 @@
+             next_live_depth = torch.where(
+                 intermediate_end.reshape(B, 1),
+                 depth_candidate, current_cs_lang[14])
+-            final_stm = FunctionalPeerSTM.soft_reset_rows(
+-                sealed_stm, intermediate_end)
+-            wholes = ShortTermMemory.functional_wholes_reset(
+-                wholes, intermediate_end)
++            reset = torch.zeros_like(intermediate_end) if sentence_transactions else intermediate_end
++            final_stm = FunctionalPeerSTM.soft_reset_rows(sealed_stm, reset)
++            wholes = ShortTermMemory.functional_wholes_reset(wholes, reset)
+ 
+             next_cs_lang = (
+                 next_symbol_activations, next_loss_sum, next_loss_weight,
+@@ -21514,20 +21697,55 @@
+                 language_feedback,
+             )
+ 
+-        (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
+-         feedback, trip_count) = (
+-            TensorPeerWhilePipeline().run_cs_lanes_banked(
+-            words, active,
+-            stm_state=stm_state,
+-            cs_sub_state=cs_sub_state,
+-            cs_sym_state=cs_sym_state,
+-            cs_lang_state=cs_lang_state,
+-            empty_cs_sub=empty_cs_sub,
+-            empty_cs_sym=empty_cs_sym,
+-            empty_feedback=empty_feedback,
+-            stage_cs_sub=stage_cs_sub,
+-            stage_cs_sym=stage_cs_sym,
+-            stage_cs_lang=stage_cs_lang))
++        if sentence_transactions and canonical:
++            from SentenceCompose import compile_word_brick
++            stage_cs_sub = compile_word_brick(stage_cs_sub)
++            stage_cs_sym = compile_word_brick(stage_cs_sym)
++            stage_cs_lang = compile_word_brick(stage_cs_lang)
++        if sentence_transactions and not canonical:
++            def stage_cs_sub(word, gate, index, live, current_sub):
++                p = int(index)
++                result = self._per_word_body_step(word, p, gate,
++                    self._per_word_contributions, active_host=True, _pipeline_stage_a=True)
++                event, orders, row, activation = self._peer_stage_b(result, p, None, cache_only=True)
++                if not torch.is_tensor(orders):
++                    orders = torch.full(event.shape[:2], -1, device=event.device, dtype=torch.long)
++                if not torch.is_tensor(row):
++                    row = torch.full((B,), -1, device=event.device, dtype=torch.long)
++                if not torch.is_tensor(activation):
++                    activation = event.new_ones(B)
++                obj = torch.full_like(row, -1)
++                prior = self._per_word_contributions[p]
++                prior = torch.zeros_like(event[:, 0]) if prior is None else prior
++                self._per_word_contributions[p] = torch.where(gate, event[:, 0], prior)
++                payload = (event, orders, row, activation, obj, obj.clone(),
++                           event.new_zeros(B, concept_dim), gate, gate, *empty_feedback)
++                percept = ps.subspace.materialize()[:, 0]
++                slab = self._tensor_write_word_column(current_sub[1], index, percept)
++                return payload, (event, slab, *current_sub[2:])
++            def stage_cs_sym(payload, feedback, index, live, current_sym):
++                return payload, (payload[0],)
++        if sentence_transactions:
++            (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
++             feedback, trip_count) = self._run_sealed_word_bricks(
++                words, active, sentence_ids, stm_state, cs_sub_state,
++                cs_sym_state, cs_lang_state, empty_feedback,
++                stage_cs_sub, stage_cs_sym, stage_cs_lang)
++        else:
++            (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
++             feedback, trip_count) = (
++                TensorPeerWhilePipeline().run_cs_lanes_banked(
++                words, active,
++                stm_state=stm_state,
++                cs_sub_state=cs_sub_state,
++                cs_sym_state=cs_sym_state,
++                cs_lang_state=cs_lang_state,
++                empty_cs_sub=empty_cs_sub,
++                empty_cs_sym=empty_cs_sym,
++                empty_feedback=empty_feedback,
++                stage_cs_sub=stage_cs_sub,
++                stage_cs_sym=stage_cs_sym,
++                stage_cs_lang=stage_cs_lang))
+         final = (
+             *final_stm,
+             final_cs_sub[0],
+@@ -21579,15 +21797,16 @@
+             final[7], symbol_event=final[7].detach(),
+             prior_symbolic_event=None, language_plan=None)
+         cs.commit_event(final[7])
+-        cs.commit_percept_field(
++        if canonical:
++            cs.commit_percept_field(
+             final_cs_sub[3].clone(), final_cs_sub[4].clone(),
+             reference_codes=final_cs_sub[5].clone(),
+             reference_roles=final_cs_sub[6].clone(),
+-            evidence=final_cs_sub[7].clone(), evidence_mask=final_cs_sub[8].clone())
++                evidence=final_cs_sub[7].clone(), evidence_mask=final_cs_sub[8].clone())
+         object.__setattr__(cs, "_peer_prev_sub", cs.CSsub)
+         object.__setattr__(cs, "_peer_prev_sym", cs.CSsym)
+         cs._stm_predicted_idea = final[12]
+-        if capture_intra:
++        if capture_intra and not sentence_transactions:
+             cs._intra_loss_accum = [final[10]]
+             cs._intra_loss_weight_accum = [final[11]]
+             cs._intra_loss_count = 1
+@@ -21605,7 +21824,8 @@
+             object_rows >= 0, object_orders, concept_orders)
+         ss.commit_word_reference_slab(
+             symbol_rows, final[8], active, orders=symbol_orders)
+-        self._per_word_contributions = []
++        if canonical:
++            self._per_word_contributions = []
+         self._per_word_percept_contributions = final[9]
+         if trace is not None:
+             trace._choice_rule_ids = final[13]
+@@ -21952,7 +22172,8 @@
+         tensor_sentence_roots = None
+         tensor_chunk_state = None
+         _tensor_peer_pipeline = (
+-            _peer_pipeline and self._tensor_peer_while_ready(N_words))
++            bool(getattr(self, '_sentence_seals', False))
++            or (_peer_pipeline and self._tensor_peer_while_ready(N_words)))
+         if _tensor_peer_pipeline:
+             # W is a capacity. The tensor loop stops at the last live column,
+             # drains the final conceptual transaction, and advances both
+@@ -22142,7 +22363,10 @@
+             # (The S2 Method-1 leaf slab -- the per-word percept events --
+             # was stashed above, BEFORE this reduce collapses the STM, so the
+             # exact teacher replay never sees the folded state.)
+-            S, post_depth = self._stm_reduce_to_single_S()
++            if getattr(self, '_packed_prediction_drained', False):
++                S, post_depth = self._stm_single_S, self._stm_post_depth
++            else:
++                S, post_depth = self._stm_reduce_to_single_S()
+             sentence_idea = S
+             sentence_post_depth = post_depth
+             if torch.is_tensor(tensor_sentence_roots):
+@@ -22229,6 +22453,8 @@
+                 and ltm_store is not None)
+             discourse_live = (discourse is not None and hasattr(
+                 discourse, 'observe_stm_end_state'))
++            if getattr(self, '_packed_prediction_drained', False):
++                discourse_live = ltm_consolidation_on = False
+             if ((discourse_live or ltm_consolidation_on) and not torch.compiler.is_compiling()
+                     and bool(getattr(self.inputSpace, "_sentence_pack_enabled", False))
+                     and torch.is_tensor(tensor_sentence_roots)):
+@@ -22240,7 +22466,7 @@
+                 end_slots, end_depth = self._final_end_state(S, post_depth)
+                 object.__setattr__(self, "_tensor_final_end_slots", end_slots)
+                 object.__setattr__(self, "_tensor_final_end_depth", end_depth)
+-                if not getattr(self, "_exploration_trial", False):
++                if self._compose_records_enabled():
+                     self._drain_packed_stm_end_states()
+                     self._packed_prediction_drained = True
+                 discourse_live = False
+@@ -22288,11 +22514,9 @@
+                         _boundary_registry(self), entries, payloads, depths,
+                         structured=(getattr(discourse, "expectation_scope", None)
+                                     == "structured")))
+-                # Skip on the explore trial (pass B): both sinks append the
+-                # sentence's end-state. Pass A already committed this
+-                # sentence; a second append would duplicate it (in the AR
+-                # deque AND the persistent store).
+-                if not getattr(self, '_exploration_trial', False):
++                # Pair trials write into independent runtime states; only
++                # the selected state's chain and persistent store survive.
++                if self._compose_records_enabled():
+                     # SINK (b) -- the discourse AR predict+observe (Task 7/8)
+                     # runs FIRST so its prediction is staged from the chain
+                     # state BEFORE this boundary's end-state lands in the
+--- a/bin/SentenceCompose.py
++++ b/bin/SentenceCompose.py
+@@ -0,0 +1,137 @@
++"""Eager sentence seals around fixed-shape numerical compose bricks."""
++import torch
++from contextlib import contextmanager
++from weakref import WeakValueDictionary
++from torch._subclasses.fake_tensor import is_fake
++
++
++class _SavedValue:
++    def __init__(self, value, storage, copy):
++        # Holding storage prevents its address being reused while a saved
++        # value is live, without retaining the original tensor's graph.
++        self.storage = storage
++        self.value = value.clone() if copy else value.detach()
++        self.version = None if copy else value._version
++
++    def unpack(self):
++        if self.version is not None and self.value._version != self.version:
++            raise RuntimeError('a sentence intermediate was mutated before backward')
++        return self.value
++
++
++@contextmanager
++def saved_sentence_values(parameters=(), buffers=()):
++    """Keep one immutable saved value per tensor view and parameter version.
++
++    Both paths backpropagate through the same perception after an optimizer
++    update. Autograd must read its original parameters and buffers. A shared weight may be
++    saved hundreds of times by the word/operator rounds; copying every save
++    would multiply dictionary memory by the number of uses.
++    """
++    protected = {value.untyped_storage()._cdata for values in (parameters, buffers)
++                 for value in values if value.layout == torch.strided}
++    saved = WeakValueDictionary()
++
++    def pack(value):
++        # HOP backward capture constructs symbolic placeholders here. They
++        # have no optimizer-owned runtime storage to freeze, and symbolic
++        # sizes are deliberately unhashable. Let the traced graph own them.
++        if is_fake(value):
++            return _SavedValue(value, None, False)
++        if value.layout != torch.strided:
++            return _SavedValue(value, None, True)
++        storage = value.untyped_storage()
++        base = value if value._base is None else value._base
++        if isinstance(base, torch.nn.Parameter):
++            protected.add(storage._cdata)
++        key = (storage._cdata, value._version, value.storage_offset(),
++               tuple(value.shape), value.stride(), value.dtype)
++        result = saved.get(key)
++        if result is None:
++            # Functional scratch and MLP intermediates are immutable. Retain
++            # them directly and check versions when read; only optimizer-owned
++            # storage needs a frozen copy across the two steps.
++            result = _SavedValue(value, storage, storage._cdata in protected)
++            saved[key] = result
++        return result
++
++    with torch.autograd.graph.saved_tensors_hooks(pack, lambda saved: saved.unpack()):
++        yield
++
++
++def compile_word_brick(function):
++    """Capture a fixed-shape word step; the sentence/optimizer boundary is eager."""
++    import util
++    backend = util.TheCompileBackend
++    if backend == 'none':
++        return function
++    backend = util._COMPILE_BACKENDS[0] if backend == 'auto' else backend
++    return torch.compile(function, backend=backend, fullgraph=True)
++
++
++def fork_perception(cache):
++    """Give a compose trial fresh leaves, with an exact pullback to perception.
++
++    Its backward can free the compose graph immediately. Only the single
++    perception graph survives the first optimizer update for the second path
++    and any batch-end answer objective.
++    """
++    leaves = {}
++    def visit(value):
++        if torch.is_tensor(value):
++            if not value.requires_grad:
++                return value
++            key = id(value)
++            if key not in leaves:
++                leaves[key] = (value, value.detach().requires_grad_())
++            return leaves[key][1]
++        return type(value)(visit(item) for item in value)
++    trial = visit(cache)
++    def pullback():
++        pairs = [(original, leaf.grad) for original, leaf in leaves.values()
++                 if leaf.grad is not None]
++        if pairs:
++            originals, gradients = zip(*pairs)
++            torch.autograd.backward(originals, gradients, retain_graph=True)
++    return trial, pullback
++
++
++def select_rows(exploit, explore, wins):
++    """Swap scratch tensor rows; no blended path and no model snapshot."""
++    if torch.is_tensor(exploit):
++        if exploit.ndim == 0:
++            raise ValueError('sentence state must retain its row dimension')
++        return torch.where(wins.reshape((-1,) + (1,) * (exploit.ndim - 1)),
++                           explore, exploit)
++    if isinstance(exploit, tuple):
++        return tuple(select_rows(a, b, wins) for a, b in zip(exploit, explore))
++    if isinstance(exploit, dict):
++        return {k: select_rows(v, explore[k], wins) for k, v in exploit.items()}
++    raise TypeError(f'unsupported sentence scratch state: {type(exploit).__name__}')
++
++
++def sentence_pair(cache, compose, score, step, *, active, training=True):
++    """Derive, train, then select one path independently in each row.
++
++    ``cache`` is the sentence's one perception. ``compose`` gets the exploit
++    path on its second call so it can replay its prefix and exclude one choice.
++    ``score`` returns a cost per row and the candidate's scratch commit value.
++    Only sentence objectives belong here; teacher answers run at batch end.
++    The caller publishes the returned state before perceiving the next sentence.
++    """
++    exploit = compose(cache, None)
++    cost_a, state_a = score(exploit, False)
++    if cost_a.shape != active.shape:
++        raise ValueError('sentence comparison requires one cost per row')
++    saved_a = cost_a.detach().clone()
++    if not training:
++        return state_a, saved_a[:, None], torch.zeros_like(active)
++    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
++    explore = compose(cache, exploit)
++    cost_b, state_b = score(explore, True)
++    if cost_b.shape != active.shape:
++        raise ValueError('sentence comparison requires one cost per row')
++    saved_b = cost_b.detach().clone()
++    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
++    wins = active & (saved_b < saved_a)
++    return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -23806,6 +23806,7 @@
+                 hidden_dim=max(_ws_dim, 8),
+                 feature_dim=_ws_dim,
+                 max_depth=max(int(outputShape[0]), 2),
++                temperature=float(TheXMLConfig.get("architecture.composeTemperature", 0.0)),
+             )
+ 
+         # Phase 1A.2: make the SYMBOL VQ codebook learnable by gradient
+--- a/data/model.xml
++++ b/data/model.xml
+@@ -27,6 +27,11 @@
+          so legacy configs keep deriving the mode from symbolicOrder > 0.
+          New configs should set <serial>true|false</serial> explicitly. -->
+     <!-- <serial>false</serial> -->
++
++    <!-- Hard compose sampling only; zero selects exact-logit argmax.
++         Both training derivations use this temperature. Model softmax
++         probabilities used for gradient credit remain untempered. -->
++    <composeTemperature>0</composeTemperature>
+ 
+     <!-- symbolicOrder is the symbolic / relational loop budget, not the
+          primary mode selector. Omitted here so legacy configs inherit the
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -75,6 +75,13 @@
+            derives it from symbolicOrder > 0 for legacy configs. New configs
+            should set it explicitly. -->
+       <xs:element name="serial" type="xs:boolean" minOccurs="0"/>
++      <!-- Sampling temperature shared by exploit/explore; zero is argmax.
++           Evaluation is always argmax. Gradient credit is untempered. -->
++      <xs:element name="composeTemperature" minOccurs="0" default="0">
++        <xs:simpleType><xs:restriction base="xs:double">
++          <xs:minInclusive value="0"/>
++        </xs:restriction></xs:simpleType>
++      </xs:element>
+       <xs:element name="modeSchedule" minOccurs="0">
+         <xs:simpleType><xs:restriction base="xs:string">
+           <xs:pattern value="serial|parallel|interleave:[1-9][0-9]*"/>
+--- a/test/test_arithmetic_isolation.py
++++ b/test/test_arithmetic_isolation.py
+@@ -119,7 +119,7 @@
+     steps = []
+     real_step = optimizer.step
+     def step(*args, **kwargs):
+-        steps.append(bool(model.symbolSpace.languageLayer.exploration_trial))
++        steps.append(getattr(model, '_sentence_trial', None) or 'batch')
+         return real_step(*args, **kwargs)
+     monkeypatch.setattr(optimizer, 'step', step)
+     try:
+@@ -128,7 +128,7 @@
+         result, _ = model.runBatch(train=True, batchSize=2, split='train',
+             optimizer=optimizer, batch_override=batch,
+             questions=(What.supervised(0), What.supervised(1)))
+-        assert steps == [False, True]  # exploit and distinct explore both train
++        assert steps == ['exploit', 'explore', 'batch']
+         assert bool(torch.isfinite(result.lossOut))
+         assert model._last_answer_mask.tolist() == [True, True]
+     finally:
+--- a/test/test_compose_pair_driver.py
++++ b/test/test_compose_pair_driver.py
+@@ -1,4 +1,4 @@
+-"""Exploit/explore both train; only exploit state survives the transaction."""
++"""Both compose trials train; the strictly lower-loss end state survives."""
+ import os
+ import re
+ import sys
+@@ -65,12 +65,18 @@
+     clock0 = m.present()
+     steps0 = int(getattr(m, '_training_step_count', 0))
+     observed = []
++    constraints = []
+     backward = m._backward_training_loss
+     def capture(total, *args, **kwargs):
+-        trace = m._reconstruction_stack()
+-        observed.append((bool(m.symbolSpace.languageLayer.exploration_trial), trace._choice_actions.detach().clone(),
+-                         m.conceptualSpace.stm._buffer.detach().clone(),
+-                         float(total.detach())))
++        if getattr(m, '_sentence_backward', False):
++            trace = m._reconstruction_stack()
++            alternative = m._sentence_trial == 'explore'
++            observed.append((alternative, trace._choice_actions.detach().clone(),
++                             m.conceptualSpace.stm._buffer.detach().clone(),
++                             float(total.detach())))
++            if alternative:
++                constraints.append((m._compose_prefix_slots.detach().clone(),
++                                    m._compose_forced_slots.detach().clone()))
+         return backward(total, *args, **kwargs)
+     monkeypatch.setattr(m, '_backward_training_loss', capture)
+     try:
+@@ -81,10 +87,50 @@
+         assert all(torch.isfinite(torch.tensor(row[3])) for row in observed)
+         assert m.present() - clock0 == 1
+         assert m._training_step_count - steps0 == 1
+-        torch.testing.assert_close(m._reconstruction_stack()._choice_actions, observed[0][1])
++        chosen = torch.where(m._sentence_winners[0][:, None], observed[1][1], observed[0][1])
++        torch.testing.assert_close(m._reconstruction_stack()._choice_actions, chosen)
+         assert (observed[0][1] != observed[1][1]).any(-1).all()
++        prefix, forced = constraints[0]
++        assert torch.equal(observed[0][1][prefix], observed[1][1][prefix])
++        assert (observed[0][1][forced] != observed[1][1][forced]).all()
+         assert m._exploration_trial is False
++        assert not hasattr(m, '_compose_state_snapshot')
+         assert m._compose_exploit_actions is None
++    finally:
++        m.End()
++        m.symbolSpace.soft_reset()
++
++
++def test_evaluation_repeats_the_same_program_without_an_explore_trial(monkeypatch):
++    m = _build('<composeTemperature>2</composeTemperature>')
++    batch = _batch(m)
++    original = m._run_batch_once
++    from functools import wraps
++    calls = []
++    @wraps(original)
++    def once(*args, **kwargs):
++        calls.append((kwargs['train'], kwargs['exploration_trial']))
++        return original(*args, **kwargs)
++    monkeypatch.setattr(m, '_run_batch_once', once)
++    def forbidden(*args, **kwargs):
++        raise AssertionError('evaluation attempted a backward')
++    monkeypatch.setattr(m, '_backward_training_loss', forbidden)
++    # The model normally stamps a new .when value on every public batch.
++    # Identical words at different times are different numerical inputs.
++    # Hold time fixed for this deterministic-choice probe; clock cadence is
++    # checked separately above.
++    monkeypatch.setattr(m, '_advance_when_time', lambda: None)
++    programs = []
++    try:
++        for _ in range(2):
++            with warnings.catch_warnings():
++                warnings.filterwarnings('ignore')
++                m.runBatch(train=False, batchSize=4, batch_override=batch)
++            programs.append(m._derivation_program()[1].detach().clone())
++            m.End()
++            m.symbolSpace.soft_reset()
++        assert calls == [(False, False), (False, False)]
++        assert torch.equal(programs[0], programs[1])
+     finally:
+         m.End()
+         m.symbolSpace.soft_reset()
+--- a/test/test_compose_records.py
++++ b/test/test_compose_records.py
+@@ -1,10 +1,8 @@
+ """Hard-path provenance and the exploration runtime transaction."""
+-from dataclasses import dataclass
+ from types import SimpleNamespace
+ 
+ import pytest
+ import torch
+-from torch import nn
+ 
+ from Models import BasicModel
+ from Language import LanguageSpace
+@@ -64,70 +62,19 @@
+         BasicModel._derivation_program(model)
+ 
+ 
+-@dataclass
+-class Lesson:
+-    targets: dict
+ 
+ 
+-class Runtime(nn.Module):
+-    def __init__(self):
+-        super().__init__()
+-        self.parameter = nn.Parameter(torch.tensor(2.))
+-        self.memory = nn.Module()
+-        self.memory.register_buffer('rows', torch.tensor([3.]))
+-        self._concept_allocator = SimpleNamespace(_layers={}, next_id=4, identity={1: 2})
+-        self.taxonomy = SimpleNamespace(children={1: [2]}, priming=torch.tensor([3.]))
+-        self._category_learner = SimpleNamespace(pending={1: torch.tensor([4.])}, step=5)
+-        from Layers import RadixTrie
+-        self.radix_trie = RadixTrie()
+-        self.radix_trie.insert(b'cat', 0)
+-        self.inverse_table = [b'cat']
+-        self.teacher = SimpleNamespace(lesson=Lesson({'clean': torch.tensor([5.])}))
+-        self.errors = SimpleNamespace(values={'exploit': [1.]})
+-        self.trace = SimpleNamespace(actions=torch.tensor([1]))
+-
+-    def _synthesis_state_objects(self):
+-        return []
+-
+-    def _reconstruction_stack(self):
+-        return self.trace
+-
+-    def _what_memory(self):
+-        return self.memory
+ 
+ 
+-def test_runtime_restore_keeps_learning_but_restores_memory_trace_and_plain_owners():
+-    model = Runtime()
+-    saved = BasicModel._compose_state_snapshot(model)
+-    with torch.no_grad():
+-        model.parameter.add_(7)
+-        model.memory.rows.add_(10)
+-    model._concept_allocator.next_id = 9
+-    model._concept_allocator.identity[1] = 99
+-    model.taxonomy.children[1].append(99)
+-    model.taxonomy.priming.fill_(99)
+-    model._category_learner.pending[1].fill_(99)
+-    model._category_learner.step = 99
+-    model.radix_trie.insert(b'car', 1)  # splits an existing mutable edge
+-    model.inverse_table.append(b'car')
+-    model.teacher.lesson.targets['clean'].fill_(99)
+-    model.trace.actions.fill_(99)
+-    model.errors.values['explore'] = [2.]
+-    BasicModel._restore_compose_state(saved)
+-    assert model.parameter.item() == 9
+-    assert model.memory.rows.tolist() == [3.]
+-    assert model._concept_allocator.next_id == 4
+-    assert model._concept_allocator.identity == {1: 2}
+-    assert model.taxonomy.children == {1: [2]}
+-    assert model.taxonomy.priming.tolist() == [3.]
+-    assert model._category_learner.pending[1].tolist() == [4.]
+-    assert model._category_learner.step == 5
+-    assert model.radix_trie.get(b'cat') == 0
+-    assert model.radix_trie.get(b'car') is None
+-    assert model.inverse_table == [b'cat']
+-    assert model.teacher.lesson.targets['clean'].tolist() == [5.]
+-    assert model.trace.actions.tolist() == [1]
+-    assert model.errors.values == {'exploit': [1.]}
++
++
++def test_incomplete_forest_keeps_its_slots_for_reconstruction():
++    buffer = torch.tensor([[[2., 3.], [5., 7.], [0., 0.]]])
++    model = SimpleNamespace(conceptualSpace=SimpleNamespace(
++        stm=SimpleNamespace(_buffer=buffer)))
++    slots, depth = BasicModel._final_end_state(model, buffer[:, 1], torch.tensor([-2]))
++    torch.testing.assert_close(slots, buffer)
++    assert depth.tolist() == [-1]  # still ineligible for memory
+ 
+ 
+ def test_parallel_completion_guards_memory_without_serial_depths():
+@@ -163,139 +110,16 @@
+         assert ((owners == sid) & forced).sum(1).tolist() == [1, 1]
+ 
+ 
+-@pytest.mark.parametrize('staged', [None, [[11], [12]]])
+-def test_explore_reuses_the_teachers_staged_addresses(staged):
+-    model = Runtime()
+-    model.symbolSpace = nn.Module()
+-    model.symbolSpace.languageLayer = nn.Module()
+-    model.symbolSpace.languageLayer.operation_layer = nn.Identity()
+-    model.when_time = torch.tensor(1.)
+-    model.teacher._staged_source_rows = staged
+-    model.teacher._staged_split = 'train'
+-    def stage(split, rows):
+-        model.teacher._staged_source_rows = rows
+-        model.teacher._staged_split = split
+-    model.teacher.stage_batch_sources = stage
+-    observed = []
+-    def once(*, train=True, split='train', exploration_trial=False, source_rows=None):
+-        observed.append(model.teacher._staged_source_rows)
+-        model.teacher._staged_source_rows = None
+-        model.teacher._staged_split = None
+-        return object(), 0
+-    model._run_batch_once = once
+-    model._compose_state_snapshot = lambda: BasicModel._compose_state_snapshot(model)
+-    model._restore_compose_state = BasicModel._restore_compose_state
+-    model._compose_completed_rows = lambda: None
+-    model._exploration_constraints = lambda: (None, None, None)
+-    # Grammar-lesson row metadata need not be Teacher corpus addresses.
+-    BasicModel._run_batch_pair(model, source_rows=[0, 1])
+-    assert observed == [staged, staged]
+-    assert model.teacher._staged_source_rows is None
+ 
+ 
+-def test_contextual_dictionary_restore_preserves_owned_storage_and_reader_aliases():
+-    from Spaces import Codebook
+-    model = Runtime()
+-    model.dictionary = Codebook()
+-    model.dictionary.W = nn.Parameter(torch.eye(3))
+-    model.dictionary.nVectors = 3
+-    model.dictionary.enable_contextual_rotation()
+-    model.dictionary.freeze_capacity('exploration transaction regression')
+-    model.reader = nn.Module()
+-    model.reader.storage = model.dictionary.W
+-    storage = model.dictionary.W
+-    saved = BasicModel._compose_state_snapshot(model)
+-    with torch.no_grad():
+-        storage.add_(4.)
+-    BasicModel._restore_compose_state(saved)
+-    assert model.dictionary.W is storage
+-    assert model.reader.storage is storage
+-    model.dictionary._assert_frozen_parameter_identity()
+-    torch.testing.assert_close(storage, torch.eye(3), rtol=0, atol=0)
+ 
+ 
+-def test_sparse_topology_restore_retains_shared_learning_and_exploit_only_edges():
+-    from Layers import SparseLayer
+-    model = Runtime()
+-    model.sparse = SparseLayer(4, 4)
+-    matrix = model.sparse
+-    matrix.add_edge(0, 1, weight=1.)
+-    optimizer = torch.optim.Adam([matrix.values], lr=.01)
+-    matrix._optimizer = optimizer
+-    before = BasicModel._compose_state_snapshot(model)
+-    def train(scale):
+-        optimizer.zero_grad(set_to_none=True)
+-        (matrix.values.sum() * scale).backward()
+-        optimizer.step()
+-    matrix.add_edge(1, 2, weight=2.)
+-    train(1.)
+-    committed = BasicModel._compose_state_snapshot(model)
+-    exploit_value = matrix.values[1].detach().clone()
+-    exploit_moment = optimizer.state[matrix.values]['exp_avg'][1].clone()
+-    BasicModel._restore_compose_state(before)
+-    assert matrix.nnz == len(matrix.values) == 1
+-    # This alternative reuses the rolled-back allocation id but has a
+-    # different meaning. Its value and optimizer history must stay ephemeral.
+-    matrix.add_edge(2, 3, weight=3.)
+-    train(2.)
+-    shared_value = matrix.values[0].detach().clone()
+-    shared_moment = optimizer.state[matrix.values]['exp_avg'][0].clone()
+-    BasicModel._restore_compose_state(committed, sparse_scope=before)
+-    assert list(zip(matrix._rows, matrix._cols)) == [(0, 1), (1, 2)]
+-    assert matrix.nnz == len(matrix.values) == 2
+-    torch.testing.assert_close(matrix.values, torch.stack((shared_value, exploit_value)))
+-    torch.testing.assert_close(optimizer.state[matrix.values]['exp_avg'],
+-                               torch.stack((shared_moment, exploit_moment)))
+-    owned = [p for group in optimizer.param_groups for p in group['params']]
+-    assert len(owned) == 1 and owned[0] is matrix.values
+ 
+ 
+-def test_runtime_restore_retains_warn_once_history_created_by_either_trial():
+-    model = Runtime()
+-    before = BasicModel._compose_state_snapshot(model)
+-    model._zeroed_channel_warned = {'exploit-warning'}
+-    committed = BasicModel._compose_state_snapshot(model)
+-    BasicModel._restore_compose_state(before)
+-    assert model._zeroed_channel_warned == {'exploit-warning'}
+-    model._zeroed_channel_warned.add('explore-warning')
+-    BasicModel._restore_compose_state(committed)
+-    assert model._zeroed_channel_warned == {'exploit-warning', 'explore-warning'}
+ 
+ 
+-def test_sparse_explore_only_parameter_and_optimizer_state_are_discarded():
+-    from Layers import SparseLayer
+-    model = Runtime()
+-    model.sparse = SparseLayer(4, 4)
+-    matrix = model.sparse
+-    optimizer = torch.optim.Adam([model.parameter], lr=.01)
+-    matrix._optimizer = optimizer
+-    committed = BasicModel._compose_state_snapshot(model)
+-    matrix.add_edge(0, 1, weight=1.)
+-    matrix.values.sum().backward()
+-    optimizer.step()
+-    BasicModel._restore_compose_state(committed, sparse_scope=committed)
+-    assert matrix.nnz == 0 and matrix.values is None
+-    owned = [p for group in optimizer.param_groups for p in group['params']]
+-    assert len(owned) == 1 and owned[0] is model.parameter
+-    assert not optimizer.state
+ 
+ 
+-def test_bounded_history_and_nested_values_restore_without_cross_trial_aliases():
+-    from collections import deque
+-    model = Runtime()
+-    model.history = deque([{'value': torch.tensor([1.])}], maxlen=2)
+-    model.memory.history = model.history
+-    before = BasicModel._compose_state_snapshot(model)
+-    model.history.append({'value': torch.tensor([2.])})
+-    committed = BasicModel._compose_state_snapshot(model)
+-    BasicModel._restore_compose_state(before)
+-    assert len(model.history) == 1
+-    model.history[0]['value'].add_(10.)
+-    model.history.append({'value': torch.tensor([99.])})
+-    BasicModel._restore_compose_state(committed)
+-    assert model.history.maxlen == 2
+-    assert model.history is model.memory.history
+-    assert [entry['value'].item() for entry in model.history] == [1., 2.]
+ 
+ 
+ def test_one_word_packed_sentence_has_its_own_seal_and_program():
+--- a/test/test_compose_review.py
++++ b/test/test_compose_review.py
+@@ -0,0 +1,128 @@
++"""September 27 review: sampling, model credit, evaluation and winning state."""
++import pytest
++import torch
++
++from Language import OperationSelectionLayer
++from test_compose_operations import Add, Negate, layer
++
++
++def test_zero_temperature_is_valid_and_keeps_the_chooser_gradient():
++    step = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()],
++                                   temperature=0)
++    with torch.no_grad():
++        step.reduce_anchor.fill_(1)
++        step.apply_anchor.zero_()
++    x = torch.tensor([[[1.], [2.], [3.]]], requires_grad=True)
++    _, path, route = step(x, sample=True)
++    path.sum().backward()
++    assert route['action'].tolist() == [1]
++    assert 0 < route['probability'].item() < 1
++    assert step.reduce_anchor.grad.abs().sum() > 0
++    assert step.apply_anchor.grad.abs().sum() > 0
++
++
++def test_temperature_and_forced_mask_do_not_change_model_credit():
++    step = layer()
++    x = torch.tensor([[[1.], [2.], [3.]]])
++    expected = torch.tensor([[3., 5., 0., 0., 0., -torch.inf]]).softmax(-1)
++    for temperature in (0., .25, 2.):
++        step.temperature = temperature
++        _, _, route = step(x, masked_action=torch.tensor([1]))
++        assert route['action'].tolist() == [0]
++        torch.testing.assert_close(route['probabilities'], expected)
++        torch.testing.assert_close(route['probability'], expected[:, 0])
++
++
++def test_zero_temperature_explore_is_identical_until_the_forced_round(monkeypatch):
++    step = layer()
++    step.temperature = 0.
++    x = torch.tensor([[[1.], [2.], [3.]]]).expand(3, -1, -1)
++    exploit = step.derive(x, slots=1, rounds=6)
++    # Exploit's optimizer step can change the preferred action. Its prefix
++    # must still be replayed when exploring under the updated parameters.
++    with torch.no_grad():
++        step.reduce_anchor.fill_(-2.)
++    monkeypatch.setattr(torch, 'rand', lambda *a, **kw:
++                        torch.tensor([.0, .34, .99], device=kw.get('device')))
++    explore = step.derive(x, slots=1, rounds=6, exploit=exploit)
++    assert explore['forced_round'].tolist() == [0, 1, 2]
++    for b, forced in enumerate(explore['forced_round'].tolist()):
++        assert torch.equal(explore['actions'][b, :forced], exploit['actions'][b, :forced])
++        assert explore['actions'][b, forced] != exploit['actions'][b, forced]
++
++
++def test_evaluation_ignores_sampling_temperature_and_does_not_explore(monkeypatch):
++    step = layer().eval()
++    step.temperature = 3.
++    def forbidden(*args, **kwargs):
++        raise AssertionError('evaluation requested a random draw')
++    monkeypatch.setattr(torch, 'rand', forbidden)
++    monkeypatch.setattr(torch, 'rand_like', forbidden)
++    x = torch.tensor([[[1.], [2.], [3.]]])
++    first, unused = step.derive_pair(x, slots=1, rounds=6)
++    second = step.derive(x, slots=1, rounds=6)
++    assert unused is None
++    assert torch.equal(first['actions'], second['actions'])
++
++
++@pytest.mark.parametrize('temperature', [-1., float('inf'), float('nan')])
++def test_sampling_temperature_must_be_finite_and_nonnegative(temperature):
++    with pytest.raises(ValueError, match='temperature'):
++        OperationSelectionLayer(d_model=1, ops=[Add()], temperature=temperature)
++
++
++def test_sampling_temperature_changes_only_the_hard_draw(monkeypatch):
++    step = layer()
++    x = torch.tensor([[[1.], [2.], [3.]]])
++    noise = torch.tensor([[3., 0., 0., 0., 0., 0.]])
++    monkeypatch.setattr(torch, 'rand_like', lambda like:
++                        torch.exp(-torch.exp(-noise.to(like))))
++    step.temperature = .1
++    _, _, cold = step(x, sample=True)
++    step.temperature = 1.
++    _, _, warm = step(x, sample=True)
++    assert cold['action'].tolist() == [1]
++    assert warm['action'].tolist() == [0]
++    torch.testing.assert_close(cold['probabilities'], warm['probabilities'])
++
++
++def test_sampling_temperature_is_read_from_the_shared_xml_element():
++    from test_compose_pair_driver import _build
++    model = _build('<composeTemperature>0.7</composeTemperature>')
++    try:
++        assert model.symbolSpace.languageLayer.operation_layer.temperature == .7
++        assert model.languageSpace._tree_layer(2) is model.symbolSpace.languageLayer.operation_layer
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++
++
++def test_zero_temperature_prefix_uses_execution_order_for_packed_seals():
++    from types import SimpleNamespace as NS
++    from Models import BasicModel
++    # Two one-word sentences: first seal is group 1, final seal is group 0.
++    actions = torch.full((1, 14), -1, dtype=torch.long)
++    actions[0, [0, 10, 3, 6]] = 2
++    forced = torch.zeros_like(actions, dtype=torch.bool)
++    forced[0, [10, 6]] = True
++    model = NS(inputSpace=NS(_word_active_mask=torch.ones(1, 2, dtype=torch.bool),
++                            _packed_sentence_ids=torch.tensor([[0, 1]])),
++               conceptualSpace=NS(stm=NS(capacity=2)))
++    owners, _, _ = BasicModel._compose_round_owners(model, actions)
++    prefix = BasicModel._exploration_prefix_slots(model, actions, forced, owners)
++    assert prefix.nonzero().tolist() == [[0, 0], [0, 3]]
++
++
++@pytest.mark.parametrize('explore_loss, expected', [(1., True), (2., False), (3., False)])
++def test_only_a_strictly_lower_loss_commits_the_alternative(explore_loss, expected):
++    from SentenceCompose import sentence_pair
++    counter = []
++    def compose(cache, prior):
++        return torch.tensor([1. if prior is None else 10.])
++    def score(path, alternative):
++        return torch.tensor([explore_loss if alternative else 2.]), path
++    state, costs, wins = sentence_pair(None, compose, score, lambda loss: counter.append(loss),
++        active=torch.tensor([True]))
++    assert len(counter) == 2
++    assert wins.item() is expected
++    assert state.item() == (10 if expected else 1)
+--- a/test/test_generation_catalog.py
++++ b/test/test_generation_catalog.py
+@@ -209,18 +209,32 @@
+     optimizer = model.getOptimizer(lr=.001)
+     recorded, observed = {}, {}
+     record, backward = model.record_loss, model._backward_training_loss
++    sentence_sources = []
++    path_cost = model._sentence_path_cost
++
++    def capture_sentence_source(path, *args):
++        sentence_sources.append(path[0][0])
++        return path_cost(path, *args)
++
++    monkeypatch.setattr(model, '_sentence_path_cost', capture_sentence_source)
+ 
+     def record_loss(name, value, **kwargs):
+         recorded[name] = value
+         return record(name, value, **kwargs)
+ 
+     def check_gradients(total, amp_scaler=None):
++        if getattr(model, '_sentence_backward', False):
++            assert 'output' not in recorded
++            return backward(total, amp_scaler)
+         construction = model._last_answer_construction
+         loss = recorded["output"]
+         assert loss.requires_grad and float(loss.detach()) > 0
+-        sources = [program.end_state for program in construction.derivation.program]
+-        sources = [value for value in sources if value.requires_grad]
+-        assert sources, "the forward must carry a live conclusion for this boundary probe"
++        assert all(not program.end_state.requires_grad
++                   for program in construction.derivation.program if program is not None)
++        # The committed program is detached at its seal. Keep the actual
++        # pre-commit tensors to check that answer loss cannot revisit them.
++        sources = [value for value in sentence_sources if value.requires_grad]
++        assert sources, "the sentence trials must carry live compose conclusions"
+         groups = model._shared_operator_parameter_groups(optimizer)
+         named = [(name, p) for name, params in groups.items() for p in params]
+         conditioner = model.question_conditioners[str(model.conceptualSpace.stm.concept_dim)].weight
+--- a/test/test_ir_only_refactor.py
++++ b/test/test_ir_only_refactor.py
+@@ -270,8 +270,7 @@
+         _orig_concepts = m._reverse_input_surface
+ 
+         def _spy_concepts(x):
+-            seeds.append((bool(m.symbolSpace.languageLayer.exploration_trial),
+-                          x.materialize().detach().clone(),
++            seeds.append((x.materialize().detach().clone(),
+                           m._last_understanding.conceptual_state.detach().clone()))
+             return _orig_concepts(x)
+ 
+@@ -287,12 +286,10 @@
+         # Concepts-seeded reverse fired; head-seeded reverse did NOT --
+         # reconstruction no longer dispatches on the (gone) enum.
+         self.assertTrue(seeds, "input reconstruction must realize the conceptual seed")
+-        self.assertEqual({explore for explore, _, _ in seeds}, {False, True})
+-        for explore, seed, owned_state in seeds:
++        for seed, owned_state in seeds:
+             torch.testing.assert_close(seed, owned_state, rtol=0, atol=0)
+-            if not explore:
+-                torch.testing.assert_close(
+-                    seed, m._last_understanding.conceptual_state, rtol=0, atol=0)
++            torch.testing.assert_close(
++                seed, m._last_understanding.conceptual_state, rtol=0, atol=0)
+         # The concepts reconstruction term is present and finite.
+         terms = {t[0]: t[1] for t in Layers.TheError.terms()}
+         self.assertIn(
+--- a/test/test_joint_objectives.py
++++ b/test/test_joint_objectives.py
+@@ -278,14 +278,18 @@
+     torch.testing.assert_close(p.grad, rg + og)
+ 
+ 
+-def test_real_runbatch_uses_one_backward_and_one_optimizer_step_per_derivation(monkeypatch):
++@pytest.mark.parametrize('config_name, expected', [
++    ('MM_xor.xml', ['batch']),
++    ('MM_xor_loopback.xml', ['exploit', 'explore', 'batch']),
++])
++def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypatch, config_name, expected):
+     import Models
+     from data import TheData
+     from util import init_config
+ 
+     monkeypatch.setenv("MODEL_COMPILE", "none")
+     project = os.path.dirname(os.path.dirname(__file__))
+-    config = os.path.join(project, "data", "MM_xor.xml")
++    config = os.path.join(project, "data", config_name)
+     init_config(path=config, defaults_path=os.path.join(project, "data", "model.xml"))
+     TheData.load("xor")
+     model, _ = Models.BaseModel.from_config(config, data=TheData)
+@@ -299,11 +303,11 @@
+ 
+     def inspect_backward(total, *args, **kwargs):
+         assert total.requires_grad
+-        calls.append(bool(model.symbolSpace.languageLayer.exploration_trial))
++        calls.append(model._sentence_trial if getattr(model, '_sentence_backward', False) else 'batch')
+         return original_backward(total, *args, **kwargs)
+ 
+     def inspect_step(*args, **kwargs):
+-        steps.append(bool(model.symbolSpace.languageLayer.exploration_trial))
++        steps.append(getattr(model, '_sentence_trial', None) or 'batch')
+         return original_step(*args, **kwargs)
+ 
+     monkeypatch.setattr(model, "_backward_training_loss", inspect_backward)
+@@ -316,7 +320,7 @@
+             train=True, batchSize=2, split="train", optimizer=optimizer,
+             batch_override=batch)
+         assert result is not None
+-    assert calls == steps == [False, True, False, True]
++    assert calls == steps == expected * 2
+ 
+ 
+ def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeypatch, tmp_path):
+--- a/test/test_output_path_supervised.py
++++ b/test/test_output_path_supervised.py
+@@ -217,6 +217,9 @@
+         return record(name, value, **kwargs)
+ 
+     def backward_probe(total, amp_scaler=None):
++        if getattr(m, '_sentence_backward', False):
++            assert 'output' not in recorded
++            return backward(total, amp_scaler)
+         params = _dedicated_answer_parameters(m)
+         observed["params"] = params
+         observed["before"] = [p.detach().clone() for p in params]
+--- a/test/test_output_walk.py
++++ b/test/test_output_walk.py
+@@ -277,6 +277,13 @@
+         return record(name, value, **kwargs)
+ 
+     def backward_probe(total, amp_scaler=None):
++        if getattr(m, '_sentence_backward', False):
++            assert m._output_policy_cost is None
++            assert 'output_policy' not in recorded
++            observed['total_grads'] = torch.autograd.grad(
++                total, params, retain_graph=True, allow_unused=True)
++            assert all(g is None for g in observed['total_grads'])
++            return backward(total, amp_scaler)
+         cost = m._output_policy_cost
+         observed["raw_grads"] = torch.autograd.grad(
+             cost.sum(), params, retain_graph=True, allow_unused=True)
+@@ -882,7 +889,9 @@
+     try:
+         with torch.no_grad():
+             _stage_packed(m, [["12 plus 1", "3 plus 4"], ["8 plus 2"]])
++            layout = m.inputSpace._packed_sentence_slot_mask.clone()
+             out = m._forward_with_compiled_sentence_state(None)
++            assert torch.equal(m.inputSpace._packed_sentence_slot_mask, layout)
+             u = m._capture_understanding(out)
+             assert u.sentence_programs[0][0] is not None
+             assert u.sentence_programs[1][0] is not None
+--- a/test/test_sentence_compose.py
++++ b/test/test_sentence_compose.py
+@@ -0,0 +1,268 @@
++"""The seal is the transaction boundary, including ragged packed rows."""
++import torch
++import pytest
++
++
++def test_cached_perception_keeps_original_values_across_parameter_updates():
++    from SentenceCompose import saved_sentence_values
++    parameter = torch.nn.Parameter(torch.tensor([2., 3.]))
++    x = torch.tensor([5., 7.], requires_grad=True)
++    with saved_sentence_values((parameter,)):
++        cache = x * parameter
++        first = cache.square().sum()
++        first.backward(retain_graph=True)
++        old_gradient = x.grad.clone()
++        with torch.no_grad():
++            parameter.add_(10)
++        x.grad = None
++        parameter.grad = None
++        cache.square().sum().backward()
++        torch.testing.assert_close(x.grad, old_gradient)
++        torch.testing.assert_close(parameter.grad, 2 * x.detach().square() * torch.tensor([2., 3.]))
++
++
++def test_sentence_winners_are_row_local_and_precede_the_next_perception():
++    from SentenceCompose import sentence_pair
++    parameter = torch.nn.Parameter(torch.tensor(0.))
++    optimizer = torch.optim.SGD([parameter], lr=.1)
++    context = torch.zeros(3)
++    perceptions, updates, observations = [], [], []
++    for sid in range(2):
++        # This is the input to perception, before either compose trial.
++        perceptions.append(context.clone())
++        cache = context.clone()
++        def compose(cached, prior):
++            updates.append(float(parameter.detach()))
++            assert cached is cache
++            return cached + (1 if prior is None else 10)
++        def score(path, alternative):
++            # Opposite winners in rows 0/1, exact tie in row 2.
++            base = torch.tensor([1., 3., 2.] if alternative else [3., 1., 2.])
++            return base - (parameter - parameter.detach()), path
++        def step(loss):
++            optimizer.zero_grad()
++            loss.backward()
++            optimizer.step()
++        chosen, costs, wins = sentence_pair(cache, compose, score, step,
++                                            active=torch.ones(3, dtype=torch.bool))
++        context = chosen
++        observations.append(chosen.clone())
++        assert wins.tolist() == [True, False, False]
++        assert costs.shape == (3, 2)
++    assert perceptions[0].tolist() == [0, 0, 0]
++    assert perceptions[1].tolist() == [10, 1, 1]
++    assert observations[-1].tolist() == [20, 2, 2]
++    assert updates[1] > updates[0] and updates[3] > updates[2]
++
++
++def test_evaluation_has_one_trial_and_no_step():
++    from SentenceCompose import sentence_pair
++    calls = []
++    def compose(cache, prior):
++        calls.append(prior)
++        return cache
++    def forbidden(*args):
++        raise AssertionError('evaluation requested training')
++    chosen, costs, wins = sentence_pair(torch.tensor([2., 3.]), compose,
++        lambda path, _: (path, path), forbidden,
++        active=torch.tensor([True, False]), training=False)
++    assert calls == [None]
++    assert chosen.tolist() == [2., 3.]
++    assert not wins.any()
++
++
++@pytest.mark.parametrize('compiled', [False, True])
++def test_real_packed_seals_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
++    from test_compiled_word_chunk import _tiny_canonical_model
++    from test_reverse_traversal import _select_completed_binary_path
++    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
++        concept_rows=256, part_rows=128, training_overrides={'intraLossWeight': 0},
++        architecture_overrides={'ltmConsolidation': True})
++    # Completion is a fixture for this causal mechanism test. Both winners
++    # must leave a real predecessor, regardless of the untrained chooser.
++    _select_completed_binary_path(model)
++    optimizer = model.getOptimizer(lr=1e-4)
++    import util
++    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
++    model.reconstruction_placement = 'eager'
++    def eager_while(condition, body, values):
++        while bool(condition(*values)):
++            values = body(*values)
++        return values
++    monkeypatch.setattr(torch, 'while_loop', eager_while)
++    if compiled:
++        import SentenceCompose
++        monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
++            lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
++    # Sentence ends land at different word columns in the two rows; the
++    # first row's one-word sentence also exercises its dedicated seal trace.
++    raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
++    events = []
++    candidates, prior_context = {}, []
++    path_cost = model._sentence_path_cost
++    def controlled_cost(path, sid, active):
++        cost, recon, observation, pending = path_cost(path, sid, active)
++        alternative = model._sentence_trial == 'explore'
++        candidates[sid, alternative] = observation
++        if sid == 1:
++            # The second sentence sees exactly the chain committed by the
++            # first, including its occurrence identity, in both trials.
++            disc = model.symbolSpace.discourse
++            assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
++        fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
++        return cost - cost.detach() + fixed, recon, observation, pending
++    monkeypatch.setattr(model, '_sentence_path_cost', controlled_cost)
++    perceived = []
++    # The perception owner must see the committed predecessor before it is
++    # called for the next sentence. The second compose must not call it again.
++    perceive = model.perceptualSpace.synthesize_word_parts
++    def perception(*args, **kwargs):
++        # Input staging also builds a detached reporting slab. Count the
++        # live word perception shared by the two compose/backward paths.
++        if torch.is_grad_enabled() and not torch.compiler.is_compiling():
++            perceived.append(len(model._sentence_programs))
++            if len(model._sentence_programs) == 1:
++                disc = model.symbolSpace.discourse
++                assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
++        return perceive(*args, **kwargs)
++    if not compiled:
++        monkeypatch.setattr(model.perceptualSpace, 'synthesize_word_parts', perception)
++    original = model._sentence_train_step
++    def step(loss):
++        events.append(('step', float(loss.detach())))
++        return original(loss)
++    monkeypatch.setattr(model, '_sentence_train_step', step)
++    commit = model._commit_sentence
++    def observe(*args):
++        events.append(('commit', args[1]))
++        result = commit(*args)
++        disc = model.symbolSpace.discourse
++        context = tuple(tuple(row) for row in disc._inter_context_occurrences)
++        assert [len(row) for row in context] == [args[1] + 1] * 2
++        assert all(occurrence is not None for row in context for occurrence in row)
++        for b, alternative in enumerate((True, False)):
++            expected = candidates[args[1], alternative]
++            roles, occupied = disc._canonical_meaning(
++                expected['observed'][b], expected['observed_depths'][b], expected['layout'],
++                None if expected['roles'] is None else expected['roles'][b])
++            depth, payload, mask = disc._inter_context[b][-1]
++            assert depth == int(occupied.sum())
++            torch.testing.assert_close(payload, roles)
++            torch.testing.assert_close(mask, occupied)
++        if args[1] == 0:
++            prior_context.append(context)
++        return result
++    monkeypatch.setattr(model, '_commit_sentence', observe)
++    try:
++        model.runBatch(train=True, optimizer=optimizer, batchSize=2,
++            batch_override=(raw, torch.empty(2, 0)), split='runtime')
++        assert [e[0] for e in events] == ['step', 'step', 'commit'] * 2
++        assert len(model._sentence_winners) == 2
++        assert all(cost.shape == (2, 2) for cost in model._sentence_trial_costs)
++        assert set(model._last_understanding.sentence_programs) == {0, 1}
++        assert model._training_step_count == 1
++        for sid in range(2):
++            assert model._sentence_winners[sid].tolist() == [True, False]
++            for b, alternative in enumerate((True, False)):
++                expected = candidates[sid, alternative]['entries'][b]
++                actual = model._last_understanding.sentence_programs[sid][b]
++                torch.testing.assert_close(actual.actions, expected.actions)
++        if not compiled:
++            assert perceived == [0, 0, 1, 1]
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++
++
++def test_prediction_preview_is_per_row_and_does_not_append_an_observation():
++    from Layers import InterSentenceLayer
++    layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
++        concept_dim=4, batch=2, expectation_scope='structured')
++    layer.set_inter_loss_weight(1.)
++    # This test uses real prediction equations; opposed row targets must not
++    # disappear into a batch scalar before the winner comparison.
++    payloads = [torch.zeros(3, layer.concept_dim), torch.ones(3, layer.concept_dim)]
++    mask = torch.ones(2, dtype=torch.bool)
++    layer.predict_and_observe_stm_end_state([3, 3], payloads, mask=mask)
++    sizes = [len(row) for row in layer._inter_context]
++    cost, contrast, pending = layer.sentence_prediction_cost([3, 3], payloads, mask)
++    assert cost.shape == contrast.shape == (2,)
++    assert cost.requires_grad
++    assert [len(row) for row in layer._inter_context] == sizes
++    assert all(value is None for value in layer._inter_last_meaning)
++    assert all(value is not None for value in pending[0])
++    cost.sum().backward()
++    assert any(p.grad is not None for p in layer._inter_predictor.parameters())
++
++
++def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
++    from types import SimpleNamespace
++    from Models import BasicModel
++    predictor = torch.nn.Parameter(torch.tensor(2.))
++    root = torch.nn.Parameter(torch.ones(1, 2))
++    optimizer = torch.optim.Adam([predictor, root], lr=.1)
++    predictor.square().backward()
++    optimizer.step()
++    optimizer.zero_grad(set_to_none=True)
++    before = predictor.detach().clone()
++    disc = SimpleNamespace(sentence_prediction_cost=lambda *a, **k:
++        (predictor.square().reshape(1), predictor.square().reshape(1), None))
++    observation = dict(observed_depths=[1], observed=[root],
++        mask=torch.tensor([True]), layout='stm', roles=None)
++    model = SimpleNamespace(reconstruct_in_loop=False, inter_loss_weight=0.,
++        inter_contrastive_weight=0., symbolSpace=SimpleNamespace(discourse=disc),
++        _publish_sentence_scratch=lambda state: None,
++        _tensor_pushed_ideas=root[:, None],
++        _sentence_observation=lambda *a: observation,
++        _expectation_documents_for_slot=lambda *a: None)
++    lang = [None] * 15
++    lang[9], lang[13], lang[14] = root[:, None], root.repeat(1, 3)[:, None], torch.ones(1, 1)
++    cost, *_ = BasicModel._sentence_path_cost(
++        model, ((root[:, None],), lang, None), 0, torch.tensor([True]))
++    cost.sum().backward()
++    assert predictor.grad is None
++    optimizer.step()
++    torch.testing.assert_close(predictor, before, rtol=0, atol=0)
++
++
++def test_legacy_event_reporting_does_not_zero_the_sentence_objective(tmp_path, monkeypatch):
++    from test_compiled_word_chunk import _tiny_canonical_model
++    import util
++    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
++        concept_rows=256, part_rows=128, training_overrides={
++            'intraLossWeight': 0., 'interLossWeight': 0., 'reconstructInLoop': False})
++    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
++    optimizer = model.getOptimizer(lr=1e-4)
++    steps = []
++    backward = model._backward_training_loss
++    def observe(loss, scaler=None):
++        steps.append((getattr(model, '_sentence_backward', False), float(loss.detach())))
++        return backward(loss, scaler)
++    monkeypatch.setattr(model, '_backward_training_loss', observe)
++    try:
++        raw = model.inputSpace.prepInput(['a b', 'c d'])
++        model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
++            batch_override=(raw, torch.empty(2, 0)))
++        assert len(steps) == 2 and all(sentence and cost > 0 for sentence, cost in steps)
++        assert bool((model._sentence_trial_costs[0] > 0).all())
++        assert model._training_step_count == 1
++        assert model._d3_active and not model.reconstruct_in_loop
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++
++
++def test_already_trained_observation_keeps_policy_and_skips_duplicate_loss():
++    from Layers import InterSentenceLayer
++    layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
++        concept_dim=4, batch=1, expectation_scope='structured')
++    layer.set_inter_loss_weight(1.)
++    payloads = [torch.ones(3, 4)]
++    layer.observe_stm_end_state([3], payloads)
++    layer.expect_next_meaning(0, refresh=True, policy=('prior-query',), policy_work=2)
++    layer.observe_stm_end_state([3], payloads, train_prediction=False)
++    assert layer.consume_inter_loss() is None
++    outcomes = layer.consume_expectation_policy_outcomes()
++    assert len(outcomes) == 1 and outcomes[0][0] == ('prior-query',)
++    assert outcomes[0][2] == 2
++    assert not layer._inter_context[0][-1][1].requires_grad
+--- a/test/test_signal_router_scorer.py
++++ b/test/test_signal_router_scorer.py
+@@ -22,6 +22,6 @@
+         step.reduce_anchor.fill_(2); step.apply_anchor.fill_(3); step.stop_anchor.fill_(1)
+     x = torch.tensor([[[1.], [2.], [4.]]])
+     _, _, route = step(x, slots=3)
+-    expected = torch.tensor([[3., 6., -1.5, -3., -6., 7./6]])
++    expected = torch.tensor([[6., 12., -3., -6., -12., 7./3]])
+     torch.testing.assert_close(route['logits'], expected)
+     torch.testing.assert_close(route['probabilities'], expected.softmax(-1))
+--- a/test/test_structural_preference.py
++++ b/test/test_structural_preference.py
+@@ -28,7 +28,7 @@
+     assert routing['kind'].tolist() == [1, 1]
+ 
+ 
+-def test_compose_exact_probability_tie_prefers_structure(monkeypatch):
++def test_compose_probability_rounding_does_not_overturn_a_better_logit(monkeypatch):
+     layer = OperationSelectionLayer(d_model=1, chooser='mlp',
+         ops=[_Candidate('opaque'), _Candidate('structural')])
+     def score(x, reduced, *_args, **_kwargs):
+@@ -37,7 +37,7 @@
+     monkeypatch.setattr(layer.chooser, 'score_binary', score)
+     _, _, routing = layer(torch.ones(1, 2, 1))
+     assert routing['probabilities'].tolist() == [[.5, .5, 0.]]
+-    assert routing['op'].tolist() == [1]
++    assert routing['op'].tolist() == [0]
+ 
+ 
+ def test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit():
+--- a/test/test_training_diagnostic_contracts.py
++++ b/test/test_training_diagnostic_contracts.py
+@@ -74,7 +74,7 @@
+     calls = []
+     original = optimizer.step
+     def step(*a, **kw):
+-        calls.append(bool(model.symbolSpace.languageLayer.exploration_trial))
++        calls.append(getattr(model, '_sentence_trial', None))
+         return original(*a, **kw)
+     optimizer.step = step
+     def unavailable(*a, **kw):
+@@ -85,7 +85,7 @@
+     with pytest.warns(RuntimeWarning, match="diagnostic probe failure"):
+         result, _ = model.runBatch(train=True, batchSize=2, split="train", optimizer=optimizer,
+                                    batch_override=batch)
+-    assert result is not None and calls == [False, True]
++    assert result is not None and calls == [None]  # This model has no serial compose.
+     model.End()
+ 
+ 
+--- a/test/test_unified_thought_controller.py
++++ b/test/test_unified_thought_controller.py
+@@ -169,14 +169,14 @@
+             assert not errors.requires_grad
+             result = policy_loss(errors, mask)
+             assert result is not None and result.requires_grad
+-            observed.append(bool(model.symbolSpace.languageLayer.exploration_trial))
++            observed.append(getattr(model, '_sentence_trial', None))
+             return result
+         monkeypatch.setattr(model, '_selected_thought_policy_loss', credit)
+         optimizer = model.getOptimizer(lr=.001)
+         batch = (model.inputSpace.prepInput(['12 plus 1', '3 plus 4']), torch.zeros(2, 1, 1))
+         model.runBatch(train=True, batchSize=2, optimizer=optimizer, batch_override=batch,
+             questions=(What.supervised(0), What.supervised(1)))
+-        assert observed == [False, True]
++        assert observed == [None]  # The answer is a batch-end objective.
+         chooser = next(iter(model.selected_thought_choosers.values()))
+         assert bool(chooser.mlp[-1].weight.detach().abs().any())
+         owned = [id(p) for group in optimizer.param_groups for p in group['params']]

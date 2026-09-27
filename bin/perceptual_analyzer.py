@@ -132,25 +132,19 @@ def divide_into_attested(surface, is_attested):
 
 
 class MeronymicRouter:
-    """Learned meronymic router: ONE hard route + soft marginals over a
-    surface's atom sequence, reusing the SHARED inverse-routing primitive.
+    """Meronymic analysis with one adjacent merge or STOP per round.
 
-    ``binary_tiling_viterbi`` / ``binary_tiling_soft_dp`` (bin/Language.py)
-    are the direction-neutral routing core the symbolic
-    ``BinaryStructuredReductionLayer`` already uses for WS reduce / unreduce;
-    the meronymic analyzer reuses the very same DP in the analysis
-    direction, so PS analysis and WS unreduce share one primitive (Phase R3,
-    "Factor the shared inverse routing primitive out of unreduce /
-    reverse_stack").
+    A global softmax over the current merge sites and perceptual STOP supplies
+    the probabilities; the highest-scoring action supplies the hard route.
+    This follows the compose operation-selection scheme in the analysis
+    direction. Perceptual STOP remains eligible at every sequence length.
 
     Boundary evidence is SIGNED-NEIGHBORHOOD: the merge (reduce) score
     between adjacent atoms ``t, t+1`` is their cosine similarity -- bound
     neighbours (bytes inside a word) score high, a boundary scores low --
     minus a ``depth_penalty`` that thresholds merging and so controls
-    terminal granularity. Because a merge fires iff the signed evidence
-    beats the keep cost, the route is the exact Viterbi optimum, not a
-    greedy / beam pick. The soft marginals from the same scores are returned
-    alongside the one hard route.
+    terminal granularity. A merge fires when its signed evidence beats the
+    keep cost. The probabilities from those same scores accompany the route.
     """
 
     def __init__(self, depth_penalty=0.0, keep_bias=0.0, max_rounds=64):
@@ -177,34 +171,26 @@ class MeronymicRouter:
         return copy, reduce.view(1, N - 1, 1)
 
     def route_once(self, copy_score, reduce_score):
-        """One DP level: exact Viterbi hard route + soft marginals.
-
-        Returns ``dict(merges, reduce_mask, reduce_marginal, score)`` where
-        ``merges`` is the sorted list of positions ``t`` at which the pair
-        ``(t, t+1)`` is merged (non-overlapping by construction).
-        """
-        from Language import binary_tiling_viterbi, binary_tiling_soft_dp
+        """One global softmax over merge sites and the perceptual STOP."""
         copy_score = torch.as_tensor(copy_score, dtype=torch.float32)
         reduce_score = torch.as_tensor(reduce_score, dtype=torch.float32)
-        M = int(reduce_score.shape[1]) if reduce_score.dim() == 3 else 0
-        if M == 0:
-            return {"merges": [], "reduce_mask": [], "reduce_marginal": [],
-                    "score": float(copy_score.sum())}
-        hard = binary_tiling_viterbi(copy_score, reduce_score)
-        soft = binary_tiling_soft_dp(copy_score, reduce_score)
-        mask = hard["reduce_mask"].squeeze(0).sum(-1)        # [M] 0/1
-        merges = [t for t in range(M) if float(mask[t]) > 0.5]
-        return {"merges": merges,
-                "reduce_mask": [int(float(mask[t]) > 0.5) for t in range(M)],
-                "reduce_marginal": soft["reduce_marginal"].squeeze(0).tolist(),
-                "score": float(hard["score"])}
+        scores = reduce_score.reshape(-1)
+        stop = copy_score.mean().reshape(1) if copy_score.numel() else scores.new_zeros(1)
+        logits = torch.cat((scores, stop))
+        probabilities = logits.softmax(-1)
+        action = int(logits.argmax())
+        count = scores.numel()
+        # At equal evidence preserve the existing perceptual boundary.
+        merges = [action] if action < count and logits[action] > stop[0] else []
+        return dict(merges=merges, reduce_mask=[int(i in merges) for i in range(count)],
+                    reduce_marginal=probabilities[:count].tolist(), score=float(logits[action]))
 
     def route(self, atoms, bonus=None, bonus_fn=None):
         """Iterated agglomerative meronymic route over ``atoms`` ``[N, D]``.
 
         Each round scores the current sequence by signed-neighborhood
-        evidence, runs the exact DP, and merges the chosen non-overlapping
-        adjacent pairs (sum-combining their vectors and unioning their
+        evidence, selects one operation, and merges the chosen adjacent pair
+        (sum-combining its vectors and unioning its
         ORIGINAL-index spans). Converges when no pair clears the penalty --
         the byte/atom cover is total, so a valid route always exists.
 
@@ -212,8 +198,8 @@ class MeronymicRouter:
         first round only). ``bonus_fn(segments) -> [len(segments)-1]`` is
         re-evaluated every round against the CURRENT segment list, so
         cross-level evidence (e.g. "this merged span is still inside a known
-        word") keeps cohering a chunk that one non-overlapping DP level
-        cannot fully merge. Returns ``dict(segments=[(start, end), ...],
+        word") keeps cohering a chunk across successive merges.
+        Returns ``dict(segments=[(start, end), ...],
         n_merges, rounds)`` (``rounds`` = per-round reduce marginals).
         """
         atoms = torch.as_tensor(atoms, dtype=torch.float32)
@@ -393,7 +379,7 @@ class MeronymicAnalyzer:
 
     def analyze_routed(self, surface, oss, b=0, router=None, known_bonus=10.0):
         """Learned-route PS analysis (Phase R3): segment ``surface`` with the
-        meronymic Viterbi router (:class:`MeronymicRouter`) instead of the
+        meronymic operation router (:class:`MeronymicRouter`) instead of the
         ``util.parse`` heuristic, then resolve each routed segment to a
         terminal (known percept -> ``stop``; unknown -> byte fallback) and
         write it to ``oss``.
@@ -403,8 +389,7 @@ class MeronymicAnalyzer:
         whose merged span stays inside a known word), so a known word's
         bytes cohere into one ``stop`` terminal while unknown surface stays
         byte terminals -- the same known-vs-byte cover the compatibility
-        analyzer produces, now selected by the SHARED DP primitive
-        (``binary_tiling_viterbi``) rather than a tokenizer. Returns the
+        analyzer produces, selected by the operation softmax. Returns the
         host-side replay record (so :meth:`synthesize` round-trips).
         """
         raw = (surface.encode("utf-8")

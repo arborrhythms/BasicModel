@@ -89,12 +89,7 @@ def test_xor_router_gradients_reach_all_three_ops():
     ss = _StubSymbolSpace()
     x = torch.randn(2, 4, D, requires_grad=True)
     router.compose(x, word_space=ss)
-    # The unary op is exercised on the soft slab (mixture). Binary ops
-    # show up in the marginal_slab path (which sums per-op reductions
-    # via the soft DP marginals). Combine all three slabs into the loss.
-    loss = (router._last_soft_slab.sum()
-            + router._last_hard_slab.sum()
-            + router._last_routing["marginal_slab"].sum())
+    loss = router._last_output.square().sum()
     loss.backward()
     for name, p in [("not", pnot.proj), ("and", pand.proj), ("or", por.proj)]:
         assert p.weight.grad is not None and p.weight.grad.abs().sum() > 0, \

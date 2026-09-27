@@ -219,6 +219,7 @@ def test_metadata_comes_from_the_preceding_occurrence_not_the_target():
 
 def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch):
     from test_compiled_word_chunk import _tiny_canonical_model
+    from test_reverse_traversal import _select_completed_binary_path
     torch.manual_seed(946)
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
         training_overrides={"expectationPolicyWeight": .2, "expectationQueryBudget": 64,
@@ -227,6 +228,9 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch):
         architecture_overrides={"ltmConsolidation": True})
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
+    # Residual thought credit requires completed preceding observations.
+    # Control compose only; the thought chooser under test remains trainable.
+    _select_completed_binary_path(model)
     # Ordinary input reconstruction and unlabelled residual credit share the
     # real runBatch optimizer; there is no desired answer in this presentation.
     monkeypatch.setattr(model.inputSpace.data, "has_supervised_outputs", False)

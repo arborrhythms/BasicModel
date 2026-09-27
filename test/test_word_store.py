@@ -411,15 +411,15 @@ def test_ws_word_whole_registry_resolves_to_rows(tmp_path_factory):
 @pytest.mark.slow
 def test_forward_records_kind_tagged_trace(tmp_path_factory, monkeypatch):
     m = _build(tmp_path_factory, word_store=True)
-    # This probes committed-fold recording. The unaligned smoke router may
-    # otherwise choose COPY throughout, leaving no grammar choice to record.
-    original_reduce = m._stm_bounded_reduce_step
-
-    def demand_fold(*args, **kwargs):
-        kwargs["demand"] = True
-        return original_reduce(*args, **kwargs)
-
-    monkeypatch.setattr(m, "_stm_bounded_reduce_step", demand_fold)
+    chooser = m._stm_reducer().chooser
+    def binary(x, candidates, *_args, **_kwargs):
+        scores = x.new_full(candidates.shape[:3], -torch.inf)
+        scores[..., 0] = 0.
+        return x.new_zeros(*x.shape[:2], 1), scores
+    def unary(x, candidates, *_args, **_kwargs):
+        return x.new_zeros(*x.shape[:2], 1), x.new_full(candidates.shape[:3], -torch.inf)
+    chooser.score_binary = binary
+    chooser.score_unary = unary
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(items)
@@ -868,8 +868,7 @@ def test_two_epoch_training_severs_cross_batch_graph():
     """Cross-epoch training pin (the ladder5 relaunch crash, 2026-07-13):
     epoch 1 on the wordstore config broke the pending backward
     ("[1016] at version 1") — the serial arcs' persistent carriers
-    (STM ``_live_buffer``, router ``_last_output``/``_last_root_state``,
-    ``routing_state.rule_probs``, ``_stm_last_reduce_routing``,
+    (STM ``_live_buffer``, ``routing_state.rule_probs``,
     ``_stm_single_S``, ``_intent_boosts``) are plain attributes, so
     ``_detach_persistent_state`` never severed them and epoch N+1's
     forward chained epoch N's (already-stepped) graph into its loss.
@@ -898,20 +897,17 @@ def test_two_epoch_training_severs_cross_batch_graph():
     # Key carriers must EXIST (a missing carrier would make the
     # graph-free checks vacuous) ...
     stm_buf = m.conceptualSpace.stm._buffer
-    rr = getattr(m, "_stm_last_reduce_routing", None)
-    router = m.symbolSpace.subspace.languageLayer
-    last_out = getattr(router, "_last_output", None)
+    root = getattr(m, "_stm_single_S", None)
+    trace = m._reconstruction_stack()
+    actions = trace._choice_actions
     assert torch.is_tensor(stm_buf) and stm_buf.numel() > 0
-    assert isinstance(rr, dict) and rr, "reduce routing must be stashed"
-    assert torch.is_tensor(last_out), "router _last_output must be stashed"
+    assert torch.is_tensor(root) and root.numel() > 0
+    assert torch.is_tensor(actions) and bool((actions >= 0).any())
+    assert torch.equal(actions >= 0, trace._choice_attempted)
     # ... and carry NO graph across the tick boundary.
     assert graph_free(stm_buf)
-    assert graph_free(getattr(m, "_stm_single_S", None))
-    assert all(graph_free(v) for v in rr.values()), \
-        [k for k, v in rr.items() if not graph_free(v)]
+    assert graph_free(root)
     assert graph_free(getattr(m.perceptualSpace, "_intent_boosts", None))
-    assert graph_free(last_out)
-    assert graph_free(getattr(router, "_last_root_state", None))
     rs = getattr(m.symbolSpace.subspace, "routing_state", None)
     assert rs is None or graph_free(getattr(rs, "rule_probs", None))
 

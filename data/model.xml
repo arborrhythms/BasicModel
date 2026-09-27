@@ -28,6 +28,14 @@
          New configs should set <serial>true|false</serial> explicitly. -->
     <!-- <serial>false</serial> -->
 
+    <!-- Hard compose sampling only; zero selects exact-logit argmax.
+         Both training derivations use this temperature. Model softmax
+         probabilities used for gradient credit remain untempered. -->
+    <composeTemperature>0</composeTemperature>
+    <!-- Fixed binary-logit load prior; its probabilities also carry credit.
+         Deadlines force the required reductions independently of this weight. -->
+    <reducePressure>1.0</reducePressure>
+
     <!-- symbolicOrder is the symbolic / relational loop budget, not the
          primary mode selector. Omitted here so legacy configs inherit the
          grammar-derived default: 1 when the XML enables a non-substrate rule

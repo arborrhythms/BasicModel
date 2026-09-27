@@ -1,0 +1,38 @@
+[
+  {
+    "run": "feedback-regressions",
+    "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "report": {
+      "operator.CS.surface": {
+        "expectation_negative_streak": 0,
+        "expectation_norm": 0.0,
+        "expectation_reconstruction_norm_ratio": 0.0,
+        "output_negative_streak": 1,
+        "output_norm": 1.73029978465629,
+        "output_reconstruction_norm_ratio": 8996142502799.19,
+        "persistent_opposition": [],
+        "reconstruction_expectation_cosine": null,
+        "reconstruction_norm": 1.9233796975958303e-13,
+        "reconstruction_output_cosine": -0.055058280389689504
+      }
+    }
+  },
+  {
+    "run": "full",
+    "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "report": {
+      "operator.CS.surface": {
+        "expectation_negative_streak": 0,
+        "expectation_norm": 0.0,
+        "expectation_reconstruction_norm_ratio": 0.0,
+        "output_negative_streak": 1,
+        "output_norm": 1.73029978465629,
+        "output_reconstruction_norm_ratio": 8996142502799.19,
+        "persistent_opposition": [],
+        "reconstruction_expectation_cosine": null,
+        "reconstruction_norm": 1.9233796975958303e-13,
+        "reconstruction_output_cosine": -0.055058280389689504
+      }
+    }
+  }
+]

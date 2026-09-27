@@ -25,7 +25,6 @@
          reducer's operator marginals are uniform (~1/15) and never pass
          the default 0.5 gate, and three words never reach the capacity
          fold, so no binary rule (no verb) would ever fire. -->
-    <stmReduceTau>0.05</stmReduceTau>
     <transformChooser>mlp</transformChooser>
 
     <data>

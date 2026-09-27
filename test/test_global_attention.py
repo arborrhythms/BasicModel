@@ -266,36 +266,6 @@ def test_global_params_reach_optimizer():
     assert gp and gp.issubset(op)
 
 
-@pytest.mark.slow
-def test_superposition_temperature_threads_to_global():
-    # The model-level superposition temperature must REACH global attention's
-    # selection. (At init the full-model distribution is dominated by the ~65k
-    # codebook candidates and sits near the entropy ceiling, so the robust
-    # invariant is: the explore temperature changes the distribution and does
-    # not sharpen it -- entropy non-decreasing.)
-    m = _build("MM_global.xml")
-    # Non-zero preference so the temperature has something to scale (an
-    # untrained scorer emits ~0 logits -> uniform regardless of temperature).
-    m.global_attention.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0, -3.0, -3.0])
-    x = _batch(m)
-    m.eval()
-    with torch.no_grad():
-        m.forward(x)
-    in_sub = m._lex_embed_stem(x)
-    ps = m.perceptualSpace.forward(in_sub)
-    prev = m.conceptualSpaces[0]._subspaceForWS
-    object.__setattr__(m, "_superposition_temperature", None)
-    m._global_attention_step(prev, ps)
-    a0 = m._global_attention_obs["alpha"].clone()
-    object.__setattr__(m, "_superposition_temperature", 0.95)
-    m._global_attention_step(prev, ps)
-    a9 = m._global_attention_obs["alpha"].clone()
-    object.__setattr__(m, "_superposition_temperature", None)
-    # L1 mass difference (robust to the ~65k-codebook near-uniform regime where
-    # element-wise allclose is fragile under different RNG): the two
-    # temperatures must produce measurably different distributions.
-    assert float((a0 - a9).abs().sum()) > 1e-4, (
-        "the explore temperature must reach + change global attention")
 
 
 if __name__ == "__main__":

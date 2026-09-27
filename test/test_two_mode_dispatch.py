@@ -91,8 +91,7 @@ def _write_config_with_arch_overrides(
                 m.group(0) + f"\n  <architecture>{inject}</architecture>"),
             text, count=1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False,
-        dir=os.path.dirname(base_config_path))
+        mode="w", suffix=".xml", delete=False)
     tmp.write(text)
     tmp.close()
     return tmp.name

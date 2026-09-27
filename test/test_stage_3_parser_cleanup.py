@@ -10,8 +10,8 @@ Acceptance gates:
   * ``Grammar.rule_probability`` returns floats in [0, 1] for both
     dormant defaults and learned overrides; ``_fired_bodies`` single-
     application gate still works; ``reset_derivation`` still callable.
-  * ``binary_tiling_soft_dp`` and ``binary_tiling_viterbi`` still
-    callable (the signal-router DP primitives).
+  * Item 7.5's operation layer replaces the signal-router tiling routines;
+    their deletion is covered by test_compose_operations.py.
   * The retired XML knobs (``parserBackend``, ``routerKind``,
     ``chartTau``, ``chartTopK``, ``chartNoiseEps``) raise a loud
     ValueError at config load time.
@@ -132,40 +132,11 @@ def test_rule_probability_fired_bodies_blocks_resfire():
     assert g.rule_probability(body) == 1.0
 
 
-# --- Gate 4: signal-router DP primitives still callable -----------------
-
-def test_binary_tiling_soft_dp_callable():
-    """The signal router's soft-DP function must remain callable."""
-    import torch
-    from Language import binary_tiling_soft_dp
-    B, N, R_copy, R_red = 2, 4, 1, 2
-    copy_score = torch.zeros(B, N, R_copy)
-    reduce_score = torch.zeros(B, N - 1, R_red)
-    out = binary_tiling_soft_dp(copy_score, reduce_score)
-    assert out is not None
+# --- Gate 4: retired parser configuration is rejected ------------------
 
 
-def test_binary_tiling_viterbi_callable():
-    """The signal router's Viterbi function must remain callable."""
-    import torch
-    from Language import binary_tiling_viterbi
-    B, N, R_copy, R_red = 2, 4, 1, 2
-    copy_score = torch.zeros(B, N, R_copy)
-    reduce_score = torch.zeros(B, N - 1, R_red)
-    out = binary_tiling_viterbi(copy_score, reduce_score)
-    assert out is not None
-
-
-# --- Gate 5: retired XML knobs error loud --------------------------------
-
-@pytest.mark.parametrize("knob", [
-    "parserBackend",
-    "routerKind",
-    "chartTau",
-    "chartTopK",
-    "chartNoiseEps",
-    "wMax",
-])
+@pytest.mark.parametrize('knob', [
+    'parserBackend', 'routerKind', 'chartTau', 'chartTopK', 'chartNoiseEps'])
 def test_retired_xml_knobs_raise_on_load(knob):
     """Legacy configs that still set retired knobs must error loudly.
 

@@ -1,0 +1,12 @@
+{
+  "doc/benchmarks/2026-09-27-item7-5-landing/package_receipt.py": "5a53bf143b83a16bd05041d00cc746787f87682dc87f0b1771a1dbf7e275741d",
+  "doc/benchmarks/2026-09-27-item7-5-landing/run_full.py": "c774a19a995f2617503310c6fbbcdecd5153d4890d4c7855ded78f81be7de252",
+  "doc/benchmarks/2026-09-27-item7-5-landing/verify_commit.py": "6a50b108cc01b731e60b3f39983f7f3efd27769a437caa718d83e85045f748e4",
+  "doc/benchmarks/2026-09-26-item7-5/package_receipt.py": "7c337ff59db7d8502bf9b0b455fe62fe48208073cdd39ddb7e36145e98c16c28",
+  "doc/specs/2026-09-26-one-operation-per-round.md": "4631297eb4d10209faca5a42dc97d6770f0b8fe669ea7f969555a9133a6573a3",
+  "doc/benchmarks/2026-09-27-item7-5-landing/accepted-spec.txt": "4631297eb4d10209faca5a42dc97d6770f0b8fe669ea7f969555a9133a6573a3",
+  "doc/benchmarks/2026-09-27-item7-5-landing/full-schedule.json": "20aa618b16adca22ccc08b6c414a42b0bdf3e8b6bfb1865df4dfe27c8cb23fdc",
+  "doc/benchmarks/2026-09-27-item7-5-landing/selection-delta.json": "e964c99342d8aeeaf439f2c40738879fde48c9f3c1e459a9edd62e633ea48665",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/overflow-fixture-followup.patch": "4ee26e7823aa1d799554903e0f8f08c49bc72e0f055da218aa4b2fcbb6dcf728",
+  "doc/benchmarks/2026-09-27-item7-5-pressure/user-truth-fixture-followup.patch": "3d688356dd8b5a3a7039662164a02c210ffbe3376dbba4190ca3b94719156765"
+}

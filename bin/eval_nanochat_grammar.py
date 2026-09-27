@@ -556,261 +556,46 @@ def _validate_candidate_reached(model, items, control, choices):
 
 
 def trace_serial_grammar(model, text):
-    """Run one sentence and audit the occupancy-driven STM grammar.
-
-    A reduction counts only when ``stm._depth`` decreases.  Online folds are
-    separated into low/medium-occupancy soft-pressure decisions and hard
-    capacity demands; sentence-boundary closure and any legacy/unlicensed
-    fallback are reported separately.  Device tensors are accumulated during
-    the forward and transferred in a few bulk slabs afterward, avoiding the
-    per-word ``.item()`` synchronization that made an MPS trace misleadingly
-    slow.
-    """
+    """Report the committed per-round grammar choices and completion status."""
     import torch
-
     _reset_model(model)
-    stm = model.conceptualSpace.stm
-    in_sweep = False
-    depth_samples = []
-    events = []
-    original_reduce = model._stm_bounded_reduce_step
-    original_sweep = model._stm_reduce_to_single_S
-    original_push = stm.push_step_masked
-
-    def sample_depth():
-        depth_samples.append(stm._depth.detach().clone())
-        return len(depth_samples) - 1
-
-    def reduce_spy(*args, **kwargs):
-        nonlocal in_sweep
-        before_idx = sample_depth()
-        reduced_mask = original_reduce(*args, **kwargs)
-        after_idx = sample_depth()
-        routing = getattr(model, "_stm_last_reduce_routing", None)
-        B = int(stm._depth.shape[0])
-        device = stm._depth.device
-
-        confidence = threshold = pressure = None
-        routed_demand = None
-        chosen = torch.full(
-            (B,), -1, dtype=torch.long, device=device)
-        if isinstance(routing, dict):
-            confidence = routing.get("grammar_reduce_confidence")
-            threshold = routing.get("stm_reduce_threshold")
-            pressure = routing.get("stm_occupancy_pressure")
-            routed_demand = routing.get("stm_demand_mask")
-            rmo = routing.get("reduce_marginal_op")
-            if torch.is_tensor(rmo) and rmo.dim() == 3 and rmo.shape[-1]:
-                chosen = rmo[:, 0, :].argmax(dim=-1).detach().clone()
-
-        row_gate = kwargs.get("row_gate")
-        if torch.is_tensor(row_gate):
-            row_gate = row_gate.detach().to(
-                device=device, dtype=torch.bool).reshape(B).clone()
-        else:
-            row_gate = torch.ones(B, dtype=torch.bool, device=device)
-        explicit_demand = bool(kwargs.get("demand", False))
-        if explicit_demand:
-            demand_rows = row_gate
-        elif torch.is_tensor(routed_demand):
-            demand_rows = routed_demand.detach().to(
-                device=device, dtype=torch.bool).reshape(B).clone()
-        else:
-            demand_rows = torch.zeros(B, dtype=torch.bool, device=device)
-
-        def optional_sample(value, dtype=torch.float32):
-            if torch.is_tensor(value) and value.numel() == B:
-                return value.detach().to(device=device, dtype=dtype).reshape(B).clone()
-            fill = float("nan") if dtype.is_floating_point else -1
-            return torch.full((B,), fill, dtype=dtype, device=device)
-
-        events.append({
-            "kind": ("boundary" if in_sweep else
-                     "pressure" if kwargs.get("occupancy_pressure", False) else
-                     "demand" if explicit_demand else
-                     "scored" if kwargs.get("gate_tau") is not None else
-                     "unlicensed"),
-            "before": before_idx,
-            "after": after_idx,
-            "confidence": optional_sample(confidence),
-            "threshold": optional_sample(threshold),
-            "pressure": optional_sample(pressure),
-            "demand_rows": demand_rows,
-            "chosen": chosen,
-        })
-        return reduced_mask
-
-    def sweep_spy(*args, **kwargs):
-        nonlocal in_sweep
-        in_sweep = True
-        try:
-            return original_sweep(*args, **kwargs)
-        finally:
-            in_sweep = False
-
-    def push_spy(*args, **kwargs):
-        result = original_push(*args, **kwargs)
-        events.append({
-            "kind": "push",
-            "after": sample_depth(),
-        })
-        return result
-
-    model._stm_bounded_reduce_step = reduce_spy
-    model._stm_reduce_to_single_S = sweep_spy
-    stm.push_step_masked = push_spy
-    try:
-        with torch.no_grad(), warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            prepared = model.inputSpace.prepInput([str(text)])
-            model.forward(prepared)
-    finally:
-        model._stm_bounded_reduce_step = original_reduce
-        model._stm_reduce_to_single_S = original_sweep
-        stm.push_step_masked = original_push
-
-    # Bulk device-to-host collection: one depth slab plus one slab per
-    # reducer field, rather than synchronizing Metal inside every word tick.
-    depth_rows = (torch.stack(depth_samples).detach().cpu()
-                  if depth_samples else torch.zeros(0, 0, dtype=torch.long))
-    reduce_events = [event for event in events if event["kind"] != "push"]
-    for key in ("confidence", "threshold", "pressure", "demand_rows", "chosen"):
-        if reduce_events:
-            slab = torch.stack([event[key] for event in reduce_events]).detach().cpu()
-            for index, event in enumerate(reduce_events):
-                event[key + "_cpu"] = slab[index]
-
-    stats = {
-        "pressure_calls": 0,
-        "soft_pressure_reductions": 0,
-        "capacity_demand_calls": 0,
-        "capacity_demand_reductions": 0,
-        "boundary_reductions": 0,
-        "unlicensed_calls": 0,
-        "unlicensed_reductions": 0,
-        "legacy_scored_calls": 0,
-        "legacy_scored_reductions": 0,
-        "peak_depth": 0,
-    }
-    timeline = []
-    online_operators = Counter()
-    boundary_operators = Counter()
-    reducer = model._stm_reducer()
-    op_names = list(getattr(reducer, "op_names", None) or [])
-    pressure_confidences = []
-    pressure_thresholds = []
-    for event in events:
-        if event["kind"] == "push":
-            depth = int(depth_rows[event["after"]].max().item())
-            stats["peak_depth"] = max(stats["peak_depth"], depth)
-            timeline.append({
-                "word": len(timeline) + 1,
-                "after_push": depth,
-                "after_pressure": depth,
-                "after_licensed": depth,
-            })
-            continue
-
-        before = depth_rows[event["before"]]
-        after = depth_rows[event["after"]]
-        actually = after < before
-        count = int(actually.sum().item())
-        demand_rows = event["demand_rows_cpu"].bool()
-        demanded = actually & demand_rows
-        soft = actually & ~demand_rows
-        kind = event["kind"]
-
-        if kind == "pressure":
-            stats["pressure_calls"] += 1
-            stats["soft_pressure_reductions"] += int(soft.sum().item())
-            stats["capacity_demand_reductions"] += int(demanded.sum().item())
-            if bool(demand_rows.any().item()):
-                stats["capacity_demand_calls"] += 1
-            finite_c = event["confidence_cpu"][
-                torch.isfinite(event["confidence_cpu"])]
-            finite_t = event["threshold_cpu"][
-                torch.isfinite(event["threshold_cpu"])]
-            pressure_confidences.extend(float(v) for v in finite_c.tolist())
-            pressure_thresholds.extend(float(v) for v in finite_t.tolist())
-            if timeline:
-                post = int(after.max().item())
-                timeline[-1]["after_pressure"] = post
-                timeline[-1]["after_licensed"] = post
-                timeline[-1]["reduced"] = bool(actually[0].item())
-                timeline[-1]["demanded"] = bool(demand_rows[0].item())
-                if finite_c.numel():
-                    timeline[-1]["grammar_confidence"] = float(
-                        event["confidence_cpu"][0].item())
-                    timeline[-1]["reduce_threshold"] = float(
-                        event["threshold_cpu"][0].item())
-                    timeline[-1]["occupancy_pressure"] = float(
-                        event["pressure_cpu"][0].item())
-        elif kind == "demand":
-            stats["capacity_demand_calls"] += 1
-            stats["capacity_demand_reductions"] += count
-        elif kind == "boundary":
-            stats["boundary_reductions"] += count
-        elif kind == "unlicensed":
-            stats["unlicensed_calls"] += 1
-            stats["unlicensed_reductions"] += count
-        else:  # legacy scored controller
-            stats["legacy_scored_calls"] += 1
-            stats["legacy_scored_reductions"] += count
-
-        chosen = event["chosen_cpu"]
-        target_counter = (boundary_operators
-                          if kind == "boundary" else online_operators)
-        for row in actually.nonzero().reshape(-1).tolist():
-            op_idx = int(chosen[row].item())
-            name = (op_names[op_idx]
-                    if 0 <= op_idx < len(op_names) else f"op_{op_idx}")
-            target_counter[name] += 1
-    total_reductions = (
-        stats["soft_pressure_reductions"]
-        + stats["capacity_demand_reductions"]
-        + stats["boundary_reductions"]
-        + stats["unlicensed_reductions"]
-        + stats["legacy_scored_reductions"])
-
-    part_ids = getattr(model.inputSpace, "_ar_word_part_ids", None)
-    part_mask = getattr(model.inputSpace, "_ar_word_part_mask", None)
-    word_cut = getattr(model.inputSpace, "_ar_word_truncated_mask", None)
-    sentence_cut = getattr(
-        model.inputSpace, "_sentence_word_truncated_mask", None)
-    active = getattr(model.inputSpace, "_word_active_mask", None)
-    result = {
-        "surface_words": (int(active.sum().item())
-                          if torch.is_tensor(active)
-                          else len(surface_words(str(text)))),
-        "outer_word_capacity": int(getattr(
-            model, "serial_word_capacity", 0) or 0),
-        "part_field_width": int(model.perceptualSpace.outputShape[0]),
-        "whole_field_width": int(model.wholeSpace.inputShape[0]),
-        "concept_field_width": int(model.conceptualSpace.outputShape[0]),
-        "stm_capacity": int(stm.capacity),
-        "raw_part_width": (int(part_ids.shape[-1])
-                           if torch.is_tensor(part_ids) else 0),
-        "max_raw_parts_per_word": (int(part_mask.sum(dim=-1).max().item())
-                                   if torch.is_tensor(part_mask) else 0),
-        "word_constituents_truncated": (
-            bool(word_cut.any().item()) if torch.is_tensor(word_cut) else False),
-        "sentence_truncated": (
-            bool(sentence_cut.any().item())
-            if torch.is_tensor(sentence_cut) else False),
-        "final_depth": int(stm._depth.detach().max().cpu().item()),
-        "total_reductions": total_reductions,
-        "operators": dict(sorted(online_operators.items())),
-        "boundary_operators": dict(sorted(boundary_operators.items())),
-        "grammar_confidence_range": (
-            [min(pressure_confidences), max(pressure_confidences)]
-            if pressure_confidences else []),
-        "reduce_threshold_range": (
-            [min(pressure_thresholds), max(pressure_thresholds)]
-            if pressure_thresholds else []),
-        "timeline": timeline,
-        **stats,
-    }
-    return result
+    with torch.no_grad(), warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        model.forward(model.inputSpace.prepInput([str(text)]))
+    trace = model._reconstruction_stack()
+    rules, arities, mask = trace.choices()
+    attempted = trace._choice_attempted
+    active = model.inputSpace._word_active_mask
+    width = active.shape[1]
+    def counts(start, end):
+        live = mask[:, start:end]
+        return dict(binary=int((live & (arities[:, start:end] == 2)).sum()),
+                    unary=int((live & (arities[:, start:end] == 1)).sum()),
+                    stop=int((attempted[:, start:end] & ~live).sum()))
+    online = counts(0, 3 * width)
+    seal = counts(3 * width, rules.shape[1])
+    part_ids = getattr(model.inputSpace, '_ar_word_part_ids', None)
+    part_mask = getattr(model.inputSpace, '_ar_word_part_mask', None)
+    word_cut = getattr(model.inputSpace, '_ar_word_truncated_mask', None)
+    sentence_cut = getattr(model.inputSpace, '_sentence_word_truncated_mask', None)
+    return dict(surface_words=int(active.sum()),
+                part_field_width=int(model.perceptualSpace.outputShape[0]),
+                whole_field_width=int(model.wholeSpace.inputShape[0]),
+                concept_field_width=int(model.conceptualSpace.outputShape[0]),
+                raw_part_width=int(part_ids.shape[-1]) if torch.is_tensor(part_ids) else 0,
+                max_raw_parts_per_word=int(part_mask.sum(-1).max()) if torch.is_tensor(part_mask) else 0,
+                word_constituents_truncated=bool(word_cut.any()) if torch.is_tensor(word_cut) else False,
+                sentence_truncated=bool(sentence_cut.any()) if torch.is_tensor(sentence_cut) else False,
+                outer_word_capacity=int(model.serial_word_capacity or width),
+                stm_capacity=int(model.conceptualSpace.stm.capacity),
+                final_depth=int(model.conceptualSpace.stm._depth.max()),
+                complete=bool((model._stm_post_depth > 0).all()),
+                online=online, seal=seal,
+                total_reductions=online['binary'] + seal['binary'],
+                timeline=[dict(round=i, rule=int(rules[b, i]),
+                               arity=int(arities[b, i]),
+                               position=int(trace._choice_positions[b, i]))
+                          for b, i in attempted.nonzero().tolist()])
 
 
 def _score_control_batch(model, data, items, control, choices):

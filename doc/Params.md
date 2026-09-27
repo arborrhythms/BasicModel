@@ -57,6 +57,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
 | `serial` | bool | derived | Forward-dispatch mode. `true` = serial / grammatical (per-word `[B, 1, D]` body); `false` = parallel (whole-slab `[B, N, D]` body). If omitted, legacy configs derive it from `symbolicOrder > 0`; new configs should set it explicitly. |
+| `composeTemperature` | finite float ≥ 0 | `0` | Shared hard-choice sampling temperature for exploit and explore. Zero selects the greatest logit, with item 8's structural rule on exact ties. Positive values sample `softmax(logits / temperature)` during training. Evaluation always uses argmax. Straight-through credit always uses the untempered model softmax; this parameter never scales its gradients. |
 | `modeSchedule` | string | derived from `serial` | `serial`, `parallel`, or `interleave:N` for a positive integer N. Interleaving stages the next N complete sentences, reads them in native parallel mode, then reads the same sentences in serial mode. The final shorter group is processed too. Both passes share the inventory. Context runs forward under no-grad, updating admission, participation and priming; only serial presentations train through the optimizer and advance the external clock. There is no separate label read-back. |
 | `symbolicOrder` | int | `0` | Bound on symbolizations in the symbolic loop. Higher rows union the preceding order's symbols; pi edges exist only within the order-0 field. Two poles share one code. 0 disables the parallel pyramid; serial grammar dispatch is independent. |
 | `conceptualPi` | bool | `false` | Enable conjunctive parts in the order-0 field before max over alternatives. The pool discovers recurring fused native parts; conceptual conjunction means co-presence inside the field bracket. Pi edges above order 0 are rejected. |
@@ -71,8 +72,6 @@ sub-elements `<training>` and `<data>` (see below).
 | `subsymbolicLoop` | string | `all` | Passes on which conceptual demand may retarget perception to a region or mereological level: `all`, `off`, or comma-separated indices in `1..subsymbolicOrder-1`, e.g. `"1,3"`. Pass 0 reads the initial attended field. This selector keeps `subsymbolicOrder` as the processing bound; it adds no perceptual fold layers or identity slots. |
 | `sparseReplace` | — | — | RETIRED (2026-07-02 P3 two-phase forward): phase separation makes non-replacement structural — the symbolic phase's outputs feed the SS leg, the head-side losses, and the concept table, never substituting the subsymbolic advance. Parsed only to emit a `DeprecationWarning`. |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
-| `learning` | bool | `false` | Two-pass soft-superposition training for the grammar chooser. When true, each TRAINING batch runs twice as two trials: pass A at superposition temperature 0 (sharp, recorded) and pass B at `exploreTemperature` (flatter exploration, trimmed from the batch error). The chooser is in the gradient path directly. Default off $\to$ one ordinary forward (byte-identical). See [Language.md $\to$ Soft-superposition route](Language.md). |
-| `exploreTemperature` | decimal | `0.5` | Superposition temperature $t \in [0,1]$ for pass B of `learning`. `0` = the chooser's own (sharp) softmax, `1` = uniform (flat). Route scores are scaled by `1 - t`. |
 | `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params $\to$ deliberate fresh-basin cutover). See [Language.md](Language.md). |
 | `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP when `transformChooser=mlp`; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. Inert for `anchordot`. |
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
@@ -172,7 +171,6 @@ Training loop and I/O.
 | `outputInLoop` | bool | `false`; BasicModel `true` | `reverseOutput` unfolds owned answer concepts with its bounded generate walk. The chooser uses declared `<generate>` rules and stop: training samples actions; evaluation selects the highest-scoring action. It ignores input compose traces, teacher targets and reconstruction witnesses. Policy and traversal state are independent; numerical operator instances still share comprehension parameters pending the integrated specification's catalog migration. Unavailable requested operations remain pending and report bounded truncation ([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). Resolution completes before `reverseOutput` and supplies its owned `AnswerDerivation`. |
 | `outputPolicyWeight` | float | `0.0`; BasicModel `1.0` | Weight of the output chooser's supervised action credit. Training samples its own output actions and credits their sequence log probability using detached realised-answer error and an EMA return baseline. Only separately supplied, available `What.supervised` numeric or text targets contribute ([Models.py](../bin/Models.py)); zero weight or missing supervision gives no policy update. The term is added to the `runBatch` total and reported as `output_policy`. `LanguageSpace.generate_policy` belongs to SymbolSpace's optimizer parameters and exists only with `outputInLoop`. Input compose choices are not output supervision. |
 | `grammarLessonWeight` | float | `1.0` | Weight of supplied grammar annotations: compose-choice cross entropy plus separately annotated generate-choice/child-value loss. Added to the actual `runBatch` total after student output; no term without annotations, on evaluation splits, or on prediction-only trials. `0` disables it. Shared parameters obey reconstruction priority. |
-| `forwardGrammarWeight` | float | `0.0` | Weight of the bounded local structural contrast for committed unary/binary folds. Its candidate evidence is detached, so it updates only the chooser at that fold. |
 | `whatScale` | float | `0.7` | Loss weight on the `.what` (content) channel. |
 | `whereScale` | float | `0.2` | Loss weight on the `.where` (positional) channel. |
 | `whenScale` | float | `0.1` | Loss weight on the `.when` (temporal) channel in general event comparisons. Per-word reconstruction excludes the field's shared timestamp. |
@@ -490,7 +488,6 @@ symbol (line anchors drift).
 | `relevance` | `Models.py` (BaseModel init) | `false` | Relevance-integration gate (Architecture.md sec C). |
 | `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Priming-energy decay per prime event. |
 | `primingSpread` | `Models.py` (BaseModel init) | `0.25` | Fraction of a connected row's standing energy diffused to neighbors per prime event (live by default; `0` = pure decay+bump). |
-| `stmReduceTau` | `Models.py` (BaseModel init) | `0.5`; NanoChat models `0.75` | Low-occupancy grammar-confidence threshold for online STM reduction. With an explicit independent word axis, occupancy pressure lowers the effective threshold linearly to a mandatory best grammatical reduction at full STM. |
 | `serialWordCapacity` | `Models.py` (BaseModel init) | legacy fallback: `stmCapacity` | Hard maximum surface words staged for one outer serial loop. Independent of PS/WS/CS field width and STM depth; BasicModel sets 256 while keeping those fields/workspace at 8. The tensor loop executes only through the final live column. |
 | `serialResidualPartCapacity` | `Models.py` / `InputSpace` | `16` | Fixed compiler-visible integer radix/subword-ID extent for one cold spelling. It is not a dense percept-vector axis; the masked PS fold reduces those IDs into PS's configured live field. BasicModel uses 64. |
 | `serialWordBuckets` | `Models.py` / `InputSpace` | one bucket equal to `serialWordCapacity` | Comma-separated staging capacities. The largest value must equal `serialWordCapacity`; an overlong sentence fails rather than clipping. BasicModel uses only `256`, because its compiled `torch.while_loop` has a runtime trip count and therefore needs neither padding execution nor separate 16/32/64/128 graphs. Multiple buckets remain a compatibility/performance option for the static scheduler. |
@@ -582,7 +579,6 @@ symbol (line anchors drift).
 | `armaP` | `Language.py` (InterSentenceLayer build) | `5` | ARMA AR order for inter-sentence prediction. |
 | `armaQ` | same | `2` | ARMA MA order. |
 | `armaHiddenDim` | same | unset (auto) | ARMA predictor hidden width. |
-| `signal.temperature` | `Language.py` (signal-router build) | `1.0` | Signal-router softmax temperature. |
 | `language.useGrammar` | `Language.py` (grammar load) | — | DEPRECATED: still read, but only to warn loudly and force `default.grammar`. |
 | `language.start` | `Language.py` (grammar load) | `"S"` | Accepted completed-derivation shapes (start patterns); named starts tag `relative_truth` / `absolute_truth` sets. |
 
@@ -771,3 +767,37 @@ The model initializes transient host flags before compilation; a resolution
 temporarily identifies completed rows while sentence work disables execution.
 No semantic feature contains these administrative flags. See
 [Query phases](QueryPhases.md).
+
+Item 7.5 retires `architecture.learning`, `exploreTemperature`, `stmReduceTau`,
+`SymbolSpace.signal.temperature`, and `training.forwardGrammarWeight`.
+At each sentence seal, training runs two hard compose derivations and two
+optimizer steps, sharing one cached perception. Each row commits the strictly
+lower sentence loss before the next sentence; ties keep exploit. Batch-end
+answer loss has its own backward and stays outside that comparison. The public
+batch clock and training counter advance once. Evaluation runs only exploit,
+without an optimizer. `architecture.composeTemperature` controls both training
+draws; it replaces the 90/10 mixture and never tempers model credit.
+Word-major sentence training uses the tied traversal even when a configuration
+keeps the older continuous event metric (`reconstructInLoop=false`). That event
+metric is then reporting only; it cannot replace the sentence objective with
+zero or add a third reconstruction update. Explicit detached-student and
+numerical compatibility configurations retain their separate objectives.
+See [Language](Language.md#one-operation-per-round-item-75).
+
+Decision 7 adds `architecture.reducePressure`, finite and nonnegative, default
+**1.0**. Declared before the correction's measurements: each binary logit gets
+`reducePressure * (d / a + max(0, d - a) / r)`, zero on an empty stack. Here `d`
+is the whole STM depth, `a = K - 1` during online rounds, and `a` is one for an
+absolute sentence or three for a relative sentence at the seal. `r` counts the
+current round and the remaining rounds in that phase. This fixed load prior
+clamps divisors to at least one for numerical safety; deadline masking uses
+the actual allowance and remaining-round count. The prior
+enters the model's softmax and straight-through credit, before the sampling
+temperature. It adds no learned parameter and gives every binary operator the
+same bonus. Unary operations remain available while there is slack; when
+`r <= max(0, d - a)`, only binary operations are eligible. STOP additionally
+requires the sentence to fit its row and, online, to leave the next-word slot
+free (relevant when a relative row is wider than a small STM's allowance).
+Online depth is measured after depositing
+the current word, so a pre-deposit depth of `K - 1` becomes `K` and requires one
+reduction before the next word. An unfused NP VP is never a two-slot allowance.

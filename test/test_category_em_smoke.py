@@ -156,8 +156,8 @@ def test_mlp_chooser_sized_and_context_built():
         # category context block (width == role count).
         router = model.symbolSpace.languageLayer
         sized = []
-        for layers in (router._unary_layers, router._binary_layers):
-            for layer in layers.values():
+        for layer in (router.operation_layer,):
+            if layer is not None:
                 ch = getattr(layer, "chooser", None)
                 nrc = getattr(ch, "n_role_cats", None)
                 if nrc is not None:

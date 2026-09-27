@@ -13,7 +13,7 @@ SUPERSEDED by the space_role-free bounded-STM grammar fold
     The grammar fold no longer happens per word. The per-word loop now only
     ingests each word (PS->CS->SS + ``stm.push_step_masked``) and folds via
     two surviving primitives:
-      - capacity back-pressure: ``_stm_bounded_reduce_step`` fires inside
+      - capacity back-pressure: ``_stm_operation_step`` fires inside
         ``_per_word_body_step`` whenever the STM hits ``capacity``,
       - the sentence-end sweep: ``_stm_reduce_to_single_S`` collapses the
         accumulated STM to a single root idea S at the NULL seal.
@@ -94,8 +94,7 @@ def _write_config_with_overrides(base_config_path, symbolic_order=1,
             + f"\n  <architecture>{inject}</architecture>",
             text, count=1)
     tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False,
-        dir=os.path.dirname(base_config_path))
+        mode="w", suffix=".xml", delete=False)
     tmp.write(text)
     tmp.close()
     return tmp.name
@@ -162,7 +161,7 @@ def _run_forward_spying_fold(model):
       * ``compose``       — ``symbolSpace.compose`` call count,
       * ``sweep``         — ``_stm_reduce_to_single_S`` (sentence-end)
                             call count,
-      * ``reduce``        — ``_stm_bounded_reduce_step`` (back-pressure +
+      * ``reduce``        — ``_stm_operation_step`` (back-pressure +
                             sweep micro-step) call count,
       * ``capacity``      — the STM capacity (int),
       * ``post_depth_max``— max STM depth after the forward (host int),
@@ -174,7 +173,7 @@ def _run_forward_spying_fold(model):
     counts = {"compose": 0, "sweep": 0, "reduce": 0}
     orig_compose = ss.compose
     orig_sweep = model._stm_reduce_to_single_S
-    orig_reduce = model._stm_bounded_reduce_step
+    orig_reduce = model._stm_operation_step
 
     def _compose_spy(*a, **k):
         counts["compose"] += 1
@@ -190,7 +189,7 @@ def _run_forward_spying_fold(model):
 
     ss.compose = _compose_spy
     model._stm_reduce_to_single_S = _sweep_spy
-    model._stm_bounded_reduce_step = _reduce_spy
+    model._stm_operation_step = _reduce_spy
     try:
         x = _one_input(model)
         with warnings.catch_warnings():
@@ -200,7 +199,7 @@ def _run_forward_spying_fold(model):
     finally:
         ss.compose = orig_compose
         model._stm_reduce_to_single_S = orig_sweep
-        model._stm_bounded_reduce_step = orig_reduce
+        model._stm_operation_step = orig_reduce
 
     post_depth = stm._depth
     single_S = getattr(model, "_stm_single_S", None)
@@ -226,73 +225,17 @@ def test_default_router_wire_serial_is_both():
         "(default 'both') into self.router_wire_serial.")
 
 
-def test_per_word_compose_fires_in_serial_mode():
-    """RE-PINNED contract (Alec 2026-07-13, per-word router fire): the
-    space_role-free fold (Task 3, 2026-06-05) DELETED the per-word
-    ``symbolSpace.compose`` fire, but ``_chart_compose_per_word``
-    re-introduced it — "the router should be firing as every word is
-    added, since the STM is not long enough to preserve the sentence
-    before parsing is initiated". A serial forward in the default
-    (``both``) mode therefore fires ``compose`` per word from the SECOND
-    word on (the N>=2 guard: a 1-slot stack has nothing to reduce), and
-    the bounded-STM fold still collapses the STM to a single root S
-    within capacity.
-    """
-    model = _make_serial_model(router_wire_serial="both")
+@pytest.mark.parametrize('mode', ['both', 'per-word'])
+def test_serial_words_use_the_shared_operation_layer(mode):
+    model = _make_serial_model(router_wire_serial=mode)
     probe = _run_forward_spying_fold(model)
-
-    # 1) The per-word fire is live: compose fires from the second word on.
-    assert probe["compose"] >= 1, (
-        f"the per-word router fire (_chart_compose_per_word, Alec "
-        f"2026-07-13) must fire compose over the growing STM in 'both' "
-        f"mode; got {probe['compose']}.")
-
-    # 2) The bounded-STM fold still happens: the sentence-end sweep runs
-    #    and the back-pressure / sweep reduce micro-step is exercised.
-    assert probe["sweep"] >= 1, (
-        f"the sentence-end sweep (_stm_reduce_to_single_S) must fire once "
-        f"per serial forward to collapse the STM to root; got "
-        f"{probe['sweep']}.")
-    assert probe["reduce"] >= 1, (
-        f"the bounded reduce micro-step (_stm_bounded_reduce_step) must be "
-        f"exercised by the fold (back-pressure + sweep); got "
-        f"{probe['reduce']}.")
-
-    # 3) The STM stays within capacity, and the sweep collapses to a
-    #    finite single root S (depth -> 1 for the absolute XOR sentence).
-    assert probe["post_depth_max"] <= probe["capacity"], (
-        f"bounded STM must stay within capacity {probe['capacity']}; got "
-        f"depth {probe['post_depth_max']}.")
-    assert probe["post_sweep_depth_max"] is not None and (
-        probe["post_sweep_depth_max"] <= 1), (
-        f"the sentence-end sweep must reduce the absolute sentence to a "
-        f"single root (depth 1); got post-sweep depth "
-        f"{probe['post_sweep_depth_max']}.")
-    S = probe["single_S"]
-    assert S is not None and torch.isfinite(S).all(), (
-        f"the collapsed root idea S must be produced and finite; got {S!r}")
-
-
-def test_router_wire_serial_per_word_fires_compose():
-    """RE-PINNED contract (Alec 2026-07-13): ``routerWireSerial='per-word'``
-    gates the LIVE per-word fire (``_chart_compose_per_word`` fires iff the
-    knob is 'per-word' or 'both'), so a serial forward under ``per-word``
-    fires ``compose`` per word from the second word on, while the
-    bounded-STM fold still collapses the STM to root. The 'off'/'boundary'
-    modes keep the serial forward compose-free (pinned below).
-    """
-    model = _make_serial_model(router_wire_serial="per-word")
-    probe = _run_forward_spying_fold(model)
-    assert probe["compose"] >= 1, (
-        f"routerWireSerial='per-word' must fire the per-word compose "
-        f"(_chart_compose_per_word); got {probe['compose']}.")
-    # The fold is unaffected by the knob: it still sweeps to root in cap.
-    assert probe["sweep"] >= 1 and probe["reduce"] >= 1, (
-        f"the bounded-STM fold must run regardless of routerWireSerial; "
-        f"got sweep={probe['sweep']} reduce={probe['reduce']}.")
-    assert probe["post_depth_max"] <= probe["capacity"], (
-        f"STM must stay within capacity {probe['capacity']}; got "
-        f"{probe['post_depth_max']}.")
+    assert probe['compose'] == 0  # no second independently selected parse
+    assert probe['sweep'] == 1
+    assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the seal
+    assert probe['post_depth_max'] <= probe['capacity']
+    depth = probe['post_sweep_depth_max']
+    assert depth == 1 or depth < 0  # incomplete is explicit, never a claimed root
+    assert torch.isfinite(probe['single_S']).all()
 
 
 def test_router_wire_serial_boundary_no_serial_forward_compose():

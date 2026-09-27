@@ -1,0 +1,11 @@
+{
+  "probe": "float32 logits [1e-8, 0] with opaque then structural binary candidates",
+  "probabilities": [
+    0.5,
+    0.5,
+    0.0
+  ],
+  "observed_operation": 0,
+  "required_operation": 1,
+  "status": "failed before correction"
+}

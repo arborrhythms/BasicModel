@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/relative-diagnostic.py"
+  ],
+  "pid": 98539,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3487895224,
+  "elapsed_seconds": 8.270256709074602,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/relative-diagnostic.log"
+}

@@ -33,7 +33,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
 
     layer = SimpleNamespace(
         _binary_rule_ids={"CS": binary}, _unary_rule_ids={"CS": unary},
-        _binary_layers={"CS": bank(binary)}, _unary_layers={"CS": bank(unary)})
+        operation_layer=SimpleNamespace(ops=bank(binary).ops, unary_ops=bank(unary).ops))
     monkeypatch.setattr(Language, "TheGrammar", grammar)
     owner = Language.LanguageSpace(SimpleNamespace(
         subspace=SimpleNamespace(languageLayer=layer, muxedSize=0)))
@@ -45,7 +45,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
     leaves = torch.stack((
         -.25 * registry._payload(a), .75 * registry._payload(b)
     )).detach().requires_grad_()
-    folded = layer._binary_layers["CS"].ops[local].compose(
+    folded = layer.operation_layer.ops[local].compose(
         leaves[0].reshape(1, 1, -1),
         leaves[1].reshape(1, 1, -1)).reshape(-1)
     end = torch.cat((folded.unsqueeze(0), leaves.new_zeros(2, leaves.shape[-1])))

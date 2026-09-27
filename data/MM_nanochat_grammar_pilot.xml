@@ -52,9 +52,6 @@
     <categoryCodebook>true</categoryCodebook>
     <!-- Low-occupancy grammar threshold; pressure lowers it to a hard
          grammatical demand at the configured capacity boundary. -->
-    <stmReduceTau>0.75</stmReduceTau>
-    <learning>false</learning>
-
     <data>
       <dataType>embedding</dataType>
       <dataset>text</dataset>

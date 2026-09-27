@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-c",
+    "\nfrom pathlib import Path\nimport tempfile\nimport torch\nimport pytest\nfrom Models import BasicModel\nfrom util import init_device\nfrom test_generation_catalog import test_normal_supervised_output_respects_gradient_contract\ninit_device('cpu')\nwalk=BasicModel._output_generate_walk\ndef observed_walk(self,*args,**kwargs):\n    out=walk(self,*args,**kwargs)\n    p=self.question_conditioners[str(self.conceptualSpace.stm.concept_dim)].weight\n    for name,value in [('first_emission',out[0][:,0].square().sum()),('all_emissions',out[0].square().sum())]:\n        g=torch.autograd.grad(value,p,retain_graph=True,allow_unused=True)[0]\n        print('CONDITIONER_GRADIENT',name,None if g is None else float(g.norm()),flush=True)\n    print('EMITTED',out[1].tolist(),'TRUNCATED',out[2].tolist(),flush=True)\n    return out\nBasicModel._output_generate_walk=observed_walk\nwith pytest.MonkeyPatch.context() as patch:\n    test_normal_supervised_output_respects_gradient_contract(Path(tempfile.mkdtemp()),patch,True)\n"
+  ],
+  "pid": 32065,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2192722992,
+  "elapsed_seconds": 11.398348708054982,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/generation-gradient-boundary.log"
+}

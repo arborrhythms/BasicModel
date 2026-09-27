@@ -1,0 +1,916 @@
+--- a/README.md
++++ b/README.md
+@@ -40,6 +40,13 @@
+ 
+ 
+ Model configurations are specified in XML. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
++
++Compose fires one operation per round from a joint operation/location softmax.
++Training compares exploit and explore hard derivations after two optimizer
++steps and retains the strictly lower-loss result; ties retain exploit.
++`architecture.composeTemperature` defaults to `0` (argmax) and controls both
++training draws. Model credit remains untempered. Evaluation runs exploit alone
++with deterministic logit argmax. See [Language](doc/Language.md#one-operation-per-round-item-75).
+ 
+ ## Files
+ 
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -5680,7 +5680,7 @@
+     """
+ 
+     def __init__(self, n_input, n_output, *, hidden_dim, feature_dim,
+-                 max_depth, temperature=1.0):
++                 max_depth, temperature=0.0):
+         super().__init__(int(n_input), int(n_output))
+         self.n_input, self.n_output = int(n_input), int(n_output)
+         self.hidden_dim, self.feature_dim = int(hidden_dim), int(feature_dim)
+@@ -5769,7 +5769,8 @@
+             previous = self._exploit_derivations[self._derivation_cursor]
+             self._derivation_cursor += 1
+         derivation = self.operation_layer.derive(
+-            data, slots=slots, rounds=budget, exploit=previous, cat_ctx=cat,
++            data, slots=slots, rounds=budget, exploit=previous,
++            greedy=not self.training, cat_ctx=cat,
+             what_ctx=getattr(self, '_what_context', None), grammar_context=grammar_context)
+         self._last_derivation = derivation
+         if not self.exploration_trial:
+@@ -5789,12 +5790,12 @@
+         self._last_root_state = derivation['value'][:, :1]
+         self._last_output = self._last_root_state.expand(-1, data.shape[1], -1).contiguous()
+         # These are this trial's transient reconstruction/feedback carriers.
+-        # runBatch restores exploit's carriers after exploration trains.
++        # runBatch keeps the lower-loss trial's carriers after both train.
+         complete = derivation['complete'].detach().tolist()
+         self._last_rules = {role: [row if complete[b] else [] for b, row in enumerate(rows)]
+                             for role, rows in rules.items()}
+         self._last_space_role_routings = {'operations': {'rounds': traces}}
+-        if not self.exploration_trial and owner is not None and cat is not None:
++        if owner is not None and cat is not None:
+             owner._category_role_obs = self._collect_round0_role_obs()
+         return self._last_rules
+ 
+@@ -7520,7 +7521,7 @@
+     through gradient. There is no compose policy/advantage objective.
+     """
+ 
+-    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=1.0,
++    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0,
+                  op_names=None, unary_names=None, op_space_roles=None,
+                  chooser="anchordot", n_role_cats=0):
+         super().__init__()
+@@ -7532,8 +7533,8 @@
+         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
+         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
+         self.temperature = float(temperature)
+-        if self.temperature <= 0:
+-            raise ValueError("compose temperature must be positive")
++        if not math.isfinite(self.temperature) or self.temperature < 0:
++            raise ValueError("compose temperature must be finite and nonnegative")
+         self.stop_anchor = nn.Parameter(torch.randn(1, self.d_model) * .02)
+         self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * .02)
+         self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * .02)
+@@ -7547,7 +7548,7 @@
+ 
+     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
+                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+-                grammar_context=None, exploit=False):
++                grammar_context=None, replay_action=None):
+         B, N, D = x.shape
+         if N < 1:
+             raise ValueError("compose needs a nonempty static slab")
+@@ -7587,26 +7588,28 @@
+         limit = torch.as_tensor(slots, device=x.device)
+         stop = stop.masked_fill(depth > limit, -torch.inf)
+         logits = torch.cat((binary_scores.reshape(B, -1),
+-                            unary_scores.reshape(B, -1), stop[:, None]), -1) / self.temperature
++                            unary_scores.reshape(B, -1), stop[:, None]), -1)
++        # Credit always uses the model's own distribution over legal actions.
++        # A forced counterfactual constrains selection, not its probability
++        # weight; neither that exclusion nor sampling temperature changes it.
++        probabilities = _masked_softmax_lastdim(logits)
++        selection_logits = logits
+         if masked_action is not None:
+             ids = torch.arange(logits.shape[-1], device=x.device)[None, :]
+-            logits = logits.masked_fill(ids == masked_action[:, None], -torch.inf)
+-        probabilities = _masked_softmax_lastdim(logits)
++            selection_logits = selection_logits.masked_fill(
++                ids == masked_action[:, None], -torch.inf)
+         flags = (self.structural_ops * (N - 1)
+                  + self.unary_structural_ops * N + (True,))
+-        greedy_action = structural_argmax(probabilities, flags)
+-        if sample or exploit:
+-            # Gumbel-max samples exactly from the tempered categorical and
+-            # supports fixed-shape compiled execution, including inactive rows.
++        action = structural_argmax(selection_logits, flags)
++        if self.training and sample and self.temperature > 0:
++            # Only the hard selection is tempered. Evaluation and temperature
++            # zero use exact-logit structural argmax without a random draw.
+             noise = -torch.log(-torch.log(torch.rand_like(logits).clamp(
+                 torch.finfo(logits.dtype).tiny, 1 - torch.finfo(logits.dtype).eps)))
+-            sampled = (logits + noise).argmax(-1)
+-            action = (sampled if sample else torch.where(
+-                torch.rand(B, device=x.device) < .1, sampled,
+-                greedy_action))
+-        else:
+-            action = greedy_action
+-        has_choice = torch.isfinite(logits).any(-1)
++            action = (selection_logits / self.temperature + noise).argmax(-1)
++        if replay_action is not None:
++            action = torch.where(replay_action >= 0, replay_action, action)
++        has_choice = torch.isfinite(selection_logits.gather(1, action[:, None])).squeeze(1)
+         torch._assert_async((~active | has_choice).all(),
+                             "compose has no legal alternative at the selected exploration round")
+         active = active & has_choice
+@@ -7658,9 +7661,11 @@
+         for i in range(int(rounds)):
+             mask = (torch.where(forced == i, exploit['actions'][:, i], -1)
+                     if exploit is not None else None)
++            replay = (torch.where(i < forced, exploit['actions'][:, i], -1)
++                      if exploit is not None and self.temperature == 0 else None)
+             _, x, route = self(
+                 x, depth=depth, slots=slots, active=active,
+-                sample=exploit is not None, exploit=exploit is None and not greedy, masked_action=mask,
++                sample=not greedy, masked_action=mask, replay_action=replay,
+                 cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
+                 grammar_context=grammar_context)
+             actions.append(torch.where(active & route['valid'], route['action'], -1))
+@@ -7674,6 +7679,8 @@
+ 
+     def derive_pair(self, x, *, slots=1, rounds, depth=None, **kwargs):
+         exploit = self.derive(x, slots=slots, rounds=rounds, depth=depth, **kwargs)
++        if not self.training:
++            return exploit, None
+         explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+                               exploit=exploit, **kwargs)
+         explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
+@@ -10261,11 +10268,8 @@
+         # indirection is gone.
+         _assert_retired_chart_knobs_absent()
+         chart_hidden = self._resolve_hidden_dim(nSymbols)
+-        try:
+-            _signal_temperature = float(TheXMLConfig.get(
+-                "SymbolSpace.signal.temperature", 1.0))
+-        except Exception:
+-            _signal_temperature = 1.0
++        compose_temperature = float(TheXMLConfig.get(
++            "architecture.composeTemperature", 0.0))
+         self.languageLayer = LanguageLayer(
+             n_input=nSymbols, n_output=nSymbols,
+             hidden_dim=chart_hidden,
+@@ -10274,7 +10278,7 @@
+             # a semantic slice of those codes.
+             feature_dim=self.muxedSize,
+             max_depth=max(nSymbols - 1, 1),
+-            temperature=_signal_temperature,
++            temperature=compose_temperature,
+         )
+         # The signal router's grammar reference (read by per-rule gating
+         # and the diagnostics that used to call ``chart.grammar``).
+@@ -13639,7 +13643,7 @@
+         return self.language_layer.operation_layer
+ 
+     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
+-                         sample=False, masked_action=None):
++                         sample=True, masked_action=None, replay_action=None):
+         """The shared compose layer with the two newest occupied STM slots."""
+         buffer, depth = state[:2]
+         B, K, D = buffer.shape
+@@ -13652,7 +13656,8 @@
+         stop_slots = torch.where(depth <= limit, n, 0)
+         _, _, route = self.language_layer.operation_layer(
+             window, depth=window_depth, slots=stop_slots,
+-            active=row_gate.reshape(B), sample=sample, exploit=not sample, masked_action=masked_action,
++            active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
++            replay_action=replay_action,
+             op_prior=op_prior, grammar_context=self._structural_context(
+                 phase='compose', input_stream=buffer))
+         position = (window_depth - 1 - route['position']).clamp_min(0)
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -1636,12 +1636,11 @@
+     _optimizer     = None
+     checkpoint_every_batches = 0
+     _training_step_count = 0
+-    # Two-pass learning pass B (the explore trial) sets this True so the
+-    # per-sentence side effects (model clock, discourse ARMA rings, LTM
+-    # end-state chain, step/checkpoint counter) do NOT fire a second time
+-    # on the same sentence -- B trains the chooser but must not advance the
+-    # sequence state pass A already committed. See runBatch(exploration_trial).
++    # Trials keep independent runtime records until their losses are compared.
++    # A non-recording context read is separate from a training pair: both
++    # candidate trials may record privately, but only the winner survives.
+     _exploration_trial = False
++    _compose_pair_active = False
+     # Class-level defaults for ``serial`` / ``symbolicOrder`` so that
+     # BasicModel()
+     # constructed directly (without going through ``init_config``)
+@@ -8509,7 +8508,7 @@
+             object.__setattr__(self, "_tensor_final_end_depth", recon_end_depth)
+             if (getattr(self, "_compiled_word_loop_fullgraph", False)
+                     and getattr(self, "_active_compiled_step", None) is not None
+-                    and not getattr(self, "_exploration_trial", False)
++                    and self._compose_records_enabled()
+                     and not getattr(self.inputSpace, "_sentence_pack_enabled", False)):
+                 # Attribute-only graph escapes may be eliminated. Publish
+                 # the unpacked observation from the same explicit sealed
+@@ -14547,8 +14546,8 @@
+     def _compose_state_snapshot(self):
+         """Snapshot runtime state, sharing parameters and module ownership.
+ 
+-        Exploration trains those same parameters but cannot publish a second
+-        program, STM, LTM row or observation. Learning survives the transaction;
++        Both trials train those parameters; the selected runtime publishes one
++        program, STM, LTM row and observation. Learning survives the transaction;
+         sparse optimizer rows follow their surviving edge identities. Container
+         copies preserve aliasing within the snapshot.
+         """
+@@ -14718,6 +14717,25 @@
+         derivation = getattr(language, '_last_derivation', None)
+         return derivation.get('complete') if isinstance(derivation, dict) else None
+ 
++    def _compose_records_enabled(self):
++        return (not getattr(self, '_exploration_trial', False)
++                or getattr(self, '_compose_pair_active', False))
++
++    def _finish_compose_trial(self):
++        """Incomplete forests train but do not survive in the committed STM."""
++        complete = self._compose_completed_rows()
++        if not torch.is_tensor(complete):
++            return
++        self._compose_incomplete_count = int((~complete).sum())
++        stm = self.conceptualSpace.stm
++        state = (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
++                 stm._concept_rows, stm._concept_activations)
++        (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
++         stm._concept_rows, stm._concept_activations) = FunctionalPeerSTM.soft_reset_rows(
++             state, ~complete)
++        stm._wholes = ShortTermMemory.functional_wholes_reset(
++            stm.ensure_whole_state(), ~complete)
++
+     def _compose_round_owners(self, actions):
+         """Sentence identity for every fixed word/seal operation slot."""
+         B, T = actions.shape
+@@ -14767,51 +14785,73 @@
+         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
+         if language is None or language.operation_layer is None:
+             return self._run_batch_once(**call)
+-        before = self._compose_state_snapshot()
+-        language.exploration_trial = False
+-        language._exploit_derivations = []
+-        result = self._run_batch_once(**call)
+-        if result[0] is None:
++        if not call['train']:
++            language.exploration_trial = False
++            language._exploit_derivations = []
++            result = self._run_batch_once(**call)
++            self._finish_compose_trial()
+             return result
+-        actions, forced, owners = self._exploration_constraints()
+-        complete = self._compose_completed_rows()
+-        if torch.is_tensor(complete):
+-            self._compose_incomplete_count = int((~complete).sum())
+-            stm = self.conceptualSpace.stm
+-            state = (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+-                     stm._concept_rows, stm._concept_activations)
+-            (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+-             stm._concept_rows, stm._concept_activations) = FunctionalPeerSTM.soft_reset_rows(
+-                 state, ~complete)
+-            stm._wholes = ShortTermMemory.functional_wholes_reset(
+-                stm.ensure_whole_state(), ~complete)
+-        parallel_paths = list(language._exploit_derivations)
+-        committed = self._compose_state_snapshot()
+-        committed_time = self.when_time.detach().clone()
++        self._compose_pair_active = True
+         try:
+-            self._restore_compose_state(before)
+-            self.when_time.copy_(committed_time)
+-            self._compose_exploit_actions, self._compose_forced_slots = actions, forced
+-            language.exploration_trial = True
+-            language._exploit_derivations = parallel_paths
+-            language._derivation_cursor = 0
+-            call['exploration_trial'] = True
+-            # The transaction restored the exact Teacher staging consumed
+-            # by exploit. source_rows can be grammar metadata without corpus
+-            # addresses and must not replace that already-restored staging.
+-            self._run_batch_once(**call)
+-            explored = getattr(self._reconstruction_stack(), '_choice_actions', None)
+-            if actions is not None and torch.is_tensor(explored):
+-                for sid in range(int(owners.max().detach()) + 1):
+-                    rounds = (owners == sid) & (actions >= 0)
+-                    different = ((actions != explored) & rounds).any(-1)
+-                    if not bool((different | ~rounds.any(-1)).all()):
+-                        raise RuntimeError('exploration repeated an exploit sentence derivation')
++            before = self._compose_state_snapshot()
++            language.exploration_trial = False
++            language._exploit_derivations = []
++            result = self._run_batch_once(**call)
++            if result[0] is None:
++                return result
++            exploit_loss = self._compose_trial_loss.detach().clone()
++            if 'questions' in call:
++                # Curriculum/question selection belongs to the objective, not
++                # to the trial. Reuse A's questions after restoring B's runtime.
++                call['questions'] = self._active_what_questions
++            actions, forced, owners = self._exploration_constraints()
++            prefix = (self._exploration_prefix_slots(actions, forced, owners)
++                if actions is not None and language.operation_layer.temperature == 0 else None)
++            self._finish_compose_trial()
++            parallel_paths = list(language._exploit_derivations)
++            committed = self._compose_state_snapshot()
++            committed_time = self.when_time.detach().clone()
++            committed_steps = self._training_step_count
++            explore_wins = False
++            explore_loss = None
++            try:
++                self._restore_compose_state(before)
++                self.when_time.copy_(committed_time)
++                self._compose_exploit_actions, self._compose_forced_slots = actions, forced
++                self._compose_prefix_slots = prefix
++                language.exploration_trial = True
++                language._exploit_derivations = parallel_paths
++                language._derivation_cursor = 0
++                call['exploration_trial'] = True
++                # The transaction restored the exact Teacher staging consumed
++                # by exploit. source_rows can be grammar metadata without corpus
++                # addresses and must not replace that already-restored staging.
++                explored_result = self._run_batch_once(**call)
++                explore_loss = self._compose_trial_loss.detach().clone()
++                self._finish_compose_trial()
++                explored = getattr(self._reconstruction_stack(), '_choice_actions', None)
++                if actions is not None and torch.is_tensor(explored):
++                    for sid in range(int(owners.max().detach()) + 1):
++                        rounds = (owners == sid) & (actions >= 0)
++                        different = ((actions != explored) & rounds).any(-1)
++                        if not bool((different | ~rounds.any(-1)).all()):
++                            raise RuntimeError('exploration repeated an exploit sentence derivation')
++                explore_wins = bool(explore_loss < exploit_loss)
++                if explore_wins:
++                    result = explored_result
++            finally:
++                if not explore_wins:
++                    self._restore_compose_state(committed, sparse_scope=before)
++                self._training_step_count = committed_steps
++                self.when_time.copy_(committed_time)
++                self._compose_exploit_actions = self._compose_forced_slots = None
++                self._compose_prefix_slots = None
++                language.exploration_trial = False
++            self._compose_trial_losses = {'exploit': exploit_loss, 'explore': explore_loss}
++            self._compose_winner = 'explore' if explore_wins else 'exploit'
++            return result
+         finally:
+-            self._restore_compose_state(committed, sparse_scope=before)
+-            self._compose_exploit_actions = self._compose_forced_slots = None
+-            language.exploration_trial = False
+-        return result
++            self._compose_pair_active = False
+ 
+     def _run_batch_once(self, train=True, batchNum=0, batchSize=10, split="train",
+                  optimizer=None, batch_override=None, progress=None,
+@@ -14820,15 +14860,11 @@
+                  source_rows=None, attach_outputs=False):
+         """Run a single batch: forward pass, loss, and (if training) backward + step.
+ 
+-        ``exploration_trial`` (the sampled alternative derivation): when True this is
+-        the non-recorded explore trial over a sentence already processed by
+-        pass A. It still trains the chooser (forward / loss / backward /
+-        step), but the per-sentence side effects are SKIPPED so B does not
+-        double-commit the same sentence: the model clock is not advanced
+-        (``_advance_when_time``), the discourse ARMA observe and the LTM
+-        end-state append are not re-run, and ``_training_step_count`` (the
+-        periodic-checkpoint cadence) is not incremented. Default False is the
+-        ordinary recorded pass.
++        ``exploration_trial`` identifies the alternative under the updated
++        weights. Inside a training pair it records into its private restored
++        runtime and uses the same objective as exploit. Only the selected end
++        state survives. Outside a pair the flag retains a non-recording context
++        read. The clock never ticks a second time for exploration.
+ 
+         Args:
+             train: whether to compute gradients and update parameters.
+@@ -14861,6 +14897,8 @@
+             the dataset is exhausted.
+         """
+         self._install_unit_span_fn()
++        record_trial = not exploration_trial or getattr(self, '_compose_pair_active', False)
++        self._compose_trial_loss = None
+         self._packed_prediction_drained = False
+         self._compose_overflow = None
+         self._compose_complete = None
+@@ -14975,7 +15013,7 @@
+ 
+         if train:
+             optimizer.zero_grad()
+-        if not exploration_trial:
++        if record_trial:
+             with torch.set_grad_enabled(bool(train)):
+                 self._stage_expectation_queries(training=bool(train))
+ 
+@@ -15185,7 +15223,7 @@
+                 # the returned execution is the ordinary forward tuple.
+                 _what_answers = self._what_or_think(
+                     what_questions, inputTensor, executor=_fwd,
+-                    record=not exploration_trial)
++                    record=record_trial)
+                 _forward_result = _what_answers[0].execution
+                 (forwardInput, symbols, predictions,
+                  _) = self._publish_compiled_sentence_state(_forward_result)
+@@ -15558,15 +15596,13 @@
+             # commits the new rep + residual into the rings (vectorized,
+             # sync-free). Cold-start rows return ``None``. Computed here,
+             # post-body / pre-backward, so the term trains the predictor.
+-            # Skip on the explore trial (pass B): _discourse_arma_loss both
+-            # trains the inter-predictor AND commits the sentence rep/residual
+-            # into the persistent ARMA rings (disc.observe). Re-running it on a
+-            # sentence pass A already observed would double-push the rings and
+-            # corrupt the lagged history the next batch reads.
++            # Each paired trial starts from the same prior runtime. Its
++            # private observation and prediction context survive only if that
++            # trial wins; both trials are scored under the same objective.
+             legacy_prediction = bool(getattr(self, "legacy_prediction_enabled", False))
+             arma_loss = (self._discourse_arma_loss()
+                          if (train and legacy_prediction
+-                             and not exploration_trial) else None)
++                             and record_trial) else None)
+ 
+             # Intra-sentence prediction loss term (Task 3, STM serial/
+             # parallel modes) -- ``ConceptualSpace.forward`` ran the
+@@ -15591,13 +15627,13 @@
+             # scored sentence this batch.
+             inter_loss = (
+                 self._discourse_inter_loss()
+-                if train and not exploration_trial else None
++                if train and record_trial else None
+             )
+-            expectation_policy_loss = self._expectation_policy_loss() if train and not exploration_trial else None
++            expectation_policy_loss = self._expectation_policy_loss() if train and record_trial else None
+             # InfoNCE next-idea contrastive term (the discourse layer's second
+             # accumulator; populated during the forward boundary observe).
+             inter_contrastive = None
+-            if train and not exploration_trial and self.symbolSpace is not None:
++            if train and record_trial and self.symbolSpace is not None:
+                 _disc = getattr(self.symbolSpace, "discourse", None)
+                 if _disc is not None and hasattr(
+                         _disc, "consume_inter_contrastive_loss"):
+@@ -15932,6 +15968,7 @@
+         except Exception:
+             pass
+ 
++        self._compose_trial_loss = totalLoss.detach().clone()
+         if train:
+             _every = int(getattr(self, "branch_diagnostics_every", 0) or 0)
+             if (_every > 0 and int(getattr(
+@@ -15980,11 +16017,9 @@
+             self._end_what_episodes()
+             self._flush_partspace_promotions(optimizer=optimizer)
+             self._clamp_symbolic_codebook()
+-            # Context-owned concept atoms are updated exactly once from the
+-            # completed sentence snapshot.  The optional exploration pass is
+-            # a second optimizer trial over the same sentence, not a second
+-            # observation, so it intentionally does not rotate the table.
+-            if not exploration_trial:
++            # Each private trial rotates its contextual dictionary from the
++            # same prior state. The winning runtime owns the single update.
++            if record_trial:
+                 self._update_contextual_concept_codebooks()
+             self._normalize_conceptual_codebooks()
+             # 2026-05-28: enforce the |W| <= 1 invariant on the
+@@ -15998,10 +16033,9 @@
+             # unbounded target rows.
+             self._normalize_perceptual_embedding()
+             self._advance_codebook_parameter_versions()
+-            # Don't count the explore trial (pass B): the step counter drives
+-            # the periodic-checkpoint cadence, which should count sentences,
+-            # not the two trials per sentence.
+-            if not exploration_trial:
++            # Both private trials start from the same counter. Retaining
++            # one end state counts the public batch exactly once.
++            if record_trial:
+                 self._training_step_count = (
+                     int(getattr(self, "_training_step_count", 0) or 0) + 1
+                 )
+@@ -19194,8 +19228,9 @@
+         gate = (state[1] > 0 if row_gate is None else row_gate.reshape(B).bool())
+         slots = 1 if protect_depth is None else protect_depth
+         choice = self.languageSpace.choose_operation(
+-            state, gate, slots=slots, sample=bool(getattr(self, '_exploration_trial', False)),
++            state, gate, slots=slots,
+             masked_action=self._compose_masked_action(trace_slot, state[1]),
++            replay_action=self._compose_replayed_action(trace_slot, state[1]),
+             op_prior=self._chunk_structural_prior(stm.ensure_whole_state(), B, state[0]))
+         next_state = self.conceptualSpace.apply_language_choice(state, choice)
+         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+@@ -19250,14 +19285,44 @@
+             active = active & applied
+ 
+     def _compose_masked_action(self, slot, like):
++        return self._compose_action_constraint(slot, like, '_compose_forced_slots')
++
++    def _compose_replayed_action(self, slot, like):
++        return self._compose_action_constraint(slot, like, '_compose_prefix_slots')
++
++    def _compose_action_constraint(self, slot, like, constraint):
+         actions = getattr(self, '_compose_exploit_actions', None)
+-        forced = getattr(self, '_compose_forced_slots', None)
++        forced = getattr(self, constraint, None)
+         if slot is None or actions is None or forced is None:
+             return None
+         index = torch.as_tensor(slot, device=like.device, dtype=torch.long).reshape(1)
+         chosen = actions.index_select(1, index.clamp(0, actions.shape[1] - 1)).reshape(-1)
+         mask = forced.index_select(1, index.clamp(0, forced.shape[1] - 1)).reshape(-1)
+         return torch.where(mask, chosen, -1)
++
++    def _exploration_prefix_slots(self, actions, forced, owners):
++        """Chronological prefix per sentence, including interleaved seal slots.
++
++        Exploit already updated the parameters. Replaying its hard choices
++        preserves the zero-temperature counterfactual's prefix under those
++        updated weights, while recomputing candidates and their live credit.
++        """
++        words = self.inputSpace._word_active_mask.shape[1]
++        seal = max(1, 2 * int(self.conceptualSpace.stm.capacity))
++        order = []
++        for word in range(words):
++            order.extend(range(3 * word, 3 * word + 3))
++            if word + 1 < words:
++                begin = 3 * words + (word + 1) * seal
++                order.extend(range(begin, begin + seal))
++        order.extend(range(3 * words, 3 * words + seal))
++        order = [slot for slot in order if slot < actions.shape[1]]
++        ranks = torch.tensor(order, device=actions.device).argsort()[None, :]
++        prefix = torch.zeros_like(forced)
++        for sid in range(int(owners.max().detach()) + 1):
++            chosen = torch.where(forced & (owners == sid), ranks, actions.shape[1]).amin(1)
++            prefix |= (owners == sid) & (ranks < chosen[:, None]) & (actions >= 0)
++        return prefix
+ 
+     def _record_operation_choice(self, slot, choice, state):
+         trace = self._reconstruction_stack()
+@@ -21380,8 +21445,8 @@
+                 slot = 3 * index + round_index
+                 choice = language.choose_operation(
+                     before, round_active, slots=slots_from_trace(trace_state, index),
+-                    sample=bool(getattr(self, '_exploration_trial', False)),
+                     masked_action=self._compose_masked_action(slot, before[1]),
++                    replay_action=self._compose_replayed_action(slot, before[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, before[0]))
+                 final_stm = cs.apply_language_choice(before, choice)
+                 binary = choice.applied & (choice.kind == 1)
+@@ -21433,8 +21498,8 @@
+                 slot = 3 * width + ((index + 1) % width) * seal_width + seal_index
+                 choice = language.choose_operation(
+                     pre_seal, seal_active, slots=slots_from_trace(trace_state, index),
+-                    sample=bool(getattr(self, '_exploration_trial', False)),
+                     masked_action=self._compose_masked_action(slot, pre_seal[1]),
++                    replay_action=self._compose_replayed_action(slot, pre_seal[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, pre_seal[0]))
+                 sealed_stm = cs.apply_language_choice(pre_seal, choice)
+                 binary = choice.applied & (choice.kind == 1)
+@@ -22240,7 +22305,7 @@
+                 end_slots, end_depth = self._final_end_state(S, post_depth)
+                 object.__setattr__(self, "_tensor_final_end_slots", end_slots)
+                 object.__setattr__(self, "_tensor_final_end_depth", end_depth)
+-                if not getattr(self, "_exploration_trial", False):
++                if self._compose_records_enabled():
+                     self._drain_packed_stm_end_states()
+                     self._packed_prediction_drained = True
+                 discourse_live = False
+@@ -22288,11 +22353,9 @@
+                         _boundary_registry(self), entries, payloads, depths,
+                         structured=(getattr(discourse, "expectation_scope", None)
+                                     == "structured")))
+-                # Skip on the explore trial (pass B): both sinks append the
+-                # sentence's end-state. Pass A already committed this
+-                # sentence; a second append would duplicate it (in the AR
+-                # deque AND the persistent store).
+-                if not getattr(self, '_exploration_trial', False):
++                # Pair trials write into independent runtime states; only
++                # the selected state's chain and persistent store survive.
++                if self._compose_records_enabled():
+                     # SINK (b) -- the discourse AR predict+observe (Task 7/8)
+                     # runs FIRST so its prediction is staged from the chain
+                     # state BEFORE this boundary's end-state lands in the
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -23806,6 +23806,7 @@
+                 hidden_dim=max(_ws_dim, 8),
+                 feature_dim=_ws_dim,
+                 max_depth=max(int(outputShape[0]), 2),
++                temperature=float(TheXMLConfig.get("architecture.composeTemperature", 0.0)),
+             )
+ 
+         # Phase 1A.2: make the SYMBOL VQ codebook learnable by gradient
+--- a/data/model.xml
++++ b/data/model.xml
+@@ -27,6 +27,11 @@
+          so legacy configs keep deriving the mode from symbolicOrder > 0.
+          New configs should set <serial>true|false</serial> explicitly. -->
+     <!-- <serial>false</serial> -->
++
++    <!-- Hard compose sampling only; zero selects exact-logit argmax.
++         Both training derivations use this temperature. Model softmax
++         probabilities used for gradient credit remain untempered. -->
++    <composeTemperature>0</composeTemperature>
+ 
+     <!-- symbolicOrder is the symbolic / relational loop budget, not the
+          primary mode selector. Omitted here so legacy configs inherit the
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -75,6 +75,13 @@
+            derives it from symbolicOrder > 0 for legacy configs. New configs
+            should set it explicitly. -->
+       <xs:element name="serial" type="xs:boolean" minOccurs="0"/>
++      <!-- Sampling temperature shared by exploit/explore; zero is argmax.
++           Evaluation is always argmax. Gradient credit is untempered. -->
++      <xs:element name="composeTemperature" minOccurs="0" default="0">
++        <xs:simpleType><xs:restriction base="xs:double">
++          <xs:minInclusive value="0"/>
++        </xs:restriction></xs:simpleType>
++      </xs:element>
+       <xs:element name="modeSchedule" minOccurs="0">
+         <xs:simpleType><xs:restriction base="xs:string">
+           <xs:pattern value="serial|parallel|interleave:[1-9][0-9]*"/>
+--- a/test/test_compose_pair_driver.py
++++ b/test/test_compose_pair_driver.py
+@@ -1,4 +1,4 @@
+-"""Exploit/explore both train; only exploit state survives the transaction."""
++"""Both compose trials train; the strictly lower-loss end state survives."""
+ import os
+ import re
+ import sys
+@@ -65,12 +65,16 @@
+     clock0 = m.present()
+     steps0 = int(getattr(m, '_training_step_count', 0))
+     observed = []
++    constraints = []
+     backward = m._backward_training_loss
+     def capture(total, *args, **kwargs):
+         trace = m._reconstruction_stack()
+         observed.append((bool(m.symbolSpace.languageLayer.exploration_trial), trace._choice_actions.detach().clone(),
+                          m.conceptualSpace.stm._buffer.detach().clone(),
+                          float(total.detach())))
++        if m.symbolSpace.languageLayer.exploration_trial:
++            constraints.append((m._compose_prefix_slots.detach().clone(),
++                                m._compose_forced_slots.detach().clone()))
+         return backward(total, *args, **kwargs)
+     monkeypatch.setattr(m, '_backward_training_loss', capture)
+     try:
+@@ -81,10 +85,44 @@
+         assert all(torch.isfinite(torch.tensor(row[3])) for row in observed)
+         assert m.present() - clock0 == 1
+         assert m._training_step_count - steps0 == 1
+-        torch.testing.assert_close(m._reconstruction_stack()._choice_actions, observed[0][1])
++        winner = int(observed[1][3] < observed[0][3])
++        torch.testing.assert_close(m._reconstruction_stack()._choice_actions, observed[winner][1])
+         assert (observed[0][1] != observed[1][1]).any(-1).all()
++        prefix, forced = constraints[0]
++        assert torch.equal(observed[0][1][prefix], observed[1][1][prefix])
++        assert (observed[0][1][forced] != observed[1][1][forced]).all()
+         assert m._exploration_trial is False
+         assert m._compose_exploit_actions is None
++    finally:
++        m.End()
++        m.symbolSpace.soft_reset()
++
++
++def test_evaluation_repeats_the_same_program_without_an_explore_trial(monkeypatch):
++    m = _build('<composeTemperature>2</composeTemperature>')
++    batch = _batch(m)
++    original = m._run_batch_once
++    from functools import wraps
++    calls = []
++    @wraps(original)
++    def once(*args, **kwargs):
++        calls.append((kwargs['train'], kwargs['exploration_trial']))
++        return original(*args, **kwargs)
++    monkeypatch.setattr(m, '_run_batch_once', once)
++    def forbidden(*args, **kwargs):
++        raise AssertionError('evaluation attempted a backward')
++    monkeypatch.setattr(m, '_backward_training_loss', forbidden)
++    initial = m._compose_state_snapshot()
++    programs = []
++    try:
++        for _ in range(2):
++            with warnings.catch_warnings():
++                warnings.filterwarnings('ignore')
++                m.runBatch(train=False, batchSize=4, batch_override=batch)
++            programs.append(m._derivation_program()[1].detach().clone())
++            m._restore_compose_state(initial)
++        assert calls == [(False, False), (False, False)]
++        assert torch.equal(programs[0], programs[1])
+     finally:
+         m.End()
+         m.symbolSpace.soft_reset()
+--- a/test/test_compose_records.py
++++ b/test/test_compose_records.py
+@@ -70,6 +70,8 @@
+ 
+ 
+ class Runtime(nn.Module):
++    _finish_compose_trial = BasicModel._finish_compose_trial
++
+     def __init__(self):
+         super().__init__()
+         self.parameter = nn.Parameter(torch.tensor(2.))
+@@ -85,6 +87,7 @@
+         self.teacher = SimpleNamespace(lesson=Lesson({'clean': torch.tensor([5.])}))
+         self.errors = SimpleNamespace(values={'exploit': [1.]})
+         self.trace = SimpleNamespace(actions=torch.tensor([1]))
++        self._training_step_count = 0
+ 
+     def _synthesis_state_objects(self):
+         return []
+@@ -181,6 +184,7 @@
+         observed.append(model.teacher._staged_source_rows)
+         model.teacher._staged_source_rows = None
+         model.teacher._staged_split = None
++        model._compose_trial_loss = torch.tensor(0.)
+         return object(), 0
+     model._run_batch_once = once
+     model._compose_state_snapshot = lambda: BasicModel._compose_state_snapshot(model)
+--- a/test/test_compose_review.py
++++ b/test/test_compose_review.py
+@@ -0,0 +1,153 @@
++"""September 27 review: sampling, model credit, evaluation and winning state."""
++import pytest
++import torch
++
++from Language import OperationSelectionLayer
++from test_compose_operations import Add, Negate, layer
++
++
++def test_zero_temperature_is_valid_and_keeps_the_chooser_gradient():
++    step = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()],
++                                   temperature=0)
++    with torch.no_grad():
++        step.reduce_anchor.fill_(1)
++        step.apply_anchor.zero_()
++    x = torch.tensor([[[1.], [2.], [3.]]], requires_grad=True)
++    _, path, route = step(x, sample=True)
++    path.sum().backward()
++    assert route['action'].tolist() == [1]
++    assert 0 < route['probability'].item() < 1
++    assert step.reduce_anchor.grad.abs().sum() > 0
++    assert step.apply_anchor.grad.abs().sum() > 0
++
++
++def test_temperature_and_forced_mask_do_not_change_model_credit():
++    step = layer()
++    x = torch.tensor([[[1.], [2.], [3.]]])
++    expected = torch.tensor([[3., 5., 0., 0., 0., -torch.inf]]).softmax(-1)
++    for temperature in (0., .25, 2.):
++        step.temperature = temperature
++        _, _, route = step(x, masked_action=torch.tensor([1]))
++        assert route['action'].tolist() == [0]
++        torch.testing.assert_close(route['probabilities'], expected)
++        torch.testing.assert_close(route['probability'], expected[:, 0])
++
++
++def test_zero_temperature_explore_is_identical_until_the_forced_round(monkeypatch):
++    step = layer()
++    step.temperature = 0.
++    x = torch.tensor([[[1.], [2.], [3.]]]).expand(3, -1, -1)
++    exploit = step.derive(x, slots=1, rounds=6)
++    # Exploit's optimizer step can change the preferred action. Its prefix
++    # must still be replayed when exploring under the updated parameters.
++    with torch.no_grad():
++        step.reduce_anchor.fill_(-2.)
++    monkeypatch.setattr(torch, 'rand', lambda *a, **kw:
++                        torch.tensor([.0, .34, .99], device=kw.get('device')))
++    explore = step.derive(x, slots=1, rounds=6, exploit=exploit)
++    assert explore['forced_round'].tolist() == [0, 1, 2]
++    for b, forced in enumerate(explore['forced_round'].tolist()):
++        assert torch.equal(explore['actions'][b, :forced], exploit['actions'][b, :forced])
++        assert explore['actions'][b, forced] != exploit['actions'][b, forced]
++
++
++def test_evaluation_ignores_sampling_temperature_and_does_not_explore(monkeypatch):
++    step = layer().eval()
++    step.temperature = 3.
++    def forbidden(*args, **kwargs):
++        raise AssertionError('evaluation requested a random draw')
++    monkeypatch.setattr(torch, 'rand', forbidden)
++    monkeypatch.setattr(torch, 'rand_like', forbidden)
++    x = torch.tensor([[[1.], [2.], [3.]]])
++    first, unused = step.derive_pair(x, slots=1, rounds=6)
++    second = step.derive(x, slots=1, rounds=6)
++    assert unused is None
++    assert torch.equal(first['actions'], second['actions'])
++
++
++@pytest.mark.parametrize('temperature', [-1., float('inf'), float('nan')])
++def test_sampling_temperature_must_be_finite_and_nonnegative(temperature):
++    with pytest.raises(ValueError, match='temperature'):
++        OperationSelectionLayer(d_model=1, ops=[Add()], temperature=temperature)
++
++
++def test_sampling_temperature_changes_only_the_hard_draw(monkeypatch):
++    step = layer()
++    x = torch.tensor([[[1.], [2.], [3.]]])
++    noise = torch.tensor([[3., 0., 0., 0., 0., 0.]])
++    monkeypatch.setattr(torch, 'rand_like', lambda like:
++                        torch.exp(-torch.exp(-noise.to(like))))
++    step.temperature = .1
++    _, _, cold = step(x, sample=True)
++    step.temperature = 1.
++    _, _, warm = step(x, sample=True)
++    assert cold['action'].tolist() == [1]
++    assert warm['action'].tolist() == [0]
++    torch.testing.assert_close(cold['probabilities'], warm['probabilities'])
++
++
++def test_sampling_temperature_is_read_from_the_shared_xml_element():
++    from test_compose_pair_driver import _build
++    model = _build('<composeTemperature>0.7</composeTemperature>')
++    try:
++        assert model.symbolSpace.languageLayer.operation_layer.temperature == .7
++        assert model.languageSpace._tree_layer(2) is model.symbolSpace.languageLayer.operation_layer
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++
++
++def test_zero_temperature_prefix_uses_execution_order_for_packed_seals():
++    from types import SimpleNamespace as NS
++    from Models import BasicModel
++    # Two one-word sentences: first seal is group 1, final seal is group 0.
++    actions = torch.full((1, 14), -1, dtype=torch.long)
++    actions[0, [0, 10, 3, 6]] = 2
++    forced = torch.zeros_like(actions, dtype=torch.bool)
++    forced[0, [10, 6]] = True
++    model = NS(inputSpace=NS(_word_active_mask=torch.ones(1, 2, dtype=torch.bool),
++                            _packed_sentence_ids=torch.tensor([[0, 1]])),
++               conceptualSpace=NS(stm=NS(capacity=2)))
++    owners, _, _ = BasicModel._compose_round_owners(model, actions)
++    prefix = BasicModel._exploration_prefix_slots(model, actions, forced, owners)
++    assert prefix.nonzero().tolist() == [[0, 0], [0, 3]]
++
++
++@pytest.mark.parametrize('explore_loss, expected', [(1., 'explore'), (2., 'exploit'), (3., 'exploit')])
++def test_only_a_strictly_lower_loss_commits_the_alternative(explore_loss, expected):
++    from torch import nn
++    from Models import BasicModel
++    from test_compose_records import Runtime
++    from types import SimpleNamespace as NS
++    model = Runtime()
++    model.symbolSpace = nn.Module()
++    model.symbolSpace.languageLayer = nn.Module()
++    model.symbolSpace.languageLayer.operation_layer = nn.Identity()
++    model.when_time = torch.tensor(0.)
++    model._training_step_count = 0
++    model._compose_state_snapshot = lambda: BasicModel._compose_state_snapshot(model)
++    model._restore_compose_state = BasicModel._restore_compose_state
++    model._compose_completed_rows = lambda: None
++    model._exploration_constraints = lambda: (None, None, None)
++    calls = []
++    def once(*, train=True, exploration_trial=False):
++        name = 'explore' if exploration_trial else 'exploit'
++        calls.append(name)
++        model._compose_trial_loss = torch.tensor(explore_loss if exploration_trial else 2.)
++        model.trace.program = name
++        model.memory.observations = [name]
++        model.discourse_chain = [name]
++        if not exploration_trial:
++            model.when_time.add_(1)
++            model._training_step_count += 1
++        with torch.no_grad():
++            model.parameter.add_(1)
++        return NS(program=name), 1
++    model._run_batch_once = once
++    result, _ = BasicModel._run_batch_pair(model)
++    assert calls == ['exploit', 'explore']
++    assert result.program == model.trace.program == expected
++    assert model.memory.observations == model.discourse_chain == [expected]
++    assert model.when_time.item() == 1
++    assert model._training_step_count == 1
++    assert model.parameter.item() == 4
+--- a/test/test_signal_router_scorer.py
++++ b/test/test_signal_router_scorer.py
+@@ -22,6 +22,6 @@
+         step.reduce_anchor.fill_(2); step.apply_anchor.fill_(3); step.stop_anchor.fill_(1)
+     x = torch.tensor([[[1.], [2.], [4.]]])
+     _, _, route = step(x, slots=3)
+-    expected = torch.tensor([[3., 6., -1.5, -3., -6., 7./6]])
++    expected = torch.tensor([[6., 12., -3., -6., -12., 7./3]])
+     torch.testing.assert_close(route['logits'], expected)
+     torch.testing.assert_close(route['probabilities'], expected.softmax(-1))
+--- a/test/test_structural_preference.py
++++ b/test/test_structural_preference.py
+@@ -28,7 +28,7 @@
+     assert routing['kind'].tolist() == [1, 1]
+ 
+ 
+-def test_compose_exact_probability_tie_prefers_structure(monkeypatch):
++def test_compose_probability_rounding_does_not_overturn_a_better_logit(monkeypatch):
+     layer = OperationSelectionLayer(d_model=1, chooser='mlp',
+         ops=[_Candidate('opaque'), _Candidate('structural')])
+     def score(x, reduced, *_args, **_kwargs):
+@@ -37,7 +37,7 @@
+     monkeypatch.setattr(layer.chooser, 'score_binary', score)
+     _, _, routing = layer(torch.ones(1, 2, 1))
+     assert routing['probabilities'].tolist() == [[.5, .5, 0.]]
+-    assert routing['op'].tolist() == [1]
++    assert routing['op'].tolist() == [0]
+ 
+ 
+ def test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit():

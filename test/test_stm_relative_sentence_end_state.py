@@ -51,6 +51,16 @@ def _build_model():
     _reload_config()
     model, _cfg = Models.BasicModel.from_config(
         os.path.join(_DATA_DIR, 'MentalModel.xml'))
+    layer = model.symbolSpace.languageLayer.operation_layer
+    def binary(x, candidate, *_a, **_k):
+        scores = x.new_full(candidate.shape[:-1], -1e6)
+        if scores.shape[-1]:
+            scores[..., 0] = 0.
+        return x.new_full((*x.shape[:2], 1), 1e6), scores
+    def unary(x, candidate, *_a, **_k):
+        return x.new_full((*x.shape[:2], 1), 1e6), x.new_full(candidate.shape[:-1], -1e6)
+    layer.chooser.score_binary = binary
+    layer.chooser.score_unary = unary
     return model
 
 
@@ -266,7 +276,7 @@ def test_category_prior_scores_anchored_operator_slot():
         duck = SimpleNamespace(op_names=['part'])
         cat_ctx = torch.zeros(1, 3, 3)
         cat_ctx[0, 1, 2] = 1.0             # middle slot anchored part_O1
-        prior = Language.BinaryStructuredReductionLayer \
+        prior = Language.OperationSelectionLayer \
             ._category_reduce_prior(duck, cat_ctx)
         assert prior is not None and tuple(prior.shape) == (1, 2, 1)
         assert float(prior[0, 0, 0]) > 0.0     # pair (0,1) touches anchor
@@ -332,7 +342,7 @@ def test_protect_depth_floor_one_is_byte_identical_to_no_arg():
     """REGRESSION (absolute path byte-identical): on a SINGLE model +
     SINGLE seeded STM, the Task-6a per-row gate with an all-ones
     ``protect_depth`` (the floor the absolute path uses) is BIT-FOR-BIT
-    identical to the pre-Task-6a no-arg ``_stm_bounded_reduce_step``.
+    identical to the pre-Task-6a no-arg ``_stm_operation_step``.
 
     This is the precise invariant the change must preserve: the added
     ``depth > protect_depth`` term is implied by the existing
@@ -359,7 +369,7 @@ def test_protect_depth_floor_one_is_byte_identical_to_no_arg():
     # Old path: no-arg step (protect_depth implicitly None).
     _seed()
     for _ in range(cap - 1):
-        model._stm_bounded_reduce_step()
+        model._stm_operation_step()
     s_old = stm._buffer[:, 0, :].detach().clone()
     d_old = stm._depth.detach().clone()
 
@@ -367,7 +377,7 @@ def test_protect_depth_floor_one_is_byte_identical_to_no_arg():
     _seed()
     ones = torch.ones(B, dtype=stm._depth.dtype)
     for _ in range(cap - 1):
-        model._stm_bounded_reduce_step(protect_depth=ones)
+        model._stm_operation_step(protect_depth=ones)
     s_new = stm._buffer[:, 0, :].detach().clone()
     d_new = stm._depth.detach().clone()
 
@@ -380,3 +390,38 @@ def test_protect_depth_floor_one_is_byte_identical_to_no_arg():
 
 if __name__ == '__main__':
     sys.exit(pytest.main([__file__, '-v']))
+
+
+def test_actual_operation_trace_supplies_relative_capacity_without_a_reparse():
+    model = _build_model()
+    model.symbolSpace.current_rules = {}
+    relative = _forward_relative_rule_id()
+    model.wholeSpace._anchored_pids = {123: 'equal'}
+    model.wholeSpace._category_last_pid = [[123]]
+    model.inputSpace._word_active_mask = torch.ones(1, 4, dtype=torch.bool)
+    model.inputSpace._packed_sentence_ids = torch.tensor([[0, 0, 1, 1]])
+    model._prepare_reconstruction_choices(1, 4, torch.device('cpu'))
+    trace = model._reconstruction_stack()
+    trace._choice_rule_ids[0, 3] = relative
+    trace._choice_mask[0, 3] = True
+    assert model._sentence_relative_mask(1, word=1).tolist() == [True]
+    assert model._sentence_relative_mask(1, word=2).tolist() == [False]
+    assert model._sentence_relative_mask(1).tolist() == [False]
+    trace._choice_rule_ids[0, 9] = relative
+    trace._choice_mask[0, 9] = True
+    assert model._sentence_relative_mask(1).tolist() == [True]
+    assert Language.sentence_relative_mask(model.symbolSpace, 1).tolist() == [True]
+    model.wholeSpace._anchored_pids = {}
+    assert model._sentence_relative_mask(1).tolist() == [False]
+
+
+def test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates():
+    model = _build_model()
+    relative = _forward_relative_rule_id()
+    absolute = _forward_absolute_rule_id()
+    ids = torch.tensor([[relative, absolute], [absolute, relative], [relative, absolute]])
+    valid = torch.tensor([[True, True], [True, False], [True, True]])
+    anchors = torch.tensor([True, True, False])
+    compiled = torch.compile(model.languageSpace.relative_from_choices,
+                             backend='eager', fullgraph=True)
+    assert compiled(ids, valid, anchors).tolist() == [True, False, False]

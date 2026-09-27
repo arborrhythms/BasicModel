@@ -11384,7 +11384,7 @@ class InterSentenceLayer(Layer):
         return prediction
 
     def _observe_meanings(self, depths, payloads, tetralemmas, mask,
-                          layout, role_masks):
+                          layout, role_masks, train_prediction=True):
         for b, payload in enumerate(payloads):
             if mask is not None and not bool(mask[b]):
                 continue
@@ -11432,7 +11432,7 @@ class InterSentenceLayer(Layer):
                     (pending.stream
                      if isinstance(pending, _PendingMeaningExpectation) else None))
                 train_roles, train_logits = prediction.roles, prediction.presence_logits
-                if (self.training and torch.is_grad_enabled()
+                if (train_prediction and self.training and torch.is_grad_enabled()
                         and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
                     if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
                             and (not prediction.roles.requires_grad or pending.versions != tuple(
@@ -11443,7 +11443,7 @@ class InterSentenceLayer(Layer):
                         # old parameter version's graph.
                         replay, logits = self._inter_predictor(*(v.detach() for v in pending.inputs))
                         train_roles, train_logits = replay[0], logits[0]
-                if self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
+                if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
                     step = (train_roles - target).square().mean() + F.binary_cross_entropy_with_logits(
                         train_logits, target_mask.to(train_logits))
                     self._inter_loss_accum = (step if self._inter_loss_accum is None
@@ -11453,12 +11453,12 @@ class InterSentenceLayer(Layer):
                         and self.training and torch.is_grad_enabled()):
                     self._expectation_policy_outcomes.append((
                         pending.policy, -float((mse + presence).detach()), pending.work))
-                if self._inter_contrastive_weight > 0:
+                if train_prediction and self._inter_contrastive_weight > 0:
                     self._accumulate_inter_contrastive(
                         train_roles.flatten(), target.flatten(),
                         [p.detach().to(target).flatten() for _, p, _ in self._inter_context[b]])
             context = roles.clone()
-            if (not self.training or not torch.is_grad_enabled()
+            if (not train_prediction or not self.training or not torch.is_grad_enabled()
                     or (self._inter_loss_weight <= 0 and self._inter_contrastive_weight <= 0)):
                 context = context.detach()
             depth = int(occupied.sum())
@@ -11547,7 +11547,7 @@ class InterSentenceLayer(Layer):
     @torch.compiler.disable
     def observe_stm_end_state(
             self, depths, payloads, tetralemmas=None, mask=None, *,
-            documents=None, layout="stm", role_masks=None):
+            documents=None, layout="stm", role_masks=None, train_prediction=True):
         """Append one STM end-state PER ROW to the LTM chain.
 
         Called from the sentence-boundary hook AFTER the reduce /
@@ -11584,7 +11584,7 @@ class InterSentenceLayer(Layer):
         self._prepare_expectation_documents(documents, mask, len(payloads))
         if self.expectation_scope == "structured":
             return self._observe_meanings(
-                depths, payloads, tetralemmas, mask, layout, role_masks)
+                depths, payloads, tetralemmas, mask, layout, role_masks, train_prediction)
         # Normalise ``depths`` to a python list of ints without forcing
         # a per-row host sync inside any captured region (this method is
         # ``@torch.compiler.disable``'d and boundary-only, so a single
@@ -11635,7 +11635,7 @@ class InterSentenceLayer(Layer):
                 # preceding context may train its encoder. Score before the
                 # payload's slot-0 is available; the target is detached
                 # regardless.
-                if (self._inter_predictor is not None
+                if (train_prediction and self._inter_predictor is not None
                         and b < len(self._inter_last_pred_root)
                         and self._inter_last_pred_root[b] is not None):
                     pd = payload.detach()
@@ -11679,7 +11679,7 @@ class InterSentenceLayer(Layer):
                 if self._ltm_store is not None and context.dim() == 2 and depth >= 3:
                     context = torch.stack(
                         (context[depth - 2], context[depth - 1], context[0]))
-                if (not self.training or not torch.is_grad_enabled()
+                if (not train_prediction or not self.training or not torch.is_grad_enabled()
                         or (self._inter_loss_weight <= 0
                             and self._inter_contrastive_weight <= 0)):
                     context = context.detach()
@@ -11995,6 +11995,76 @@ class InterSentenceLayer(Layer):
         self._inter_last_pred_root[bi] = root_vec
         payload_hat = root_vec.unsqueeze(0).expand(depth_hat, -1)
         return depth_hat, payload_hat
+
+    def sentence_prediction_cost(self, depths, payloads, mask, *,
+                                 documents=None, layout="stm", role_masks=None):
+        """Preview one sentence per row without observing either candidate.
+
+        Only the pending predictions are scratch. Context, occurrences, LTM,
+        counters and policy outcomes are written once, when the winner arrives.
+        The returned pending records retain the estimate belonging to that trial.
+        """
+        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+        like = next((p for p in payloads if p is not None), self._s_history)
+        if self._external_observations_suspended or not self.expectation_enabled:
+            zero = like.new_zeros(len(payloads))
+            return zero, zero.clone(), before
+        self._prepare_expectation_documents(documents, mask, len(payloads))
+        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+        costs, contrastive = [], []
+        try:
+            for b, payload in enumerate(payloads):
+                cost, contrast = like.new_zeros(()), like.new_zeros(())
+                if payload is not None and bool(mask[b]) and self._inter_predictor is not None:
+                    self.predict_next_end_state(b)
+                    negatives = []
+                    pred = target = None
+                    if self.expectation_scope == "structured":
+                        roles, occupied = self._canonical_meaning(
+                            payload, depths[b], layout,
+                            None if role_masks is None else role_masks[b])
+                        pending = self._inter_last_meaning[b]
+                        prediction = (pending.prediction if isinstance(
+                            pending, _PendingMeaningExpectation) else pending)
+                        if prediction is not None:
+                            pred, logits = prediction.roles, prediction.presence_logits
+                            if (isinstance(pending, _PendingMeaningExpectation)
+                                    and pending.inputs is not None
+                                    and (not pred.requires_grad or pending.versions != tuple(
+                                        p._version for p in self._inter_predictor.parameters()))):
+                                replay, presence = self._inter_predictor(
+                                    *(v.detach() for v in pending.inputs))
+                                pred, logits = replay[0], presence[0]
+                            target = roles.detach().to(pred)
+                            cost = (pred - target).square().mean() + F.binary_cross_entropy_with_logits(
+                                logits, occupied.to(logits))
+                            negatives = [p.detach().to(target).flatten()
+                                         for _, p, _ in self._inter_context[b]]
+                    else:
+                        pred = self._inter_last_pred_root[b]
+                        pd = payload.detach()
+                        if self._ltm_store is not None and pd.dim() == 2 and pd.shape[0] >= 2:
+                            pd = pd[pd.shape[0] - 2].unsqueeze(0)
+                        target = self._reduce_end_state_to_root(pd)
+                        if pred is not None and target is not None:
+                            target = target.to(pred)
+                            cost = F.mse_loss(pred, target)
+                            negatives = [root.detach().to(pred) for _, p, _ in self._inter_context[b]
+                                         if (root := self._reduce_end_state_to_root(p)) is not None]
+                    if (self._inter_contrastive_weight > 0 and pred is not None
+                            and target is not None and negatives):
+                        q = F.normalize(pred.reshape(-1), dim=0)
+                        candidates = torch.stack([target.flatten()] + [n.flatten() for n in negatives])
+                        logits = (F.normalize(candidates, dim=-1) @ q) / self._inter_contrastive_temp
+                        contrast = F.cross_entropy(logits[None], logits.new_zeros(1, dtype=torch.long))
+                if not bool(torch.isfinite(cost) and torch.isfinite(contrast)):
+                    raise FloatingPointError('non-finite sentence prediction cost')
+                costs.append(cost)
+                contrastive.append(contrast)
+            pending = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+            return torch.stack(costs), torch.stack(contrastive), pending
+        finally:
+            self._inter_last_meaning, self._inter_last_pred_root = before
 
     def _accumulate_inter_loss(self, pred_root, actual_root):
         """Accumulate one sentence of ``L_inter = MSE(pred_root,

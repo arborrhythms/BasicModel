@@ -1,0 +1,89 @@
+{
+  "processes": {
+    "serial-baseline": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item8/measure.py",
+        "baseline",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/measurements/serial-baseline.json"
+      ],
+      "pid": 4221,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5004154280,
+      "elapsed_seconds": 179.01641979103442,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/measurements/serial-baseline.log"
+    },
+    "packed": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+        "--config",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+        "--parity",
+        "packed",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/measurements/packed.json"
+      ],
+      "pid": 4326,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5363995472,
+      "elapsed_seconds": 175.1078040000284,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/measurements/packed.log"
+    },
+    "single": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+        "--config",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+        "--parity",
+        "single",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/measurements/single.json"
+      ],
+      "pid": 4450,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5367681896,
+      "elapsed_seconds": 277.952307291911,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/measurements/single.log"
+    }
+  },
+  "source_delta": {
+    "test/test_detached_reverse_objective.py": {
+      "measured": "8a23e95dbb2973a96ab95067d1df7151527d7e816415d44cf934314840690655",
+      "current": "a220b2a4fe129b73a17b5e667734ad04b165b65133602dc4d8036eee21af4e54"
+    },
+    "test/test_structural_preference.py": {
+      "measured": "be5a8c3de71768b85102c45282f0ecea8bb2dcb7314e77d9a6be652d26d497e5",
+      "current": "afea2543cac11da1f86f02c40faffd5e5ba7be4590664ffaa90b249023336bad"
+    }
+  },
+  "serial": {
+    "reviewed": {
+      "before_training": 0.10059066489338875,
+      "training": 0.09482414424419403,
+      "after_training": 0.09287650510668755
+    },
+    "current": {
+      "before_training": 0.10405020788311958,
+      "training": 0.10417700409889222,
+      "after_training": 0.10392807051539421
+    }
+  },
+  "training_sentences_per_second": 0.1271711630639544,
+  "parity": {
+    "initial_parameters_sha256": true,
+    "initial_dictionary_sha256": true,
+    "sentences": false,
+    "mean_sentence_byte_cost": false
+  },
+  "byte_cost": {
+    "reviewed": 0.6839025616645813,
+    "packed": 0.787799209356308,
+    "single": 0.6835970133543015
+  }
+}

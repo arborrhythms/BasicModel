@@ -20,7 +20,7 @@ from test_word_loop_buckets_and_orders import _grammar_model  # noqa: E402
 
 def test_lazy_stm_reducer_ignores_later_global_grammar(monkeypatch):
     model = _grammar_model()
-    expected = model.symbolSpace.languageLayer._binary_layers["CS"]
+    expected = model.symbolSpace.languageLayer.operation_layer
 
     # Another model's XML load mutates the process-global Grammar singleton.
     # Recreate that ordering without constructing a second heavyweight model.

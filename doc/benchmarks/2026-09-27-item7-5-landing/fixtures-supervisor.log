@@ -1,0 +1,10 @@
+[collect] 2 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.6s; peak 0.40 GiB
+[worker-000] 18 selectors; limit 1800s, 8.0 GiB
+[worker-001] 32 selectors; limit 1800s, 8.0 GiB
+[worker-002] 15 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 6.4s; peak 0.48 GiB
+[worker-002] exit 0; 7.4s; peak 0.47 GiB
+[worker-000] exit 0; 38.7s; peak 0.93 GiB
+Result: passed, exit 0; 65/65 cases completed.
+doc/benchmarks/2026-09-27-item7-5-landing/fixtures/result.json

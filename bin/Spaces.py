@@ -70,38 +70,10 @@ from Layers import meronomy_enabled  # MeronomySpec §3 mode knob (Stage 4)
 from space_carrier import SpaceCarrierMixin
 
 
-LanguageBinaryChoice = namedtuple(
-    "LanguageBinaryChoice",
-    (
-        "parent",
-        "applied",
-        "local_op",
-        "trace_valid",
-        "local_loss",
-        "copy_selected",
-        "copy_source",
-    ),
-)
-"""Immutable Language-owned decision for one binary CS reduction.
+LanguageOperationChoice = namedtuple(
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid")
+"""One immutable operation/location choice; only ConceptualSpace applies it."""
 
-LanguageSpace may read a CS-owned STM snapshot to score grammar alternatives,
-but it must not construct or publish the next STM state.  The choice therefore
-contains only the selected parent and routing metadata.  ConceptualSpace
-consumes it through :meth:`ConceptualSpace.apply_binary_language_choice`.
-"""
-
-
-LanguageUnaryChoice = namedtuple(
-    "LanguageUnaryChoice",
-    (
-        "candidate",
-        "applied",
-        "local_op",
-        "trace_valid",
-        "local_loss",
-    ),
-)
-"""Immutable Language-owned decision for one unary CS rewrite."""
 
 
 def gauge_orient(u, referent):
@@ -433,11 +405,7 @@ class ReadingAttention(nn.Module):
 
     @staticmethod
     def superposition_scale(temperature):
-        """The two-pass soft-superposition score scale ``1 - clamp(t, 0, 1)``
-        (mirrors ``Language.superposition_scale``; inlined to avoid a
-        Spaces->Language import). ``t=0`` -> ``1`` (sharp/exploit, pass A,
-        byte-identical); ``t=1`` -> ``0`` (uniform/explore, pass B). The
-        selection stays in the gradient path, scaled by ``1-t``."""
+        """Attention-only logit scale; compose exploration does not use it."""
         return 1.0 - min(1.0, max(0.0, float(temperature or 0.0)))
 
     def forward(self, *, concept_q, symbol_q, percept_ev, spans, read_idx,
@@ -445,10 +413,8 @@ class ReadingAttention(nn.Module):
                 temperature=0.0):
         """Score the spans for a single ``t>0`` pass.
 
-        ``temperature`` is the two-pass superposition temperature (the
-        stochastic element): ``0`` (default / pass A) is sharp/exploit and
-        BYTE-IDENTICAL (``scale==1.0``); a higher value (pass B at
-        ``exploreTemperature``) flattens the distribution for exploration.
+        ``temperature`` controls this attention distribution only. Production
+        compose derivations leave it at zero.
 
         The **subsymbolic** score term is the codebook-retrieval prior over the
         percept ``codebook_rows`` (the literal ``intent_boosts`` path,
@@ -15483,117 +15449,39 @@ class ConceptualSpace(Space):
         super()._register_requirements()
 
     @staticmethod
-    def apply_binary_language_choice(state, choice):
-        """Apply one Language-owned binary choice to CS-owned STM tensors.
+    def apply_language_choice(state, choice):
+        """Apply a single binary or unary choice, preserving every other slot."""
+        buffer, depth, orders, grammar, rows, activations = state
+        B, K, D = buffer.shape
+        binary = choice.applied & (choice.kind == 1)
+        unary = choice.applied & (choice.kind == 2)
+        pos = choice.position.clamp(0, K - 1)
+        rewrite = unary[:, None] & (torch.arange(K, device=buffer.device)[None, :] == pos[:, None])
+        out = torch.where(rewrite[..., None], choice.candidate[:, None], buffer)
+        out_grammar = torch.where(rewrite & (grammar >= 0), grammar + 1, grammar)
+        out_rows = torch.where(rewrite, -1, rows)
+        out_activations = torch.where(rewrite, 0., activations)
+        out_orders = orders
+        if K >= 2:
+            parent_order = torch.where((orders[:, 0] >= 0) & (orders[:, 1] >= 0),
+                                       orders[:, :2].amax(1), -1)
+            parent_grammar = torch.where((grammar[:, 0] >= 0) & (grammar[:, 1] >= 0),
+                                         grammar[:, :2].amax(1) + 1, -1)
+            def fold(slab, parent, fill):
+                shifted = torch.cat((parent[:, None], slab[:, 2:], torch.full_like(slab[:, :1], fill)), 1)
+                gate = binary.reshape(B, *([1] * (slab.ndim - 1)))
+                return torch.where(gate, shifted, slab)
+            out = fold(out, choice.candidate, 0)
+            out_orders = fold(orders, parent_order, -1)
+            out_grammar = fold(out_grammar, parent_grammar, -1)
+            out_rows = fold(out_rows, torch.full_like(rows[:, 0], -1), -1)
+            out_activations = fold(out_activations, torch.zeros_like(activations[:, 0]), 0)
+        stop_weighted = choice.probability[:, None, None] * buffer
+        stop_path = buffer.detach() + (stop_weighted - stop_weighted.detach())
+        out = torch.where((choice.valid & (choice.kind == 0))[:, None, None], stop_path, out)
+        return out, depth - binary.long(), out_orders, out_grammar, out_rows, out_activations
 
-        This is the mutation side of the Language/ConceptualSpace ownership
-        boundary.  ``LanguageSpace`` chooses an operation from a read-only
-        snapshot; only ConceptualSpace constructs the proposed next buffer,
-        depth, order, grammar-order, and reference tensors.  The method is
-        functional so the compiled word loop can carry the owner state and
-        commit it once after drain.
-        """
-        (buffer, depth, orders, grammar_orders,
-         concept_rows, concept_activations) = state
-        (parent, applied, local_op, trace_valid, local_loss,
-         copy_selected, copy_source) = choice
-        B, capacity, D = buffer.shape
-        if int(capacity) < 2:
-            return (
-                state, applied, local_op, trace_valid, local_loss)
 
-        left_order, right_order = orders[:, 1], orders[:, 0]
-        parent_order = torch.where(
-            torch.logical_and(left_order >= 0, right_order >= 0),
-            torch.maximum(left_order, right_order),
-            torch.full_like(left_order, -1))
-        left_grammar, right_grammar = (
-            grammar_orders[:, 1], grammar_orders[:, 0])
-        parent_grammar = torch.where(
-            torch.logical_and(left_grammar >= 0, right_grammar >= 0),
-            torch.maximum(left_grammar, right_grammar) + 1,
-            torch.full_like(left_grammar, -1))
-
-        reference_rows = torch.stack(
-            (concept_rows[:, 1], concept_rows[:, 0]), dim=1)
-        reference_activations = torch.stack(
-            (concept_activations[:, 1],
-             concept_activations[:, 0]), dim=1)
-        source = copy_source.clamp(0, 1).reshape(B, 1)
-        parent_rows = torch.where(
-            copy_selected,
-            reference_rows.gather(1, source).reshape(B),
-            torch.full_like(concept_rows[:, 0], -1))
-        parent_activations = torch.where(
-            copy_selected,
-            reference_activations.gather(1, source).reshape(B),
-            torch.zeros_like(concept_activations[:, 0]))
-
-        zero_event = buffer.new_zeros(B, 1, D)
-        shifted_buffer = torch.cat(
-            (parent.unsqueeze(1), buffer[:, 2:, :], zero_event), dim=1)
-        unknown = torch.full(
-            (B, 1), -1, dtype=torch.long, device=buffer.device)
-        shifted_orders = torch.cat(
-            (parent_order.reshape(B, 1), orders[:, 2:], unknown), dim=1)
-        shifted_grammar = torch.cat(
-            (parent_grammar.reshape(B, 1),
-             grammar_orders[:, 2:], unknown), dim=1)
-        shifted_rows = torch.cat(
-            (parent_rows.reshape(B, 1),
-             concept_rows[:, 2:], unknown), dim=1)
-        zero_activation = concept_activations.new_zeros(B, 1)
-        shifted_activations = torch.cat(
-            (parent_activations.reshape(B, 1),
-             concept_activations[:, 2:], zero_activation), dim=1)
-        gate_event = applied.reshape(B, 1, 1)
-        gate_slab = applied.reshape(B, 1)
-        next_state = (
-            torch.where(gate_event, shifted_buffer, buffer),
-            depth - applied.to(dtype=depth.dtype),
-            torch.where(gate_slab, shifted_orders, orders),
-            torch.where(gate_slab, shifted_grammar, grammar_orders),
-            torch.where(gate_slab, shifted_rows, concept_rows),
-            torch.where(
-                gate_slab, shifted_activations, concept_activations),
-        )
-        return (
-            next_state, applied, local_op, trace_valid, local_loss)
-
-    @staticmethod
-    def apply_unary_language_choice(state, choice):
-        """Apply one Language-owned unary choice to CS-owned STM tensors."""
-        (buffer, depth, orders, grammar_orders,
-         concept_rows, concept_activations) = state
-        (candidate, applied, local_op,
-         trace_valid, local_loss) = choice
-        B = int(buffer.shape[0])
-        next_buffer = torch.cat(
-            (torch.where(
-                applied.reshape(B, 1), candidate, buffer[:, 0, :]
-            ).unsqueeze(1), buffer[:, 1:, :]), dim=1)
-        top_grammar = grammar_orders[:, 0]
-        raised = torch.where(
-            top_grammar >= 0, top_grammar + 1, top_grammar)
-        next_grammar = torch.cat(
-            (torch.where(
-                applied, raised, top_grammar).reshape(B, 1),
-             grammar_orders[:, 1:]), dim=1)
-        next_rows = torch.cat(
-            (torch.where(
-                applied, torch.full_like(concept_rows[:, 0], -1),
-                concept_rows[:, 0]).reshape(B, 1),
-             concept_rows[:, 1:]), dim=1)
-        next_activations = torch.cat(
-            (torch.where(
-                applied, torch.zeros_like(concept_activations[:, 0]),
-                concept_activations[:, 0]).reshape(B, 1),
-             concept_activations[:, 1:]), dim=1)
-        next_state = (
-            next_buffer, depth, orders, next_grammar,
-            next_rows, next_activations)
-        return (
-            next_state, applied, local_op, trace_valid, local_loss)
 
     def _stm_set_all_slots(self, slab):
         """STM primitive (parallel mode): write all N positions of
@@ -15732,7 +15620,7 @@ class ConceptualSpace(Space):
         # falls off) and writes the new idea to slot 0. For below-capacity
         # rows the shuffled tail lies beyond ``depth`` (the occupied
         # window) so it is don't-care; ``_depth`` saturates at cap. Mirrors
-        # the tensorized backtrace in ``Language.binary_tiling_viterbi``.
+        # the tensorized backtrace in ``the fixed-shape operation chooser``.
         #
         # OUT-OF-PLACE (reassign, do NOT mutate ``buf`` in place): the shift
         # is built as a fresh tensor and assigned to ``stm._buffer``, mirroring
@@ -23918,6 +23806,7 @@ class WholeSpace(Space):
                 hidden_dim=max(_ws_dim, 8),
                 feature_dim=_ws_dim,
                 max_depth=max(int(outputShape[0]), 2),
+                temperature=float(TheXMLConfig.get("architecture.composeTemperature", 0.0)),
             )
 
         # Phase 1A.2: make the SYMBOL VQ codebook learnable by gradient
@@ -27597,7 +27486,7 @@ class WholeSpace(Space):
     #   * SymbolSpace.current_rules / generate_rules
     #   * SyntacticLayer cursor (uses .execute instead)
     #   * Chart.compose / symbolSpace.forwardSymbols
-    #   * ConceptualSpace.stm._buffer (_stm_bounded_reduce_step et al.)
+    #   * ConceptualSpace.stm._buffer (_stm_operation_step)
     # ------------------------------------------------------------------
 
     def _snap_to_terminal_ste(self, x, codebook_W):
@@ -27665,7 +27554,7 @@ class WholeSpace(Space):
         knows how to route any GRAMMAR_LAYER_CLASSES-resolved op.
 
         TODO(phase5+): replace this hardcoded pick with the router's
-        learned scoring (binary_tiling_soft_dp / binary_tiling_viterbi).
+        one global softmax over operations and locations.
         """
         from Language import TheGrammar, GRAMMAR_LAYER_CLASSES
         if getattr(self, 'syntacticLayer', None) is None:

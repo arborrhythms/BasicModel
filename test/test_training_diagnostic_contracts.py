@@ -74,7 +74,7 @@ def test_diagnostic_failure_does_not_abort_real_training(monkeypatch):
     calls = []
     original = optimizer.step
     def step(*a, **kw):
-        calls.append(True)
+        calls.append(getattr(model, '_sentence_trial', None))
         return original(*a, **kw)
     optimizer.step = step
     def unavailable(*a, **kw):
@@ -85,7 +85,7 @@ def test_diagnostic_failure_does_not_abort_real_training(monkeypatch):
     with pytest.warns(RuntimeWarning, match="diagnostic probe failure"):
         result, _ = model.runBatch(train=True, batchSize=2, split="train", optimizer=optimizer,
                                    batch_override=batch)
-    assert result is not None and calls == [True]
+    assert result is not None and calls == [None]  # This model has no serial compose.
     model.End()
 
 

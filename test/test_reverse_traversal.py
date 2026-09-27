@@ -157,6 +157,22 @@ def _stage_packed(m, rows):
     return raw
 
 
+def _select_completed_binary_path(m):
+    """Control the derivation for traversal/provenance assertions, not quality."""
+    chooser = m.symbolSpace.languageLayer.operation_layer.chooser
+
+    def binary(x, candidates, *_args, **_kwargs):
+        scores = x.new_full(candidates.shape[:-1], -1e6)
+        scores[..., 0] = 0.
+        return x.new_full((*x.shape[:2], 1), 1e6), scores
+
+    def unary(x, candidates, *_args, **_kwargs):
+        return (x.new_full((*x.shape[:2], 1), 1e6),
+                x.new_full(candidates.shape[:-1], -1e6))
+
+    chooser.score_binary, chooser.score_unary = binary, unary
+
+
 def _replay_operand_rows(m):
     """Replay the real trace's row stack, newest first, before each fold."""
     trace = m._reconstruction_stack()
@@ -165,7 +181,7 @@ def _replay_operand_rows(m):
     ids = m.inputSpace._packed_sentence_ids
     rows = m._word_symbol_rows()
     width = int(active.shape[1])
-    seal_width = int(m.conceptualSpace.stm.capacity) - 1
+    seal_width = 2 * int(m.conceptualSpace.stm.capacity)
     expected = {}
     for b in range(int(active.shape[0])):
         words = active[b].nonzero().flatten().tolist()
@@ -182,15 +198,17 @@ def _replay_operand_rows(m):
                     stack[:2] = [-1]
                 else:
                     assert int(arities[b, slot]) == 1 and stack
-                    stack[0] = -1
+                    position = int(trace._choice_positions[b, slot])
+                    assert 0 <= position < len(stack)
+                    stack[position] = -1
 
             for w in sentence:
-                fold(3 * w)
                 stack.insert(0, int(rows[b, w]))
+                fold(3 * w)
                 fold(3 * w + 1)
                 fold(3 * w + 2)
             hi = sentence[-1]
-            base = 3 * width if hi == words[-1] else 3 * width + hi * seal_width
+            base = 3 * width if hi == words[-1] else 3 * width + (hi + 1) * seal_width
             for k in range(seal_width):
                 fold(base + k)
             assert len(stack) == 1, (b, sid, stack)
@@ -206,24 +224,41 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>32</serialWordBuckets>")])
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    m.stm_reduce_tau = 1.0
     m._install_unit_span_fn()
-    # This is a binary operand-provenance probe. Preserve lexical leaves
-    # until a binary consumes them: an ordinary unary rewrite legitimately
-    # clears the row identity and need not leave a mixed pair at the seal.
-    # Control that precondition instead of depending on a chooser draw.
-    from Spaces import LanguageUnaryChoice
-
-    def retain_leaf(state, gate):
-        depth = state[1]
-        inactive = torch.zeros_like(depth, dtype=torch.bool)
-        return LanguageUnaryChoice(state[0][:, 0], inactive,
-                                   torch.full_like(depth, -1), inactive,
-                                   state[0].new_zeros(depth.shape))
-
-    monkeypatch.setattr(m.languageSpace, "choose_unary", retain_leaf)
+    _select_completed_binary_path(m)
     try:
         _stage_packed(m, [["aa bb cc dd ee", "ff gg hh ii jj"], ["kk ll mm", "nn oo"]])
+        # Keep the final lexical leaf beside an older unary-rewritten
+        # constituent until the seal. Every active round still applies a
+        # legal joint choice; there is no per-position unary/no-op layer.
+        from Spaces import LanguageOperationChoice
+        language = m.languageSpace
+        operation = language.language_layer.operation_layer
+        ordinary = language.choose_operation
+        ends = m.inputSpace._packed_sentence_end_mask
+        width = int(ends.shape[1])
+        monkeypatch.setattr(m, "_compose_masked_action", lambda slot, depth:
+                            torch.as_tensor(slot, device=depth.device).expand_as(depth))
+
+        def retain_final_leaf(state, gate, *, masked_action, **kwargs):
+            choice = ordinary(state, gate, **kwargs)
+            slot = masked_action
+            word = (slot // 3).clamp(0, width - 1)
+            retain = (ends.gather(1, word[:, None]).squeeze(1)
+                      & (slot >= 0) & (slot < 3 * width)
+                      & gate.reshape(-1) & (state[1] > 1))
+            candidate = operation._apply_op(
+                operation.unary_ops[0], state[0][:, 1:2, :])[:, 0]
+            unary = LanguageOperationChoice(
+                candidate, torch.full_like(state[1], 2),
+                torch.ones_like(state[1]), torch.zeros_like(state[1]),
+                retain, candidate.new_ones(state[1].shape),
+                torch.full_like(state[1], operation.r_reduce), retain)
+            return LanguageOperationChoice(*(torch.where(
+                retain[:, None] if a.ndim == 2 else retain, a, b)
+                for a, b in zip(unary, choice)))
+
+        monkeypatch.setattr(language, "choose_operation", retain_final_leaf)
         with torch.no_grad():
             out = m._forward_with_compiled_sentence_state(None)
         m._publish_compiled_sentence_state(out)
@@ -233,7 +268,7 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
         recorded = set(map(tuple, (mask.bool() & (arities == 2)).nonzero().tolist()))
         assert set(expected) == recorded
         width = int(m.inputSpace._word_active_mask.shape[1])
-        seal_width = int(m.conceptualSpace.stm.capacity) - 1
+        seal_width = 2 * int(m.conceptualSpace.stm.capacity)
         assert any(slot < 3 * width for _, slot in expected)  # per-word folds
         assert any(3 * width <= slot < 3 * width + seal_width for _, slot in expected)
         intermediate = {key: value for key, value in expected.items()
@@ -262,6 +297,9 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     m._chart_compose_per_word = lambda: None
     m._recon_keep_ideas = True
     m._install_unit_span_fn()
+    # The compiled and eager traversals must receive the same hard path.
+    # Sampling a different path is not a reconstruction parity failure.
+    _select_completed_binary_path(m)
     _stage_packed(m, [["12 plus 1", "3 plus 4"], ["ab cd"]])
     with torch.no_grad():
         out = m._forward_with_compiled_sentence_state(None)

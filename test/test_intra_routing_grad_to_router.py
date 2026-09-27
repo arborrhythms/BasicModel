@@ -9,7 +9,7 @@ SOFT per-space_role marginals cached in ``LanguageLayer._last_space_role_routing
 (``unary action_probs`` apply columns + ``binary reduce_marginal_op``
 summed over all reduction rounds) into a global ``[B, n_rules]`` tensor
 that keeps a graph back to the router's anchor scorers
-(``copy_anchor`` / ``apply_anchor`` on the unary layer, ``reduce_anchor``
+(``stop_anchor`` / ``apply_anchor`` on the unary layer, ``reduce_anchor``
 on the binary layer).
 
 Proof points (the deliverable):
@@ -124,22 +124,17 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         # (no hardcoded S/C/P). Resolve whichever key the unary layer was
         # registered under -- there is exactly one -- and assert the
         # router exposes the APPLY/COPY anchor scorers on it.
-        unary_keys = list(ll._unary_layers.keys())
-        self.assertEqual(
-            len(unary_keys), 1,
-            f"space_role-free fold expects one unary reduction space_role; "
-            f"got {unary_keys}.")
-        ul = ll._unary_layers[unary_keys[0]]
+        ul = ll.operation_layer
         self.assertTrue(
-            hasattr(ul, "apply_anchor") and hasattr(ul, "copy_anchor"),
+            hasattr(ul, "apply_anchor") and hasattr(ul, "stop_anchor"),
             "unary reduction layer must expose the router's APPLY/COPY "
             "anchor scorers.")
         # De-saturate the straight-through action softmax so the gradient
         # path magnitude is not masked by an incidental one-hot posterior.
         with torch.no_grad():
             ul.apply_anchor.zero_()
-            ul.copy_anchor.zero_()
-        for p in (ul.apply_anchor, ul.copy_anchor):
+            ul.stop_anchor.zero_()
+        for p in (ul.apply_anchor, ul.stop_anchor):
             p.grad = None
         torch.manual_seed(0)
         D = ll.feature_dim
@@ -226,8 +221,8 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             float(col_mass[1] + col_mass[2]), 0.0,
             "binary reduce ops must carry mass in the unspace_role-masked router.")
 
-        ul = router._unary_layers["SS"]
-        bl = router._binary_layers["SS"]
+        ul = router.operation_layer
+        bl = router.operation_layer
         for p in (ul.apply_anchor, bl.reduce_anchor):
             p.grad = None
         proj = nn.Linear(int(rp.shape[1]), 5, bias=True)

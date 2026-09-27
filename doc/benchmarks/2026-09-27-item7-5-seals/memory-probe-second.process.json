@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/memory_probe.py"
+  ],
+  "pid": 28572,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 410764488,
+  "elapsed_seconds": 3.3487828749930486,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/memory-probe-second.log"
+}

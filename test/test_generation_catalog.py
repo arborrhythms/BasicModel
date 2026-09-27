@@ -209,18 +209,32 @@ def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypat
     optimizer = model.getOptimizer(lr=.001)
     recorded, observed = {}, {}
     record, backward = model.record_loss, model._backward_training_loss
+    sentence_sources = []
+    path_cost = model._sentence_path_cost
+
+    def capture_sentence_source(path, *args):
+        sentence_sources.append(path[0][0])
+        return path_cost(path, *args)
+
+    monkeypatch.setattr(model, '_sentence_path_cost', capture_sentence_source)
 
     def record_loss(name, value, **kwargs):
         recorded[name] = value
         return record(name, value, **kwargs)
 
     def check_gradients(total, amp_scaler=None):
+        if getattr(model, '_sentence_backward', False):
+            assert 'output' not in recorded
+            return backward(total, amp_scaler)
         construction = model._last_answer_construction
         loss = recorded["output"]
         assert loss.requires_grad and float(loss.detach()) > 0
-        sources = [program.end_state for program in construction.derivation.program]
-        sources = [value for value in sources if value.requires_grad]
-        assert sources, "the forward must carry a live conclusion for this boundary probe"
+        assert all(not program.end_state.requires_grad
+                   for program in construction.derivation.program if program is not None)
+        # The committed program is detached at its seal. Keep the actual
+        # pre-commit tensors to check that answer loss cannot revisit them.
+        sources = [value for value in sentence_sources if value.requires_grad]
+        assert sources, "the sentence trials must carry live compose conclusions"
         groups = model._shared_operator_parameter_groups(optimizer)
         named = [(name, p) for name, params in groups.items() for p in params]
         conditioner = model.question_conditioners[str(model.conceptualSpace.stm.concept_dim)].weight

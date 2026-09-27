@@ -13,8 +13,7 @@ from types import SimpleNamespace
 
 from Spaces import (
     ConceptualSpace,
-    LanguageBinaryChoice,
-    LanguageUnaryChoice,
+    LanguageOperationChoice,
     SubSpace,
     SubSpaceView,
     guard_peer_views,
@@ -31,115 +30,56 @@ def _pipeline_grad_anchors():
     _ensure_grad_anchors(torch.device("cpu"))
 
 
-class _DeterministicBinaryChooser(torch.nn.Module):
-    def forward(self, window):
-        parent = window.sum(dim=1, keepdim=True)
-        B = int(window.shape[0])
-        routing = {
-            "chosen_reduced": parent,
-            "copy_score": window.new_zeros(B, 2, 1),
-            "reduce_score": window.new_full((B, 1, 1), 10.0),
-            "action_kind": torch.ones(
-                B, 1, dtype=torch.long, device=window.device),
-            "src_left": torch.full(
-                (B, 1), -1, dtype=torch.long, device=window.device),
-            "reduce_marginal_op": window.new_tensor(
-                [[[0.25, 0.75]]]).expand(B, 1, 2),
-            "local_structural_loss": window.new_full((B, 1), 0.125),
-        }
-        return parent, parent, routing
+class _Add(torch.nn.Module):
+    def forward(self, left, right):
+        return left + right
 
 
-class _DeterministicUnaryChooser(torch.nn.Module):
-    def forward(self, window):
-        candidate = -window
-        B = int(window.shape[0])
-        routing = {
-            "apply_mask": torch.ones(
-                B, 1, 1, dtype=torch.bool, device=window.device),
-            "action_op": torch.full(
-                (B, 1), 3, dtype=torch.long, device=window.device),
-            "local_structural_loss": window.new_full((B, 1), 0.25),
-        }
-        return candidate, candidate, routing
-
-
-def _language_choice_harness():
-    layer = SimpleNamespace(
-        _binary_layers={"CS": _DeterministicBinaryChooser()},
-        _unary_layers={"CS": _DeterministicUnaryChooser()},
-        _binary_rule_ids={"CS": (0, 1)},
-        _unary_rule_ids={"CS": (2,)},
-    )
-    coordinator = SimpleNamespace(languageLayer=layer)
-    return LanguageSpace(SimpleNamespace(subspace=coordinator))
+class _Negate(torch.nn.Module):
+    def forward(self, value):
+        return -value
 
 
 def test_language_chooses_and_conceptual_space_alone_applies_stm_update():
-    language = _language_choice_harness()
-    state = (
-        torch.tensor([
-            [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]],
-            [[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]],
-        ]),
-        torch.tensor([3, 1]),
-        torch.tensor([[2, 1, 0], [5, -1, -1]]),
-        torch.tensor([[4, 2, 0], [7, -1, -1]]),
-        torch.tensor([[12, 11, 10], [15, -1, -1]]),
-        torch.tensor([[0.9, 0.8, 0.7], [0.6, 0.0, 0.0]]),
-    )
+    from Language import OperationSelectionLayer
+    layer = OperationSelectionLayer(d_model=2, ops=[_Add()], unary_ops=[_Negate()])
+    with torch.no_grad():
+        layer.reduce_anchor.fill_(1)
+        layer.apply_anchor.zero_()
+        layer.stop_anchor.zero_()
+    owner = SimpleNamespace(operation_layer=layer, _binary_rule_ids={'CS': (0,)},
+                            _unary_rule_ids={'CS': (1,)})
+    language = LanguageSpace(SimpleNamespace(subspace=SimpleNamespace(languageLayer=owner)))
+    state = (torch.tensor([[[1., 2.], [3., 4.], [5., 6.]],
+                           [[10., 20.], [30., 40.], [50., 60.]]]),
+             torch.tensor([3, 1]), torch.tensor([[2, 1, 0], [5, -1, -1]]),
+             torch.tensor([[4, 2, 0], [7, -1, -1]]),
+             torch.tensor([[12, 11, 10], [15, -1, -1]]),
+             torch.tensor([[.9, .8, .7], [.6, 0., 0.]]))
     before = tuple(value.clone() for value in state)
     versions = tuple(value._version for value in state)
     gate = torch.tensor([True, False])
-
-    binary = language.choose_capacity_binary(
-        state, gate, base_tau=0.75)
-    seal_binary = language.choose_sentence_seal_binary(
-        state, gate, base_tau=0.75)
-    assert isinstance(binary, LanguageBinaryChoice)
-    for actual, expected in zip(seal_binary, binary):
-        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
-    assert not hasattr(language, "apply_binary_language_choice")
+    choice = language.choose_operation(state, gate, slots=1)
+    assert isinstance(choice, LanguageOperationChoice)
     assert tuple(value._version for value in state) == versions
+    assert choice.kind.tolist() == [1, 0]
+    next_state = ConceptualSpace.apply_language_choice(state, choice)
     for actual, expected in zip(state, before):
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
-
-    (binary_state, binary_applied, binary_op,
-     binary_valid, binary_loss) = (
-        ConceptualSpace.apply_binary_language_choice(state, binary))
-    assert tuple(value._version for value in state) == versions
-    for actual, expected in zip(state, before):
-        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
-    torch.testing.assert_close(
-        binary_state[0][0],
-        torch.tensor([[4.0, 6.0], [5.0, 6.0], [0.0, 0.0]]))
-    torch.testing.assert_close(binary_state[1], torch.tensor([2, 1]))
-    torch.testing.assert_close(binary_state[2][0], torch.tensor([2, 0, -1]))
-    torch.testing.assert_close(binary_state[3][0], torch.tensor([5, 0, -1]))
-    torch.testing.assert_close(
-        binary_state[4][0], torch.tensor([-1, 10, -1]))
-    torch.testing.assert_close(
-        binary_state[5][0], torch.tensor([0.0, 0.7, 0.0]))
-    torch.testing.assert_close(
-        binary_applied, torch.tensor([True, False]))
-    torch.testing.assert_close(binary_valid, binary_applied)
-    torch.testing.assert_close(binary_op, torch.tensor([1, 1]))
-    torch.testing.assert_close(
-        binary_loss, torch.tensor([0.125, 0.125]))
-
-    unary = language.choose_unary(binary_state, gate)
-    assert isinstance(unary, LanguageUnaryChoice)
-    final_state, unary_applied, unary_op, unary_valid, unary_loss = (
-        ConceptualSpace.apply_unary_language_choice(binary_state, unary))
-    torch.testing.assert_close(
-        final_state[0][0, 0], torch.tensor([-4.0, -6.0]))
-    torch.testing.assert_close(final_state[3][0], torch.tensor([6, 0, -1]))
-    torch.testing.assert_close(
-        unary_applied, torch.tensor([True, False]))
-    torch.testing.assert_close(unary_valid, unary_applied)
-    torch.testing.assert_close(unary_op, torch.tensor([3, 3]))
-    torch.testing.assert_close(
-        unary_loss, torch.tensor([0.25, 0.25]))
+    torch.testing.assert_close(next_state[0][0], torch.tensor([[4., 6.], [5., 6.], [0., 0.]]))
+    torch.testing.assert_close(next_state[1], torch.tensor([2, 1]))
+    torch.testing.assert_close(next_state[2][0], torch.tensor([2, 0, -1]))
+    torch.testing.assert_close(next_state[3][0], torch.tensor([5, 0, -1]))
+    torch.testing.assert_close(next_state[4][0], torch.tensor([-1, 10, -1]))
+    with torch.no_grad():
+        layer.apply_anchor.fill_(-100)
+    unary = language.choose_operation(next_state, gate, slots=1)
+    assert unary.kind.tolist() == [2, 0]
+    assert unary.position[0] == 1  # the older of the two slots
+    final = ConceptualSpace.apply_language_choice(next_state, unary)
+    torch.testing.assert_close(final[0][0], torch.tensor([[4., 6.], [-5., -6.], [0., 0.]]))
+    torch.testing.assert_close(final[1], next_state[1])
+    assert final[3][0, 1] == 1
 
 
 def test_subspace_view_has_no_setters_and_owner_commits():

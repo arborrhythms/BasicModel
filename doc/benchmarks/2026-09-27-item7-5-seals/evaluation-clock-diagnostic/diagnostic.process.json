@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-c",
+    "import warnings, torch\nfrom test_compose_pair_driver import _build, _batch\nfrom unittest.mock import patch\nrows=[]\nfor n in range(12):\n m=_build('<composeTemperature>2</composeTemperature>')\n batch=_batch(m)\n programs=[]\n with patch.object(m, '_advance_when_time', lambda: None):\n  for _ in range(2):\n   with warnings.catch_warnings():\n    warnings.simplefilter('ignore')\n    m.runBatch(train=False,batchSize=4,batch_override=batch)\n   programs.append(m._derivation_program()[1].detach().clone())\n   m.End()\n   m.symbolSpace.soft_reset()\n rows.append(bool(torch.equal(*programs)))\n m.End()\n m.symbolSpace.soft_reset()\nprint('IDENTICAL_PROGRAMS_WITH_FIXED_CLOCK', rows)\nassert all(rows)\n"
+  ],
+  "pid": 27763,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 471368952,
+  "elapsed_seconds": 5.922666957951151,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/evaluation-clock-diagnostic/diagnostic.log"
+}

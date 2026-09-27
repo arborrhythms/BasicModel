@@ -65,30 +65,63 @@ def _dot_unit(left, right, left_norm, right_norm):
     return float((a * b).sum())
 
 
-def objective_agreement(objectives, groups):
-    """Compare reconstruction with output/expectation at one parameter version.
+_OBJECTIVES = ("reconstruction", "output", "expectation")
+
+
+def _sum_gradients(left, right):
+    if left is None:
+        return right
+    if right is None:
+        return left
+    # PyTorch supports dense + sparse, but not sparse + dense.
+    total = right + left if left.is_sparse and not right.is_sparse else left + right
+    return total.coalesce() if total.is_sparse else total
+
+
+def accumulate_objective_gradients(destination, objectives, groups, *, gradient_fn=None):
+    """Save weighted gradient vectors before a seal's training graph is freed.
+
+    Sum vectors in each parameter's coordinates, not norms or cosines. Values
+    are detached snapshots; sparse gradients retain only their touched entries.
+    The optional gradient reader includes the cached perception's pullback.
+    Neither this collection nor the reader changes optimizer .grad buffers.
+    """
+    parameters = tuple(dict.fromkeys(
+        p for group in groups.values() for p in group if p.requires_grad))
+    if not parameters:
+        return destination
+    for name in _OBJECTIVES:
+        cost = objectives.get(name)
+        if not torch.is_tensor(cost) or not cost.requires_grad:
+            continue
+        gradients = (gradient_fn(cost, parameters) if gradient_fn is not None else
+            torch.autograd.grad(cost, parameters, retain_graph=True, allow_unused=True))
+        saved = destination.setdefault(name, {})
+        for parameter, gradient in zip(parameters, gradients):
+            if gradient is not None:
+                saved[parameter] = _sum_gradients(saved.get(parameter), gradient.detach().clone())
+    return destination
+
+
+def objective_agreement(objectives, groups, *, accumulated=None):
+    """Compare weighted reconstruction with output/expectation gradients.
 
     ``groups`` maps stable operator names to parameter sequences.
     Missing and zero gradients have no cosine (None), rather than agreement.
     ``autograd.grad`` leaves optimizer .grad buffers and parameters unchanged.
+    When supplied, ``accumulated`` contains actual gradients from earlier seal
+    updates. Their sum describes the batch's training directions across those
+    versions; it is not a gradient re-evaluated at the batch-end parameters.
     """
-    names = ("reconstruction", "output", "expectation")
-    parameters = tuple(dict.fromkeys(
-        p for group in groups.values() for p in group if p.requires_grad))
-    positions = {id(p): i for i, p in enumerate(parameters)}
-    gradients = {}
-    for name in names:
-        cost = objectives.get(name)
-        gradients[name] = (torch.autograd.grad(
-            cost, parameters, retain_graph=True, allow_unused=True)
-            if parameters and torch.is_tensor(cost) and cost.requires_grad
-            else (None,) * len(parameters))
+    names = _OBJECTIVES
+    gradients = {name: dict((accumulated or {}).get(name, {})) for name in names}
+    accumulate_objective_gradients(gradients, objectives, groups)
     report = {}
     for name, group in groups.items():
-        indices = tuple(dict.fromkeys(positions[id(p)] for p in group if id(p) in positions))
-        if not indices:
+        parameters = tuple(dict.fromkeys(p for p in group if p.requires_grad))
+        if not parameters:
             continue
-        norms = {key: tuple(_norm(gradients[key][i]) for i in indices) for key in names}
+        norms = {key: tuple(_norm(gradients[key].get(p)) for p in parameters) for key in names}
         totals = {key: math.hypot(*values) for key, values in norms.items()}
         entry = {key + "_norm": totals[key] for key in names}
         for other in ("output", "expectation"):
@@ -96,9 +129,9 @@ def objective_agreement(objectives, groups):
             cosine = None
             if nr and no:
                 cosine = sum(
-                    _dot_unit(gradients["reconstruction"][i], gradients[other][i], a, b)
+                    _dot_unit(gradients["reconstruction"].get(p), gradients[other].get(p), a, b)
                     * (a / nr) * (b / no)
-                    for i, a, b in zip(indices, norms["reconstruction"], norms[other]))
+                    for p, a, b in zip(parameters, norms["reconstruction"], norms[other]))
                 cosine = max(-1.0, min(1.0, cosine))
             entry["reconstruction_" + other + "_cosine"] = cosine
             # Orientation is explicit: >1 means the other weighted objective

@@ -388,8 +388,6 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
     assert discourse.expectation_scope == "structured"
     if train_steps < 7:
         raise ValueError("at least two warmup and five measured training steps are required")
-    if bool(getattr(model, "two_pass_learning", False)):
-        raise ValueError("two-pass learning requires separate timing attribution")
     if answers and not 0.0 < model.loss.reconstruction_scale < 1.0:
         raise ValueError("supplied-answer timing requires nonzero reconstruction and answer weights")
     amp_context, _ = util.amp_context()

@@ -1,0 +1,88 @@
+{
+  "runs": {
+    "fixtures": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 65,
+      "completed": 65,
+      "counts": {
+        "passed": 60,
+        "skipped": 5
+      },
+      "seconds": 42.53010287496727,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 995658080,
+      "peak_aggregate_memory_bytes": 1609928976,
+      "compile_cache_retries": []
+    },
+    "full": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 4989,
+      "completed": 4989,
+      "counts": {
+        "passed": 4666,
+        "skipped": 321,
+        "failed": 1,
+        "xfailed": 1
+      },
+      "seconds": 5674.496463667019,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+          "phase": "call",
+          "message": "test/test_thinking_kernel.py:52: in test_first_trained_read_reaches_depth3_end_state\n    self.assertIn(3, flat,\nE   AssertionError: 3 not found in [1, 1, 1, 1] : no depth-3 relative end-state in sweeps: [1, 1, 1, 1]"
+        }
+      ],
+      "peak_worker_bytes": 6619355544,
+      "peak_aggregate_memory_bytes": 15232580944,
+      "compile_cache_retries": []
+    }
+  },
+  "source_files": 671,
+  "source_sha256": "a98b0f4e98b6959c3c60f01567c87dd419a09842c047f6e304a752d230171bf7",
+  "approved_fixture_delta": {
+    "test/test_compiled_word_chunk.py": {
+      "measured": "77613d6c87d336501125d8d4af2c70d5e07bffb468090e971998134e3213711b",
+      "current": "c02fa54cbf07515218425bc76b87c4a0d1045324d59588fd4cdd4fbee453458a"
+    },
+    "test/test_ltm_consolidation.py": {
+      "measured": "5550a6b841a2955c238468656ce5010f53757bf42c41bcf2ee859d6874b962ad",
+      "current": "1238c7a4c221999b9096735d792daeeefffae0b1a01f47b276532f59a2745ffe"
+    }
+  },
+  "approved_patches_applied_exactly": true,
+  "complete_unique_full_coverage": 4989,
+  "protected_contracts_unchanged": true,
+  "source_archive_verified": true,
+  "documentation_snapshot_matches": false,
+  "depth3_campaign": "red; unchanged assertion retained",
+  "learned_utility": "unproven",
+  "deferred_decisions": [
+    "nonzero training temperature",
+    "sentence parsimony/work term"
+  ],
+  "publication": "accepted by Alec after Claude round 3; documentation check pending"
+}

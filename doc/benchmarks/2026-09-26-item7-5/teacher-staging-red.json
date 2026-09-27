@@ -1,0 +1,18 @@
+{
+  "exit_code": 1,
+  "probe": "teacher-staging-red.py",
+  "probe_sha256": "be1df0ce6a18c11f900bdd1cd65382e6442068da212c72db9a6d46e8f8f62450",
+  "source_sha256": "db23814cdcc3f9a2393c63856c65d430684bd26f362ad193bdc6eefa2d80eeca",
+  "observed": [
+    null,
+    [
+      0,
+      1
+    ]
+  ],
+  "expected": [
+    null,
+    null
+  ],
+  "error": "AssertionError: exploit/explore Teacher addresses differ: [None, [0, 1]]"
+}

@@ -76,7 +76,9 @@ tensor-map contract. ConceptualSpace builds one at construction as
 inside Miller's $7 \pm 2$ band — the working-set size
 psycholinguistics ascribes to human short-term memory. The capacity is
 the rolling-window length: at steady state the STM holds the last `cap`
-ideas and the oldest falls off as new ones arrive.
+ideas and the general push API drops the oldest when full. Item 7.5 compose
+reserves a free slot through the online reduction deadline before the next
+push. An arrival at a full stack raises an assertion instead of dropping a word.
 
 **Buffer.** The data is a single per-batch tensor
 `[B, cap, concept_dim]` plus a `[B]` long depth-pointer vector recording
@@ -173,43 +175,32 @@ implemented in `ConceptualSpace.forward`
    \mathrm{MSE}(\hat{c}_t, c_t)$ (see [Section 6](#6-intrasentencelayer)).
 4. **Language dispatch.** The signal router dispatches grammar ops over
    the STM contents (read-only via CS, write-required via SS).
-5. **Occupancy-driven grammatical reduction.** Once the per-word commit
-   lands, the per-word router fire (`_chart_compose_per_word`,
-   [Section 7](#7-per-word-router-firing)) populates this sentence's
-   `current_rules`, then `BasicModel._per_word_body_step`
-   ([Models.py](../bin/Models.py)) allows at most **one actual binary
-   grammatical operation**, followed by at most **one unary operation**. The
-   controller first normalizes over the operator axis, so adding two equally
-   scored REDUCE rules does not change a neutral decision from $1/2$ to $2/3$.
-   It then compares that grammar confidence $g$ with
-
-   $$
-   \tau_d = \tau_0\left(1-
-     \operatorname{clip}\frac{d-2}{K-2}\right),
-   $$
-
-   where $d$ is live STM depth, $K$ is capacity, and `stmReduceTau` is the
-   low-occupancy threshold $\tau_0$ (the two NanoChat models use `0.75`). At
-   depth two the grammar must license the reduction on its own. As STM fills,
-   the falling threshold supplies soft memory pressure. At $d=K$, REDUCE is a
-   demand: the best binary grammatical operator fires even at zero confidence.
-   In the canonical tensor recurrence that post-insertion demand establishes
-   the inductive invariant `depth < capacity` at every following word
-   boundary, so it does not re-evaluate all Binary experts immediately before
-   every insertion. Entering the recurrence with an externally installed full
-   STM is an invariant failure. Legacy eager controllers retain their
-   exceptional pre-insertion check. If no binary grammatical operator exists,
-   a capacity demand raises an explicit error; the model may not silently drop
-   an old constituent or substitute a mean-fold.
-
-   `protect_depth` still preserves a relative row's depth-3 end-state. At the
-   sentence boundary, the corrected word-axis models likewise demand actual
-   grammar operators while closing the remaining forest to its root. A
-   Legacy execution still counts a capacity-demand operation before insertion
-   against that word's binary budget. Canonical execution reaches the same
-   one-Binary budget through its post-insertion controller alone. Unary APPLY
-   preserves concept order, increments grammatical derivation depth, and does
-   not change STM occupancy.
+5. **One operation per round.** `LanguageSpace.choose_operation` presents
+   the newest two occupied slots to the shared `OperationSelectionLayer`.
+   Binary candidates and unary candidates at both positions compete in one
+   softmax. Three fixed rounds follow each word, with early STOP; the sentence
+   seal runs up to twice capacity. A binary choice removes one slot, while a
+   unary choice changes its selected slot without changing occupancy. STOP is
+   forbidden until the complete STM fits the destination row (one absolute
+   slot or up to three relative slots) and the phase allowance. Online rounds
+   allow `K - 1` occupied slots; seals allow one absolute or three relative slots.
+   A fixed binary-logit prior grows with whole-STM occupancy and required
+   reductions per remaining round. Its `reducePressure` weight defaults to `1`.
+   When remaining rounds equal required reductions, unary and STOP candidates
+   are masked. Unary operations remain available while there is slack.
+   Default budgets therefore reserve the next word's slot and finish each seal.
+   An initially infeasible budget may still leave an incomplete sentence;
+   an attempted push into a full stack is an assertion failure.
+   The trace records the actual operator and position in each round. Both
+   derivations use hard execution with a probability-weighted straight-through
+   gradient from the untempered model softmax. At every sentence seal, each row
+   trains both derivations from cached word vectors, retains the strictly
+   lower sentence loss (ties retain exploit), and commits before the next
+   sentence starts. Batch-end answer loss is outside this comparison.
+   Explore uses the shared
+   `composeTemperature` and forces one alternative round. Evaluation runs
+   exploit alone with deterministic logit argmax.
+   See [Language](Language.md#one-operation-per-round-item-75).
 
 > **Convention pin — newest-at-slot-0, shift-RIGHT.** The **free / newest**
 > slot is **slot $0$** and the rolling window shifts **right**, dropping
@@ -411,7 +402,7 @@ The grammar runs through the signal router (`LanguageLayer`,
 > a genuinely clean analysis/execution separation. On the **full-router**
 > path, however, `LanguageLayer.compose` does **both**: it selects the
 > rules *and* folds the slab tensorially through the op modules
-> (`BinaryStructuredReductionLayer.forward` $\to$ `op(left, right)`),
+> (`OperationSelectionLayer.forward` $\to$ `op(left, right)`),
 > caching the root state. The per-space `SyntacticLayer` cursors are then
 > **deliberately bypassed** on that path — guarded by
 > `not _grammar_is_default_only`
@@ -592,60 +583,34 @@ exercises this path.
 
 ## 9. Relative vs absolute end-states
 
-At the sentence boundary the STM is reduced to its end-state. The shape
-of that end-state depends on whether the sentence asserts an **absolute**
-or a **relative** truth.
+At the sentence boundary, item 7.5 runs a fixed operation budget. The
+row capacity controls when STOP becomes eligible:
 
-- **Absolute** sentences reduce to a **single idea** (depth 1) — the root
-  $S$ the start-symbol reduction wrote. This is the dominant path and the
-  one the IR loss consumes.
-- **Relative** sentences (the `isPart` / `isEqual` predicate family; a
-  `REL_T`-named start is the back-compat fallback signal for grammars
-  that don't tag their relative start, see "Conservative detection"
-  below) are **preserved at depth 3**
-  as the `[predicate, idea1, idea2]` end-state. Under the newest-at-slot-0
-  convention these are stored newest-first, so the predicate (oldest
-  constituent) sits at the **last** slot ($\text{depth}-1$), idea1 at
-  $\text{depth}-2$, and idea2 (the folded-newest-rest) at slot $0$.
-  `learn_relations_from_stm` reads them from those slots so
-  `_maybe_learn_relation` receives the identical predicate / idea1 / idea2
-  it did under the old oldest-first (`slots 0/1/2`) layout.
+- An absolute sentence must fit one idea slot.
+- A relative sentence may fit up to three slots. A three-slot end state
+  retains `[predicate, idea1, idea2]`, stored newest-first: the predicate
+  occupies the oldest slot (`depth - 1`), idea1 the middle slot and idea2
+  slot zero. Existing relation readers use that order.
 
-The mechanism is a per-row `protect_depth` gate threaded into
-`_stm_reduce_to_single_S` ([Models.py](../bin/Models.py)). Each
-masked micro-step (`_stm_bounded_reduce_step`,
-[Models.py](../bin/Models.py)) folds only while
-$\text{depth} > \text{protect\_depth}$: absolute rows pass
-$\text{protect\_depth} = 1$ (collapse all the way), relative rows pass
-$\text{protect\_depth} = 3$ (stop at the depth-3 end-state). The sweep
-itself is statically unrolled to `cap - 1` forced micro-steps, capped
-below that by `<syntacticOrder>` (doc/specs/orders.md; `0` = unbounded,
-the default, running the full `cap - 1` sweep) — a positive value bounds
-how many fold levels the boundary sweep runs, clamped to `cap - 1` so the
-CUDA-graph trip count stays static regardless of the runtime word count.
-Since a reduce micro-step is a no-op once a row's depth reaches 1, capping
-below `cap - 1` simply hands on a partially-composed forest rather than
-forcing the sentence root.
+`_stm_reduce_to_single_S` ([Models.py](../bin/Models.py)) runs at most `2K`
+rounds for STM capacity K, capped by a positive `syntacticOrder`. Each round
+uses the same joint selector as online composition, with the row's one-slot or
+three-slot allowance. Reduction pressure grows with occupancy and urgency;
+once remaining rounds equal required reductions, only binary choices are legal.
+STOP competes with binary and unary operations once the row fits; binary operations remain
+eligible below three slots. The older depth-three campaign therefore remains
+an empirical gate rather than a guaranteed reduction floor. An initially
+infeasible budget may leave an incomplete forest, which trains without
+publishing a program or memory row.
 
-**Conservative detection.** `_sentence_relative_mask`
-([Models.py](../bin/Models.py)) decides per row from the grammar — it
-scans `symbolSpace.current_rules`' SS- and CS-role rule-id lists (the
-relative producers are CS-role rules; the CS scan is anchor-gated, see
-`Language.sentence_relative_mask`) for any rule_id
-`TheGrammar.is_relative_rule` flags: primarily a **grammar-driven**
-signal (`lhs` names a relative-start category the WholeSpace tagged
-`<start name="relative_truth">`), falling back to a single-symbol
-`"REL_T"` start pattern for grammars that don't name their starts, OR
-(independent of the LHS signal) a rule whose `method_name` is in
-`_RELATIVE_OP_NAMES = {isEqual, isPart}` — the role-collapsed grammar's
-relative-truth family; the retired `queryPart` / `assertPart` / `part`
-op names are folded into `isPart` and no longer appear here (the
-transitional grammar's `queryPart` / `assertPart` rules still key off the
-`REL_T`-LHS fallback). It **defaults to collapse on any uncertainty**: a
-false positive would stop an absolute sentence's collapse and break the
-dominant path and the IR loss, so missing / empty rules, a grammar with
-no relative rule, or any ambiguous shape all return all-False. The
-absolute path stays **byte-identical** in every fall-through case.
+**Conservative detection.** `_sentence_relative_mask` reads the actual selected
+operation trace and the grammar's relative-rule classification, with the
+existing closed-class anchor requirement. Packed choices are scoped to their
+own sentence. Tensor word-loop choices update this evidence without a second
+parse or a host-side choice inside the loop. The final sentence's same trace
+feeds `Language.sentence_relative_mask`, used by the existing relation-learning
+hook at reset. Explicit grammar plans remain readable when no operation trace
+has been staged. Missing relative evidence leaves the one-slot capacity.
 
 **Ineffable-relation routing.** Not every accepted relation becomes a
 WS-META row. `_route_learned_relation` ([Spaces.py](../bin/Spaces.py))

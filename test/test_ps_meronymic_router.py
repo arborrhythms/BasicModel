@@ -1,13 +1,10 @@
 """Learned meronymic PS router (Phase R3).
 
 doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
-§7.2 / §8 R3 / §10. The analyzer beyond compatibility mode: a meronymic
-Viterbi / soft-DP router with signed-neighborhood evidence that selects ONE
-hard route plus soft marginals, reusing the SHARED inverse-routing primitive
-(``binary_tiling_viterbi`` / ``binary_tiling_soft_dp``) that the symbolic
-``BinaryStructuredReductionLayer`` uses. Tests: Viterbi-not-beam (exact DP
-vs brute force), depth penalty (granularity control), byte-fallback vs
-known-word (coherent atoms merge, incoherent stay byte terminals).
+§7.2 / §8 R3 / §10, updated for item 7.5. Signed-neighborhood evidence
+selects one adjacent merge or perceptual STOP from a single softmax.
+Tests cover one operation per round, depth penalty, and byte fallback
+versus known words (coherent atoms merge, incoherent ones stay terminals).
 """
 
 import itertools
@@ -25,40 +22,13 @@ if _BIN not in sys.path:
 import torch
 
 
-def _brute_force_best_merges(reduce_score):
-    """Max-weight non-overlapping adjacent-pair matching on a path (the
-    exact single-level binary tiling) by exhaustive enumeration. Returns
-    (best_score, frozenset_of_merge_positions)."""
-    m = len(reduce_score)
-    best_score, best = 0.0, frozenset()
-    positions = list(range(m))
-    for r in range(m + 1):
-        for combo in itertools.combinations(positions, r):
-            # non-overlapping: no two chosen pairs share an index.
-            if any(combo[i] + 1 == combo[i + 1] for i in range(len(combo) - 1)):
-                continue
-            s = float(sum(reduce_score[t] for t in combo))
-            if s > best_score:
-                best_score, best = s, frozenset(combo)
-    return best_score, best
-
-
-def test_route_once_is_exact_viterbi_not_beam():
-    """The single-level route maximizes total reduce score exactly (matches
-    brute force), proving an exact DP rather than a greedy / beam pick."""
+def test_route_once_selects_exactly_one_best_merge():
     from perceptual_analyzer import MeronymicRouter
     router = MeronymicRouter(keep_bias=0.0)
-    torch.manual_seed(0)
-    for _ in range(20):
-        N = 6
-        # copy_score 0 so total route score == sum of chosen reduce scores.
-        copy_score = torch.zeros(1, N, 1)
-        reduce_score = torch.randn(1, N - 1, 1)
-        out = router.route_once(copy_score, reduce_score)
-        rs = reduce_score.view(-1).tolist()
-        _, best = _brute_force_best_merges(rs)
-        assert set(out["merges"]) == set(best), (
-            f"router merges {sorted(out['merges'])} != brute force {sorted(best)}")
+    copy = torch.zeros(1, 6, 1)
+    scores = torch.tensor([[[3.], [-1.], [4.], [2.], [1.]]])
+    assert router.route_once(copy, scores)['merges'] == [2]
+    assert router.route_once(copy, -scores.abs())['merges'] == []
 
 
 def test_route_once_returns_soft_marginals():
@@ -77,7 +47,7 @@ def test_route_once_returns_soft_marginals():
 def test_depth_penalty_monotonically_reduces_merges():
     """Higher depth penalty -> non-increasing merge count (finer terminals).
     The penalty uniformly shifts the signed-neighborhood merge evidence, so
-    one DP level can only lose positive pairs as it rises (provably
+    one round can only lose positive pairs as it rises (provably
     monotonic; the iterated route mutates vectors and is not)."""
     from perceptual_analyzer import MeronymicRouter
     torch.manual_seed(1)

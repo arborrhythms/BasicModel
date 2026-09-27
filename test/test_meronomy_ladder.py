@@ -309,7 +309,6 @@ def _chunk_forced_ladder():
     m = _build_ladder()
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    m.stm_reduce_tau = 0.0
     m._ensure_chunk_machinery()
     with torch.no_grad():
         m._concept_owner().chunk_prior.fill_(20.0)

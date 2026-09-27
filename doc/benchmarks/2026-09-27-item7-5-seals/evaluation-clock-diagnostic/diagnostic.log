@@ -1,0 +1,49 @@
+Starting with dynamic 4-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.055s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.053s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.052s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.055s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.055s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.055s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.054s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.055s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.053s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.055s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.053s)
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.055s)
+IDENTICAL_PROGRAMS_WITH_FIXED_CLOCK [True, True, True, True, True, True, True, True, True, True, True, True]

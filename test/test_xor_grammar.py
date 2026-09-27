@@ -211,10 +211,10 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         self.assertIsNotNone(
             router, "LanguageLayer must be built")
         self.assertTrue(
-            len(router._unary_layers) > 0,
+            router.operation_layer.r_apply > 0,
             "Expected at least one unary space_role attached")
         self.assertTrue(
-            len(router._binary_layers) > 0,
+            router.operation_layer.r_reduce > 0,
             "Expected at least one binary space_role attached")
 
         # The common structural-face contract wraps both unary and binary
@@ -222,10 +222,10 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         # rather than coupling this integration check to the dispatcher
         # representation.
         unary_ops = [getattr(op, "gl", op)
-                     for layer in router._unary_layers.values()
-                     for op in layer.ops]
+                     for layer in (router.operation_layer,)
+                     for op in layer.unary_ops]
         binary_ops = [getattr(op, "gl", op)
-                      for layer in router._binary_layers.values()
+                      for layer in (router.operation_layer,)
                       for op in layer.ops]
         self.assertTrue(
             any(isinstance(op, NotLayer) for op in unary_ops),

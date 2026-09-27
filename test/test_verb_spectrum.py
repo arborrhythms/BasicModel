@@ -24,7 +24,7 @@ import torch
 from torch import nn
 
 from util import TheXMLConfig
-from Language import BinaryStructuredReductionLayer, LiftLayer, VerbLayer
+from Language import OperationSelectionLayer, LiftLayer, VerbLayer
 
 _D = 8
 
@@ -158,12 +158,12 @@ def _overflow_router_case(selected_op):
         verb._verb_spec.weight.fill_(100.0)
         verb._verb_spec.bias.zero_()
 
-    router = BinaryStructuredReductionLayer(
-        d_model=4, ops=[verb, _LeftOperand()], r_copy=1,
+    router = OperationSelectionLayer(
+        d_model=4, ops=[verb, _LeftOperand()],
         chooser="anchordot")
     with torch.no_grad():
         # Make REDUCE beat two COPY actions, then choose the requested op.
-        router.copy_anchor.fill_(-100.0)
+        router.stop_anchor.fill_(-100.0)
         router.reduce_anchor.zero_()
         router.reduce_anchor[selected_op].fill_(100.0)
 
@@ -171,7 +171,7 @@ def _overflow_router_case(selected_op):
         [[[0.5, 0.5, 0.5, 0.5], [1.0, 1.0, 1.0, 1.0]]],
         requires_grad=True)
     hard, soft, routing = router(x)
-    assert int(routing["reduce_mask"].argmax(-1).item()) == selected_op
+    assert int(routing["op"].item()) == selected_op
     assert torch.isfinite(hard).all()
     assert torch.isfinite(soft).all()
 

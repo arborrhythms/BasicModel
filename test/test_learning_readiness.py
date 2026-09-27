@@ -113,6 +113,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     from data import Data
     from test_compiled_word_chunk import _tiny_canonical_model
     from test_packed_reconstruction_parity import reset
+    from test_reverse_traversal import _select_completed_binary_path
     from LearningEvaluation import FINEWEB_CORPUS, checkpoint_readiness
     from eval_fineweb_learning import load_model, read_validation
     from What import What
@@ -133,6 +134,9 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     model.reconstruction_placement = 'eager'
+    # This is checkpoint/prediction plumbing. Supply complete observations;
+    # unconstrained unary rounds may correctly exhaust the compose budget.
+    _select_completed_binary_path(model)
     data = model.inputSpace.data
     manifest = dict(dataset='text', corpus=FINEWEB_CORPUS,
                     shards=[dict(path='fixture.parquet', size=123)])
@@ -173,6 +177,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
                            for i in range(4)]}
     monkeypatch.setattr(Data, 'load', heldout)
     loaded = load_model(tmp_path/'tiny_chunk_model.xml', path, minimum_sentences=3)
+    _select_completed_binary_path(loaded)
     try:
         report = read_validation(loaded, sentences=4, gain=0.)
         assert report['predicted_targets'] == 2

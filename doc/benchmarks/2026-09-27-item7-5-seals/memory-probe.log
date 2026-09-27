@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/memory_probe.py", line 9, in <module>
+    import psutil
+ModuleNotFoundError: No module named 'psutil'

@@ -278,14 +278,18 @@ def test_truth_modulation_scales_objectives_without_state_feedback():
     torch.testing.assert_close(p.grad, rg + og)
 
 
-def test_real_runbatch_uses_one_backward_and_one_optimizer_step(monkeypatch):
+@pytest.mark.parametrize('config_name, expected', [
+    ('MM_xor.xml', ['batch']),
+    ('MM_xor_loopback.xml', ['exploit', 'explore', 'batch']),
+])
+def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypatch, config_name, expected):
     import Models
     from data import TheData
     from util import init_config
 
     monkeypatch.setenv("MODEL_COMPILE", "none")
     project = os.path.dirname(os.path.dirname(__file__))
-    config = os.path.join(project, "data", "MM_xor.xml")
+    config = os.path.join(project, "data", config_name)
     init_config(path=config, defaults_path=os.path.join(project, "data", "model.xml"))
     TheData.load("xor")
     model, _ = Models.BaseModel.from_config(config, data=TheData)
@@ -299,11 +303,11 @@ def test_real_runbatch_uses_one_backward_and_one_optimizer_step(monkeypatch):
 
     def inspect_backward(total, *args, **kwargs):
         assert total.requires_grad
-        calls.append(True)
+        calls.append(model._sentence_trial if getattr(model, '_sentence_backward', False) else 'batch')
         return original_backward(total, *args, **kwargs)
 
     def inspect_step(*args, **kwargs):
-        steps.append(True)
+        steps.append(getattr(model, '_sentence_trial', None) or 'batch')
         return original_step(*args, **kwargs)
 
     monkeypatch.setattr(model, "_backward_training_loss", inspect_backward)
@@ -316,7 +320,7 @@ def test_real_runbatch_uses_one_backward_and_one_optimizer_step(monkeypatch):
             train=True, batchSize=2, split="train", optimizer=optimizer,
             batch_override=batch)
         assert result is not None
-    assert len(calls) == len(steps) == 2
+    assert calls == steps == expected * 2
 
 
 def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeypatch, tmp_path):
@@ -370,6 +374,18 @@ def test_real_intermediate_and_final_seals_have_same_canonical_roles(tmp_path):
             ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
             ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
         ])
+        # This probes the seal layout on a completed derivation. Select one
+        # known binary operation and STOP when eligible; random unary loops
+        # can exhaust the budget and correctly leave an incomplete forest.
+        chooser = model.symbolSpace.languageLayer.operation_layer.chooser
+        def binary(x, candidates, *_args, **_kwargs):
+            scores = x.new_full(candidates.shape[:-1], -1e6)
+            scores[..., 0] = 0.
+            return x.new_full((*x.shape[:2], 1), 1e6), scores
+        def unary(x, candidates, *_args, **_kwargs):
+            return (x.new_full((*x.shape[:2], 1), 1e6),
+                    x.new_full(candidates.shape[:-1], -1e6))
+        chooser.score_binary, chooser.score_unary = binary, unary
         model._tensor_peer_while_eager = True
         model._chart_compose_per_word = lambda: None
         model._install_unit_span_fn()

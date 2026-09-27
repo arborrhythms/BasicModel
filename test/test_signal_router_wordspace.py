@@ -28,7 +28,7 @@ def test_language_layer_constructs_without_ops():
     """LanguageLayer can be constructed before any ops are attached."""
     router = _make_signal_router()
     assert isinstance(router, LanguageLayer)
-    assert not router._unary_layers and not router._binary_layers
+    assert router.operation_layer is None
 
 
 def test_language_layer_compose_without_ops_raises():

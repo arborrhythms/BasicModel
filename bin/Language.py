@@ -59,7 +59,7 @@ from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, Ev
 from Spaces import Basis, Tensor, Codebook, Embedding, fold_content_apply
 from Spaces import (SubSpace, SubSpaceView, Space, InputSpace, PartSpace,
                     ModalSpace, ConceptualSpace, WholeSpace, OutputSpace,
-                    LanguageBinaryChoice, LanguageUnaryChoice)
+                    LanguageOperationChoice)
 
 import xml.etree.ElementTree as _ET
 from pathlib import Path as _Path
@@ -5493,10 +5493,10 @@ def invoke_structural_face(layer, operands, *, context, phase=None):
 
 class _BinaryGrammarOpAdapter(nn.Module):
     """Adapt a GrammarLayer with a `.compose(left, right)` method into a
-    plain binary callable for the LanguageLayer's `BinaryStructuredReductionLayer`.
+    plain binary callable for the LanguageLayer's `OperationSelectionLayer`.
 
     The CKY chart calls `gl.compose(left, right)` on `[..., D]` pairs;
-    `BinaryStructuredReductionLayer` calls `op(left, right)` on
+    `OperationSelectionLayer` calls `op(left, right)` on
     `[B, N-1, D]` pairs. The two contracts agree element-wise; this
     adapter just forwards.
     """
@@ -5579,19 +5579,47 @@ class _UnaryGrammarOpAdapter(nn.Module):
             self.gl, (value,), context=context, phase='compose')
 
 
+def sentence_anchor_mask(word_subspace, B, device=None):
+    """Existing closed-class anchor evidence, with tensor-only live PID reads."""
+    owner = getattr(word_subspace, 'wholeSpace', None)
+    if getattr(owner, 'property_basis', False):
+        owner = getattr(word_subspace, 'conceptualSpace', None)
+    anchors = getattr(owner, '_anchored_pids', None) or {}
+    grid = getattr(owner, '_category_last_pid', None) or []
+    flags = [any(int(pid) in anchors for pid in (grid[min(b, len(grid) - 1)] if grid else []))
+             for b in range(B)]
+    anchored = torch.tensor(flags, dtype=torch.bool, device=device)
+    ps = getattr(word_subspace, 'perceptualSpace', None)
+    current = getattr(ps, '_forward_input', None)
+    pids = current.get('indices') if isinstance(current, dict) else None
+    if anchors and torch.is_tensor(pids) and pids.dim() >= 2 and pids.shape[0] == B:
+        known = torch.tensor(tuple(anchors), dtype=pids.dtype, device=pids.device)
+        anchored = anchored | torch.isin(pids, known).reshape(B, -1).any(-1).to(device=device)
+    return anchored
+
+
 def sentence_relative_mask(word_subspace, B, device=None):
     """Per-row ``[B]`` bool: True where the current sentence is a RELATIVE
-    truth (the ``part`` / ``isEqual`` predicate family), read from
-    ``word_subspace.current_rules`` + ``TheGrammar``.
-
-    Host-side (a cheap dict lookup); conservative -- returns all-False on
-    ANY uncertainty. Shared by ``BasicModel._sentence_relative_mask`` (the
-    reduce site) and the hoisted ``ConceptualSpace.Reset`` relation-learning
-    hook (both need the same signal off the compiled forward).
+    truth, read from the final sentence's selected operation trace. Explicit
+    grammar plans remain readable when no operation trace is staged. Shared
+    with the ConceptualSpace.Reset relation-learning hook, so memory sees the
+    same anchor-gated evidence as the reducer without another parse.
     """
     false_mask = torch.zeros(B, dtype=torch.bool, device=device)
     if word_subspace is None:
         return false_mask
+    trace = getattr(word_subspace, 'reconstruction_stack', None)
+    ids = getattr(trace, '_choice_rule_ids', None)
+    valid = getattr(trace, '_choice_mask', None)
+    owners = getattr(trace, '_choice_sentence_ids', None)
+    last = getattr(trace, '_last_sentence_id', None)
+    relative_ids = getattr(trace, '_relative_rule_ids', None)
+    if (torch.is_tensor(ids) and ids.shape[0] == B and torch.is_tensor(valid)
+            and torch.is_tensor(owners) and owners.shape == ids.shape
+            and torch.is_tensor(last) and torch.is_tensor(relative_ids)):
+        selected = (ids[..., None] == relative_ids.to(ids.device)).any(-1)
+        scoped = valid & (owners == last)
+        return (selected & scoped).any(-1) & sentence_anchor_mask(word_subspace, B, device=device)
     current_rules = getattr(word_subspace, 'current_rules', None)
     if not current_rules:
         return false_mask
@@ -5627,7 +5655,7 @@ def sentence_relative_mask(word_subspace, B, device=None):
     # The relative producers (part/whole/equal) are CS-role rules, so the
     # router appends their fired ids under 'CS'; 'SS' carries the padded
     # stem cursor. The CS scan is ANCHOR-GATED (review finding, same day):
-    # fired ids are Viterbi-argmax picks at EVERY reduce site, so an
+    # fired ids are hard picks at the selected operation sites, so an
     # untrained chooser fires a relative op on ABSOLUTE sentences at
     # chance rate — requiring an anchored closed-class pid in the row's
     # grid restores the documented conservatism (anchors are grammatical,
@@ -5638,111 +5666,65 @@ def sentence_relative_mask(word_subspace, B, device=None):
         mask = mask | _mask_for(current_rules['SS'])
     if 'CS' in current_rules:
         cs_mask = _mask_for(current_rules['CS'])
-        ws_sp = getattr(word_subspace, 'wholeSpace', None)
-        anch = getattr(ws_sp, '_anchored_pids', None)
-        grid = getattr(ws_sp, '_category_last_pid', None)
-        # Anchor evidence: the (one-sentence-stale) category pid grid OR
-        # the CURRENT sentence's PS forward-stash pids — the latter covers
-        # provisioning's first-presentation window (the anchor pid exists
-        # there as soon as promotion lands mid-read).
-        ps_sp = getattr(word_subspace, 'perceptualSpace', None)
-        if ps_sp is None:
-            ps_sp = getattr(getattr(word_subspace, 'subspace', None),
-                            'perceptualSpace', None)
-        cur = getattr(ps_sp, '_forward_input', None)
-        cur_idx = cur.get('indices') if isinstance(cur, dict) else None
-        anchored = torch.zeros(B, dtype=torch.bool, device=device)
-        if anch:
-            for b in range(B):
-                row = list(grid[b if b < len(grid) else -1]) if grid else []
-                if (torch.is_tensor(cur_idx) and cur_idx.dim() >= 2
-                        and b < int(cur_idx.shape[0])):
-                    row += cur_idx[b].reshape(-1).tolist()
-                if any(int(p) in anch for p in row):
-                    anchored[b] = True
+        anchored = sentence_anchor_mask(word_subspace, B, device=device)
         mask = mask | (cs_mask & anchored)
     return mask
 
 
+def sentence_row_slots(relative):
+    """An absolute sentence fuses to one event; a relative keeps S REL S."""
+    return torch.where(relative, 3, 1)
+
+
 class LanguageLayer(Layer):
-    """Top-level signal-routing parser. The canonical parser as of
-    Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md,
-    2026-05-27). Constructed directly on
-    ``SymbolSubSpace.languageLayer``; the CKY chart and its lazy
-    ``_ensure_signal_router`` bridge retired with the Chart class.
+    """Compose parser with one shared selector for every arity and location.
 
-    Multi-space_role: a unary layer and/or a binary layer can be attached per
-    space_role (e.g., 'subsymbolic', 'CS', 'SS'). On compose, space_roles run in sorted order;
-    within each space_role, unary fires first then binary, with the soft slab
-    of the previous step feeding the next so gradient reaches every op.
-
-    **Layer contract** (post-2026-05-20 stack-rewrite refactor):
-
-    The canonical entry points are ``forward(subspace, syntactic_layer,
-    ..., actions=...)`` and ``reverse(subspace, syntactic_layer, ...)``
-    -- both wrap the stack-rewrite primitives (shift/reduce/unreduce)
-    so call sites can treat LanguageLayer like any other Layer subclass.
-
-    ``compose`` / ``generate`` are the SymbolSubSpace-facing entry points;
-    they operate on a ``[B, N, D]`` slab through the attached
-    ``_unary_layers`` / ``_binary_layers`` ModuleDicts and produce
-    per-row rule lists. The two paths are independent: the Layer-style
-    ``forward`` ignores the ModuleDicts (it dispatches through the
-    supplied SyntacticLayer's ``execute``), and ``compose`` ignores the
-    Layer-style
-    args.
+    ``compose`` returns the exploit rule sequence. The same operation layer
+    serves the serial two-slot STM window; supplied stack actions remain
+    available for replay through ``forward`` and ``reverse``.
     """
 
     def __init__(self, n_input, n_output, *, hidden_dim, feature_dim,
-                 max_depth, temperature=1.0):
-        """Initialize empty unary / binary ModuleDicts; ops are attached later.
-
-        ``feature_dim`` is the slab D; ``temperature`` divides logits in
-        the inner soft DP. ``max_depth`` caps the number of binary
-        reduction rounds; the actual cap is min(N-1, max_depth).
-
-        Calls ``Layer.__init__(n_input, n_output)`` so ``self.nInput``
-        / ``self.nOutput`` / ``self.layers`` follow the standard Layer
-        contract. The ergodic interface (paramUpdate / set_sigma /
-        Start / End) is inherited and dispatches to ``self.layers``
-        (a plain list, kept empty here -- the trainable scoring layers
-        live in ``self._unary_layers`` / ``self._binary_layers``
-        ModuleDicts so the optimizer still sees them via the standard
-        nn.Module parameter walk).
-        """
+                 max_depth, temperature=0.0, reduce_pressure=1.0):
         super().__init__(int(n_input), int(n_output))
-        self.n_input = int(n_input)
-        self.n_output = int(n_output)
-        self.hidden_dim = int(hidden_dim)
-        self.feature_dim = int(feature_dim)
-        self.max_depth = int(max_depth)
-        self.temperature = float(temperature)
-        # Conceptual reduction order (T = subsymbolicOrder). Used as the
-        # recursive-reduction round floor in ``compose`` (plan \xa76: the
-        # per-space_role compose loop is collapsed into a single reduction space_role,
-        # so the bound is ``max(subsymbolic_order, N-1)`` rather than the
-        # number of declared space_roles). Defaults to 1; the host space sets it
-        # when it can reach the model's subsymbolicOrder. ``max(1, N-1) ==
-        # N-1`` so the default reproduces the pre-collapse round count.
+        self.n_input, self.n_output = int(n_input), int(n_output)
+        self.hidden_dim, self.feature_dim = int(hidden_dim), int(feature_dim)
+        self.max_depth, self.temperature = int(max_depth), float(temperature)
+        self.reduce_pressure = float(reduce_pressure)
         self.subsymbolic_order = 1
-        # Placement-chooser kind for the structured layers built by
-        # ``attach_unary_ops`` / ``attach_layer_ops``. "anchordot" (default)
-        # = the stateless behavior-preserving scorer (no params); "mlp" =
-        # the contextual MLPTransformChooser (owns params, new basin). The
-        # host sets it from ``<architecture><transformChooser>`` BEFORE the
-        # ops are attached (the layers pick the chooser at construction).
         self.transform_chooser = "anchordot"
-        self._unary_layers = nn.ModuleDict()
-        self._binary_layers = nn.ModuleDict()
-        # Parallel arrays of global rule_ids per attached layer; keyed by
-        # space_role. Local op_id (the index inside the layer's ModuleList) maps
-        # to the corresponding global rule_id at this list position.
-        self._unary_rule_ids = {}
-        self._binary_rule_ids = {}
-        # Per-compose cache for generate / inspection.
-        self._last_input = None
-        self._last_output = None
+        self.operation_layer = None
+        self._operation_specs = {}
+        self._unary_rule_ids, self._binary_rule_ids = {}, {}
+        self._last_input = self._last_output = None
         self._last_space_role_routings = {}
+        self._last_rules = {}
+
+    def _attach_ops(self, arity, ops, rule_ids, op_names, op_space_roles, space_role):
+        ops = tuple(ops)
+        rule_ids = list(range(len(ops))) if rule_ids is None else list(map(int, rule_ids))
+        if len(rule_ids) != len(ops):
+            raise ValueError("one rule id is required for each compose operator")
+        role = str(space_role)
+        self._operation_specs[(role, arity)] = (ops, rule_ids, op_names, op_space_roles)
+        (self._binary_rule_ids if arity == 2 else self._unary_rule_ids)[role] = rule_ids
+        tables = {1: ([], [], [], [], []), 2: ([], [], [], [], [])}
+        for (owner, a), (operations, ids, names, roles) in sorted(self._operation_specs.items()):
+            table = tables[a]
+            table[0].extend(operations); table[1].extend(ids)
+            table[2].extend(names or [None] * len(operations))
+            table[3].extend(roles or [owner] * len(operations))
+            table[4].extend([owner] * len(operations))
+        binary, unary = tables[2], tables[1]
+        self.operation_layer = OperationSelectionLayer(
+            d_model=self.feature_dim, ops=binary[0], unary_ops=unary[0],
+            op_names=binary[2], unary_names=unary[2], op_space_roles=binary[3],
+            temperature=self.temperature, reduce_pressure=self.reduce_pressure,
+            chooser=self.transform_chooser,
+            n_role_cats=self._chooser_role_cats())
+        self.binary_rule_ids, self.unary_rule_ids = binary[1], unary[1]
+        self.binary_roles, self.unary_roles = binary[4], unary[4]
+
 
     def _chooser_role_cats(self):
         """Category-context width for structured-layer MLP choosers.
@@ -5764,225 +5746,56 @@ class LanguageLayer(Layer):
             return 0
 
     def attach_unary_ops(self, *, ops, rule_ids=None, op_names=None,
-                         op_space_roles=None, r_copy=1, space_role="SS"):
-        """Attach a unary space_role; ops fire per-position with one selection.
+                         op_space_roles=None, space_role="SS"):
+        """Add unary candidates to the same global operation layer."""
+        self._attach_ops(1, ops, rule_ids, op_names, op_space_roles, space_role)
 
-        ``rule_ids`` parallels ``ops`` and maps local op_id to the
-        grammar's global rule_id (defaults to identity range).
-        ``op_names`` and ``op_space_roles`` parallel ``ops`` and carry the
-        per-rule method-name and space_role tag ('CS' / 'SS' / ...) declared
-        in the .grammar file. Both are optional; they enable downstream
-        consumers (space_role-gated scoring, diagnostics) to look at each op
-        without crawling back through ``TheGrammar``. Mutates
-        ``self._unary_layers[space_role]`` and ``self._unary_rule_ids[space_role]``.
-        """
-        space_role = str(space_role)
-        layer = UnaryStructuredLayer(
-            d_model=self.feature_dim,
-            ops=ops, r_copy=r_copy,
-            temperature=self.temperature,
-            chooser=getattr(self, "transform_chooser", "anchordot"),
-            n_role_cats=self._chooser_role_cats(),
-            op_names=op_names,
-        )
-        layer.op_names = list(op_names) if op_names is not None else None
-        layer.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
-        self._unary_layers[space_role] = layer
-        if rule_ids is None:
-            rule_ids = list(range(len(ops)))
-        else:
-            rule_ids = [int(r) for r in rule_ids]
-        if len(rule_ids) != len(ops):
-            raise ValueError(
-                f"attach_unary_ops: len(rule_ids)={len(rule_ids)} != "
-                f"len(ops)={len(ops)} for space_role {space_role!r}")
-        self._unary_rule_ids[space_role] = rule_ids
 
     def attach_layer_ops(self, *, ops, rule_ids=None, op_names=None,
-                         op_space_roles=None, r_copy=1, space_role="SS"):
-        """Attach a binary space_role; ops reduce adjacent pairs via Viterbi DP.
+                         op_space_roles=None, space_role="SS"):
+        """Add binary candidates to the same global operation layer."""
+        self._attach_ops(2, ops, rule_ids, op_names, op_space_roles, space_role)
 
-        ``rule_ids`` parallels ``ops`` and maps local op_id to grammar
-        global rule_id. ``op_names`` and ``op_space_roles`` carry the per-rule
-        method-name and space_role tag declared in the .grammar file; when
-        supplied, the binary layer uses them to (a) gate scores so a
-        CS-space_role op only fires at CS-space_role positions and an SS-space_role op only
-        at SS-space_role positions, and (b) update each position's space_role after a
-        ``lift`` (CS->SS) or ``lower`` (SS->CS) reduce. Both are optional;
-        when omitted the layer falls back to ungated behaviour
-        (backward-compat). Mutates ``self._binary_layers[space_role]`` and
-        ``self._binary_rule_ids[space_role]``.
-        """
-        space_role = str(space_role)
-        layer = BinaryStructuredReductionLayer(
-            d_model=self.feature_dim,
-            ops=ops, op_space_roles=op_space_roles, op_names=op_names,
-            r_copy=r_copy,
-            temperature=self.temperature,
-            chooser=getattr(self, "transform_chooser", "anchordot"),
-            n_role_cats=self._chooser_role_cats(),
-        )
-        self._binary_layers[space_role] = layer
-        if rule_ids is None:
-            rule_ids = list(range(len(ops)))
-        else:
-            rule_ids = [int(r) for r in rule_ids]
-        if len(rule_ids) != len(ops):
-            raise ValueError(
-                f"attach_layer_ops: len(rule_ids)={len(rule_ids)} != "
-                f"len(ops)={len(ops)} for space_role {space_role!r}")
-        self._binary_rule_ids[space_role] = rule_ids
 
-    def compose(self, data, word_space, subspace=None, grammar_context=None):
-        """Run space_roleed unary then recursive binary reductions; return rule list.
-
-        ``data`` is ``[B, N, D]``. For each space_role in sorted order, unary
-        fires per position then binary reduces adjacent pairs until N
-        collapses to a single S-state. Returns ``{space_role: list[list[rule_id]]}``
-        and caches the root state + length-N expansion on ``self``.
-        """
-        if not self._unary_layers and not self._binary_layers:
-            raise RuntimeError(
-                "LanguageLayer.compose called before attach_layer_ops() / "
-                "attach_unary_ops().")
-        x = data
-        live_lengths = torch.full((x.shape[0],), x.shape[1],
-                                  dtype=torch.long, device=x.device)
-        rules = {}
-        self._last_space_role_routings = {}
-        all_space_roles = sorted(set(self._unary_layers.keys())
-                           | set(self._binary_layers.keys()))
-
-        # Category conditioning: build the per-slot category context ONCE from
-        # terminal-slot identities and thread it into the FIRST space_role's
-        # scoring only. Later rounds/space_roles fold composed slots whose
-        # MetaSymbol identity no longer maps 1:1 to a percept, so their
-        # category is neutral.
-        cat_e = None
-        category_owner = self._category_owner(word_space)
-        if (category_owner is not None
-                and getattr(category_owner,
-                            'category_codebook_enabled', None) is not None
-                and category_owner.category_codebook_enabled()):
-            cat_e = self._build_category_context(x, category_owner)
-        terminal_space_role = all_space_roles[0] if all_space_roles else None
-
-        for space_role in all_space_roles:
-            B = x.shape[0]
-            space_role_routing = {}
-            space_role_rules_per_row = [[] for _ in range(B)]
-
-            unary_layer = self._unary_layers[space_role] if space_role in self._unary_layers else None
-            if unary_layer is not None:
-                u_hard, u_soft, u_routing = unary_layer(
-                    x,
-                    cat_ctx=(cat_e if space_role == terminal_space_role else None),
-                    what_ctx=(getattr(self, "_what_context", None)
-                              if space_role == terminal_space_role else None),
-                    grammar_context=grammar_context)
-                space_role_routing["unary"] = u_routing
-                rid_table = self._unary_rule_ids[space_role]
-                kind = u_routing["action_kind"]
-                op = u_routing["action_op"]
-                # Rule ids are host bookkeeping only.  A scalar ``.item()``
-                # here for every (batch,row) pair serializes MPS thousands of
-                # times during per-word parsing.  Transfer the compact integer
-                # routing slab once, then decode it in ordinary Python; the
-                # differentiable ``u_soft`` path below is unchanged.
-                routing_rows = torch.stack(
-                    (kind, op), dim=-1).detach().cpu().tolist()
-                for b, routing_row in enumerate(routing_rows):
-                    for action_kind, action_op in routing_row:
-                        if int(action_kind) == 2:
-                            space_role_rules_per_row[b].append(
-                                rid_table[int(action_op)])
-                # Propagate soft slab so gradient reaches unary ops at
-                # later space_roles / through the binary stage of this space_role.
-                x = u_soft
-
-            binary_layer = self._binary_layers[space_role] if space_role in self._binary_layers else None
-            if binary_layer is not None:
-                rid_table = self._binary_rule_ids[space_role]
-                # Compaction packs each disjoint tile into its output ordinal.
-                # Hard routing carries the remaining live lengths, so a later
-                # round cannot consume padding or reuse an already consumed
-                # child. Soft routing retains its distribution over lengths.
-                max_rounds = max(self.subsymbolic_order, x.shape[1] - 1)
-                round_routings = []
-                for _round_i in range(max_rounds):
-                    if x.shape[1] <= 1:
-                        break
-                    b_hard, b_soft, b_routing = binary_layer(
-                        x,
-                        lengths=live_lengths,
-                        cat_ctx=(cat_e if (space_role == terminal_space_role
-                                           and _round_i == 0) else None),
-                        what_ctx=(getattr(self, "_what_context", None)
-                                  if (space_role == terminal_space_role
-                                      and _round_i == 0) else None),
-                        grammar_context=grammar_context)
-                    round_routings.append(b_routing)
-                    kind = b_routing["action_kind"]
-                    op = b_routing["action_op"]
-                    lengths = b_routing["lengths"]
-                    # As above, collect the discrete diagnostic/rule path with
-                    # two bulk transfers per round instead of one MPS sync per
-                    # scalar.  ``b_soft`` retains the full gradient graph.
-                    routing_rows = torch.stack(
-                        (kind, op), dim=-1).detach().cpu().tolist()
-                    length_rows = lengths.detach().cpu().tolist()
-                    for b, routing_row in enumerate(routing_rows):
-                        L = int(length_rows[b])
-                        for action_kind, action_op in routing_row[:L]:
-                            if int(action_kind) == 1:
-                                space_role_rules_per_row[b].append(
-                                    rid_table[int(action_op)])
-                    x = b_soft
-                    if getattr(binary_layer, 'superposition_temperature', None) is None:
-                        live_lengths = lengths
-                        x = x[:, :max(length_rows)]
-                if round_routings:
-                    # Last round's routing is the canonical "binary"
-                    # diagnostic; the full sequence is in "binary_rounds".
-                    space_role_routing["binary"] = round_routings[-1]
-                    space_role_routing["binary_rounds"] = round_routings
-
-            self._last_space_role_routings[space_role] = space_role_routing
-            rules[space_role] = space_role_rules_per_row
-
-        # Canonical S start state: leading position of the final slab,
-        # shape [B, 1, D]. Downstream consumers that want the single
-        # parsed state read from here.
-        if x.shape[1] >= 1:
-            self._last_root_state = x[:, 0:1, :]
-        else:
-            self._last_root_state = x
-        # Length-N expansion of the root state, for shape-compat write-
-        # back into subspace.event so downstream layers don't need
-        # adapting to a [B, 1, D] input.
+    def compose(self, data, word_space, subspace=None, grammar_context=None, *, exploit=None):
+        """Select one operation each round and publish only the exploit program."""
+        if self.operation_layer is None:
+            raise RuntimeError("LanguageLayer.compose needs attach_layer_ops or attach_unary_ops")
+        owner = self._category_owner(word_space)
+        cat = self._build_category_context(data, owner) if (
+            owner is not None and callable(getattr(owner, 'category_codebook_enabled', None))
+            and owner.category_codebook_enabled()) else None
+        # The row contract is one absolute slot or three relative slots.
+        slots = sentence_row_slots(sentence_relative_mask(word_space, data.shape[0], device=data.device))
+        budget = max(1, self.max_depth, 2 * data.shape[1])
+        derivation = self.operation_layer.derive(
+            data, slots=slots, rounds=budget, exploit=exploit,
+            greedy=not self.training, cat_ctx=cat,
+            what_ctx=getattr(self, '_what_context', None), grammar_context=grammar_context)
+        self._last_derivation = derivation
+        traces = derivation['traces']
+        roles = sorted(set(self.binary_roles + self.unary_roles))
+        rules = {role: [[] for _ in range(data.shape[0])] for role in roles}
+        for route in traces:
+            rows = torch.stack((route['kind'], route['op'], route['valid'].long()), -1).detach().cpu().tolist()
+            for b, (kind, op, valid) in enumerate(rows):
+                if valid and kind in (1, 2):
+                    ids, owners = ((self.binary_rule_ids, self.binary_roles) if kind == 1
+                                   else (self.unary_rule_ids, self.unary_roles))
+                    rules[owners[op]][b].append(ids[op])
         self._last_input = data
-        self._last_output = self._last_root_state.expand(
-            -1, data.shape[1], -1).contiguous()
+        self._last_root_state = derivation['value'][:, :1]
+        self._last_output = self._last_root_state.expand(-1, data.shape[1], -1).contiguous()
+        # These are this trial's transient reconstruction/feedback carriers.
+        # runBatch keeps the lower-loss trial's carriers after both train.
+        complete = derivation['complete'].detach().tolist()
+        self._last_rules = {role: [row if complete[b] else [] for b, row in enumerate(rows)]
+                            for role, rows in rules.items()}
+        self._last_space_role_routings = {'operations': {'rounds': traces}}
+        if owner is not None and cat is not None:
+            owner._category_role_obs = self._collect_round0_role_obs()
+        return self._last_rules
 
-        # MetaSymbol category role observation (Phase 1; doc/Language.md
-        # "Participation Categories as the Chooser's Syntactic-Category
-        # Context"). Gated: only when the architecture's category owner has
-        # the codebook enabled. Captures the FIRST binary space_role's round-0 reduces
-        # (the only round whose slab positions map 1:1 to the original
-        # percepts) as per-row (left_pos, right_pos, method) tuples, stashed on
-        # the category owner for the autobind hook (which holds pid_2d) to
-        # attribute to MetaSymbols/concepts.  In the canonical property-basis
-        # architecture that owner is ConceptualSpace; legacy symbol-dictionary
-        # models retain WholeSpace ownership. Off -> not computed
-        # (byte-identical).
-        if (category_owner is not None
-                and getattr(category_owner,
-                            'category_codebook_enabled', None) is not None
-                and category_owner.category_codebook_enabled()):
-            category_owner._category_role_obs = (
-                self._collect_round0_role_obs())
-
-        return rules
 
     @staticmethod
     def _category_owner(word_space):
@@ -6064,49 +5877,15 @@ class LanguageLayer(Layer):
         return ctx
 
     def _collect_round0_role_obs(self):
-        """Round-0 reduces of the first binary space_role as per-row
-        ``(left_pos, right_pos, method)`` tuples for Phase-1 category learning.
+        traces = self._last_space_role_routings.get('operations', {}).get('rounds', [])
+        if not traces:
+            return []
+        route = traces[0]
+        rows = torch.stack((route['kind'], route['op'], route['position']), -1).detach().cpu().tolist()
+        names = self.operation_layer.op_names
+        return [[(p, p + 1, names[op])] if kind == 1 and names[op] else []
+                for kind, op, p in rows]
 
-        Only round 0 has slab positions == original percept positions, so the
-        operand positions index ``pid_2d`` directly in the autobind hook.
-        Returns a list of B lists (empty when no binary space_role fired). Host-side
-        bookkeeping; only runs when the category codebook is enabled."""
-        for space_role in sorted(self._binary_layers.keys()):
-            tr = (self._last_space_role_routings or {}).get(space_role) or {}
-            rounds = tr.get("binary_rounds")
-            if not rounds:
-                continue
-            r0 = rounds[0]
-            kind = r0.get("action_kind")
-            op = r0.get("action_op")
-            sl = r0.get("src_left")
-            sr = r0.get("src_right")
-            if kind is None or op is None or sl is None or sr is None:
-                continue
-            rid_table = (getattr(self, "_binary_rule_ids", {}) or {}).get(space_role) or []
-            kind_h = kind.tolist()
-            op_h = op.tolist()
-            sl_h = sl.tolist()
-            sr_h = sr.tolist()
-            obs = [[] for _ in range(len(kind_h))]
-            for b in range(len(kind_h)):
-                row_kind = kind_h[b]
-                for j in range(len(row_kind)):
-                    if int(row_kind[j]) != 1:          # 1 == fired reduce
-                        continue
-                    o = int(op_h[b][j])
-                    if o < 0 or o >= len(rid_table):
-                        continue
-                    try:
-                        method = TheGrammar.rules[rid_table[o]].method_name
-                    except (IndexError, AttributeError, TypeError):
-                        method = None
-                    if not method:
-                        continue
-                    obs[b].append(
-                        (int(sl_h[b][j]), int(sr_h[b][j]), str(method)))
-            return obs          # first binary space_role only (positions == percepts)
-        return []
 
     def generate(self, target, word_space, subspace=None, grammar_context=None):
         """Reverse-pass mirror: emit the compose-order rule list reversed.
@@ -6115,7 +5894,7 @@ class LanguageLayer(Layer):
         Space-role order is reversed (innermost first) and each row's rule
         sequence is reversed so the inverse pass pops last-applied first.
         """
-        if not self._unary_layers and not self._binary_layers:
+        if self.operation_layer is None:
             raise RuntimeError(
                 "LanguageLayer.generate called before attach_layer_ops() / "
                 "attach_unary_ops().")
@@ -6136,56 +5915,15 @@ class LanguageLayer(Layer):
                 for space_role in all_space_roles}
 
     def _compose_rules_from_routings(self):
-        """Rebuild per-row compose-order rule lists from cached routings.
+        return self._last_rules
 
-        Walks ``self._last_space_role_routings`` and translates each routing's
-        ``(action_kind, action_op)`` tensors back into global rule_ids
-        via the per-space_role ``_unary_rule_ids`` / ``_binary_rule_ids`` tables.
-        """
-        rules = {}
-        for space_role, space_role_routing in self._last_space_role_routings.items():
-            space_role_rules_per_row = None
-            if "unary" in space_role_routing:
-                rid_table = self._unary_rule_ids[space_role]
-                r = space_role_routing["unary"]
-                kind = r["action_kind"]
-                op = r["action_op"]
-                B = kind.shape[0]
-                space_role_rules_per_row = [[] for _ in range(B)]
-                for b in range(B):
-                    for j in range(kind.shape[1]):
-                        if int(kind[b, j].item()) == 2:
-                            space_role_rules_per_row[b].append(
-                                rid_table[int(op[b, j].item())])
-            if "binary" in space_role_routing:
-                rid_table = self._binary_rule_ids[space_role]
-                r = space_role_routing["binary"]
-                kind = r["action_kind"]
-                op = r["action_op"]
-                lengths = r["lengths"]
-                B = kind.shape[0]
-                if space_role_rules_per_row is None:
-                    space_role_rules_per_row = [[] for _ in range(B)]
-                for b in range(B):
-                    L = int(lengths[b].item())
-                    for j in range(L):
-                        if int(kind[b, j].item()) == 1:
-                            space_role_rules_per_row[b].append(
-                                rid_table[int(op[b, j].item())])
-            if space_role_rules_per_row is not None:
-                rules[space_role] = space_role_rules_per_row
-        return rules
 
     # -- backwards-compat shims for diagnostics / older tests -----------
     @property
     def _last_routing(self):
-        # Returns the binary routing of the highest-space_role (last-run) space_role
-        # that has one, mirroring the pre-multi-space_role API.
-        for space_role in sorted(self._last_space_role_routings.keys(), reverse=True):
-            tr = self._last_space_role_routings[space_role]
-            if "binary" in tr:
-                return tr["binary"]
-        return None
+        traces = self._last_space_role_routings.get('operations', {}).get('rounds', [])
+        return traces[-1] if traces else None
+
 
     @property
     def _last_hard_slab(self):
@@ -6211,9 +5949,7 @@ class LanguageLayer(Layer):
     #
     # First-patch design choices (per the plan's "Implementation Notes
     # For Claude"):
-    #   * Hard SHIFT/REDUCE only -- no soft DP yet. Soft routing reuses
-    #     the existing scoring utilities (binary_tiling_soft_dp) when
-    #     wired in a later phase.
+    #   * Hard SHIFT/REDUCE actions are explicit replay inputs.
     #   * Per-row occupancy reads use a small eager bridge (occ.sum
     #     along K). This is the documented "small eager bridge" the
     #     plan permits for a first correctness patch.
@@ -6958,8 +6694,8 @@ class LanguageLayer(Layer):
         """Run a sequence of hard SHIFT / REDUCE actions on a stack-mode subspace.
 
         First-patch orchestrator: takes an explicit ``actions`` list.
-        A full router (scoring SHIFT vs REDUCE, soft DP) is a later
-        phase; the contract pinned here is that the actions, regardless
+        Production routing belongs to OperationSelectionLayer. This replay
+        contract is that the actions, regardless
         of how they are produced, rewrite ``subspace.what / .where /
         .activation`` correctly.
 
@@ -7134,603 +6870,14 @@ def _masked_softmax_lastdim(scores: torch.Tensor) -> torch.Tensor:
     return post
 
 
-def _bounded_rule_contrast(logits: torch.Tensor,
-                           energies: torch.Tensor) -> torch.Tensor:
-    """Return a bounded per-site contrast over type-valid grammar rules.
-
-    ``energies`` is detached structural evidence in ``[0, 1]``; ``logits``
-    is recomputed from detached operands by the caller, so this objective can
-    update the grammar chooser without opening a gradient through the prior
-    recurrent folds.  The first term minimizes expected structural energy.
-    The second ranks the lowest-energy rule above every alternative.  Both
-    terms lie in ``[0, 1]`` and use tanh-bounded scores, keeping the local
-    backward independent of sentence length and numerically bounded.
-    """
-    if (logits.numel() == 0 or logits.shape[-1] <= 1
-            or energies.shape != logits.shape):
-        return logits.new_zeros(logits.shape[:-1])
-    score = torch.tanh(logits)
-    energy = energies.detach().clamp(0.0, 1.0)
-    prob = F.softmax(score, dim=-1)
-    expected = (prob * energy).sum(dim=-1)
-
-    best = energy.argmin(dim=-1, keepdim=True)
-    best_score = score.gather(-1, best)
-    is_best = F.one_hot(
-        best.squeeze(-1), num_classes=score.shape[-1]).to(score.dtype)
-    # Positive margin in score space: at equal scores the penalty is > 0.5;
-    # it falls toward zero only when the structurally preferred rule wins.
-    pair = torch.sigmoid(score - best_score + 0.25) * (1.0 - is_best)
-    pair = pair.sum(dim=-1) / float(max(1, score.shape[-1] - 1))
-    return 0.5 * (expected + pair)
-
-
-def _carrier_closure_energy(candidate: torch.Tensor) -> torch.Tensor:
-    """Bounded distance to the signed conceptual carrier ``[-1, 1]``.
-
-    Projection onto this box is an idempotent local closure.  It is not
-    presented as the full data-derived FCA double-prime closure; it is the
-    stable carrier closure available at every grammar site without a global
-    codebook scan.  The result has the candidate-rule axis intact.
-    """
-    closed = candidate.clamp(-1.0, 1.0)
-    delta = (candidate - closed).abs().clamp(max=1.0)
-    return delta.mean(dim=-1)
-
-
-def superposition_scale(temperature):
-    """Score scale for the soft-superposition temperature (the parser's
-    differentiable route, replacing Viterbi + straight-through under
-    ``<learning>``). ``temperature`` in [0, 1] maps to ``1 - t``: at ``t=0``
-    the scores pass through unchanged (the chooser's own softmax -- the
-    sharp/deterministic exploit pass), at ``t=1`` the scores are zeroed so
-    the superposition is uniform (the flat-random explore pass). Multiplying
-    the scores by ``(1-t)`` keeps the chooser in the gradient path with the
-    gradient scaled by ``(1-t)`` -- full at ``t=0``, vanishing at ``t=1``
-    (a fully random route carries no preference to learn)."""
-    return 1.0 - min(1.0, max(0.0, float(temperature or 0.0)))
-
-
-def binary_tiling_soft_dp(
-    copy_score: torch.Tensor,
-    reduce_score: torch.Tensor,
-    temperature: float = 1.0,
-):
-    """Forward-backward over legal COPY/REDUCE tilings, multi-op.
-
-    Args:
-        copy_score:   [B, N, R_copy] per-(position, op) log-scores.
-        reduce_score: [B, N-1, R_reduce] per-(adjacent-pair, op) log-scores.
-        temperature:  scalar; scores divided by this before DP.
-
-    Returns dict:
-        logZ:               [B] log partition function.
-        alpha:              [B, N+1] forward log-messages.
-        beta:               [B, N+1] backward log-messages.
-        copy_marginal:      [B, N]      P(copy fires at t)
-        reduce_marginal:    [B, N-1]    P(reduce fires at t,t+1)
-        copy_marginal_op:   [B, N, R_copy]    P(copy with op c at t)
-        reduce_marginal_op: [B, N-1, R_reduce] P(reduce with op r at t)
-    """
-    B, N, R_copy = copy_score.shape
-    if N == 0:
-        zero = torch.zeros(B, device=copy_score.device, dtype=copy_score.dtype)
-        return {
-            "logZ": zero,
-            "alpha": zero.unsqueeze(1),
-            "beta": zero.unsqueeze(1),
-            "copy_marginal": copy_score.new_zeros(B, 0),
-            "reduce_marginal": copy_score.new_zeros(B, 0),
-            "copy_marginal_op": copy_score.new_zeros(B, 0, R_copy),
-            "reduce_marginal_op": copy_score.new_zeros(B, 0, 0),
-        }
-
-    R_reduce = reduce_score.shape[-1] if reduce_score.numel() > 0 else 0
-
-    c = copy_score / temperature                          # [B, N, R_copy]
-    r = reduce_score / temperature                        # [B, N-1, R_reduce]
-
-    # The chooser scores are unnormalised dot products.  Early in training,
-    # repeated grammar transforms can therefore produce perfectly finite
-    # scores whose magnitude is large enough (observed around 1e9 at N=64)
-    # to make float32 forward/backward subtraction inaccurate by hundreds.
-    # A log marginal is theoretically <= 0, but that cancellation error can
-    # make it positive and ``exp`` then overflows.
-    #
-    # Rescale the complete score set for each batch row by one positive,
-    # detached constant.  This preserves every score ordering (and therefore
-    # the preferred routes/ops), leaves ordinary scores exactly unchanged,
-    # and bounds a length-N accumulated message closely enough for stable
-    # float32 subtraction.  Non-finite inputs are excluded ONLY from choosing
-    # the scale; they remain in c/r and still propagate to the fail-loud checks
-    # downstream rather than being silently repaired.
-    SOFT_DP_MAX_ABS_SCORE = 32.0
-    finite_c_abs = torch.where(
-        torch.isfinite(c), c.abs(), torch.zeros_like(c))
-    max_abs = finite_c_abs.reshape(B, -1).amax(dim=1)
-    if r.numel() > 0:
-        finite_r_abs = torch.where(
-            torch.isfinite(r), r.abs(), torch.zeros_like(r))
-        max_abs = torch.maximum(
-            max_abs, finite_r_abs.reshape(B, -1).amax(dim=1))
-    score_scale = (max_abs / SOFT_DP_MAX_ABS_SCORE).clamp_min(1.0).detach()
-    c = c / score_scale[:, None, None]
-    r = r / score_scale[:, None, None]
-
-    # Per-action log-sum-exp over op axis = action-level log-score.
-    c_action = torch.logsumexp(c, dim=-1)                 # [B, N]
-    r_action = (torch.logsumexp(r, dim=-1)
-                if R_reduce > 0 and N > 1
-                else copy_score.new_full((B, max(N - 1, 0)), -1e9))
-
-    NEG_INF = -1e9
-    neg_inf_b = copy_score.new_full((B,), NEG_INF)
-
-    # alpha as a list of [B] tensors; avoids autograd-hostile in-place
-    # writes into a stacked [B, N+1] tensor.
-    alpha_list = [neg_inf_b for _ in range(N + 1)]
-    alpha_list[0] = copy_score.new_zeros(B)
-    for t in range(N):
-        alpha_list[t + 1] = torch.logaddexp(
-            alpha_list[t + 1], alpha_list[t] + c_action[:, t])
-        if t + 1 < N:
-            alpha_list[t + 2] = torch.logaddexp(
-                alpha_list[t + 2], alpha_list[t] + r_action[:, t])
-    alpha = torch.stack(alpha_list, dim=1)
-    logZ = alpha[:, N]
-
-    beta_list = [neg_inf_b for _ in range(N + 1)]
-    beta_list[N] = copy_score.new_zeros(B)
-    for t in reversed(range(N)):
-        beta_list[t] = torch.logaddexp(
-            beta_list[t], c_action[:, t] + beta_list[t + 1])
-        if t + 1 < N:
-            beta_list[t] = torch.logaddexp(
-                beta_list[t], r_action[:, t] + beta_list[t + 2])
-    beta = torch.stack(beta_list, dim=1)
-
-    # Action-level marginals.
-    copy_log_marginal = alpha[:, :N] + c_action + beta[:, 1:N + 1] - logZ.unsqueeze(1)
-    # Exact log marginals cannot exceed zero.  Clamp the tiny positive residue
-    # that float32 cancellation can still leave at the probability boundary.
-    copy_marginal = copy_log_marginal.clamp_max(0.0).exp()
-    if N > 1:
-        reduce_log_marginal = (
-            alpha[:, :N - 1] + r_action + beta[:, 2:N + 1] - logZ.unsqueeze(1))
-        reduce_marginal = reduce_log_marginal.clamp_max(0.0).exp()
-    else:
-        reduce_marginal = copy_score.new_zeros(B, 0)
-
-    # Per-(action, op) marginals: P(action fires at t) * softmax(op | action).
-    # A row can be ENTIRELY masked out (all -inf) when space_role-gating forbids
-    # every op for that position/pair (see BinaryStructuredReductionLayer's
-    # space_role mask). For such a row softmax(-inf, ...) is NaN, but the row's
-    # ACTION marginal is exactly 0 (structurally impossible), so the
-    # per-op product MUST be 0 -- not NaN. Use a masked softmax that
-    # yields a 0 posterior on fully-dead rows (any finite value works
-    # since it is multiplied by a 0 marginal; 0 keeps it tidy). This is
-    # the correct value for a 0 x undefined structural cell, NOT silent
-    # gating of a genuine numerical divergence (the action marginals are
-    # the live, fail-loud-checked quantities).
-    op_post_copy = _masked_softmax_lastdim(c)             # [B, N, R_copy]
-    copy_marginal_op = copy_marginal.unsqueeze(-1) * op_post_copy
-    if N > 1 and R_reduce > 0:
-        op_post_reduce = _masked_softmax_lastdim(r)       # [B, N-1, R_reduce]
-        reduce_marginal_op = reduce_marginal.unsqueeze(-1) * op_post_reduce
-    else:
-        reduce_marginal_op = copy_score.new_zeros(B, max(N - 1, 0), R_reduce)
-
-    return {
-        "logZ": logZ,
-        "alpha": alpha,
-        "beta": beta,
-        "copy_marginal": copy_marginal,
-        "reduce_marginal": reduce_marginal,
-        "copy_marginal_op": copy_marginal_op,
-        "reduce_marginal_op": reduce_marginal_op,
-    }
-
-
-def binary_tiling_viterbi(
-    copy_score: torch.Tensor,
-    reduce_score: torch.Tensor,
-    *, structural=None,
-):
-    """Argmax legal COPY/REDUCE tiling, multi-op.
-
-    Args:
-        copy_score:   [B, N, R_copy]
-        reduce_score: [B, N-1, R_reduce]
-
-    Returns:
-        score:       [B] best-route score.
-        copy_mask:   [B, N, R_copy] one-hot at chosen (position, op) for COPY.
-        reduce_mask: [B, N-1, R_reduce] one-hot at chosen (position, op).
-        action_kind: [B, N+1] long; backpointer kind at each step boundary.
-        action_op:   [B, N+1] long; backpointer op at each step boundary.
-    """
-    B, N, R_copy = copy_score.shape
-    R_reduce = reduce_score.shape[-1] if reduce_score.numel() > 0 else 0
-    device = copy_score.device
-    dtype = copy_score.dtype
-
-    if N == 0:
-        return {
-            "score": torch.zeros(B, device=device, dtype=dtype),
-            "copy_mask": copy_score.new_zeros(B, 0, R_copy),
-            "reduce_mask": copy_score.new_zeros(B, 0, R_reduce),
-            "action_kind": torch.zeros(B, 1, device=device, dtype=torch.long),
-            "action_op": torch.zeros(B, 1, device=device, dtype=torch.long),
-        }
-
-    NEG_INF = -1e9
-
-    c_best, c_argop = copy_score.max(dim=-1)              # [B, N], [B, N]
-    if R_reduce > 0 and N > 1:
-        r_best, r_argop = reduce_score.max(dim=-1)
-        if structural is not None:
-            r_argop = structural_argmax(reduce_score, structural)
-    else:
-        r_best = copy_score.new_full((B, max(N - 1, 0)), NEG_INF)
-        r_argop = torch.zeros(B, max(N - 1, 0), device=device, dtype=torch.long)
-
-    dp = copy_score.new_full((B, N + 1), NEG_INF)
-    dp[:, 0] = 0.0
-    back_kind = torch.full((B, N + 1), -1, device=device, dtype=torch.long)
-    back_op = torch.zeros((B, N + 1), device=device, dtype=torch.long)
-
-    for t in range(N):
-        cand_copy = dp[:, t] + c_best[:, t]
-        better = cand_copy > dp[:, t + 1]
-        dp[:, t + 1] = torch.where(better, cand_copy, dp[:, t + 1])
-        back_kind[:, t + 1] = torch.where(
-            better, torch.zeros_like(back_kind[:, t + 1]), back_kind[:, t + 1])
-        back_op[:, t + 1] = torch.where(better, c_argop[:, t], back_op[:, t + 1])
-
-        if t + 1 < N:
-            cand_reduce = dp[:, t] + r_best[:, t]
-            better_r = cand_reduce > dp[:, t + 2]
-            dp[:, t + 2] = torch.where(better_r, cand_reduce, dp[:, t + 2])
-            back_kind[:, t + 2] = torch.where(
-                better_r, torch.ones_like(back_kind[:, t + 2]),
-                back_kind[:, t + 2])
-            back_op[:, t + 2] = torch.where(
-                better_r, r_argop[:, t], back_op[:, t + 2])
-
-    copy_mask = copy_score.new_zeros(B, N, R_copy)
-    reduce_mask = copy_score.new_zeros(B, max(N - 1, 0), R_reduce)
-
-    # Backtrace: walk the DP message from t=N down to t=0, writing
-    # one-hot copy/reduce masks per row. Each step decreases t by 1
-    # (copy) or 2 (reduce), so N iterations is a static upper bound
-    # for any input length. Fully tensorized -- no .item()/host sync,
-    # no data-dependent Python branch -- so this body traces under
-    # fullgraph + max-autotune (CUDA-graph-capturable). Replaces the
-    # earlier ``for b in range(B): while t>0: kind=int(back_kind[b,t]
-    # .item()); if kind == 0:`` walk that emitted cudaMemcpyDtoH per
-    # step and failed dynamo with ``Could not guard on Eq(u0, 0)``.
-    B_idx = torch.arange(B, device=device)
-    t_cur = torch.full((B,), N, device=device, dtype=torch.long)
-    for _ in range(N):
-        alive = t_cur > 0
-        # Clamp gather index so dead rows still produce a valid read.
-        safe_t = t_cur.clamp(min=0, max=N)
-        kind_t = back_kind[B_idx, safe_t]                # [B]
-        op_t = back_op[B_idx, safe_t]                    # [B]
-        is_copy = alive & (kind_t == 0)
-        is_reduce = alive & (kind_t == 1)
-        # ``op_t`` is the back_op value at ``safe_t``: it is a COPY-op
-        # index for kind=0 rows and a REDUCE-op index for kind=1 rows.
-        # When R_copy != R_reduce the same op_t may be out-of-bounds
-        # for the opposite mask's last dim -- the torch.where masks
-        # out the write, but the advanced-index gather itself must
-        # see a valid index. Clamp per mask: it's a no-op when the
-        # row's kind matches; harmless otherwise (write discarded).
-        op_for_copy = op_t.clamp(max=max(R_copy - 1, 0))
-        # Copy write: copy_mask[b, t-1, op] = 1 where is_copy.
-        pos_copy = (safe_t - 1).clamp(min=0)
-        cur_c = copy_mask[B_idx, pos_copy, op_for_copy]
-        copy_mask[B_idx, pos_copy, op_for_copy] = torch.where(
-            is_copy, torch.ones_like(cur_c), cur_c)
-        # Reduce write: reduce_mask[b, t-2, op] = 1 where is_reduce.
-        if R_reduce > 0 and N > 1:
-            op_for_reduce = op_t.clamp(max=max(R_reduce - 1, 0))
-            pos_reduce = (safe_t - 2).clamp(min=0)
-            cur_r = reduce_mask[B_idx, pos_reduce, op_for_reduce]
-            reduce_mask[B_idx, pos_reduce, op_for_reduce] = torch.where(
-                is_reduce, torch.ones_like(cur_r), cur_r)
-        # Advance t: 1 for copy, 2 for reduce, 0 otherwise (dead row
-        # or invalid kind -- the latter is caught by the assert below).
-        step = torch.where(
-            is_copy, torch.ones_like(t_cur),
-            torch.where(is_reduce, torch.full_like(t_cur, 2),
-                        torch.zeros_like(t_cur)))
-        t_cur = t_cur - step
-    # Invariant note: a well-formed DP message consumes all positions
-    # in N steps. Under the post-bivector-retirement chart scoring
-    # path the backtrace can land in degenerate states (e.g.,
-    # MM_xor_loopback's grammar with R_copy=0 leaves back_kind=-1 at
-    # boundary positions), so the previous ``_assert_async`` was too
-    # aggressive — it produced false-positive failures on otherwise-
-    # valid forward passes. The masks remain semantically correct
-    # (one-hot writes only fire under ``is_copy``/``is_reduce`` gates
-    # that already check ``alive``), so unconsumed-prefix rows simply
-    # contribute zero to the chart selection. Track in a follow-up if
-    # the chart starts producing structurally wrong masks under this
-    # relaxation.
-
-    return {
-        "score": dp[:, N],
-        "copy_mask": copy_mask,
-        "reduce_mask": reduce_mask,
-        "action_kind": back_kind,
-        "action_op": back_op,
-    }
-
-
-# BinaryPlacementScorer was removed in favor of anchor-based scoring on
-# the rule's own output. See BinaryStructuredReductionLayer.copy_anchor /
-# reduce_anchor and the einsum-based scoring in its forward(). Same goes
-# for _UnaryPlacementScorer / UnaryStructuredLayer below.
-
-
-class ComparatorMixer(nn.Module):
-    """Four-branch trainable comparator-mixer.
-
-    Per output position j, builds
-        y_j = sum_k gate_jk * branch_jk
-    over branches k in (keep=x_j, reduce=r_j, shift=x_{j+1}, pad=0).
-
-    Gate weights from a small MLP over local context h_j; softmax with
-    configurable temperature gives a strict generalization of (a) the
-    soft DP-driven blend (when the MLP learns to copy DP marginals into
-    the gates) and (b) hard routing (when the MLP learns one-hots).
-    """
-
-    NUM_BRANCHES = 4  # keep, reduce, shift, pad
-
-    def __init__(self, d_model: int, hidden: int = None,
-                 temperature: float = 1.0):
-        """Build the gate MLP (d_model -> hidden -> 4 branches).
-
-        ``hidden`` defaults to ``d_model``. ``temperature`` divides
-        gate logits before softmax; lower = harder routing.
-        """
-        super().__init__()
-        hidden = hidden if hidden is not None else d_model
-        self.temperature = float(temperature)
-        self.gate_mlp = nn.Sequential(
-            nn.Linear(d_model, hidden),
-            nn.GELU(),
-            nn.Linear(hidden, self.NUM_BRANCHES),
-        )
-
-    def forward(self, *, h: torch.Tensor, branches: torch.Tensor):
-        """h: [B, N, D]; branches: [B, N, 4, D] in branch order
-        (keep, reduce, shift, pad). Returns (y: [B, N, D], gates: [B, N, 4])."""
-        # The gate MLP is sized to d_model (content .what width). A muxed
-        # CS-space_role event h is [B, N, muxedSize] with where/when columns beyond
-        # d_model; the routing decision reads content, so slice h to the gate's
-        # input width. The branches (and the mixed output y) stay full-width,
-        # so where/when ride through the mix untouched.
-        d_in = self.gate_mlp[0].in_features
-        h_gate = h[..., :d_in] if h.shape[-1] > d_in else h
-        gate_logits = self.gate_mlp(h_gate) / self.temperature  # [B, N, 4]
-        gates = F.softmax(gate_logits, dim=-1)
-        y = (gates.unsqueeze(-1) * branches).sum(dim=2)        # [B, N, D]
-        return y, gates
-
-def compact_hard(
-    *,
-    x: torch.Tensor,                 # [B, N, D]
-    reduced: torch.Tensor,           # [B, N-1, D]
-    copy_mask: torch.Tensor,         # [B, N, R_copy]
-    reduce_mask: torch.Tensor,       # [B, N-1, R_reduce]
-    span_start: torch.Tensor = None,
-    span_end: torch.Tensor = None,
-    input_lengths: torch.Tensor = None,
-):
-    """Walk the hard route and write the compacted slab. Output is padded
-    to length N so all batches share a tensor; per-row valid length is
-    returned in metadata.
-    """
-    B, N, D = x.shape
-    device = x.device
-    dtype = x.dtype
-    source_lengths = (torch.full((B,), N, device=device, dtype=torch.long)
-                      if input_lengths is None else input_lengths.to(device=device))
-
-    y = x.new_zeros(B, N, D)
-    src_left = torch.full((B, N), -1, device=device, dtype=torch.long)
-    src_right = torch.full((B, N), -1, device=device, dtype=torch.long)
-    action_kind = torch.full((B, N), -1, device=device, dtype=torch.long)
-    action_op = torch.full((B, N), -1, device=device, dtype=torch.long)
-
-    have_spans = span_start is not None and span_end is not None
-    if have_spans:
-        next_span_start = torch.full((B, N), -1, device=device, dtype=torch.long)
-        next_span_end = torch.full((B, N), -1, device=device, dtype=torch.long)
-    lengths = torch.zeros(B, device=device, dtype=torch.long)
-
-    cm_per_pos = copy_mask.sum(-1)        # [B, N]
-    rm_per_pos = reduce_mask.sum(-1)      # [B, N-1]
-    cm_op = copy_mask.argmax(-1)          # [B, N]
-    rm_op = (reduce_mask.argmax(-1) if reduce_mask.numel() > 0
-             else torch.zeros_like(cm_op[:, :0]))
-
-    # Static-unrolled, fully tensorized walk over source positions
-    # i=0..N-1. Each iteration consumes 1 (copy) or 2 (reduce) source
-    # positions and writes one destination slot j. N iterations is a
-    # static upper bound (the maximum possible action count). All
-    # writes use per-row tensor masks -- no .item()/host sync, no
-    # data-dependent Python branch -- so this body traces under
-    # fullgraph + max-autotune. Replaces the earlier ``for b in
-    # range(B): while i<N: float(rm_per_pos[b,i].item())>0.5; if
-    # do_reduce:`` walk that emitted cudaMemcpyDtoH per step.
-
-    # Safe lookups: pad zero-length per-position tensors to length 1
-    # so unconditional advanced-index reads stay valid when N<=1.
-    if rm_per_pos.shape[1] > 0:
-        rm_per_pos_safe = rm_per_pos
-        rm_op_safe = rm_op
-    else:
-        rm_per_pos_safe = x.new_zeros(B, 1)
-        rm_op_safe = torch.zeros(B, 1, device=device, dtype=torch.long)
-    if reduced.shape[1] > 0:
-        reduced_safe = reduced
-    else:
-        reduced_safe = x.new_zeros(B, 1, D)
-
-    B_idx = torch.arange(B, device=device)
-    cursor = torch.zeros(B, device=device, dtype=torch.long)   # source pos i
-    j_idx = torch.zeros(B, device=device, dtype=torch.long)    # dest pos j
-
-    for _ in range(N):
-        in_range = cursor < source_lengths
-        can_reduce = in_range & (cursor + 1 < source_lengths)
-        ci = cursor.clamp(max=max(N - 1, 0))
-        ci_r = cursor.clamp(max=max(rm_per_pos_safe.shape[1] - 1, 0))
-        rm_here = rm_per_pos_safe[B_idx, ci_r]                # [B]
-        do_reduce = can_reduce & (rm_here > 0.5)
-        do_copy = in_range & ~do_reduce
-        jc = j_idx.clamp(max=max(N - 1, 0))
-
-        # y[b, j] = reduced[b, ci] if do_reduce else x[b, ci]
-        gathered_reduced = reduced_safe[B_idx, ci_r]          # [B, D]
-        gathered_x = x[B_idx, ci]                             # [B, D]
-        cur_y = y[B_idx, jc]
-        y[B_idx, jc] = torch.where(
-            do_reduce.unsqueeze(-1), gathered_reduced,
-            torch.where(do_copy.unsqueeze(-1), gathered_x, cur_y),
-        )
-
-        # src_left[b, j] = ci (both branches when in_range)
-        cur_sl = src_left[B_idx, jc]
-        src_left[B_idx, jc] = torch.where(in_range, ci, cur_sl)
-        # src_right[b, j] = ci+1 if reduce else -1 if copy
-        cur_sr = src_right[B_idx, jc]
-        src_right[B_idx, jc] = torch.where(
-            do_reduce, ci + 1,
-            torch.where(do_copy, torch.full_like(ci, -1), cur_sr),
-        )
-        # action_kind[b, j] = 1 if reduce, 0 if copy
-        cur_ak = action_kind[B_idx, jc]
-        action_kind[B_idx, jc] = torch.where(
-            do_reduce, torch.ones_like(ci),
-            torch.where(do_copy, torch.zeros_like(ci), cur_ak),
-        )
-        # action_op[b, j]: reduce -> rm_op[ci_r]; copy -> cm_op[ci]
-        #                 if cm_per_pos[ci] > 0 else -1
-        ao_reduce = rm_op_safe[B_idx, ci_r]
-        cm_op_at = cm_op[B_idx, ci]
-        cm_per_at = cm_per_pos[B_idx, ci]
-        ao_copy = torch.where(
-            cm_per_at > 0, cm_op_at, torch.full_like(ci, -1))
-        cur_ao = action_op[B_idx, jc]
-        action_op[B_idx, jc] = torch.where(
-            do_reduce, ao_reduce,
-            torch.where(do_copy, ao_copy, cur_ao),
-        )
-
-        if have_spans:
-            # next_span_start[b, j] = span_start[b, ci] (both branches)
-            cur_ss = next_span_start[B_idx, jc]
-            next_span_start[B_idx, jc] = torch.where(
-                in_range, span_start[B_idx, ci], cur_ss)
-            # next_span_end[b, j] = span_end[b, ci+1] if reduce
-            #                       else span_end[b, ci] if copy
-            ci_plus_1 = (ci + 1).clamp(max=max(N - 1, 0))
-            cur_se = next_span_end[B_idx, jc]
-            next_span_end[B_idx, jc] = torch.where(
-                do_reduce, span_end[B_idx, ci_plus_1],
-                torch.where(do_copy, span_end[B_idx, ci], cur_se),
-            )
-
-        # Advance: cursor += 2 if reduce, 1 if copy, 0 otherwise.
-        step = torch.where(
-            do_reduce, torch.full_like(cursor, 2),
-            torch.where(do_copy, torch.ones_like(cursor),
-                        torch.zeros_like(cursor)),
-        )
-        cursor = cursor + step
-        # j advances iff any action fired this iter.
-        j_idx = j_idx + in_range.to(j_idx.dtype)
-
-    lengths = j_idx
-
-    meta = {
-        "lengths": lengths,
-        "src_left": src_left,
-        "src_right": src_right,
-        "action_kind": action_kind,
-        "action_op": action_op,
-    }
-    if have_spans:
-        meta["span_start"] = next_span_start
-        meta["span_end"] = next_span_end
-    return y, meta
-
-def compact_soft(
-    *,
-    x: torch.Tensor,                  # [B, N, D]
-    reduced: torch.Tensor,            # [B, N-1, D]
-    copy_marginal: torch.Tensor,      # [B, N]
-    reduce_marginal: torch.Tensor,    # [B, N-1]
-):
-    """Expected packed output over the COPY/REDUCE tiling distribution.
-
-    Forward-backward marginals give the conditional next action at a visited
-    source position: copy / (copy + reduce), or reduce / (copy + reduce).
-    A second dynamic program tracks both source position and output ordinal.
-    Unlike a one-position shift approximation, this handles any number of
-    earlier reductions without duplicating children. One-hot marginals give
-    exactly the hard compaction; gradients retain the same tiling expectation.
-    """
-    B, N, D = x.shape
-    if N == 0:
-        return x
-    arrivals = [x.new_zeros(B, N) for _ in range(N + 1)]
-    arrivals[0] = torch.cat((x.new_ones(B, 1), x.new_zeros(B, N - 1)), dim=1)
-    y = torch.zeros_like(x)
-    for position in range(N):
-        copy = copy_marginal[:, position:position + 1]
-        reduce = (reduce_marginal[:, position:position + 1]
-                  if position + 1 < N else torch.zeros_like(copy))
-        visit = copy + reduce
-        # An unreachable boundary has zero incoming mass. Use denominator
-        # one there, preserving exact zero without an epsilon-sized slope.
-        denominator = torch.where(visit > 0, visit, torch.ones_like(visit))
-        copy_mass = arrivals[position] * (copy / denominator)
-        y = y + copy_mass.unsqueeze(-1) * x[:, position:position + 1]
-        arrivals[position + 1] = (arrivals[position + 1]
-                                 + F.pad(copy_mass[:, :-1], (1, 0)))
-        if position + 1 < N:
-            reduce_mass = arrivals[position] * (reduce / denominator)
-            y = y + reduce_mass.unsqueeze(-1) * reduced[:, position:position + 1]
-            arrivals[position + 2] = (arrivals[position + 2]
-                                     + F.pad(reduce_mass[:, :-1], (1, 0)))
-    return y
-
-class _IdentityContext(nn.Module):
-    """Default context net for the structured layers: pass-through.
-
-    Used when no explicit contextualizer is supplied so the routing
-    score sees raw ``x``.
-    """
-    def forward(self, x):
-        """Return ``x`` unchanged."""
-        return x
-
-
 class TransformChooser(nn.Module):
     """Routing policy: scores tool/location candidates for a structured
     layer.
 
     The plan separates the transform/tool IMPLEMENTATION (the
     ``GrammarLayer`` ops) from the CHOICE POLICY (which op to apply,
-    where). ``UnaryStructuredLayer`` / ``BinaryStructuredReductionLayer``
-    delegate their placement scoring here; the soft-DP / Viterbi route and
-    the op execution stay on the layer.
+    where). ``OperationSelectionLayer`` delegates candidate scoring here;
+    its joint softmax and selected operation execution stay on the layer.
 
     The default chooser (:class:`AnchorDotTransformChooser`) reproduces the
     layers' inline anchor-dot scoring exactly. ``MLPTransformChooser`` swaps
@@ -7739,7 +6886,7 @@ class TransformChooser(nn.Module):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None):
+                    cat_ctx=None, what_ctx=None, op_offset=0):
         raise NotImplementedError
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
@@ -7768,7 +6915,7 @@ class AnchorDotTransformChooser(TransformChooser):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None):
+                    cat_ctx=None, what_ctx=None, op_offset=0):
         """Return ``(copy_score, apply_score)`` for the unary layer.
 
         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
@@ -8122,7 +7269,7 @@ class MLPTransformChooser(TransformChooser):
         return self.what_projection(ctx).to(dtype)
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None):
+                    cat_ctx=None, what_ctx=None, op_offset=0):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -8130,7 +7277,7 @@ class MLPTransformChooser(TransformChooser):
                                  cat_ctx=cat_ctx)                      # copy=slot
         r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
         if r_apply > 0:
-            apply_rows = self.tool_embedding[self.n_copy:self.n_copy + r_apply]
+            apply_rows = self.tool_embedding[self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
             apply_score = self._score(x_score, applied_score, apply_rows, pos,
                                       cat_ctx=cat_ctx)
         else:
@@ -8141,7 +7288,7 @@ class MLPTransformChooser(TransformChooser):
             copy_score = copy_score + what_bias[:, None, :self.n_copy]
             if r_apply > 0:
                 apply_score = apply_score + what_bias[
-                    :, None, self.n_copy:self.n_copy + r_apply]
+                    :, None, self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
@@ -8181,24 +7328,22 @@ class MLPTransformChooser(TransformChooser):
             r_reduce = int(reduced_score.shape[2])
             # The reduce op-axis must equal n_op (the construction-time
             # r_reduce) so the R_reduce layout is consistent with the
-            # degenerate branch below and with the cross-product / Viterbi
+            # degenerate branch below and with the operation
             # readers -- fail loud on any future contract drift.
-            assert r_reduce == self.n_op, (
-                f"reduced_score op-axis {r_reduce} != n_op {self.n_op}")
             reduce_rows = self.tool_embedding[
                 self.n_copy:self.n_copy + r_reduce]
             reduce_score = self._score(
                 pair_slot, reduced_score, reduce_rows, pos_pair,
                 cat_ctx=pair_cat, order_ctx=order_ctx)
         else:
-            reduce_score = x_score.new_zeros(B, max(N - 1, 0), self.n_op)
+            reduce_score = x_score.new_zeros(B, max(N - 1, 0), int(reduced_score.shape[2]) if reduced_score.dim() == 4 else self.n_op)
         what_bias = self._what_bias(
             what_ctx, batch=B, device=x_score.device, dtype=x_score.dtype)
         if what_bias is not None:
             copy_score = copy_score + what_bias[:, None, :self.n_copy]
-            if self.n_op > 0:
+            if reduce_score.shape[-1] > 0:
                 reduce_score = reduce_score + what_bias[
-                    :, None, self.n_copy:self.n_copy + self.n_op]
+                    :, None, self.n_copy:self.n_copy + reduce_score.shape[-1]]
         return copy_score, reduce_score
 
 
@@ -8363,74 +7508,208 @@ def _collapsed_cat_ctx(cat_ctx):
         cat_ctx, P.to(device=cat_ctx.device, dtype=cat_ctx.dtype))
 
 
-class BinaryStructuredReductionLayer(nn.Module):
-    """One layer: contextualize, score, route, compact (hard + soft).
+class OperationSelectionLayer(nn.Module):
+    """One global categorical choice over operations at all live locations.
 
-    Args:
-        d_model: feature dim.
-        ops: sequence of binary nn.Modules; len(ops) = R_reduce. Each
-             receives (left[B, N-1, D], right[B, N-1, D]) and returns
-             [B, N-1, D]. The Viterbi route picks one op per reduce site.
-        op_space_roles: optional list of space_role tags ('CS' / 'SS' / ...)
-             parallel to ``ops``. When supplied alongside ``op_names``,
-             enables per-position space_role-gated scoring: a rule only scores
-             at a pair whose left and right operands are both at the
-             rule's space_role. ``lift`` flips the carried operand's space_role from
-             CS to SS and ``lower`` flips SS to CS (plan \xa76).
-        op_names: optional list of method names parallel to ``ops``;
-             used to identify the lift / lower ops for space_role flipping.
-        r_copy: number of copy "ops" (typically 1; >1 lets the router
-             distinguish copy specializations like typed identities).
-        context_net: optional contextualizer for h. Defaults to identity.
-        temperature: comparator-mixer softmax temperature.
-
+    The slab width and round budget are static. Only the occupied depth changes;
+    binary rewrites remove one operand, unary rewrites preserve depth, and STOP
+    is admissible only when the sequence fits its destination row. The chosen
+    candidate has a hard forward value and a probability-weighted straight-
+    through gradient. There is no compose policy/advantage objective.
     """
 
-    def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0, op_space_roles=None, op_names=None,
+    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0, reduce_pressure=1.0,
+                 op_names=None, unary_names=None, op_space_roles=None,
                  chooser="anchordot", n_role_cats=0):
-        """Wire ops list, per-rule anchor params, and the comparator mixer.
-
-        Builds learnable ``copy_anchor`` ``[r_copy, D]`` and
-        ``reduce_anchor`` ``[r_reduce, D]`` for anchor-based placement
-        scoring (no separate scorer MLP). ``context_net`` defaults to
-        identity if None.
-        """
         super().__init__()
         self.d_model = int(d_model)
-        self.ops = nn.ModuleList(list(ops))
-        self.r_reduce = len(self.ops)
-        require_opaque_mlp(self.ops, chooser)
+        self.ops = nn.ModuleList(ops)
+        self.unary_ops = nn.ModuleList(unary_ops)
+        self.r_reduce, self.r_apply = len(self.ops), len(self.unary_ops)
+        require_opaque_mlp((*self.ops, *self.unary_ops), chooser)
         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
-        self.r_copy = int(r_copy)
-        self.context_net = context_net if context_net is not None else _IdentityContext()
-        # Anchor-based scoring (Stern et al. 2017 / Vaswani et al. 2017
-        # style): the placement score is an inner product between the
-        # rule's own output and a per-rule learnable anchor vector.
-        # The same gradient that trains the rule trains its anchor; no
-        # separate scorer MLP / second-optimizer pathology.
-        self.copy_anchor = nn.Parameter(torch.randn(self.r_copy, self.d_model) * 0.02)
-        self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * 0.02)
-        # Placement scoring delegated to the TransformChooser.
-        # ``chooser="anchordot"`` (default) is the stateless scorer that
-        # keeps the anchors owned here (state_dict unchanged,
-        # byte-identical); ``"mlp"`` builds the contextual
-        # MLPTransformChooser (owns params -> new basin), sized to this
-        # layer's r_copy copy ops + r_reduce reduce ops.
+        self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
+        self.temperature = float(temperature)
+        if not math.isfinite(self.temperature) or self.temperature < 0:
+            raise ValueError("compose temperature must be finite and nonnegative")
+        self.reduce_pressure = float(reduce_pressure)
+        if not math.isfinite(self.reduce_pressure) or self.reduce_pressure < 0:
+            raise ValueError("reduction pressure must be finite and nonnegative")
+        self.stop_anchor = nn.Parameter(torch.randn(1, self.d_model) * .02)
+        self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * .02)
+        self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * .02)
         self.chooser = make_transform_chooser(
-            chooser, d_model=self.d_model,
-            n_copy=self.r_copy, n_op=self.r_reduce, n_role_cats=n_role_cats,
+            chooser, d_model=self.d_model, n_copy=1,
+            n_op=self.r_reduce + self.r_apply, n_role_cats=n_role_cats,
             ordered_binary=True)
-        # Enabled explicitly by <forwardGrammarWeight>.  The local objective
-        # is otherwise absent, preserving legacy routing and capture cost.
-        self.local_objective_enabled = False
-        self.comparator = ComparatorMixer(
-            d_model=self.d_model, temperature=temperature)
-        # Per-rule name / space_role metadata retained for op identification
-        # (e.g. lift / lower). Space-role-gated masking has been removed.
         self.op_names = list(op_names) if op_names is not None else None
-        self.op_space_roles = (
-            list(op_space_roles) if op_space_roles is not None else None)
+        self.unary_names = list(unary_names) if unary_names is not None else None
+        self.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
+
+    def reduction_pressure(self, depth, *, allowance, rounds_left):
+        """Fixed load prior, using the whole stack and an inclusive deadline."""
+        depth = depth.to(torch.get_default_dtype()) if not depth.is_floating_point() else depth
+        allowance = torch.as_tensor(allowance, device=depth.device, dtype=depth.dtype)
+        remaining = torch.as_tensor(rounds_left, device=depth.device, dtype=depth.dtype)
+        required = (depth - allowance).clamp_min(0)
+        return torch.where(depth > 0, self.reduce_pressure * (
+            depth / allowance.clamp_min(1) + required / remaining.clamp_min(1)), 0.)
+
+    def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
+                masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                grammar_context=None, replay_action=None, allowance=None,
+                rounds_left=None, load_depth=None):
+        B, N, D = x.shape
+        if N < 1:
+            raise ValueError("compose needs a nonempty static slab")
+        depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
+                 if depth is None else depth)
+        active = (depth > 0 if active is None else active.bool() & (depth > 0))
+        positions = torch.arange(N, device=x.device)[None, :]
+        live = positions < depth[:, None]
+        x = torch.where(live[..., None], x, 0.)
+        if not torch.compiler.is_compiling():
+            for op in self.ops:
+                grammar_op = getattr(op, 'gl', op)
+                if hasattr(grammar_op, 'set_bind_context'):
+                    grammar_op.set_bind_context(slab=x)
+        binary = self._stacked_reduced(x, grammar_context)
+        unary = self._stacked_applied(x, grammar_context)
+        content = x[..., :self.d_model]
+        what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
+        stop_scores, binary_scores = self.chooser.score_binary(
+            content, binary[..., :self.d_model], self.stop_anchor,
+            self.reduce_anchor, cat_ctx=cat_ctx, what_ctx=what_ctx)
+        _, unary_scores = self.chooser.score_unary(
+            content, unary[..., :self.d_model], self.stop_anchor,
+            self.apply_anchor, cat_ctx=cat_ctx, what_ctx=what_ctx,
+            op_offset=self.r_reduce)
+        prior = self._category_reduce_prior(cat_ctx)
+        if prior is not None:
+            binary_scores = binary_scores + prior.to(binary_scores)
+        prior = self._category_apply_prior(cat_ctx)
+        if prior is not None:
+            unary_scores = unary_scores + prior.to(unary_scores)
+        if op_prior is not None:
+            binary_scores = binary_scores + op_prior.to(binary_scores)
+        deadline = torch.zeros_like(depth, dtype=torch.bool)
+        needs_reduction = torch.zeros_like(depth, dtype=torch.bool)
+        if rounds_left is not None:
+            # A serial candidate sees two operands, but load/deadline apply
+            # to the entire STM. Parallel candidates already see that depth.
+            load = depth if load_depth is None else load_depth
+            limit = slots if allowance is None else allowance
+            required = (load - torch.as_tensor(limit, device=x.device)).clamp_min(0)
+            needs_reduction = required > 0
+            deadline = required >= torch.as_tensor(rounds_left, device=x.device)
+            pressure = self.reduction_pressure(load.to(binary_scores),
+                allowance=limit, rounds_left=rounds_left)
+            binary_scores = binary_scores + pressure[:, None, None]
+        binary_scores = binary_scores.masked_fill(~live[:, 1:, None], -torch.inf)
+        unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
+        stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
+        limit = torch.as_tensor(slots, device=x.device)
+        # In a small STM a relative row can fit while the next-word slot is
+        # still occupied. Early STOP must also satisfy the phase allowance.
+        stop = stop.masked_fill((depth > limit) | needs_reduction | deadline, -torch.inf)
+        logits = torch.cat((binary_scores.reshape(B, -1),
+                            unary_scores.reshape(B, -1), stop[:, None]), -1)
+        # Credit always uses the model's own distribution over legal actions.
+        # A forced counterfactual constrains selection, not its probability
+        # weight; neither that exclusion nor sampling temperature changes it.
+        probabilities = _masked_softmax_lastdim(logits)
+        selection_logits = logits
+        if masked_action is not None:
+            ids = torch.arange(logits.shape[-1], device=x.device)[None, :]
+            selection_logits = selection_logits.masked_fill(
+                ids == masked_action[:, None], -torch.inf)
+        flags = (self.structural_ops * (N - 1)
+                 + self.unary_structural_ops * N + (True,))
+        action = structural_argmax(selection_logits, flags)
+        if self.training and sample and self.temperature > 0:
+            # Only the hard selection is tempered. Evaluation and temperature
+            # zero use exact-logit structural argmax without a random draw.
+            noise = -torch.log(-torch.log(torch.rand_like(logits).clamp(
+                torch.finfo(logits.dtype).tiny, 1 - torch.finfo(logits.dtype).eps)))
+            action = (selection_logits / self.temperature + noise).argmax(-1)
+        if replay_action is not None:
+            action = torch.where(replay_action >= 0, replay_action, action)
+        has_choice = torch.isfinite(selection_logits.gather(1, action[:, None])).squeeze(1)
+        torch._assert_async((~active | has_choice).all(),
+                            "compose has no legal alternative at the selected exploration round")
+        active = active & has_choice
+        nb = (N - 1) * self.r_reduce
+        nu = N * self.r_apply
+        is_binary = active & (action < nb)
+        is_unary = active & (action >= nb) & (action < nb + nu)
+        kind = torch.where(is_binary, 1, torch.where(is_unary, 2, 0))
+        position = torch.where(is_binary, action // max(1, self.r_reduce),
+                               (action - nb) // max(1, self.r_apply)).clamp(0, N - 1)
+        local_op = torch.where(is_binary, action % max(1, self.r_reduce),
+                               (action - nb) % max(1, self.r_apply))
+        candidates = torch.cat((binary.reshape(B, nb, D), unary.reshape(B, nu, D),
+                                x.new_zeros(B, 1, D)), 1)
+        chosen = candidates.gather(1, action[:, None, None].expand(B, 1, D)).squeeze(1)
+        probability = probabilities.gather(1, action[:, None])
+        weighted = probability * chosen
+        chosen_st = chosen.detach() + (weighted - weighted.detach())
+        next_depth = depth - is_binary.long()
+        # A single deletion/rewrite, not tile compaction or a length DP.
+        source = positions.expand(B, N) + (is_binary[:, None] & (positions > position[:, None])).long()
+        base = x.gather(1, source.clamp_max(N - 1)[..., None].expand(B, N, D))
+        selected = (is_binary | is_unary)[:, None] & (positions == position[:, None])
+        path = torch.where(selected[..., None], chosen_st[:, None], base)
+        hard = torch.where(selected[..., None], chosen.detach()[:, None], base)
+        stop_weighted = probability[:, :, None] * x
+        stop_path = x.detach() + (stop_weighted - stop_weighted.detach())
+        path = torch.where((active & (kind == 0))[:, None, None], stop_path, path)
+        path = torch.where((positions < next_depth[:, None])[..., None], path, 0.)
+        hard = torch.where((positions < next_depth[:, None])[..., None], hard, 0.)
+        routing = dict(action=torch.where(active, action, -1), kind=kind, position=position, op=local_op,
+                       depth=next_depth, probabilities=probabilities, logits=logits,
+                       probability=probability.squeeze(-1), candidate=chosen_st,
+                       stopped=active & (kind == 0), valid=active,
+                       binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
+                       unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
+        return hard, path, routing
+
+    def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
+               cat_ctx=None, what_ctx=None, grammar_context=None):
+        B, N, _ = x.shape
+        depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
+                 if depth is None else depth)
+        active = depth > 0
+        used = torch.zeros_like(depth)
+        actions, traces = [], []
+        forced = (torch.floor(torch.rand(B, device=x.device) * exploit['used']).long()
+                  if exploit is not None else torch.full_like(depth, -1))
+        for i in range(int(rounds)):
+            mask = (torch.where(forced == i, exploit['actions'][:, i], -1)
+                    if exploit is not None else None)
+            replay = (torch.where(i < forced, exploit['actions'][:, i], -1)
+                      if exploit is not None and self.temperature == 0 else None)
+            _, x, route = self(
+                x, depth=depth, slots=slots, active=active,
+                sample=not greedy, masked_action=mask, replay_action=replay,
+                cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
+                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i)
+            actions.append(torch.where(active & route['valid'], route['action'], -1))
+            used = used + (active & route['valid']).long()
+            depth = route['depth']
+            active = active & route['valid'] & ~route['stopped']
+            traces.append(route)
+        return dict(value=x, depth=depth, actions=torch.stack(actions, 1), used=used,
+                    complete=depth <= torch.as_tensor(slots, device=x.device),
+                    forced_round=forced, traces=traces)
+
+    def derive_pair(self, x, *, slots=1, rounds, depth=None, **kwargs):
+        exploit = self.derive(x, slots=slots, rounds=rounds, depth=depth, **kwargs)
+        if not self.training:
+            return exploit, None
+        explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+                              exploit=exploit, **kwargs)
+        explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
+        return exploit, explore
 
     def _category_reduce_prior(self, cat_ctx):
         """Role-frequency prior for binary ops from labelled operand slots."""
@@ -8464,10 +7743,11 @@ class BinaryStructuredReductionLayer(nn.Module):
             return None
         return torch.stack(priors, dim=-1)
 
+
     def _stacked_reduced(self, x, grammar_context=None):
         """[B, N-1, R_reduce, D] candidate ops applied to each adjacent pair."""
-        if x.shape[1] < 2:
-            return x.new_zeros(x.shape[0], 0, self.r_reduce, x.shape[-1])
+        if x.shape[1] < 2 or not self.r_reduce:
+            return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), self.r_reduce, x.shape[-1])
         left = x[:, :-1, :]
         right = x[:, 1:, :]
         per_op = [
@@ -8481,339 +7761,10 @@ class BinaryStructuredReductionLayer(nn.Module):
         ]
         return torch.stack(per_op, dim=2)                      # [B, N-1, R, D]
 
-    def _selected_reduced(self, stacked, route_op):
-        """Gather the chosen reduction at each position from the stack.
-        stacked: [B, N-1, R, D]; route_op: [B, N-1] long.
-        """
-        B, Nm1, _, D = stacked.shape
-        if Nm1 == 0:
-            return stacked.new_zeros(B, 0, D)
-        idx = route_op.clamp(min=0).unsqueeze(-1).unsqueeze(-1).expand(
-            B, Nm1, 1, D)
-        gathered = stacked.gather(dim=2, index=idx).squeeze(2)
-        return gathered
-
-    def _gather_branches(self, x, reduced_chosen):
-        """Build [B, N, 4, D] in branch order (keep, reduce, shift, pad).
-
-        ``reduced_chosen`` is the per-pair reduction result, length N-1;
-        it gets pad-extended to N at the last position so all four
-        branches share an N-length axis for the comparator mixer.
-        """
-        B, N, D = x.shape
-        pad_slab = x.new_zeros(B, 1, D)
-        x_shift = torch.cat([x[:, 1:, :], pad_slab], dim=1)
-        if reduced_chosen.shape[1] > 0:
-            r_padded = torch.cat([reduced_chosen, pad_slab], dim=1)
-        else:
-            r_padded = x.new_zeros(B, N, D)
-        return torch.stack(
-            [x, r_padded, x_shift, pad_slab.expand_as(x)], dim=2)
-
-    # CS-side execution stage: this applies the chosen reductions to the
-    # concept tensors (``op(left, right)`` over self.ops in
-    # _stacked_reduced), the counterpart to SymbolSubSpace.compose's
-    # WS-side analysis. See SymbolSubSpace.compose docstring for the split.
-    def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None,
-                what_ctx=None, op_prior=None, grammar_context=None, lengths=None):
-        if what_ctx is None:
-            # The question context is installed per batch by ``Model.what()``
-            # (LanguageLayer AND each grammar layer); callers that do not
-            # thread it explicitly -- the STM bounded-reduce pass, whose
-            # choices are the ones credited by the policy objective -- still
-            # score with it.
-            what_ctx = getattr(self, "_what_context", None)
-        """Score, route via Viterbi, compact; return (hard, soft, routing).
-
-        Returns:
-            hard_slab: [B, N, D] argmax-selected per-position action.
-            soft_slab: [B, N, D] DP-marginal-weighted blend (gradient surrogate).
-            routing:   dict with masks, scores, marginals, lengths, gates,
-                       optionally ``span_start`` / ``span_end``.
-        Degenerate N<=1 returns the input twice with a stub routing.
-
-        ``cat_ctx``: optional per-slot category role vector ``[B, N,
-        n_role_cats]``. It feeds the chooser where supported and always
-        contributes the layer-level labelled-role prior.
-        """
-        B, N, D = x.shape
-        if lengths is None:
-            lengths = torch.full((B,), N, device=x.device, dtype=torch.long)
-            # With no padding contract, preserve the caller's live slab for
-            # contextual binding and the degenerate identity return.
-            valid = torch.ones((B, N), device=x.device, dtype=torch.bool)
-        else:
-            valid = torch.arange(N, device=x.device)[None, :] < lengths[:, None]
-            x = torch.where(valid.unsqueeze(-1), x, torch.zeros_like(x))
-        if N <= 1:
-            routing = {
-                "copy_mask": x.new_zeros(B, N, self.r_copy),
-                "reduce_mask": x.new_zeros(B, 0, self.r_reduce),
-                "lengths": lengths,
-                "copy_marginal": x.new_zeros(B, N),
-                "reduce_marginal": x.new_zeros(B, 0),
-                "logZ": x.new_zeros(B),
-                "degenerate": True,
-            }
-            return x, x, routing
-
-        h = self.context_net(x)
-        # Preserve the eager diagnostic surface used by grammar inspection.
-        # Captured recurrent execution uses the explicit tensor context in
-        # ``_stacked_reduced`` and must not write module attributes.
-        if not torch.compiler.is_compiling():
-            for op in self.ops:
-                grammar_op = getattr(op, "gl", op)
-                if hasattr(grammar_op, "set_bind_context"):
-                    grammar_op.set_bind_context(slab=x)
-        stacked_reduced = self._stacked_reduced(
-            x, grammar_context=grammar_context)                # [B, N-1, R, D]
-
-        # Anchor-based scoring (replaces the old scorer MLP):
-        #   copy_score[b, n, c]   = <x[b, n, :],            copy_anchor[c, :]>
-        #   reduce_score[b, p, r] = <stacked_reduced[..., r, :], reduce_anchor[r, :]>
-        # Each rule's anchor is part of its own parameter set, so the
-        # placement score is a derived quantity of the rule's own
-        # computation -- one optimizer, one graph, no separate scorer.
-        # Anchors are sized to d_model (content .what width); a muxed CS-space_role
-        # event carries where/when columns beyond d_model, so score on the
-        # content slice (the reduce ops above still transform the full event).
-        x_score = x[..., :self.d_model] if x.shape[-1] > self.d_model else x
-        sr_score = (stacked_reduced[..., :self.d_model]
-                    if stacked_reduced.shape[-1] > self.d_model
-                    else stacked_reduced)
-        copy_score, reduce_score = self.chooser.score_binary(
-            x_score, sr_score, self.copy_anchor, self.reduce_anchor,
-            cat_ctx=cat_ctx, what_ctx=what_ctx)
-        cat_prior = self._category_reduce_prior(cat_ctx)
-        if cat_prior is not None and cat_prior.shape == reduce_score.shape:
-            reduce_score = reduce_score + cat_prior.to(
-                device=reduce_score.device, dtype=reduce_score.dtype)
-        # Structural prior (meronomy fold-ladder plan, Phase 2b): a per-op
-        # additive logit supplied by the owner, e.g. the analysis tiling
-        # licensing ``chunk`` on a pair inside one coarser whole.
-        if (torch.is_tensor(op_prior) and reduce_score.numel() > 0
-                and op_prior.shape[-1] == reduce_score.shape[-1]):
-            reduce_score = reduce_score + op_prior.to(
-                device=reduce_score.device, dtype=reduce_score.dtype)
-
-        # Padding completes the fixed-size DP with neutral COPY tiles. It
-        # never supplies an operand or receives a grammar reduction.
-        reduce_valid = valid[:, :-1] & valid[:, 1:]
-        copy_score = torch.where(valid.unsqueeze(-1), copy_score, 0.0)
-        reduce_score = torch.where(reduce_valid.unsqueeze(-1), reduce_score, -torch.inf)
-
-        # Local construction pressure.  Re-score DETACHED operands/candidates
-        # through the same chooser parameters, then contrast the type-valid
-        # binary rules by bounded carrier-closure + child-incidence energy.
-        # This branch therefore trains the chooser at one fold while carrying
-        # no gradient into x, prior STM folds, or the candidate operators.
-        local_structural_loss = None
-        if self.local_objective_enabled and self.r_reduce > 1:
-            local_cat = cat_ctx.detach() if torch.is_tensor(cat_ctx) else None
-            _, local_logits = self.chooser.score_binary(
-                x_score.detach(), sr_score.detach(),
-                self.copy_anchor, self.reduce_anchor,
-                cat_ctx=local_cat, what_ctx=what_ctx)
-            if cat_prior is not None and cat_prior.shape == local_logits.shape:
-                local_logits = local_logits + cat_prior.detach().to(
-                    device=local_logits.device, dtype=local_logits.dtype)
-            candidate = sr_score.detach()
-            left_local = torch.tanh(x_score.detach()[:, :-1, :]).unsqueeze(2)
-            right_local = torch.tanh(x_score.detach()[:, 1:, :]).unsqueeze(2)
-            candidate_local = torch.tanh(candidate)
-            incidence = 0.25 * (
-                (candidate_local - left_local).abs().mean(dim=-1)
-                + (candidate_local - right_local).abs().mean(dim=-1))
-            closure = _carrier_closure_energy(candidate)
-            energy = (0.8 * incidence + 0.2 * closure).clamp(0.0, 1.0)
-            local_structural_loss = _bounded_rule_contrast(
-                local_logits, energy)
-            local_structural_loss = torch.where(reduce_valid, local_structural_loss, 0.0)
-
-        # Soft-superposition temperature (the parser's differentiable route
-        # under <learning>; doc/Language.md "weighted deduction"). When set,
-        # the FORWARD value is the pure sum-product superposition at this
-        # temperature -- NO Viterbi route and NO straight-through; the
-        # chooser is in the gradient path directly. ``0`` = the chooser's own
-        # (sharp/deterministic) softmax, ``1`` = uniform; the scores are
-        # scaled by ``1-t`` (superposition_scale). Default None keeps the
-        # legacy hard-Viterbi + straight-through forward (byte-identical).
-        # Viterbi is still computed for the routing / tree read-off (that
-        # read-off is outside the gradient path in both modes).
-        _st = getattr(self, 'superposition_temperature', None)
-        if _st is not None:
-            _sc = superposition_scale(_st)
-            cs_dp = copy_score * _sc
-            rs_dp = torch.where(reduce_valid.unsqueeze(-1), reduce_score * _sc, -torch.inf)
-        else:
-            cs_dp, rs_dp = copy_score, reduce_score
-        soft = binary_tiling_soft_dp(cs_dp, rs_dp)
-        hard = binary_tiling_viterbi(copy_score, reduce_score,
-                                    structural=self.structural_ops)
-
-        if hard["reduce_mask"].numel() > 0:
-            reduce_op_per_pair = hard["reduce_mask"].argmax(-1)  # [B, N-1]
-        else:
-            reduce_op_per_pair = torch.zeros(
-                B, 0, device=x.device, dtype=torch.long)
-
-        # Hardened op-selection: forward uses one-hot argmax (sparse
-        # commitment to a single op per pair); backward uses the soft
-        # softmax over reduce_score so the scorer still receives gradient
-        # via straight-through. A fully space_role-masked pair (all -inf) gets a
-        # 0 soft posterior (NaN-safe; see _masked_softmax_lastdim) -- its
-        # reduce marginal is 0 downstream so the chosen reduction is
-        # dropped from the slab, but the slab must stay FINITE (a NaN here
-        # would propagate into the next round's folded slab and poison the
-        # whole DP).
-        if reduce_score.numel() > 0:
-            if _st is not None:
-                # Pure soft op superposition at temperature (no straight-through).
-                op_weights = _masked_softmax_lastdim(rs_dp)     # [B, N-1, R]
-            else:
-                op_soft = _masked_softmax_lastdim(reduce_score)     # [B, N-1, R]
-                op_hard = F.one_hot(
-                    structural_argmax(reduce_score, self.structural_ops),
-                    num_classes=op_soft.shape[-1]
-                ).to(op_soft.dtype)
-                op_weights = op_hard + op_soft - op_soft.detach()
-            chosen_reduced = (op_weights.unsqueeze(-1) * stacked_reduced).sum(dim=2)
-        else:
-            chosen_reduced = self._selected_reduced(
-                stacked_reduced, reduce_op_per_pair)            # [B, N-1, D]
-
-        hard_slab, hard_meta = compact_hard(
-            x=x, reduced=chosen_reduced,
-            copy_mask=hard["copy_mask"], reduce_mask=hard["reduce_mask"],
-            span_start=span_start, span_end=span_end,
-            input_lengths=lengths,
-        )
-
-        # Hardened DP marginals: forward uses the Viterbi route's hard
-        # masks (one-hot copy at chosen positions, one-hot reduce at
-        # chosen pairs) so the slab becomes structurally sparse — most
-        # positions are either kept-as-is or reduced cleanly, with pad
-        # at consumed slots. Backward uses the soft DP marginals as the
-        # gradient surrogate. This is the "hardening" the user asked
-        # for: forward decisions commit, gradient still flows back.
-        copy_hard_action = hard["copy_mask"].sum(-1)             # [B, N], 0 or 1
-        if hard["reduce_mask"].numel() > 0:
-            reduce_hard_action = hard["reduce_mask"].sum(-1)     # [B, N-1]
-        else:
-            reduce_hard_action = soft["reduce_marginal"]
-        if _st is not None:
-            # Pure soft superposition: the forward value IS the differentiable
-            # sum-product marginal at this temperature (no hard route, no
-            # straight-through). This is the parser's training-time route.
-            copy_marginal_st = soft["copy_marginal"]
-            reduce_marginal_st = soft["reduce_marginal"]
-        else:
-            copy_marginal_st = (
-                copy_hard_action + soft["copy_marginal"] - soft["copy_marginal"].detach()
-            )
-            reduce_marginal_st = (
-                reduce_hard_action + soft["reduce_marginal"]
-                - soft["reduce_marginal"].detach()
-            )
-        marginal_slab = compact_soft(
-            x=x, reduced=chosen_reduced,
-            copy_marginal=torch.where(valid, copy_marginal_st, 0.0),
-            reduce_marginal=reduce_marginal_st,
-        )
-
-        # Comparator-mixer kept as a secondary trainable gate over the
-        # four structural branches; available in the routing dict for
-        # the Task 11 DP-prior regularizer and inverse-pass diagnostics.
-        branches = self._gather_branches(x, chosen_reduced)
-        _comp_slab, gates = self.comparator(h=h, branches=branches)
-        soft_slab = marginal_slab
-
-        routing = {
-            "copy_mask": hard["copy_mask"],
-            "reduce_mask": hard["reduce_mask"],
-            "lengths": hard_meta["lengths"],
-            "src_left": hard_meta["src_left"],
-            "src_right": hard_meta["src_right"],
-            "action_kind": hard_meta["action_kind"],
-            "action_op": hard_meta["action_op"],
-            "copy_score": copy_score,
-            "reduce_score": reduce_score,
-            "copy_marginal": soft["copy_marginal"],
-            "reduce_marginal": soft["reduce_marginal"],
-            "copy_marginal_op": soft["copy_marginal_op"],
-            "reduce_marginal_op": soft["reduce_marginal_op"],
-            "logZ": soft["logZ"],
-            "gates": gates,
-            "marginal_slab": marginal_slab,
-            # Conditional grammatical parent, independent of the outer
-            # SHIFT-vs-REDUCE decision.  A memory-capacity demand must choose
-            # the best grammar operator even when the unconstrained Viterbi
-            # route preferred COPY; using ``hard_slab[:, 0]`` in that case
-            # merely copied an operand while decrementing STM depth.
-            "chosen_reduced": chosen_reduced,
-        }
-        if local_structural_loss is not None:
-            routing["local_structural_loss"] = local_structural_loss
-        if span_start is not None and span_end is not None:
-            routing["span_start"] = hard_meta["span_start"]
-            routing["span_end"] = hard_meta["span_end"]
-        if what_ctx is not None:
-            routing["what_context"] = what_ctx
-
-        return hard_slab, soft_slab, routing
-
-
-# _UnaryPlacementScorer was removed -- see UnaryStructuredLayer's
-# copy_anchor / apply_anchor and the einsum-based scoring in its forward.
-
-class UnaryStructuredLayer(nn.Module):
-    """One unary layer: contextualize, score, choose action per position.
-
-    Action space per position: R_copy + R_apply choices, exactly one
-    fires. No structured DP -- positions are independent under unary.
-
-    Hard slab: argmax-selected action per position.
-    Soft slab: softmax-weighted blend over (copy of x_j) and (apply of
-    each unary op to x_j).
-    """
-
-    def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0, chooser="anchordot", n_role_cats=0,
-                 op_names=None):
-        """Wire ops list and per-(copy/apply) anchor params.
-
-        Action space is ``R_copy + R_apply`` choices per position with
-        anchor-based scoring; positions are independent (no DP). Builds
-        ``copy_anchor`` ``[r_copy, D]`` and ``apply_anchor`` ``[r_apply, D]``.
-        """
-        super().__init__()
-        self.d_model = int(d_model)
-        self.ops = nn.ModuleList(list(ops))
-        self.r_apply = len(self.ops)
-        require_opaque_mlp(self.ops, chooser)
-        self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
-        self.r_copy = int(r_copy)
-        self.temperature = float(temperature)
-        self.context_net = context_net if context_net is not None else _IdentityContext()
-        # Anchor-based scoring: per-(action, op) learnable anchor; score
-        # is the inner product of the candidate output with the anchor.
-        self.copy_anchor = nn.Parameter(torch.randn(self.r_copy, self.d_model) * 0.02)
-        self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * 0.02)
-        # Placement scoring delegated to the TransformChooser.
-        # ``chooser="anchordot"`` (default) is the stateless scorer
-        # (anchors owned here, state_dict unchanged); ``"mlp"`` builds the
-        # contextual MLPTransformChooser (owns params -> new basin), sized
-        # to r_copy copy + r_apply ops.
-        self.chooser = make_transform_chooser(
-            chooser, d_model=self.d_model,
-            n_copy=self.r_copy, n_op=self.r_apply, n_role_cats=n_role_cats)
-        self.local_objective_enabled = False
-        self.op_names = list(op_names) if op_names is not None else None
 
     def _category_apply_prior(self, cat_ctx):
         """Role-frequency prior for unary ops from the labelled input slot."""
-        if cat_ctx is None or self.op_names is None:
+        if cat_ctx is None or self.unary_names is None:
             return None
         role_index = _role_index_for_categories()
         if not role_index:
@@ -8822,7 +7773,7 @@ class UnaryStructuredLayer(nn.Module):
         # rules whose input category collapsed share routing evidence.
         cat_ctx = _collapsed_cat_ctx(cat_ctx)
         priors = []
-        for name in self.op_names:
+        for name in self.unary_names:
             col = _role_column(role_index, name, "I1")
             if col is None or col >= cat_ctx.shape[-1]:
                 priors.append(cat_ctx.new_zeros(cat_ctx.shape[0], cat_ctx.shape[1]))
@@ -8832,14 +7783,16 @@ class UnaryStructuredLayer(nn.Module):
             return None
         return torch.stack(priors, dim=-1)
 
+
     def _stacked_applied(self, x, grammar_context=None):
         """[B, N, R_apply, D] each unary op applied to every position."""
         if self.r_apply == 0:
             B, N, D = x.shape
             return x.new_zeros(B, N, 0, D)
         per_op = [self._apply_op(op, x, grammar_context=grammar_context)
-                  for op in self.ops]
+                  for op in self.unary_ops]
         return torch.stack(per_op, dim=2)
+
 
     def _apply_op(self, op, x, grammar_context=None):
         """Apply one unary op; a content-sized meronymic fold (nInput < D)
@@ -8857,228 +7810,13 @@ class UnaryStructuredLayer(nn.Module):
             return torch.cat([apply(x[..., :w]), x[..., w:]], dim=-1)
         return apply(x)
 
-    def forward(self, x, cat_ctx=None, what_ctx=None, grammar_context=None):
-        if what_ctx is None:
-            # The question context is installed per batch by ``Model.what()``
-            # (LanguageLayer AND each grammar layer); callers that do not
-            # thread it explicitly -- the STM bounded-reduce pass, whose
-            # choices are the ones credited by the policy objective -- still
-            # score with it.
-            what_ctx = getattr(self, "_what_context", None)
-        """Score, choose per-position action, return (hard, soft, routing).
 
-        Hard slab argmax-selects one branch per position; soft slab is
-        the softmax-weighted blend over (copy_branch + applied_ops).
-        Straight-through gradient connects the hard-forward / soft-backward.
 
-        ``cat_ctx``: optional per-position category role vector ``[B, N,
-        n_role_cats]``. It feeds the chooser where supported and always
-        contributes the layer-level labelled-role prior.
-        """
-        B, N, D = x.shape
-        h = self.context_net(x)
-        applied = self._stacked_applied(
-            x, grammar_context=grammar_context)            # [B, N, R_apply, D]
 
-        # Anchor-based scoring (replaces the old scorer MLP):
-        #   copy_score[b, n, c]  = <x[b, n, :],            copy_anchor[c, :]>
-        #   apply_score[b, n, a] = <applied[b, n, a, :], apply_anchor[a, :]>
-        # The routing anchors are sized to d_model (= content .what width). A
-        # muxed CS-space_role event is [B, N, muxedSize] with where/when columns beyond
-        # d_model that the anchors don't score, so take the content slice for
-        # the inner products. The ops above still see (and transform) the full
-        # event; only the scalar routing scores read content.
-        x_score = x[..., :self.d_model] if D > self.d_model else x
-        applied_score = (applied[..., :self.d_model]
-                         if applied.shape[-1] > self.d_model else applied)
-        copy_score, apply_score = self.chooser.score_unary(
-            x_score, applied_score, self.copy_anchor, self.apply_anchor,
-            cat_ctx=cat_ctx, what_ctx=what_ctx)
-        cat_prior = self._category_apply_prior(cat_ctx)
-        if cat_prior is not None and cat_prior.shape == apply_score.shape:
-            apply_score = apply_score + cat_prior.to(
-                device=apply_score.device, dtype=apply_score.dtype)
 
-        # Unary counterpart of the bounded local construction objective.
-        # Copy is not an alternative grammar rule here: compare the type-valid
-        # APPLY rules with one another, using preservation of the child plus
-        # signed-carrier closure as the detached structural evidence.
-        local_structural_loss = None
-        if self.local_objective_enabled and self.r_apply > 1:
-            local_cat = cat_ctx.detach() if torch.is_tensor(cat_ctx) else None
-            _, local_logits = self.chooser.score_unary(
-                x_score.detach(), applied_score.detach(),
-                self.copy_anchor, self.apply_anchor,
-                cat_ctx=local_cat, what_ctx=what_ctx)
-            if cat_prior is not None and cat_prior.shape == local_logits.shape:
-                local_logits = local_logits + cat_prior.detach().to(
-                    device=local_logits.device, dtype=local_logits.dtype)
-            candidate = applied_score.detach()
-            child = torch.tanh(x_score.detach()).unsqueeze(2)
-            incidence = 0.5 * (
-                torch.tanh(candidate) - child).abs().mean(dim=-1)
-            closure = _carrier_closure_energy(candidate)
-            energy = (0.8 * incidence + 0.2 * closure).clamp(0.0, 1.0)
-            local_structural_loss = _bounded_rule_contrast(
-                local_logits, energy)
-        # Soft-superposition temperature (the differentiable route under
-        # <learning>; same contract as the binary layer). When set, the
-        # forward is the pure softmax superposition at this temperature
-        # (scores scaled by 1-t) -- no argmax / straight-through; the chooser
-        # is in the gradient path. Default None keeps the legacy
-        # argmax-forward / soft-backward straight-through (byte-identical).
-        _st = getattr(self, 'superposition_temperature', None)
-        if _st is not None:
-            _sc = superposition_scale(_st)
-            action_logits = torch.cat(
-                [copy_score, apply_score], dim=-1) * _sc / self.temperature
-            action_probs = F.softmax(action_logits, dim=-1)
-        else:
-            action_logits = torch.cat(
-                [copy_score, apply_score], dim=-1) / self.temperature
-            action_soft = F.softmax(action_logits, dim=-1)
-            # Hardened: forward uses argmax one-hot, backward gets the
-            # softmax gradient via straight-through.
-            action_hard = F.one_hot(
-                structural_argmax(torch.cat([copy_score, apply_score], dim=-1),
-                                  (True,) * self.r_copy + self.structural_ops),
-                num_classes=action_soft.shape[-1]
-            ).to(action_soft.dtype)
-            action_probs = action_hard + action_soft - action_soft.detach()
 
-        # Soft slab: weighted blend over (copy x_j) and applied_op(x_j).
-        copy_branch = x.unsqueeze(2).expand(B, N, self.r_copy, D)
-        if self.r_apply > 0:
-            branches = torch.cat([copy_branch, applied], dim=2)
-        else:
-            branches = copy_branch
-        soft_slab = (action_probs.unsqueeze(-1) * branches).sum(dim=2)
 
-        # Hard slab: argmax over actions. Read the UNSCALED scores (not the
-        # _sc-scaled action_logits) so the routing read-off is temperature-
-        # stable and matches the binary layer's unscaled Viterbi read-off.
-        # At t=1 superposition_scale is 0, which would zero action_logits and
-        # collapse the argmax to all-copy; argmax is invariant to the positive
-        # 1/temperature factor, so this is byte-identical on the default path.
-        action_id = structural_argmax(torch.cat([copy_score, apply_score], dim=-1),
-                                     (True,) * self.r_copy + self.structural_ops)
-        is_copy = action_id < self.r_copy
-        gather_idx = action_id.unsqueeze(-1).unsqueeze(-1).expand(B, N, 1, D)
-        hard_slab = branches.gather(dim=2, index=gather_idx).squeeze(2)
 
-        flat_one_hot = F.one_hot(
-            action_id, num_classes=self.r_copy + self.r_apply
-        ).to(x.dtype)
-        copy_mask = flat_one_hot[..., :self.r_copy] if self.r_copy > 0 \
-            else x.new_zeros(B, N, 0)
-        apply_mask = flat_one_hot[..., self.r_copy:] if self.r_apply > 0 \
-            else x.new_zeros(B, N, 0)
-
-        # action_kind: 0 == copy, 2 == apply (unary). action_op is the
-        # local op id within its kind's namespace.
-        action_kind = torch.where(
-            is_copy,
-            torch.zeros_like(action_id),
-            torch.full_like(action_id, 2),
-        )
-        action_op = torch.where(
-            is_copy, action_id, action_id - self.r_copy)
-
-        routing = {
-            "action_logits": action_logits,
-            "action_probs": action_probs,
-            "copy_mask": copy_mask,
-            "apply_mask": apply_mask,
-            "action_kind": action_kind,
-            "action_op": action_op,
-            "lengths": torch.full((B,), N, device=x.device, dtype=torch.long),
-        }
-        if local_structural_loss is not None:
-            routing["local_structural_loss"] = local_structural_loss
-        if what_ctx is not None:
-            routing["what_context"] = what_ctx
-        return hard_slab, soft_slab, routing
-
-def copy_penalty(route_traces, lambda_copy: float = 1e-3):
-    """Penalty proportional to mean copy_marginal across route traces.
-
-    Encourages the router to commit to non-copy actions (apply / reduce)
-    rather than passing positions through unchanged. Returns scalar 0
-    if ``lambda_copy`` is zero or no trace carries a copy_marginal.
-    """
-    if lambda_copy == 0.0:
-        return torch.tensor(0.0)
-    total = 0.0
-    seen = False
-    for r in route_traces:
-        if "copy_marginal" in r:
-            total = total + r["copy_marginal"].mean()
-            seen = True
-    if not seen:
-        return torch.tensor(0.0)
-    return lambda_copy * total
-
-def length_penalty(route_traces, lambda_len: float = 1e-4):
-    """Penalty proportional to mean post-reduction length across traces.
-
-    Pressures the router toward shorter derivations (more reduces).
-    Returns scalar 0 if ``lambda_len`` is zero or no trace carries a
-    lengths tensor.
-    """
-    if lambda_len == 0.0:
-        return torch.tensor(0.0)
-    total = 0.0
-    seen = False
-    for r in route_traces:
-        if "lengths" in r:
-            total = total + r["lengths"].float().mean()
-            seen = True
-    if not seen:
-        return torch.tensor(0.0)
-    return lambda_len * total
-
-def comparator_dp_kl(route_traces, lambda_dp_prior: float = 0.0):
-    """KL(comparator gates || target built from soft DP marginals).
-
-    The target per output position j is the four-branch distribution
-    that compact_soft uses internally:
-        keep   = p_copy[j]   * (1 - cumshift[j])
-        reduce = p_reduce[j] (extended with 0 at j=N-1)
-        shift  = cumshift[j] (cumulative reduce mass strictly before j)
-        pad    = remainder
-    This term encodes "comparator gates should agree with the structured
-    DP marginals to first order" without forcing equality.
-    """
-    if lambda_dp_prior == 0.0:
-        return torch.tensor(0.0)
-    total = 0.0
-    seen = False
-    for r in route_traces:
-        gates = r.get("gates", None)
-        p_copy = r.get("copy_marginal", None)
-        p_reduce = r.get("reduce_marginal", None)
-        if gates is None or p_copy is None or p_reduce is None:
-            continue
-        seen = True
-        B, N, K = gates.shape
-        if p_reduce.shape[1] == 0:
-            cumshift = gates.new_zeros(B, N)
-            reduce_w = gates.new_zeros(B, N)
-        else:
-            cum = torch.cumsum(p_reduce, dim=1)
-            cumshift = torch.cat([gates.new_zeros(B, 1), cum], dim=1)
-            reduce_w = torch.cat([p_reduce, gates.new_zeros(B, 1)], dim=1)
-        keep = p_copy * (1.0 - cumshift.clamp(0.0, 1.0))
-        shift = cumshift.clamp(0.0, 1.0)
-        pad = (1.0 - keep - reduce_w - shift).clamp(min=1e-8)
-        tgt = torch.stack([keep, reduce_w, shift, pad], dim=-1)
-        tgt = tgt / tgt.sum(-1, keepdim=True).clamp(min=1e-8)
-        log_gates = (gates.clamp(min=1e-8)).log()
-        kl = (tgt * (tgt.clamp(min=1e-8).log() - log_gates)).sum(-1).mean()
-        total = total + kl
-    if not seen:
-        return torch.tensor(0.0)
-    return lambda_dp_prior * total
 
 # -- End inlined LanguageLayer section -------------------------------
 
@@ -9774,6 +8512,7 @@ class ReconstructionStack:
         self._choice_rule_ids = None
         self._choice_arities = None
         self._choice_mask = None
+        self._choice_positions = self._choice_actions = self._choice_attempted = None
         self._unary_rule_map = None
         self._binary_rule_map = None
         self._forward_losses = None
@@ -9797,6 +8536,7 @@ class ReconstructionStack:
         self._choice_rule_ids = None
         self._choice_arities = None
         self._choice_mask = None
+        self._choice_positions = self._choice_actions = self._choice_attempted = None
         self._forward_losses = None
         self._forward_loss_mask = None
 
@@ -9819,6 +8559,7 @@ class ReconstructionStack:
         self._choice_rule_ids = None
         self._choice_arities = None
         self._choice_mask = None
+        self._choice_positions = self._choice_actions = self._choice_attempted = None
         self._unary_rule_map = None
         self._binary_rule_map = None
         self._forward_losses = None
@@ -9896,7 +8637,8 @@ class ReconstructionStack:
             self._choice_mask[s:e] = False
             self._choice_rule_ids[s:e] = -1
             self._choice_arities[s:e] = 0
-            for name in ("_choice_left_rows", "_choice_right_rows"):
+            self._choice_attempted[s:e] = False
+            for name in ("_choice_left_rows", "_choice_right_rows", "_choice_positions", "_choice_actions"):
                 slab = getattr(self, name, None)
                 if torch.is_tensor(slab) and int(slab.shape[0]) >= e:
                     slab[s:e] = -1
@@ -10019,6 +8761,9 @@ class ReconstructionStack:
             raise ValueError("ReconstructionStack choice slab must be non-empty")
         self._choice_rule_ids = torch.full(
             (batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_positions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
         self._choice_arities = torch.zeros(
             batch, max_steps, dtype=torch.int8, device=device)
         self._choice_mask = torch.zeros(
@@ -10058,7 +8803,7 @@ class ReconstructionStack:
 
     def record_choice(self, slot, rule_ids, arity, mask,
                       local_structural_loss=None, left_row=None,
-                      right_row=None):
+                      right_row=None, position=0):
         """Commit one hard choice and its optional bounded local objective."""
         if self._choice_rule_ids is None:
             return
@@ -10076,6 +8821,9 @@ class ReconstructionStack:
             torch.full_like(chosen, int(arity), dtype=torch.int8),
             torch.zeros_like(chosen, dtype=torch.int8)))
         self._choice_mask[:, slot].copy_(active)
+        self._choice_positions[:, slot].copy_(torch.where(active,
+            torch.as_tensor(position, device=active.device), -1))
+        self._choice_attempted[:, slot].copy_(active)
         for name, value in (("_choice_left_rows", left_row),
                             ("_choice_right_rows", right_row)):
             slab = getattr(self, name, None)
@@ -10427,15 +9175,16 @@ class ReverseConstructionChooser(nn.Module):
             if seal_width > 0:
                 end_mask = sentence_end_mask.to(
                     device=root_hidden.device, dtype=torch.bool)
-                seal_ids = rule_ids[
-                    :, 3 * W:3 * W + W * stored_seal_width
-                ].reshape(B, W, stored_seal_width)[..., :seal_width]
-                seal_arities = arities[
-                    :, 3 * W:3 * W + W * stored_seal_width
-                ].reshape(B, W, stored_seal_width)[..., :seal_width]
-                seal_active = choice_mask[
-                    :, 3 * W:3 * W + W * stored_seal_width
-                ].reshape(B, W, stored_seal_width)[..., :seal_width]
+                word_index = torch.arange(W, device=root_hidden.device)[None, :]
+                last_end = torch.where(end_mask, word_index, -1).amax(1, keepdim=True)
+                group = torch.where(word_index == last_end, 0, (word_index + 1).clamp_max(W - 1))
+                group = group[..., None].expand(B, W, stored_seal_width)
+                def seal_choices(slab):
+                    return slab[:, 3 * W:3 * W + W * stored_seal_width].reshape(
+                        B, W, stored_seal_width).gather(1, group)[..., :seal_width]
+                seal_ids = seal_choices(rule_ids)
+                seal_arities = seal_choices(arities)
+                seal_active = seal_choices(choice_mask)
                 seal_index = torch.arange(
                     seal_width, device=root_hidden.device,
                     dtype=torch.long).reshape(1, 1, seal_width)
@@ -11544,11 +10293,9 @@ class SymbolSubSpace(SubSpace):
         # indirection is gone.
         _assert_retired_chart_knobs_absent()
         chart_hidden = self._resolve_hidden_dim(nSymbols)
-        try:
-            _signal_temperature = float(TheXMLConfig.get(
-                "SymbolSpace.signal.temperature", 1.0))
-        except Exception:
-            _signal_temperature = 1.0
+        compose_temperature = float(TheXMLConfig.get(
+            "architecture.composeTemperature", 0.0))
+        reduce_pressure = float(TheXMLConfig.get("architecture.reducePressure", 1.0))
         self.languageLayer = LanguageLayer(
             n_input=nSymbols, n_output=nSymbols,
             hidden_dim=chart_hidden,
@@ -11557,7 +10304,8 @@ class SymbolSubSpace(SubSpace):
             # a semantic slice of those codes.
             feature_dim=self.muxedSize,
             max_depth=max(nSymbols - 1, 1),
-            temperature=_signal_temperature,
+            temperature=compose_temperature,
+            reduce_pressure=reduce_pressure,
         )
         # The signal router's grammar reference (read by per-rule gating
         # and the diagnostics that used to call ``chart.grammar``).
@@ -13025,7 +11773,7 @@ class SymbolSubSpace(SubSpace):
         fold (CS-side). On the FULL-ROUTER path, however,
         ``LanguageLayer.compose`` currently does BOTH: it selects the
         rules AND folds the slab tensorially through the op modules
-        (``BinaryStructuredReductionLayer.forward`` -> ``op(left,
+        (``OperationSelectionLayer.forward`` -> ``op(left,
         right)``), caching the [B, 1, D] root in ``_last_root_state``.
         The per-space_role ``SyntacticLayer.forward`` / ``reverse`` then
         deliberately SKIP re-execution on that path (guarded by
@@ -13248,150 +11996,22 @@ class SymbolSubSpace(SubSpace):
         return self._synthesize_rule_probs_hard(
             rules_by_space_role, batch_size, device=device)
 
-    def _synthesize_rule_probs_soft(self, space_role_routings, batch_size,
-                                    device=None):
-        """Aggregate the router's SOFT per-space_role marginals into a dense,
-        GRADIENT-BEARING ``[B, n_rules]`` rule distribution.
-
-        ``space_role_routings`` is ``self.languageLayer._last_space_role_routings``:
-        ``{space_role: {"unary": u_routing, "binary": last_round_routing,
-        "binary_rounds": [...]}}`` cached by ``LanguageLayer.compose``.
-
-        Differentiable aggregation (per space_role)
-        -------------------------------------
-        * unary: ``apply_counts = action_probs[:, :, R_copy:].sum(dim=1)``
-          -> ``[B, R_apply]`` expected count per APPLY op. Column ``a``
-          maps to ``_unary_rule_ids[space_role][a]``. (``action_probs`` is the
-          straight-through softmax -- gradient-bearing; the COPY columns
-          ``[:, :, :R_copy]`` are dropped: copy ops carry no distinct
-          rule_ids.)
-        * binary: ``reduce_counts = reduce_marginal_op.sum(dim=1)`` ->
-          ``[B, R_reduce]`` expected count per REDUCE op, SUMMED over ALL
-          reduction rounds (``binary_rounds``) to match the hard
-          scatter's accumulate-across-rounds semantics. Column ``r`` maps
-          to ``_binary_rule_ids[space_role][r]``.
-
-        The per-op count COLUMNS are scattered to their global rule_id
-        via ``index_add`` (differentiable w.r.t. the source counts -- NO
-        in-place index assignment, NO ``.detach()`` / ``.item()`` on the
-        counts). Rows with any mass are L1-normalized; zero-mass rows stay
-        zero (the additive bias is then just ``routing_proj``'s bias).
-
-        Returns the live differentiable ``[B, n_rules]`` tensor, or
-        ``None`` when no usable marginals exist (caller then falls back to
-        the hard scatter). FAIL LOUD: a non-finite marginal or assembled
-        ``rule_probs`` raises (no silent NaN gating).
-        """
-        ll = self.languageLayer
-        n_rules = int(len(TheGrammar.rule_table))
-        if n_rules <= 0:
+    def _synthesize_rule_probs_soft(self, space_role_routings, batch_size, device=None):
+        layer = self.languageLayer
+        traces = space_role_routings.get('operations', {}).get('rounds', [])
+        if not traces:
             return None
+        first = traces[0]['probabilities']
+        result = first.new_zeros(first.shape[0], len(TheGrammar.rule_table))
+        for trace in traces:
+            for name, ids in (('binary_probabilities', layer.binary_rule_ids),
+                              ('unary_probabilities', layer.unary_rule_ids)):
+                counts = trace[name].sum(1) * trace['valid'][:, None]
+                if ids:
+                    index = torch.tensor(ids, device=result.device, dtype=torch.long)
+                    result = result.index_add(1, index, counts)
+        return result / result.sum(-1, keepdim=True).clamp_min(torch.finfo(result.dtype).tiny)
 
-        # A5: device threaded from the compose operand (avoids the
-        # non-proxyable ``TheDevice.get()`` inside the traced forward).
-        if device is None:
-            device = TheDevice.get()
-        # Collect (rule_id_index_tensor, count_columns) contributions per
-        # space_role, then index_add them onto a single zeros base so the graph
-        # back to action_probs / reduce_marginal_op is preserved.
-        contributions = []          # list of (idx [K] long, src [B, K] float)
-        B_resolved = batch_size
-
-        def _check_finite(name, t):
-            if not torch.isfinite(t).all():
-                raise ValueError(
-                    f"SymbolSubSpace._synthesize_rule_probs_soft: non-finite "
-                    f"{name} marginal (fail-loud per numerical policy).")
-
-        for space_role, space_role_routing in space_role_routings.items():
-            if not isinstance(space_role_routing, dict):
-                continue
-
-            # --- Unary apply ops ---------------------------------------
-            u_routing = space_role_routing.get("unary")
-            if isinstance(u_routing, dict):
-                action_probs = u_routing.get("action_probs")
-                if torch.is_tensor(action_probs) and action_probs.dim() == 3:
-                    unary_layer = ll._unary_layers.get(space_role) \
-                        if hasattr(ll._unary_layers, 'get') \
-                        else (ll._unary_layers[space_role]
-                              if space_role in ll._unary_layers else None)
-                    r_copy = int(getattr(unary_layer, 'r_copy', 0)) \
-                        if unary_layer is not None else 0
-                    apply_slice = action_probs[:, :, r_copy:]   # [B, N, R_apply]
-                    if apply_slice.shape[-1] > 0:
-                        _check_finite("unary action_probs", apply_slice)
-                        apply_counts = apply_slice.sum(dim=1)    # [B, R_apply]
-                        rid_table = ll._unary_rule_ids.get(space_role, []) \
-                            if hasattr(ll._unary_rule_ids, 'get') \
-                            else ll._unary_rule_ids[space_role]
-                        idx, cols = self._map_op_columns(
-                            apply_counts, rid_table, n_rules)
-                        if idx is not None:
-                            contributions.append((idx, cols))
-                            B_resolved = B_resolved or cols.shape[0]
-
-            # --- Binary reduce ops (summed over all rounds) ------------
-            rounds = space_role_routing.get("binary_rounds")
-            if not rounds:
-                one = space_role_routing.get("binary")
-                rounds = [one] if isinstance(one, dict) else []
-            reduce_total = None     # [B, R_reduce]
-            for r_routing in rounds:
-                if not isinstance(r_routing, dict):
-                    continue
-                rmo = r_routing.get("reduce_marginal_op")
-                if not (torch.is_tensor(rmo) and rmo.dim() == 3):
-                    continue
-                if rmo.shape[1] == 0 or rmo.shape[2] == 0:
-                    continue
-                _check_finite("binary reduce_marginal_op", rmo)
-                round_counts = rmo.sum(dim=1)                    # [B, R_reduce]
-                reduce_total = (round_counts if reduce_total is None
-                                else reduce_total + round_counts)
-            if reduce_total is not None:
-                rid_table = ll._binary_rule_ids.get(space_role, []) \
-                    if hasattr(ll._binary_rule_ids, 'get') \
-                    else ll._binary_rule_ids[space_role]
-                idx, cols = self._map_op_columns(
-                    reduce_total, rid_table, n_rules)
-                if idx is not None:
-                    contributions.append((idx, cols))
-                    B_resolved = B_resolved or cols.shape[0]
-
-        if not contributions:
-            return None
-
-        # Resolve B from the contributions if the caller's hint was None.
-        B = int(B_resolved) if B_resolved else int(contributions[0][1].shape[0])
-        if B <= 0:
-            return None
-
-        # Differentiable scatter: zeros base + index_add of each per-op
-        # count column at its global rule_id. index_add is autograd-safe
-        # w.r.t. the source (the count columns carry the router graph).
-        probs = torch.zeros(B, n_rules, device=device)
-        for idx, cols in contributions:
-            if int(cols.shape[0]) != B:
-                # Batch mismatch between space_roles' marginals: skip the soft
-                # path entirely rather than fabricate an alignment.
-                return None
-            probs = probs.index_add(1, idx.to(device), cols.to(device))
-
-        # L1-normalize rows with mass; zero rows stay zero. Build the
-        # normalized tensor functionally (no in-place row assignment) so
-        # the graph to the count columns is preserved.
-        row_sums = probs.sum(dim=1, keepdim=True)               # [B, 1]
-        denom = torch.where(row_sums > 0, row_sums,
-                            torch.ones_like(row_sums))
-        probs = probs / denom
-
-        if not torch.isfinite(probs).all():
-            raise ValueError(
-                "SymbolSubSpace._synthesize_rule_probs_soft produced a "
-                "non-finite rule_probs tensor (fail-loud per numerical "
-                "policy).")
-        return probs
 
     def _map_op_columns(self, counts, rid_table, n_rules):
         """Map per-op count columns ``counts`` ``[B, R]`` to their global
@@ -13760,7 +12380,7 @@ class SymbolSubSpace(SubSpace):
         Binary GrammarLayers (IntersectionLayer, UnionLayer, ...) expose
         their pair-wise math via ``.compose(left, right)``; unary ones
         (NotLayer, NonLayer, ...) via ``.forward(x)``. The signal
-        router's ``BinaryStructuredReductionLayer`` calls ``op(left,
+        router's ``OperationSelectionLayer`` calls ``op(left,
         right)``, so binary ops get wrapped with
         ``_BinaryGrammarOpAdapter``.
         """
@@ -13801,7 +12421,7 @@ class SymbolSubSpace(SubSpace):
         # entry of a given arity ACROSS space_roles into a single attach call under
         # the conceptual reduction space_role 'CS'. ``op_space_roles`` / ``op_names`` still
         # carry the .grammar-declared metadata, so the merged binary layer
-        # (BinaryStructuredReductionLayer) keeps each op's original space_role
+        # (OperationSelectionLayer) keeps each op's original space_role
         # tag for lift/lower (CS<->SS) role identification; ops, rule_ids,
         # op_names and op_space_roles are concatenated in lockstep so op order
         # stays aligned with rule_id order. Group by arity only, with a
@@ -14752,167 +13372,13 @@ _SYMBOLSPACE_FORWARD_WRITES = {
 }
 
 
-class _FunctionalLanguageChooser:
-    """Pure grammar-choice kernels used by ``LanguageSpace``.
-
-    These functions receive a read-only snapshot of ConceptualSpace STM and
-    return immutable tensor choices.  They never construct the next STM state:
-    buffer/depth/order/reference transitions belong exclusively to
-    ``ConceptualSpace.apply_*_language_choice``.
-    """
-
-    @staticmethod
-    def _occupancy_threshold(depth, capacity, base_tau):
-        tau = torch.as_tensor(
-            base_tau, dtype=torch.float32, device=depth.device)
-        if int(capacity) <= 2:
-            pressure = torch.zeros_like(depth, dtype=tau.dtype)
-        else:
-            pressure = (
-                (depth.to(tau.dtype) - 2.0)
-                / float(int(capacity) - 2)
-            ).clamp(0.0, 1.0)
-        return tau * (1.0 - pressure), pressure
-
-    @staticmethod
-    def _reduce_confidence(routing):
-        copy_score = routing["copy_score"]
-        reduce_score = routing["reduce_score"]
-        copy_action = (
-            torch.logsumexp(copy_score[:, :2, :], dim=-1)
-            - math.log(float(copy_score.shape[-1])))
-        reduce_action = (
-            torch.logsumexp(reduce_score[:, 0, :], dim=-1)
-            - math.log(float(reduce_score.shape[-1])))
-        return torch.sigmoid(reduce_action - copy_action.sum(dim=1))
-
-    @staticmethod
-    def choose_binary(state, reducer, row_gate, *, base_tau,
-                      occupancy_pressure=False, demand=False, op_prior=None,
-                      grammar_context=None):
-        """Choose one bounded binary grammar operation without applying it.
-
-        ``op_prior`` (``[B, 1, R]`` additive logits over the reduce ops, or
-        ``None``) is the structural licensing the caller derives from the
-        STM provenance slab (the fold-ladder ``chunk`` gate); it enters the
-        reducer's scores like any other tensor input, so the choice stays
-        one fixed-shape computation under ``torch.while_loop``.
-        """
-        (buffer, depth, orders, grammar_orders,
-         concept_rows, concept_activations) = state
-        del orders, grammar_orders, concept_rows, concept_activations
-        B, capacity, _D = buffer.shape
-        if int(capacity) < 2:
-            applied = torch.zeros_like(depth, dtype=torch.bool)
-            local_op = torch.full_like(depth, -1)
-            return LanguageBinaryChoice(
-                buffer[:, 0, :],
-                applied,
-                local_op,
-                applied,
-                buffer.new_zeros(B),
-                applied,
-                local_op,
-            )
-
-        gate = row_gate.reshape(B).to(
-            device=buffer.device, dtype=torch.bool)
-        can = torch.logical_and(depth >= 2, gate)
-        left = buffer[:, 1, :]
-        right = buffer[:, 0, :]
-        window = torch.stack((left, right), dim=1)
-        # Grammar-aware reducers receive the owner-built context when one is
-        # available.  A small legacy/evidence reducer may intentionally have
-        # only the established ``forward(window)`` shape; passing a literal
-        # ``grammar_context=None`` would turn the new optional capability into
-        # a breaking required keyword for that structural adapter.
-        reducer_kwargs = {}
-        if torch.is_tensor(op_prior):
-            reducer_kwargs['op_prior'] = op_prior
-        if grammar_context is not None:
-            reducer_kwargs['grammar_context'] = grammar_context
-        hard, soft, routing = reducer(window, **reducer_kwargs)
-        parent = (soft + (hard - soft).detach())[:, 0, :]
-        if occupancy_pressure or demand:
-            parent = routing["chosen_reduced"][:, 0, :]
-        if occupancy_pressure:
-            confidence = _FunctionalLanguageChooser._reduce_confidence(
-                routing)
-            threshold, _pressure = (
-                _FunctionalLanguageChooser._occupancy_threshold(
-                    depth, int(capacity), base_tau))
-            demand_rows = torch.logical_and(depth >= int(capacity), can)
-            can = torch.logical_and(
-                can, torch.logical_or(demand_rows, confidence > threshold))
-
-        action_kind = routing["action_kind"][:, 0]
-        source_left = routing["src_left"][:, 0]
-        copy_selected = torch.zeros_like(can)
-        if not (occupancy_pressure or demand):
-            copy_selected = torch.logical_and(
-                action_kind == 0, source_left >= 0)
-
-        marginal = routing["reduce_marginal_op"][:, 0, :]
-        flags = getattr(reducer, 'structural_ops', None)
-        local_op = structural_argmax(marginal, flags)
-        trace_valid = can
-        if not (occupancy_pressure or demand):
-            trace_valid = torch.logical_and(
-                trace_valid, routing["action_kind"][:, 0] == 1)
-        local_loss = routing.get("local_structural_loss")
-        if (not torch.is_tensor(local_loss) or local_loss.dim() < 2
-                or int(local_loss.shape[1]) < 1):
-            local_loss = buffer.new_zeros(B)
-        else:
-            local_loss = local_loss[:, 0]
-        return LanguageBinaryChoice(
-            parent,
-            can,
-            local_op,
-            trace_valid,
-            local_loss,
-            copy_selected,
-            source_left,
-        )
-
-    @staticmethod
-    def choose_unary(state, layer, row_gate, *, grammar_context=None):
-        """Choose one bounded unary grammar operation without applying it."""
-        (buffer, depth, orders, grammar_orders,
-         concept_rows, concept_activations) = state
-        del orders, grammar_orders, concept_rows, concept_activations
-        B = int(buffer.shape[0])
-        can = torch.logical_and(
-            depth >= 1,
-            row_gate.reshape(B).to(
-                device=buffer.device, dtype=torch.bool))
-        # Keep the context optional for the same reason as the binary path:
-        # a legacy deterministic chooser may only accept its established
-        # positional slab argument.  The production grammar-aware layer gets
-        # the context whenever an owning SymbolSubSpace supplied one.
-        unary_kwargs = ({'grammar_context': grammar_context}
-                        if grammar_context is not None else {})
-        hard, soft, routing = layer(buffer[:, :1, :], **unary_kwargs)
-        candidate = (soft + (hard - soft).detach())[:, 0, :]
-        applied = torch.logical_and(
-            routing["apply_mask"][:, 0, :].bool().any(dim=-1), can)
-        local_op = routing["action_op"][:, 0].long()
-        local_loss = routing.get("local_structural_loss")
-        if (not torch.is_tensor(local_loss) or local_loss.dim() < 2
-                or int(local_loss.shape[1]) < 1):
-            local_loss = buffer.new_zeros(B)
-        else:
-            local_loss = local_loss[:, 0]
-        return LanguageUnaryChoice(
-            candidate, applied, local_op, applied, local_loss)
-
 
 class LanguageSpace(nn.Module):
     """Scheduling owner for the grammar layer without owning a second copy.
 
     ``SymbolSubSpace.languageLayer`` remains the sole parameter/state owner.
     This Space is the explicit pipeline stage that invokes it after CSsym/SS;
-    it chooses immutable Binary/Unary results for ConceptualSpace to apply
+    it chooses immutable operation results for ConceptualSpace to apply
     instead of constructing or mutating the next CS state.
     """
     def __init__(self, symbol_space):
@@ -14974,6 +13440,13 @@ class LanguageSpace(nn.Module):
                 if isinstance(surface, str) and isinstance(form, str)
             })
         self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
         # Output has its own rule inventory. The LHS counts generated
         # children; the RHS arity of a binary reverse is only one parent.
         from util import TheXMLConfig as _cfg
@@ -15194,14 +13667,37 @@ class LanguageSpace(nn.Module):
         return None
 
     def _tree_layer(self, arity):
-        layers = (
-            getattr(self.language_layer, "_binary_layers", None)
-            if int(arity) == 2
-            else getattr(self.language_layer, "_unary_layers", None))
-        return layers["CS"] if layers is not None and "CS" in layers else None
+        return self.language_layer.operation_layer
+
+    def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
+                         sample=True, masked_action=None, replay_action=None,
+                         allowance=None, rounds_left=None):
+        """The shared compose layer with the two newest occupied STM slots."""
+        buffer, depth = state[:2]
+        B, K, D = buffer.shape
+        n = min(2, K)
+        window_depth = depth.clamp(0, n)
+        source = (window_depth[:, None] - 1 - torch.arange(n, device=buffer.device)[None, :]).clamp_min(0)
+        window = buffer.gather(1, source[..., None].expand(B, n, D))
+        # STOP tests the whole sentence/STM depth, not the two-slot window.
+        limit = torch.as_tensor(slots, device=buffer.device)
+        stop_slots = torch.where(depth <= limit, n, 0)
+        _, _, route = self.language_layer.operation_layer(
+            window, depth=window_depth, slots=stop_slots,
+            active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
+            replay_action=replay_action, allowance=slots if allowance is None else allowance,
+            rounds_left=rounds_left, load_depth=depth,
+            op_prior=op_prior, grammar_context=self._structural_context(
+                phase='compose', input_stream=buffer))
+        position = (window_depth - 1 - route['position']).clamp_min(0)
+        return LanguageOperationChoice(
+            route['candidate'], route['kind'], position, route['op'],
+            route['valid'] & (route['kind'] != 0), route['probability'],
+            route['action'], route['valid'])
+
 
     @torch.compiler.disable
-    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions):
+    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, admit=True):
         """Resolve the selected grammar's reference orders at capture time.
 
         Operator-role metadata supplies the order, never a token list or a
@@ -15241,7 +13737,7 @@ class LanguageSpace(nn.Module):
             cid = owner.resolve_word_concept(surface, order=order, previous=int(refs[leaf]))
             associated = [identity for identity in owner.word_concepts(surface)
                           if owner._concept_source_order(identity) == order]
-            if cid is None and not associated and word_id is not None and order in (1, 2):
+            if admit and cid is None and not associated and word_id is not None and order in (1, 2):
                 cid = owner.interpret.forward(word_id, order=order)
             refs[leaf] = -1 if cid is None else cid
             orders[leaf] = order if cid is None else owner._concept_source_order(cid)
@@ -15606,58 +14102,8 @@ class LanguageSpace(nn.Module):
         return recover(semantic_tree(stack[0]))
 
 
-    def choose_capacity_binary(self, state, row_gate, *, base_tau):
-        """Choose a legacy pre-deposit capacity Binary.
 
-        The canonical tensor recurrence no longer calls this on every word:
-        its post-deposit demand proves ``depth < capacity`` at the following
-        word boundary. The method remains for legacy/eager controllers that
-        explicitly encounter an externally installed full STM.
-        """
-        layer = self._tree_layer(2)
-        if layer is None:
-            raise RuntimeError(
-                "LanguageSpace has no CS binary layer for STM capacity")
-        return _FunctionalLanguageChooser.choose_binary(
-            state, layer, row_gate, base_tau=base_tau, demand=True,
-            grammar_context=self._structural_context(
-                phase='compose', input_stream=state[0]))
 
-    def choose_sentence_seal_binary(self, state, row_gate, *, base_tau,
-                                    op_prior=None):
-        """Choose one demanded Binary while closing a sentence forest.
-
-        Sentence sealing is semantically distinct from the retired recurring
-        pre-deposit capacity guard: it may require up to ``capacity - 1``
-        actual grammar applications to produce the sentence root.
-        """
-        layer = self._tree_layer(2)
-        if layer is None:
-            raise RuntimeError(
-                "LanguageSpace has no CS binary layer for sentence sealing")
-        return _FunctionalLanguageChooser.choose_binary(
-            state, layer, row_gate, base_tau=base_tau, demand=True,
-            op_prior=op_prior, grammar_context=self._structural_context(
-                phase='compose', input_stream=state[0]))
-
-    def choose_post_binary(
-            self, state, row_gate, pre_applied, *, base_tau, op_prior=None):
-        """Choose the ordinary post-deposit Binary; CS applies the choice.
-
-        ``op_prior`` is the CS-derived structural licensing of the reduce
-        ops (see :meth:`_FunctionalLanguageChooser.choose_binary`)."""
-        binary = self._tree_layer(2)
-        if binary is None:
-            raise RuntimeError("LanguageSpace requires a CS binary tree layer")
-        post_gate = torch.logical_and(
-            row_gate.reshape(-1).to(
-                device=state[1].device, dtype=torch.bool),
-            torch.logical_not(pre_applied.reshape(-1)))
-        return _FunctionalLanguageChooser.choose_binary(
-            state, binary, post_gate, base_tau=base_tau,
-            occupancy_pressure=True, op_prior=op_prior,
-            grammar_context=self._structural_context(
-                phase='compose', input_stream=state[0]))
 
     # -- functional reverses (compiled reverse-loops plan, contract 2) ------
     #
@@ -15959,7 +14405,7 @@ class LanguageSpace(nn.Module):
         """
         if ops is None:
             unary = self._tree_layer(1)
-            ops = list(unary.ops) if unary is not None else ()
+            ops = list(unary.unary_ops) if unary is not None else ()
         if not ops:
             return (x, valid.bool()) if return_status else x
         if torch.compiler.is_compiling():
@@ -16047,12 +14493,12 @@ class LanguageSpace(nn.Module):
 
     def forward_unary_step(self, x, op_local, valid):
         """``[B, D]`` of one recorded unary rewrite applied forward (the
-        unary layer's candidate of the recorded local op); an invalid row
+        unary candidate of the recorded local op); an invalid row
         keeps ``x``."""
         unary = self._tree_layer(1)
         if unary is None:
             return x
-        ops = list(unary.ops)
+        ops = list(unary.unary_ops)
         if not ops:
             return x
         B, D = int(x.shape[0]), int(x.shape[-1])
@@ -16095,15 +14541,12 @@ class LanguageSpace(nn.Module):
         local = hit.to(torch.long).argmax(dim=1)
         return local, known
 
-    def choose_unary(self, state, row_gate):
-        """Choose the post-Binary unary rewrite; CS applies the choice."""
-        unary = self._tree_layer(1)
-        if unary is None:
-            raise RuntimeError("LanguageSpace requires a CS unary tree layer")
-        return _FunctionalLanguageChooser.choose_unary(
-            state, unary, row_gate,
-            grammar_context=self._structural_context(
-                phase='compose', input_stream=state[0]))
+
+    def relative_from_choices(self, rule_ids, valid, anchored):
+        """Per-row relative evidence from a scoped hard trace, never a reparse."""
+        relative = self._relative_cs_rule_ids.to(device=rule_ids.device)
+        chosen = (rule_ids[..., None] == relative).any(-1)
+        return (chosen & valid).any(-1) & anchored
 
     @staticmethod
     def _scatter_rule_counts(base, rule_ids, counts):
@@ -16118,59 +14561,61 @@ class LanguageSpace(nn.Module):
         columns = counts[:, :width] * valid.to(counts.dtype).reshape(1, width)
         return base.index_add(1, safe, columns.to(base.dtype))
 
+    def record_category_observations(self, trace, active):
+        owner = self.language_layer._category_owner(self._symbol_space)
+        if (owner is None or not int(getattr(owner, '_category_n_roles', 0) or 0)
+                or not torch.is_tensor(active)):
+            return
+        ids, arities, masks = trace.choices()
+        positions = trace._choice_positions
+        if positions is None:
+            return
+        ids, arities, masks, positions, active = [
+            value.detach().cpu().tolist()
+            for value in (ids, arities, masks, positions, active)]
+        layer = self.language_layer.operation_layer
+        names = dict(zip(self._cs_binary_rule_ids.tolist(), layer.op_names or []))
+        names.update(zip(self._cs_unary_rule_ids.tolist(), layer.unary_names or []))
+        observations = []
+        for b, words in enumerate(active):
+            forest, row = [], []
+            for w, live in enumerate(words):
+                if not live:
+                    continue
+                forest.append(w)
+                for slot in range(3 * w, min(3 * w + 3, len(ids[b]))):
+                    if not masks[b][slot]:
+                        continue
+                    name = names.get(ids[b][slot])
+                    if arities[b][slot] == 2 and len(forest) >= 2:
+                        right, left = forest.pop(), forest.pop()
+                        if name and (left >= 0 or right >= 0):
+                            row.append((left, right, name))
+                        forest.append(-1)
+                    elif arities[b][slot] == 1:
+                        p = positions[b][slot]
+                        if 0 <= p < len(forest):
+                            leaf = forest[-1 - p]
+                            if name and leaf >= 0:
+                                row.append((leaf, -1, name))
+                            forest[-1 - p] = -1
+            observations.append(row)
+        owner._category_role_obs = observations
+
     def compute_local_plan(self, symbolic_snapshot, depth):
-        """Compute a tensor-only Language plan for the newest pair.
+        B = symbolic_snapshot.shape[0]
+        n = min(2, symbolic_snapshot.shape[1])
+        live = depth.clamp(0, n)
+        source = (live[:, None] - 1 - torch.arange(n, device=depth.device)[None]).clamp_min(0)
+        x = symbolic_snapshot.gather(1, source[..., None].expand(B, n, symbolic_snapshot.shape[-1]))
+        layer = self.language_layer.operation_layer
+        _, _, route = layer(x, depth=live, slots=torch.where(depth <= 1, n, 0))
+        plan = x.new_zeros(B, self._n_rules)
+        for name, ids in (('binary_probabilities', self._cs_binary_rule_ids),
+                          ('unary_probabilities', self._cs_unary_rule_ids)):
+            plan = self._scatter_rule_counts(plan, ids, route[name].sum(1))
+        return plan / plan.sum(-1, keepdim=True).clamp_min(torch.finfo(plan.dtype).tiny)
 
-        This is the compiled C-stage surface.  It uses the very same
-        Language-owned CS unary and binary chooser modules as the eager parser
-        and returns their differentiable global-rule distribution
-        ``[B, n_rules]``.  The Python rule dictionaries, cursors, and diagnostic
-        cache remain an eager boundary concern.
-        """
-        if (not torch.is_tensor(symbolic_snapshot)
-                or symbolic_snapshot.dim() != 3):
-            raise ValueError(
-                "local Language plan expects symbolic snapshot [B,K,D]")
-        B = int(symbolic_snapshot.shape[0])
-        if not torch.is_tensor(depth) or tuple(depth.shape) != (B,):
-            raise ValueError(
-                "local Language plan depth must contain one value per row")
-        n_rules = int(self._n_rules)
-        if n_rules <= 0:
-            return symbolic_snapshot.new_zeros(B, 0)
-
-        # The online controller owns one binary opportunity per word, so
-        # Language scores exactly the two newest constituents. Rows that have
-        # not accumulated two constituents are masked from the returned plan.
-        x = symbolic_snapshot[:, :2, :]
-        grammar_context = self._structural_context(
-            phase='compose', input_stream=symbolic_snapshot)
-        plan = symbolic_snapshot.new_zeros(B, n_rules)
-        layer = self.language_layer
-        unary = (layer._unary_layers["CS"]
-                 if "CS" in layer._unary_layers else None)
-        if unary is not None:
-            _hard, x, routing = unary(x, grammar_context=grammar_context)
-            action = routing.get("action_probs")
-            if torch.is_tensor(action):
-                counts = action[..., int(unary.r_copy):].sum(dim=1)
-                plan = self._scatter_rule_counts(
-                    plan, self._cs_unary_rule_ids, counts)
-
-        binary = (layer._binary_layers["CS"]
-                  if "CS" in layer._binary_layers else None)
-        if binary is not None:
-            _hard, _soft, routing = binary(x, grammar_context=grammar_context)
-            marginal = routing.get("reduce_marginal_op")
-            if torch.is_tensor(marginal):
-                counts = marginal.sum(dim=1)
-                plan = self._scatter_rule_counts(
-                    plan, self._cs_binary_rule_ids, counts)
-
-        live = (depth >= 2).reshape(B, 1)
-        plan = torch.where(live, plan, torch.zeros_like(plan))
-        mass = plan.sum(dim=1, keepdim=True)
-        return plan / mass.clamp_min(torch.finfo(plan.dtype).tiny)
 
     def feedback_from_local_choices(
             self, binary_ops, binary_valid, unary_op, unary_valid,

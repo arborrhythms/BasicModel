@@ -1,0 +1,27 @@
+{
+  "head": "206a01468d424338a0966b5ec082278b3175241b",
+  "uncommitted": true,
+  "source_files": 671,
+  "source_sha256": "76d50ec49eb0f978c36c132a6c0790583a9f46b4aa390efbbf2dc05eeedd8d16",
+  "final_runs_share_source": true,
+  "source_archive_verified": true,
+  "documentation_snapshot_matches": true,
+  "documentation_passed": 114,
+  "full_unique_coverage": 4988,
+  "full_counts": {
+    "passed": 4663,
+    "skipped": 321,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "full_seconds": 5631.205186042003,
+  "protected_contracts_unchanged": true,
+  "measurement_processes_passed": true,
+  "packed_single_records_equal": true,
+  "unapplied_fixture_followups": [
+    "overflow-fixture-followup.patch",
+    "user-truth-fixture-followup.patch"
+  ],
+  "receipt_driver_hashes_verified": true,
+  "reviewed_spec_exact": true
+}

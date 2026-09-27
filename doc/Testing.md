@@ -2302,3 +2302,231 @@ memory stop, are retained without rerunning or replacing them. Learned utility
 and decreasing opaque routing remain unproven. These review corrections are
 validated for the requested commit; documentation-link verification is recorded
 in the new receipt's validation summary.
+
+### Item 7.5: one operation per round (September 26)
+
+The [implementation and review receipt](benchmarks/2026-09-26-item7-5/README.md)
+replaces compose tiling with one joint tempered softmax over binary operators,
+unary operators and eligible STOP. Both hard derivations retain the selected
+candidate's probability-weighted straight-through gradient. Explore masks one
+uniformly chosen used exploit round, trains, and restores exploit's runtime
+records. The tiling DPs, compaction, DP-prior objective, flattened-temperature
+pass and separate unary layer are deleted. The implementation choices and
+Alec's rationale are recorded in the
+[specification](specs/2026-09-26-one-operation-per-round.md).
+
+Affected validation completes 142 cases: **109 passed and 33 opt-in skips**.
+Four explicit compiler/trace checks and 17 ownership/word-store checks pass.
+The packed budget/record group passes 20 cases. Later full sweeps expose two
+synthetic fixtures requiring the new trace layout; both corrected files pass
+all 18 cases. Their changes do not alter production code, configuration or
+measurement inputs. The receipt preserves every source delta and earlier
+failure, including the full 4,945-case run with 4,621 passes, 321 skips, two
+failures and one expected failure before the final fixture correction.
+
+Submission-source coverage completes all **4,945 cases: 4,622 passed, 321
+skipped, one failed and one expected failure**. The original pool stopped after
+868 completed cases when a relative-STM worker crossed the 8 GiB cap (observed
+peak 8.55 GiB). Its three unfinished cases pass in fresh workers at the same
+cap; a continuation completes the remaining 4,074 cases. The 868 completed
+cases are not repeated. Coverage accounting verifies every case exactly once
+across source-identical segments and retains the original memory failure.
+Their execution time totals 3,297.45 seconds. All runs retain the original
+1,800-second / 8 GiB worker limits, three-worker / 24 GiB reservation and total
+suite deadline. The complete source hash is
+`c0e9097ae05b800b8de4622d410eacaf7fa775236f7602f6d953f120b5fa2e98`.
+
+Serial reconstruction before/during/after training is
+.10405020788311958 / .10417700409889222 / .10392807051539421, versus the reviewed
+.10059066489338875 / .09482414424419403 / .09287650510668755. Packed/single byte
+costs are .787799209356308 / .6835970133543015, versus .6839025616645813 for both
+reviewed controls. Initial parameters and dictionary hashes match across the
+two layouts, but sentence artifacts and costs do not: exact parity is lost.
+These are recorded movements under the existing measurement protocol.
+
+The unchanged MM_grammar gate passes its <.20 assertion; both XOR_grammar CLI
+gates fail at the six-row WholeSpace inventory during reset/autobind. The
+historical unseeded MM result of .21757 remains visible. The unchanged relative
+depth campaign still observes only depth-one end states: STOP is eligible at
+depth three, not compulsory. Its assertion is preserved. Mechanism checks and
+these short measurements do not establish mature learned utility. Code remains
+uncommitted pending Claude review.
+
+## Item 7.5 review corrections (September 27, superseded whole-batch draft)
+
+The [development receipt](benchmarks/2026-09-27-item7-5-review/README.md)
+records the shared zero-default sampling temperature, untempered model credit,
+raw-logit tie rule, deterministic exploit-only evaluation and forced-prefix
+replay under updated weights. This archived draft retained one whole batch
+using the existing scalar objective. Alec subsequently confirmed the amended
+per-sentence transaction; the [sentence-seal receipt](benchmarks/2026-09-27-item7-5-seals/README.md)
+supersedes this draft. Its measurements below remain historical evidence.
+
+Affected tests: **132 passed, 13 skipped**. The focused winner/ownership group
+passes all 32 cases, four explicit compiler/packed/graph checks pass, and 109
+documentation-link checks pass. The unchanged XOR_grammar CLI gates both fail
+at the six-row inventory. MM passes this run; the historical .21757 failure
+remains visible. The unchanged depth-3 campaign fails again with all 16 depths
+equal to one. No threshold, training budget or gate was changed.
+
+Serial reconstruction before/during/after is
+.1040863823145628 / .10699735879898072 / .10230774991214275. Packed/single byte
+cost is .7846425250172615 / 1.1408610492944717 with matching initial parameter
+and dictionary fingerprints. Parity remains absent; both layouts report
+truncation. These are untuned measurements under the existing seed-42 protocol.
+
+Warmed per-batch CPU timings are: exploit/explore forward .359613 / .364350 s,
+exploit/explore backward 6.587968 / 6.621047 s, snapshot .025297 s and restore
+.001249 s, plus .018701 s for other work. The two backwards account for 94.50%
+of the 13.978225-second batch; snapshots/restores account for .19%. Raw per-batch
+timings, both losses, winners and cold/warm labels are preserved. This does not
+establish long-training utility, and no million-sentence campaign was run.
+
+The affected checks, explicit gates and measurements match the 667-file
+source manifest `d26b69d625856af785f159bac485da382d19d4de6ae65c68e3c1eeea6f8088a5`.
+The reviewed source and every intermediate failure remain separately preserved.
+Nothing has been committed.
+
+
+## Item 7.5 sentence seals (September 27, reviewed baseline)
+
+The [sentence-seal receipt](benchmarks/2026-09-27-item7-5-seals/README.md)
+implements the two closing sections of the amended spec. Each sentence index
+across rows has two optimizer updates from one cached perception: exploit,
+then explore under the updated parameters. Reconstruction and prediction stay
+per sentence and row; the strictly lower-cost row wins, with exploit winning
+ties. Its program and observation commit before the next sentence's perception.
+Teacher answers have a separate batch-end backward. Evaluation runs exploit
+only; zero-temperature exploration replays the exploit prefix before the
+uniformly selected forced alternative. Model credit uses the untempered softmax.
+
+The final targeted selection completes **47 cases: 46 passed, one failed**.
+Sentence-seal, causal-context, gradient, temperature, tie, winner, ownership and
+reconstruction mechanism checks pass. The remaining output-mode assertion sees
+a zero question-conditioner gradient and remains red. The seven explicit checks
+complete with **five passes and two unchanged XOR_grammar capacity failures**.
+MM passes this run; the historical **.21757** failure remains visible. No quality
+threshold, gate source or learning seed was tuned, and no million-sentence
+campaign ran.
+
+Reissued serial reconstruction before/during/after training is
+**.1065397672355175 / .1001331090927124 / .10013789683580399**. Packed and single
+byte cost is exactly **.6496902331709862**, with identical initial parameters,
+dictionary fingerprints and per-sentence records. Both layouts still mark every
+row truncated. These short measurements do not establish learned utility.
+
+The unchanged two-warm-up/five-measured-batch CPU protocol yields
+**.9189261373 sentences/s**, including epoch tails. Measured batch calls average
+**2.167488242 seconds**; exploit/explore compose take **1.106395225 / .230206750**,
+their backwards **.269424950 / .269619625**, scoring **.111816675**, snapshot
+**.000000742** and restore **.000276658** seconds. The first training batch takes
+**555.77970 seconds**, chiefly initial capture during scoring. The first measured
+batch still takes **5.65698 seconds** and remains in the fixed protocol. The
+receipt retains every cold/warm row, both costs and row winners. Earlier timings
+that omitted the sentence reconstruction objective are explicitly superseded.
+
+These checks and measurements match the 669-file source fingerprint
+`6e84d24b2e13424b5e2b171c64dcba7d64cfec8ff62439127eba584529c8637d`.
+The single full sweep completes all **4,968 cases exactly once: 4,636 passed,
+321 skipped, ten failed and one expected failure**, exit 1. It takes **5,459.09
+seconds**, with **6.19 GiB** peak worker memory and **13.42 GiB** peak aggregate
+memory, within the unchanged 8 / 24 GiB limits. No continuation or cache retry
+is needed. The ten unwaived failures are the shared-operator reconstruction
+gradient diagnostic, the output question-conditioner gradient, four obsolete
+evaluation-call expectations, three native observation/prediction-retention
+checks, and the unchanged relative-depth campaign. The latter records
+**[1, 1, 1, 1]**, with no depth-three state. Both explicit XOR CLI failures and
+MM's historical **.21757** result remain visible alongside its current pass.
+
+The receipt preserves every development attempt, the source archive, the patch
+since the first reviewed submission, raw measurements and the complete sweep.
+The wrapper's post-completion return-value error is recorded separately; the
+durable supervisor result has full, unique coverage and matches the measured
+source. Work is stopped for Claude's review. Nothing is committed or pushed.
+
+## Item 7.5 reduction pressure (September 27, review stop)
+
+The [pressure review receipt](benchmarks/2026-09-27-item7-5-pressure/README.md)
+implements review round 2 and decision 7. The declared default is
+`reducePressure=1.0`, adding `d/a + max(0,d-a)/r` to every binary logit, zero
+when empty. Online allowance reserves the next word's slot; seals use one
+absolute slot or three relative slots. Hard deadlines mask unary and STOP
+when every remaining round must reduce. Overflow is an assertion.
+
+Per-seal reconstruction and prediction gradient vectors are captured before
+their graphs are released, including the exact cached-perception pullback,
+and aggregated into the batch operator report. Four obsolete evaluation call
+lists follow the amended exploit-only contract. The observation, conditioner,
+operator-gradient and depth-three assertions remain unchanged. New mechanism
+tests and all red/green development attempts are retained in the receipt.
+
+The targeted selection completes **35 cases: 34 passed and the unchanged
+depth-three failure**, still `[1, 1, 1, 1]`. All three observation tests, both
+output-gradient modes, the operator-gradient report, all 16 interleave tests,
+nine sentence-seal tests and three pair-driver tests pass. The explicit
+selection has **five passes and two unchanged XOR CLI capacity failures**.
+MM passes this run; the historical **.21757** failure remains visible.
+
+The unchanged short reconstruction protocol gives serial before/during/after
+values **.11755186505615711 / .10999541729688644 / .09888161532580853**.
+Packed/single byte reconstruction matches exactly at **.18002260848879814**,
+including initial fingerprints and all sentence records. Every truncation flag
+is now false. The fixed two-warm-up/five-measured-batch window yields
+**1.5262840033 sentences/s**, including epoch tails. The prior window included
+late capture in its first measured batch; the new one does not, so this is not
+a clean steady-state architecture speed comparison. The receipt retains the
+551.47-second first training batch and every timing component and row winner.
+
+The restored report's overlapping `operator.CS.surface` has reconstruction
+norm **1.92338e-13**, output norm **1.73030**, cosine **-.0550583** and
+output/reconstruction norm ratio **8.99614e12**. This is measured imbalance,
+not evidence that the objectives are balanced or language utility is learned.
+
+All corrected checks and measurements match the 671-file source fingerprint
+`76d50ec49eb0f978c36c132a6c0790583a9f46b4aa390efbbf2dc05eeedd8d16`.
+The single source-matched full sweep completes **4,988 cases exactly once:
+4,663 passed, 321 skipped, three failed and one expected failure**, exit 1,
+in **5,631.21 seconds (93.85 minutes)**. All nine failures addressed by the
+feedback pass in the full sweep. All 18 new pressure/gradient mechanism cases
+also pass. Peak worker / aggregate memory is **6.08 / 13.89 GiB**, within the
+unchanged 8 / 24 GiB limits; no retry, continuation or cap stop occurs.
+
+The unchanged depth-three campaign remains red. Two additional fixtures assert
+superseded behavior: an externally injected full STM now raises the required
+assertion instead of setting `_compose_overflow`, and unary preference no longer
+leaves a user sentence incomplete without an LTM row. The receipt contains
+concrete fixture-only follow-up patches, **unapplied and not reported as passing**.
+The measured and swept source remains intact for the requested review stop.
+Both XOR CLI failures and MM's historical result remain visible. No gate, seed
+or threshold was tuned, no million-sentence campaign ran, and nothing is committed
+or pushed.
+
+
+## Item 7.5 accepted landing (September 27)
+
+Claude's round-3 review and Alec's acceptance authorize the two remaining
+fixture patches. The full-STM fixture now expects the admission assertion;
+unary preference now expects a completed user sentence and one LTM row.
+Production/configuration source is unchanged from the pressure review.
+The [landing receipt](benchmarks/2026-09-27-item7-5-landing/README.md) retains
+both exact approved patches and all preceding attempts and measurements.
+
+Both complete fixture files finish **60 passed and five skipped**. The one
+source-matched full sweep completes **4,989 cases exactly once: 4,666 passed,
+321 skipped, one failed and one expected failure**, exit 1, in **5,674.50 seconds
+(94.57 minutes)**. Its sole failure is the unchanged depth-three campaign,
+still **[1, 1, 1, 1]**. No assertion, threshold or seed is relaxed. Both corrected
+fixtures pass in the sweep, as do the observation, conditioner and
+shared-operator report regressions. Peak worker / aggregate memory is
+**6.16 / 14.19 GiB**, within the unchanged 8 / 24 GiB limits, without retries,
+continuations or resource stops.
+
+The frozen 671-file fingerprint is
+`a98b0f4e98b6959c3c60f01567c87dd419a09842c047f6e304a752d230171bf7`.
+Its only differences from the measured pressure source are the two approved
+test fixtures. Serial reconstruction remains the recorded
+**.1175518651 / .1099954173 / .0988816153**; packed/single parity is exactly
+**.1800226085** with no truncation. Both XOR CLI capacity failures and the
+historical MM **.21757** failure remain visible. No million-sentence campaign
+ran. Nonzero training temperature and a sentence work term await later specs;
+the diagnostic assertion and native context-read flag have recorded follow-ups.

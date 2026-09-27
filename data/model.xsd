@@ -75,6 +75,19 @@
            derives it from symbolicOrder > 0 for legacy configs. New configs
            should set it explicitly. -->
       <xs:element name="serial" type="xs:boolean" minOccurs="0"/>
+      <!-- Sampling temperature shared by exploit/explore; zero is argmax.
+           Evaluation is always argmax. Gradient credit is untempered. -->
+      <xs:element name="composeTemperature" minOccurs="0" default="0">
+        <xs:simpleType><xs:restriction base="xs:double">
+          <xs:minInclusive value="0"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
+      <!-- Working-memory load prior shared by all binary candidates. -->
+      <xs:element name="reducePressure" minOccurs="0" default="1.0">
+        <xs:simpleType><xs:restriction base="xs:double">
+          <xs:minInclusive value="0"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
       <xs:element name="modeSchedule" minOccurs="0">
         <xs:simpleType><xs:restriction base="xs:string">
           <xs:pattern value="serial|parallel|interleave:[1-9][0-9]*"/>
@@ -114,19 +127,6 @@
            Defaults 0/1 preserve existing parameters and initialization. -->
       <xs:element name="transformChooserHidden" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="transformChooserDepth" type="xs:positiveInteger" minOccurs="0"/>
-      <!-- Two-pass soft-superposition training for the grammar chooser
-           (doc/Language.md "Soft-superposition route"). When true, each
-           TRAINING batch runs twice as two separate trials: pass A at
-           superposition temperature 0 (sharp, recorded) and pass B at
-           exploreTemperature (flatter exploration, trimmed from the batch
-           error, no batch-count increment). The chooser is in the gradient
-           path directly (no straight-through). Default false keeps the single
-           forward (byte-identical). -->
-      <xs:element name="learning" type="xs:boolean" minOccurs="0"/>
-      <!-- The [0, 1] superposition temperature for pass B of learning (0 =
-           the chooser's own sharp softmax, 1 = uniform / flat; route scores
-           are scaled by (1 - t)). Default 0.5. -->
-      <xs:element name="exploreTemperature" type="xs:decimal" minOccurs="0"/>
       <!-- MetaSymbol role-participation Category codebook (doc/Language.md
            "Participation Categories"). When true, a small role-space
            VectorQuantize starts with one centroid per labelled grammar role
@@ -207,13 +207,6 @@
            prime event; successive primes propagate energy further out.
            Live by default (0.25); 0 restores pure decay+bump. -->
       <xs:element name="primingSpread" type="xs:decimal" minOccurs="0"/>
-      <!-- Base grammar-confidence threshold for online STM reduction.
-           Explicit word-axis models lower the effective threshold as STM
-           occupancy rises and demand the best binary grammar op at capacity;
-           thus >=1 suppresses only low-pressure reductions, not capacity or
-           sentence-boundary demands. Legacy serial configs keep the former
-           fixed-threshold semantics. Default 0.5. -->
-      <xs:element name="stmReduceTau" type="xs:decimal" minOccurs="0"/>
       <!-- Discover concepts in a row pool by witnessed context and use. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
@@ -246,8 +239,7 @@
            emitting a typed .where (which space + the [start,end] bracket) and a
            soft-read of the addressed content (parked on _global_attention_obs).
            Unlike reading attention it has no monotonic mask and no next-word
-           target, so it REQUIRES the stochastic element (the two-pass
-           <learning>/<exploreTemperature>) to explore. The gradient stops at the
+           target, so it requires a task signal to break symmetry. The gradient stops at the
            keys (the codebook/LTM rows are EMA/persistent, detached); only the
            scorer readout trains. Dark by default: no module, the soft-read is
            parked not fed back, so the forward is byte-identical (the consumer
@@ -902,9 +894,6 @@
            answer error. Input compose choices are not answer supervision;
            unavailable targets and zero weight give no policy update. -->
       <xs:element name="outputPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Weight on the bounded one-fold grammar-choice objective. 0 leaves
-           legacy routing byte-identical. -->
-      <xs:element name="forwardGrammarWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="grammarLessonWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Deprecated legacy alias for reconstructionScale; util.TheXMLConfig
            remaps it (with a deprecation warning). Accepted here so

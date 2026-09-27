@@ -97,54 +97,9 @@ def _grammar_model():
     return _build_model(_resolve_config("data/MM_grammar.xml"))[0]
 
 
-def test_binary_reduce_preserves_concept_order_and_raises_grammar_depth():
+def test_one_operation_layer_owns_both_arities():
     model = _grammar_model()
-    stm = model.conceptualSpace.stm
-    stm.begin_forward(1, device=torch.device("cpu"))
-    D = int(stm.concept_dim)
-    gate = torch.ones(1, 1, dtype=torch.bool)
-    stm.push_step_masked(
-        torch.randn(1, D), gate,
-        orders=torch.tensor([1]), grammar_orders=torch.tensor([0]))
-    stm.push_step_masked(
-        torch.randn(1, D), gate,
-        orders=torch.tensor([3]), grammar_orders=torch.tensor([0]))
-
-    reduced = model._stm_bounded_reduce_step(gate_tau=0.0)
-    assert bool(reduced.item())
-    assert int(stm._orders[0, 0]) == 3
-    assert int(stm._grammar_orders[0, 0]) == 1
-
-
-class _AlwaysUnary(nn.Module):
-    def forward(self, x):
-        candidate = x + 0.125
-        routing = {
-            "apply_mask": torch.ones(
-                x.shape[0], x.shape[1], 1,
-                dtype=x.dtype, device=x.device),
-        }
-        return candidate, candidate, routing
-
-
-def test_unary_step_preserves_concept_order_and_raises_grammar_depth():
-    model = _grammar_model()
-    stm = model.conceptualSpace.stm
-    stm.begin_forward(1, device=torch.device("cpu"))
-    D = int(stm.concept_dim)
-    stm.push_step_masked(
-        torch.randn(1, D), torch.ones(1, 1, dtype=torch.bool),
-        orders=torch.tensor([2]), grammar_orders=torch.tensor([0]))
-    old = getattr(model, "_stm_unary_rewriter_cached", None)
-    object.__setattr__(model, "_stm_unary_rewriter_cached", _AlwaysUnary())
-    try:
-        applied = model._stm_bounded_unary_step(
-            row_gate=torch.ones(1, dtype=torch.bool))
-    finally:
-        if old is None:
-            delattr(model, "_stm_unary_rewriter_cached")
-        else:
-            object.__setattr__(model, "_stm_unary_rewriter_cached", old)
-    assert bool(applied.item())
-    assert int(stm._orders[0, 0]) == 2
-    assert int(stm._grammar_orders[0, 0]) == 1
+    shared = model.symbolSpace.languageLayer.operation_layer
+    assert model._stm_reducer() is shared
+    assert shared.r_reduce > 0 and shared.r_apply > 0
+    assert not hasattr(model.symbolSpace.languageLayer, '_unary_layers')

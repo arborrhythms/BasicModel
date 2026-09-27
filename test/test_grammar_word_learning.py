@@ -20,7 +20,7 @@ import torch
 from torch import nn
 import pytest
 
-from Language import BinaryStructuredReductionLayer, MLPTransformChooser
+from Language import OperationSelectionLayer, MLPTransformChooser
 
 
 class _SymmetricCandidate(nn.Module):
@@ -44,7 +44,7 @@ def test_natural_relation_words_have_no_bootstrap_operator_assignment(filename):
 @pytest.mark.parametrize("signal", ["concepts", "roles"])
 def test_same_candidate_values_do_not_erase_operand_order(signal):
     torch.manual_seed(391)
-    layer = BinaryStructuredReductionLayer(
+    layer = OperationSelectionLayer(
         d_model=4, ops=[_SymmetricCandidate(), _SymmetricCandidate()],
         chooser="mlp", n_role_cats=2)
     chooser = layer.chooser
@@ -188,7 +188,7 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
         enlisted = [p for group in optimizer.param_groups for p in group["params"]]
         for parameter in chooser.parameters():
             assert sum(parameter is p for p in enlisted) == 1
-        assert model.forward_grammar_weight == 0.0
+        assert not hasattr(model, "forward_grammar_weight")
         understanding = model._last_understanding
         assert len(understanding.answer_program) == len(words)
         assert all(program.leaves.shape[0] >= 5 for program in understanding.answer_program)

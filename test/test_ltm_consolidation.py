@@ -71,6 +71,18 @@ def _make_model(config):
         m, _ = Models.BasicModel.from_config(config)
     Models.TheData.load("xor")
     m.eval()
+    if config == _SERIAL_CONFIG:
+        # Storage/provenance fixtures require a completed parse. Exercise
+        # real operators with one controlled binary choice and eligible STOP.
+        chooser = m.symbolSpace.languageLayer.operation_layer.chooser
+        def binary(x, candidates, *_args, **_kwargs):
+            scores = x.new_full(candidates.shape[:-1], -1e6)
+            scores[..., 0] = 0.
+            return x.new_full((*x.shape[:2], 1), 1e6), scores
+        def unary(x, candidates, *_args, **_kwargs):
+            return (x.new_full((*x.shape[:2], 1), 1e6),
+                    x.new_full(candidates.shape[:-1], -1e6))
+        chooser.score_binary, chooser.score_unary = binary, unary
     return m
 
 
@@ -662,6 +674,26 @@ class TestRuntimeUserIngestion(unittest.TestCase):
     def _fresh(self):
         m = _make_model(_SERIAL_CONFIG)
         return m, m.symbolSpace.ltm_store, m.symbolSpace.truth_layer
+
+    def test_unary_preference_still_seals_and_records_user_truth(self):
+        from Layers import TernaryTruthStore as T
+        m, store, _ = self._fresh()
+        m.provision_ltm()
+        before = len(store)
+        chooser = m.symbolSpace.languageLayer.operation_layer.chooser
+        def binary(x, candidates, *_args, **_kwargs):
+            return (x.new_full((*x.shape[:2], 1), 1e6),
+                    x.new_full(candidates.shape[:-1], -1e6))
+        def unary(x, candidates, *_args, **_kwargs):
+            return (x.new_full((*x.shape[:2], 1), 1e6),
+                    x.new_zeros(candidates.shape[:-1]))
+        chooser.score_binary, chooser.score_unary = binary, unary
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            m.store_truths([{'content': 'hello world', 'trust': .9}])
+        self.assertTrue(bool((m._stm_post_depth == 1).all()))
+        self.assertEqual(len(store), before + 1)
+        self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
 
     def test_user_rows_land_alongside_provisioned(self):
         from Layers import TernaryTruthStore as T

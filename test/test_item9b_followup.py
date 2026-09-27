@@ -23,7 +23,7 @@ def test_interleave_reads_native_context_before_any_serial_word(tmp_path, monkey
         rows = model.inputSpace._packed_sentence_rows
         visible = (tuple(text for row in rows for text in row) if rows else
                    tuple(model.inputSpace._last_sentences))
-        calls.append((model.serial, visible))
+        calls.append((model.serial, visible, kwargs.get('exploration_trial', False)))
         if model.serial:
             field = model._last_understanding.reconstruction_carriers['field']
             assert field.evidence.shape[1] == len(texts)
@@ -36,7 +36,8 @@ def test_interleave_reads_native_context_before_any_serial_word(tmp_path, monkey
         model.runBatch(train=False, batchSize=batch, split='validation',
             batch_override=(raw, torch.empty(batch, 0)),
             questions=tuple(What.present(b, split='validation') for b in range(batch)))
-    assert calls == [(False, tuple(texts)), (True, tuple(texts))]
+    assert calls == [(False, tuple(texts), True),
+                     (True, tuple(texts), False)]
     assert not hasattr(model.mode_schedule, 'resymbolize')
     assert not hasattr(model._concept_owner(), '_label_feedback')
 
@@ -82,7 +83,8 @@ def test_interleave_epoch_reads_a_short_final_group_once(tmp_path, monkeypatch):
     advance = model._advance_when_time
     @wraps(execute)
     def record(*args, **kwargs):
-        calls.append((model.serial, tuple(model.inputSpace._last_sentences)))
+        calls.append((model.serial, tuple(model.inputSpace._last_sentences),
+                      kwargs.get('exploration_trial', False)))
         return execute(*args, **kwargs)
     def clock():
         ticks.append(model.serial)
@@ -91,8 +93,11 @@ def test_interleave_epoch_reads_a_short_final_group_once(tmp_path, monkeypatch):
     monkeypatch.setattr(model, '_advance_when_time', clock)
     with model.inputSpace.data.runtime_batch(texts):
         model.runEpoch(None, batchSize=1, split='runtime')
-    assert calls == [(False, tuple(texts[:2])), (True, (texts[0],)),
-                     (True, (texts[1],)), (False, (texts[2],)), (True, (texts[2],))]
+    assert calls == [(False, tuple(texts[:2]), True),
+                     (True, (texts[0],), False),
+                     (True, (texts[1],), False),
+                     (False, (texts[2],), True),
+                     (True, (texts[2],), False)]
     assert ticks == [True, True, True]
     assert model.mode_schedule.pending == []
     assert model.mode_schedule.completed_parallel == 2
@@ -122,7 +127,7 @@ def test_interleave_checkpoint_resumes_unread_serial_prefix(tmp_path, monkeypatc
     execute = target._run_batch_once
     @wraps(execute)
     def record(*args, **kwargs):
-        calls.append(target.serial)
+        calls.append((target.serial, kwargs.get('exploration_trial', False)))
         return execute(*args, **kwargs)
     monkeypatch.setattr(target, '_run_batch_once', record)
     with torch.no_grad():
@@ -130,7 +135,7 @@ def test_interleave_checkpoint_resumes_unread_serial_prefix(tmp_path, monkeypatc
         target.runBatch(train=False, batchSize=1, split='validation',
             batch_override=(raw, torch.empty(1, 0)),
             questions=(What.present(0, split='validation'),))
-    assert calls == [True]
+    assert calls == [(True, False)]
     assert target.mode_schedule.pending == []
     assert target.mode_schedule.completed_parallel == 1
 

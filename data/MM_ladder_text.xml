@@ -98,16 +98,6 @@
     <answerSynthesis>true</answerSynthesis>
     <synthesisBindings>4</synthesisBindings>
     <categoryCodebook>true</categoryCodebook>
-    <!-- Low-occupancy grammar threshold; pressure lowers it to a hard
-         grammatical demand at the configured capacity boundary. -->
-    <stmReduceTau>0.75</stmReduceTau>
-    <!-- This Boolean controls the legacy second full exploration trial.
-         false still trains the chooser through the normal pass's shared
-         Viterbi-forward / sum-product-marginal backward surface. The
-         canonical sentence-wide packed-forest replacement is specified in
-         doc/Language.md and must not pay for a duplicate sentence parse. -->
-    <learning>false</learning>
-
     <data>
       <dataType>embedding</dataType>
       <dataset>text</dataset>
@@ -149,7 +139,6 @@
            production run for now. Its extra candidate re-score is paid on
            every live fold; benchmark that pressure separately before
            assigning a nonzero weight here. Detached reverse is the NaN gate. -->
-      <forwardGrammarWeight>0.0</forwardGrammarWeight>
 
       <!-- Teacher reconstruction replaces the independent predictor losses.
            Future/past What queries will vary objective input availability

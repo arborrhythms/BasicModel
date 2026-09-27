@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/output_probe.py"
+  ],
+  "pid": 30640,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2966277240,
+  "elapsed_seconds": 20.966572709032334,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/output-probe.log"
+}

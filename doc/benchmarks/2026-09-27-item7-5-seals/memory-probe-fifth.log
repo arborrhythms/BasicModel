@@ -1,0 +1,375 @@
+START peak_GiB 0.469
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7921: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_grammar_wordstore.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+ENTER getOptimizer peak_GiB 2.511 
+EXIT getOptimizer peak_GiB 2.511
+ENTER _run_sentence_batch peak_GiB 2.511 
+ENTER _run_batch_once peak_GiB 2.511 
+[AMP] off (fp32, MODEL_AMP unset or =off)
+ENTER _per_word_prelude peak_GiB 2.576 torch.Size([4, 8, 1024])
+EXIT _per_word_prelude peak_GiB 2.576
+SAVE peak_GiB 2.593 (65536, 1016) torch.float32
+SAVE peak_GiB 3.337 (65536, 1016) torch.float32
+SAVE peak_GiB 3.339 (65536, 1016) torch.float32
+ENTER _run_tensor_peer_word_pipeline peak_GiB 3.341 
+ENTER _run_sealed_word_bricks peak_GiB 3.341 torch.Size([4, 8, 1024])
+ENTER _per_word_body_step peak_GiB 3.341 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.341
+ENTER _per_word_body_step peak_GiB 3.341 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.341
+ENTER _per_word_body_step peak_GiB 3.342 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.342
+ENTER _per_word_body_step peak_GiB 3.342 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.342
+ENTER _per_word_body_step peak_GiB 3.342 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.342
+ENTER _per_word_body_step peak_GiB 3.342 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.342
+ENTER _per_word_body_step peak_GiB 3.342 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.342
+ENTER _per_word_body_step peak_GiB 3.342 torch.Size([4, 1, 1024])
+EXIT _per_word_body_step peak_GiB 3.342
+ENTER _publish_sentence_scratch peak_GiB 3.342 
+EXIT _publish_sentence_scratch peak_GiB 3.342
+ENTER choose_operation peak_GiB 3.363 
+ENTER _stacked_reduced peak_GiB 3.364 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 3.457
+ENTER _stacked_applied peak_GiB 3.457 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 3.457
+EXIT choose_operation peak_GiB 3.46
+ENTER choose_operation peak_GiB 3.46 
+ENTER _stacked_reduced peak_GiB 3.46 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 3.54
+ENTER _stacked_applied peak_GiB 3.54 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 3.541
+EXIT choose_operation peak_GiB 3.543
+ENTER choose_operation peak_GiB 3.543 
+ENTER _stacked_reduced peak_GiB 3.543 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 3.623
+ENTER _stacked_applied peak_GiB 3.623 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 3.624
+EXIT choose_operation peak_GiB 3.625
+ENTER choose_operation peak_GiB 3.659 
+ENTER _stacked_reduced peak_GiB 3.659 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 3.74
+ENTER _stacked_applied peak_GiB 3.74 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 3.74
+EXIT choose_operation peak_GiB 3.742
+ENTER choose_operation peak_GiB 3.742 
+ENTER _stacked_reduced peak_GiB 3.742 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 3.823
+ENTER _stacked_applied peak_GiB 3.823 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 3.823
+EXIT choose_operation peak_GiB 3.825
+ENTER choose_operation peak_GiB 3.825 
+ENTER _stacked_reduced peak_GiB 3.825 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 3.906
+ENTER _stacked_applied peak_GiB 3.906 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 3.906
+EXIT choose_operation peak_GiB 3.908
+ENTER choose_operation peak_GiB 3.941 
+ENTER _stacked_reduced peak_GiB 3.942 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.022
+ENTER _stacked_applied peak_GiB 4.022 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.023
+EXIT choose_operation peak_GiB 4.024
+ENTER choose_operation peak_GiB 4.025 
+ENTER _stacked_reduced peak_GiB 4.025 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.105
+ENTER _stacked_applied peak_GiB 4.105 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.105
+EXIT choose_operation peak_GiB 4.107
+ENTER choose_operation peak_GiB 4.108 
+ENTER _stacked_reduced peak_GiB 4.108 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.188
+ENTER _stacked_applied peak_GiB 4.188 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.188
+EXIT choose_operation peak_GiB 4.19
+ENTER choose_operation peak_GiB 4.224 
+ENTER _stacked_reduced peak_GiB 4.224 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.305
+ENTER _stacked_applied peak_GiB 4.305 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.305
+EXIT choose_operation peak_GiB 4.307
+ENTER choose_operation peak_GiB 4.307 
+ENTER _stacked_reduced peak_GiB 4.307 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.387
+ENTER _stacked_applied peak_GiB 4.387 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.388
+EXIT choose_operation peak_GiB 4.39
+ENTER choose_operation peak_GiB 4.39 
+ENTER _stacked_reduced peak_GiB 4.39 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.47
+ENTER _stacked_applied peak_GiB 4.47 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.471
+EXIT choose_operation peak_GiB 4.472
+ENTER choose_operation peak_GiB 4.506 
+ENTER _stacked_reduced peak_GiB 4.506 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.587
+ENTER _stacked_applied peak_GiB 4.587 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.587
+EXIT choose_operation peak_GiB 4.589
+ENTER choose_operation peak_GiB 4.589 
+ENTER _stacked_reduced peak_GiB 4.589 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.67
+ENTER _stacked_applied peak_GiB 4.67 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.67
+EXIT choose_operation peak_GiB 4.672
+ENTER choose_operation peak_GiB 4.672 
+ENTER _stacked_reduced peak_GiB 4.672 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.753
+ENTER _stacked_applied peak_GiB 4.753 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.753
+EXIT choose_operation peak_GiB 4.755
+ENTER choose_operation peak_GiB 4.788 
+ENTER _stacked_reduced peak_GiB 4.789 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.869
+ENTER _stacked_applied peak_GiB 4.869 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.869
+EXIT choose_operation peak_GiB 4.871
+ENTER choose_operation peak_GiB 4.871 
+ENTER _stacked_reduced peak_GiB 4.871 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 4.952
+ENTER _stacked_applied peak_GiB 4.952 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 4.952
+EXIT choose_operation peak_GiB 4.954
+ENTER choose_operation peak_GiB 4.954 
+ENTER _stacked_reduced peak_GiB 4.954 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.035
+ENTER _stacked_applied peak_GiB 5.035 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.035
+EXIT choose_operation peak_GiB 5.037
+ENTER choose_operation peak_GiB 5.07 
+ENTER _stacked_reduced peak_GiB 5.071 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.151
+ENTER _stacked_applied peak_GiB 5.151 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.152
+EXIT choose_operation peak_GiB 5.153
+ENTER choose_operation peak_GiB 5.154 
+ENTER _stacked_reduced peak_GiB 5.154 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.234
+ENTER _stacked_applied peak_GiB 5.234 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.234
+EXIT choose_operation peak_GiB 5.236
+ENTER choose_operation peak_GiB 5.237 
+ENTER _stacked_reduced peak_GiB 5.237 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.317
+ENTER _stacked_applied peak_GiB 5.317 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.317
+EXIT choose_operation peak_GiB 5.319
+ENTER choose_operation peak_GiB 5.353 
+ENTER _stacked_reduced peak_GiB 5.353 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.433
+ENTER _stacked_applied peak_GiB 5.433 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.434
+EXIT choose_operation peak_GiB 5.436
+ENTER choose_operation peak_GiB 5.436 
+ENTER _stacked_reduced peak_GiB 5.436 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.516
+ENTER _stacked_applied peak_GiB 5.516 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.517
+EXIT choose_operation peak_GiB 5.519
+ENTER choose_operation peak_GiB 5.519 
+ENTER _stacked_reduced peak_GiB 5.519 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.599
+ENTER _stacked_applied peak_GiB 5.599 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.6
+EXIT choose_operation peak_GiB 5.602
+ENTER choose_operation peak_GiB 5.602 
+ENTER _stacked_reduced peak_GiB 5.602 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.682
+ENTER _stacked_applied peak_GiB 5.682 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.682
+EXIT choose_operation peak_GiB 5.684
+ENTER choose_operation peak_GiB 5.684 
+ENTER _stacked_reduced peak_GiB 5.684 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.765
+ENTER _stacked_applied peak_GiB 5.765 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.765
+EXIT choose_operation peak_GiB 5.767
+ENTER choose_operation peak_GiB 5.767 
+ENTER _stacked_reduced peak_GiB 5.767 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.848
+ENTER _stacked_applied peak_GiB 5.848 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.848
+EXIT choose_operation peak_GiB 5.85
+ENTER choose_operation peak_GiB 5.85 
+ENTER _stacked_reduced peak_GiB 5.85 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 5.931
+ENTER _stacked_applied peak_GiB 5.931 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 5.931
+EXIT choose_operation peak_GiB 5.933
+ENTER choose_operation peak_GiB 5.933 
+ENTER _stacked_reduced peak_GiB 5.933 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.013
+ENTER _stacked_applied peak_GiB 6.013 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.014
+EXIT choose_operation peak_GiB 6.016
+ENTER choose_operation peak_GiB 6.016 
+ENTER _stacked_reduced peak_GiB 6.016 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.096
+ENTER _stacked_applied peak_GiB 6.096 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.097
+EXIT choose_operation peak_GiB 6.099
+ENTER choose_operation peak_GiB 6.099 
+ENTER _stacked_reduced peak_GiB 6.099 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.179
+ENTER _stacked_applied peak_GiB 6.179 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.179
+EXIT choose_operation peak_GiB 6.181
+ENTER choose_operation peak_GiB 6.182 
+ENTER _stacked_reduced peak_GiB 6.182 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.262
+ENTER _stacked_applied peak_GiB 6.262 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.262
+EXIT choose_operation peak_GiB 6.264
+ENTER choose_operation peak_GiB 6.264 
+ENTER _stacked_reduced peak_GiB 6.264 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.345
+ENTER _stacked_applied peak_GiB 6.345 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.345
+EXIT choose_operation peak_GiB 6.347
+ENTER choose_operation peak_GiB 6.347 
+ENTER _stacked_reduced peak_GiB 6.347 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.428
+ENTER _stacked_applied peak_GiB 6.428 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.428
+EXIT choose_operation peak_GiB 6.43
+ENTER choose_operation peak_GiB 6.43 
+ENTER _stacked_reduced peak_GiB 6.43 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.51
+ENTER _stacked_applied peak_GiB 6.51 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.511
+EXIT choose_operation peak_GiB 6.513
+ENTER choose_operation peak_GiB 6.513 
+ENTER _stacked_reduced peak_GiB 6.513 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.593
+ENTER _stacked_applied peak_GiB 6.593 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.593
+EXIT choose_operation peak_GiB 6.595
+ENTER choose_operation peak_GiB 6.596 
+ENTER _stacked_reduced peak_GiB 6.596 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.676
+ENTER _stacked_applied peak_GiB 6.676 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.676
+EXIT choose_operation peak_GiB 6.678
+ENTER choose_operation peak_GiB 6.679 
+ENTER _stacked_reduced peak_GiB 6.679 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.759
+ENTER _stacked_applied peak_GiB 6.759 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.759
+EXIT choose_operation peak_GiB 6.761
+ENTER choose_operation peak_GiB 6.761 
+ENTER _stacked_reduced peak_GiB 6.761 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.842
+ENTER _stacked_applied peak_GiB 6.842 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.842
+EXIT choose_operation peak_GiB 6.844
+ENTER choose_operation peak_GiB 6.844 
+ENTER _stacked_reduced peak_GiB 6.844 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 6.925
+ENTER _stacked_applied peak_GiB 6.925 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 6.925
+EXIT choose_operation peak_GiB 6.927
+ENTER _sentence_path_cost peak_GiB 6.927 
+ENTER _publish_sentence_scratch peak_GiB 6.927 
+EXIT _publish_sentence_scratch peak_GiB 6.927
+EXIT _sentence_path_cost peak_GiB 6.928
+ENTER _sentence_train_step peak_GiB 6.928 torch.Size([])
+EXIT _sentence_train_step peak_GiB 8.07
+ENTER _publish_sentence_scratch peak_GiB 8.07 
+EXIT _publish_sentence_scratch peak_GiB 8.07
+ENTER _publish_sentence_scratch peak_GiB 8.07 
+EXIT _publish_sentence_scratch peak_GiB 8.07
+ENTER choose_operation peak_GiB 8.07 
+ENTER _stacked_reduced peak_GiB 8.07 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.134
+ENTER _stacked_applied peak_GiB 8.134 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.134
+EXIT choose_operation peak_GiB 8.135
+ENTER choose_operation peak_GiB 8.136 
+ENTER _stacked_reduced peak_GiB 8.136 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.216
+ENTER _stacked_applied peak_GiB 8.216 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.216
+EXIT choose_operation peak_GiB 8.218
+ENTER choose_operation peak_GiB 8.218 
+ENTER _stacked_reduced peak_GiB 8.218 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.299
+ENTER _stacked_applied peak_GiB 8.299 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.299
+EXIT choose_operation peak_GiB 8.301
+ENTER choose_operation peak_GiB 8.335 
+ENTER _stacked_reduced peak_GiB 8.335 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.416
+ENTER _stacked_applied peak_GiB 8.416 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.416
+EXIT choose_operation peak_GiB 8.418
+ENTER choose_operation peak_GiB 8.418 
+ENTER _stacked_reduced peak_GiB 8.418 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.498
+ENTER _stacked_applied peak_GiB 8.498 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.499
+EXIT choose_operation peak_GiB 8.501
+ENTER choose_operation peak_GiB 8.501 
+ENTER _stacked_reduced peak_GiB 8.501 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.581
+ENTER _stacked_applied peak_GiB 8.581 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.581
+EXIT choose_operation peak_GiB 8.583
+ENTER choose_operation peak_GiB 8.617 
+ENTER _stacked_reduced peak_GiB 8.617 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.698
+ENTER _stacked_applied peak_GiB 8.698 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.698
+EXIT choose_operation peak_GiB 8.7
+ENTER choose_operation peak_GiB 8.7 
+ENTER _stacked_reduced peak_GiB 8.7 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.781
+ENTER _stacked_applied peak_GiB 8.781 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.781
+EXIT choose_operation peak_GiB 8.783
+ENTER choose_operation peak_GiB 8.783 
+ENTER _stacked_reduced peak_GiB 8.783 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.863
+ENTER _stacked_applied peak_GiB 8.863 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.864
+EXIT choose_operation peak_GiB 8.866
+ENTER choose_operation peak_GiB 8.9 
+ENTER _stacked_reduced peak_GiB 8.9 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 8.98
+ENTER _stacked_applied peak_GiB 8.98 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 8.981
+EXIT choose_operation peak_GiB 8.983
+ENTER choose_operation peak_GiB 8.983 
+ENTER _stacked_reduced peak_GiB 8.983 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 9.063
+ENTER _stacked_applied peak_GiB 9.063 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 9.064
+EXIT choose_operation peak_GiB 9.065
+ENTER choose_operation peak_GiB 9.066 
+ENTER _stacked_reduced peak_GiB 9.066 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 9.146
+ENTER _stacked_applied peak_GiB 9.146 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 9.146
+EXIT choose_operation peak_GiB 9.148
+ENTER choose_operation peak_GiB 9.182 
+ENTER _stacked_reduced peak_GiB 9.182 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 9.263
+ENTER _stacked_applied peak_GiB 9.263 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 9.263
+EXIT choose_operation peak_GiB 9.265
+ENTER choose_operation peak_GiB 9.265 
+ENTER _stacked_reduced peak_GiB 9.265 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 9.345
+ENTER _stacked_applied peak_GiB 9.345 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 9.346
+EXIT choose_operation peak_GiB 9.348
+ENTER choose_operation peak_GiB 9.348 
+ENTER _stacked_reduced peak_GiB 9.348 torch.Size([4, 2, 1024])
+EXIT _stacked_reduced peak_GiB 9.428
+ENTER _stacked_applied peak_GiB 9.428 torch.Size([4, 2, 1024])
+EXIT _stacked_applied peak_GiB 9.429
+EXIT choose_operation peak_GiB 9.431
+ENTER choose_operation peak_GiB 9.464 
+ENTER _stacked_reduced peak_GiB 9.464 torch.Size([4, 2, 1024])

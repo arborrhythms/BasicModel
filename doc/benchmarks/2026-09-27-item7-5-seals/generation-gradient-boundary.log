@@ -1,0 +1,25 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+CONDITIONER_GRADIENT first_emission 0.0
+CONDITIONER_GRADIENT all_emissions 8.610651016235352
+EMITTED [6, 8] TRUNCATED [False, False]
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7925: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmdwpiczl/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+batch = 0 (warm-up)
+Traceback (most recent call last):
+  File "<string>", line 21, in <module>
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_generation_catalog.py", line 261, in test_normal_supervised_output_respects_gradient_contract
+    model.runBatch(train=True, batchSize=2, split="train", optimizer=optimizer,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14511, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14634, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 15779, in _run_batch_once
+    self._backward_training_loss(
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_generation_catalog.py", line 243, in check_gradients
+    assert gradients[0] is not None and bool(gradients[0].any())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

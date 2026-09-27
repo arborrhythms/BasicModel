@@ -38,11 +38,8 @@
     <!-- At low occupancy require more than an untrained 50/50 shift/reduce
          preference. This threshold falls continuously to a forced best
          grammatical reduction as the configured STM fills. -->
-    <stmReduceTau>0.75</stmReduceTau>
     <!-- One route pass keeps the gate inexpensive.  Turn this on only for an
          exploration-vs-exploitation ablation after the language gate moves. -->
-    <learning>false</learning>
-
     <data>
       <dataType>embedding</dataType>
       <dataset>text</dataset>

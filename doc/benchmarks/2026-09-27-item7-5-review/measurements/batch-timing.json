@@ -1,0 +1,340 @@
+{
+  "clock": "time.perf_counter; CPU synchronous wall time",
+  "forward_scope": "BasicModel._what_or_think: forward, understanding and answer construction",
+  "backward_scope": "BasicModel._backward_training_loss; optimizer steps are in other",
+  "snapshot_scope": "both pre-exploit and exploit-end runtime snapshots",
+  "restore_scope": "pre-explore restore plus exploit-end restore when exploit wins",
+  "other_scope": "loss assembly, optimizer steps, staging, housekeeping and remaining batch work",
+  "epoch_tail": "excluded here; unchanged baseline throughput includes epoch tails",
+  "rows": [
+    {
+      "exploit_forward": 8.57815054198727,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 0,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 8.857834542053752,
+      "other": 0.27968400006648153,
+      "winner": null,
+      "losses": null
+    },
+    {
+      "exploit_forward": 0.3217895830748603,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 1,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.3241663329536095,
+      "other": 0.0023767498787492514,
+      "winner": null,
+      "losses": null
+    },
+    {
+      "exploit_forward": 0.321453292039223,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 2,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.3237937910016626,
+      "other": 0.0023404989624395967,
+      "winner": null,
+      "losses": null
+    },
+    {
+      "exploit_forward": 0.2990385410375893,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 3,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.3013794170692563,
+      "other": 0.002340876031666994,
+      "winner": null,
+      "losses": null
+    },
+    {
+      "exploit_forward": 8.508368333918042,
+      "explore_forward": 8.775809583021328,
+      "exploit_backward": 6.8042884580791,
+      "explore_backward": 6.578459750046022,
+      "snapshot": 0.024822042090818286,
+      "restore": 0.0010516250040382147,
+      "index": 4,
+      "train": true,
+      "split": "train",
+      "warmup": true,
+      "total": 30.712481459020637,
+      "other": 0.01968166686128825,
+      "winner": "explore",
+      "losses": {
+        "exploit": 0.06628455221652985,
+        "explore": 0.04862576723098755
+      }
+    },
+    {
+      "exploit_forward": 8.789797459030524,
+      "explore_forward": 0.3829394170315936,
+      "exploit_backward": 6.606177874957211,
+      "explore_backward": 6.7126794590149075,
+      "snapshot": 0.02494095789734274,
+      "restore": 0.0009172080317512155,
+      "index": 5,
+      "train": true,
+      "split": "train",
+      "warmup": true,
+      "total": 22.536727707949467,
+      "other": 0.019275331986136734,
+      "winner": "explore",
+      "losses": {
+        "exploit": 0.11226334422826767,
+        "explore": 0.0909956693649292
+      }
+    },
+    {
+      "exploit_forward": 0.35073279100470245,
+      "explore_forward": 0.3501046249875799,
+      "exploit_backward": 6.496778917033225,
+      "explore_backward": 6.668721207999624,
+      "snapshot": 0.025153417023830116,
+      "restore": 0.0010591669706627727,
+      "index": 6,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 13.911965708015487,
+      "other": 0.01941558299586177,
+      "winner": "explore",
+      "losses": {
+        "exploit": 0.2704429030418396,
+        "explore": 0.26989907026290894
+      }
+    },
+    {
+      "exploit_forward": 0.3753696250496432,
+      "explore_forward": 0.38374933297745883,
+      "exploit_backward": 6.594775583012961,
+      "explore_backward": 6.708948332932778,
+      "snapshot": 0.025137834018096328,
+      "restore": 0.002066498971544206,
+      "index": 7,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 14.10917408298701,
+      "other": 0.019126876024529338,
+      "winner": "exploit",
+      "losses": {
+        "exploit": 0.05094298720359802,
+        "explore": 0.07200488448143005
+      }
+    },
+    {
+      "exploit_forward": 0.35058104200288653,
+      "explore_forward": 0.35777841706294566,
+      "exploit_backward": 6.587773167062551,
+      "explore_backward": 6.722741540987045,
+      "snapshot": 0.025015167077071965,
+      "restore": 0.0010821670293807983,
+      "index": 8,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 14.061439582961611,
+      "other": 0.016468081739731133,
+      "winner": "explore",
+      "losses": {
+        "exploit": 0.05099727585911751,
+        "explore": 0.048081956803798676
+      }
+    },
+    {
+      "exploit_forward": 0.34949158306699246,
+      "explore_forward": 0.35413095902185887,
+      "exploit_backward": 6.550944708986208,
+      "explore_backward": 6.756616250029765,
+      "snapshot": 0.025496998918242753,
+      "restore": 0.001009583007544279,
+      "index": 9,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 14.057396750082262,
+      "other": 0.019706667051650584,
+      "winner": "explore",
+      "losses": {
+        "exploit": 0.0570901557803154,
+        "explore": 0.05367722734808922
+      }
+    },
+    {
+      "exploit_forward": 0.3718922499101609,
+      "explore_forward": 0.3759870840003714,
+      "exploit_backward": 6.709566041943617,
+      "explore_backward": 6.248208291013725,
+      "snapshot": 0.025679167127236724,
+      "restore": 0.0010282080620527267,
+      "index": 10,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 13.751149542047642,
+      "other": 0.018788499990478158,
+      "winner": "explore",
+      "losses": {
+        "exploit": 0.0537339486181736,
+        "explore": 0.049507562071084976
+      }
+    },
+    {
+      "exploit_forward": 8.159719374962151,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 11,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 8.164887290913612,
+      "other": 0.0051679159514606,
+      "winner": null,
+      "losses": null
+    },
+    {
+      "exploit_forward": 0.32499962497968227,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 12,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.3273758339928463,
+      "other": 0.0023762090131640434,
+      "winner": null,
+      "losses": null
+    },
+    {
+      "exploit_forward": 0.32186908402945846,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 13,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.3242117080371827,
+      "other": 0.0023426240077242255,
+      "winner": null,
+      "losses": null
+    },
+    {
+      "exploit_forward": 0.3001510000322014,
+      "explore_forward": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "snapshot": 0.0,
+      "restore": 0.0,
+      "index": 14,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.30251325003337115,
+      "other": 0.002362250001169741,
+      "winner": null,
+      "losses": null
+    }
+  ],
+  "summaries": {
+    "warmup_training": {
+      "batches": 2,
+      "mean_seconds": {
+        "exploit_forward": 8.649082896474283,
+        "explore_forward": 4.579374500026461,
+        "exploit_backward": 6.7052331665181555,
+        "explore_backward": 6.645569604530465,
+        "snapshot": 0.024881499994080514,
+        "restore": 0.000984416517894715,
+        "other": 0.019478499423712492,
+        "total": 26.624604583485052
+      },
+      "fraction": {
+        "exploit_forward": 0.32485300840258163,
+        "explore_forward": 0.17199784078171798,
+        "exploit_backward": 0.25184348355270364,
+        "explore_backward": 0.24960256531481553,
+        "snapshot": 0.0009345303107154588,
+        "restore": 3.697393945543656e-05,
+        "other": 0.000731597698010313
+      }
+    },
+    "warmed_training": {
+      "batches": 5,
+      "mean_seconds": {
+        "exploit_forward": 0.3596134582068771,
+        "explore_forward": 0.36435008361004295,
+        "exploit_backward": 6.587967683607713,
+        "explore_backward": 6.621047124592588,
+        "snapshot": 0.025296516832895577,
+        "restore": 0.0012491248082369566,
+        "other": 0.018701141560450198,
+        "total": 13.978225133218803
+      },
+      "fraction": {
+        "exploit_forward": 0.02572668953172512,
+        "explore_forward": 0.026065546958760642,
+        "exploit_backward": 0.47130215895232785,
+        "explore_backward": 0.47366865689248927,
+        "snapshot": 0.0018097087857584448,
+        "restore": 8.93621898583141e-05,
+        "other": 0.001337876689080328
+      }
+    },
+    "evaluation": {
+      "batches": 8,
+      "mean_seconds": {
+        "exploit_forward": 2.3283963802678045,
+        "explore_forward": 0.0,
+        "exploit_backward": 0.0,
+        "explore_backward": 0.0,
+        "snapshot": 0.0,
+        "restore": 0.0,
+        "other": 0.037373890489107,
+        "total": 2.3657702707569115
+      },
+      "fraction": {
+        "exploit_forward": 0.9842022317419901,
+        "explore_forward": 0.0,
+        "exploit_backward": 0.0,
+        "explore_backward": 0.0,
+        "snapshot": 0.0,
+        "restore": 0.0,
+        "other": 0.015797768258009888
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "doc/benchmarks/2026-09-27-item7-5-seals/memory_probe.py": "1250110b55b98d02d7748ac3e066406ee6796efa1702cea7564fd44614159bcc",
+  "doc/benchmarks/2026-09-27-item7-5-seals/output_probe.py": "b4a272c4d49fbff18af7db9b8c49fbd33a3e846b8de7c96ecd8a62c1d71e9d7c",
+  "doc/benchmarks/2026-09-27-item7-5-seals/package_receipt.py": "11183217b9ab92bd87ff4ffd2b99164ab1b525fb3794d432d6e5731d910e8dcf",
+  "doc/benchmarks/2026-09-27-item7-5-seals/profile_baseline.py": "10bd5e99c919915c073e1f19df80ac4000cda48211af79d1a328334d127b9d89",
+  "doc/benchmarks/2026-09-27-item7-5-seals/run_full.py": "71a418daea2a944aa8cdc3d5bcc3989ec36698800ff51e63db61520deb1cc694",
+  "doc/benchmarks/2026-09-27-item7-5-seals/run_measurements.py": "b037905e5304ac5826305d351d2f8b37905088d82d1b51320774096d958f41b0",
+  "doc/benchmarks/2026-09-26-item7-5/package_receipt.py": "7c337ff59db7d8502bf9b0b455fe62fe48208073cdd39ddb7e36145e98c16c28",
+  "doc/benchmarks/2026-09-27-item7-5-seals/full-schedule.json": "31fc396836f36b852bf747337609f12dde986accfab540b5072013e7888f0b62"
+}

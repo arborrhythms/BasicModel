@@ -1,0 +1,23 @@
+{
+  "fixtures": {
+    "exit_code": 0,
+    "counts": {
+      "passed": 60,
+      "skipped": 5
+    },
+    "completed": 65,
+    "seconds": 42.53010287496727
+  },
+  "full": {
+    "exit_code": 1,
+    "counts": {
+      "passed": 4666,
+      "skipped": 321,
+      "failed": 1,
+      "xfailed": 1
+    },
+    "completed": 4989,
+    "seconds": 5674.496463667019
+  }
+}
+a98b0f4e98b6959c3c60f01567c87dd419a09842c047f6e304a752d230171bf7

@@ -1,0 +1,26 @@
+{
+  "segments": [
+    "full",
+    "full-memory-remainder",
+    "full-continuation"
+  ],
+  "selected": 4945,
+  "completed": 4945,
+  "unique_completed": 4945,
+  "source_unchanged": true,
+  "resource_failure_retained": {
+    "segment": "full",
+    "reason": "memory",
+    "exit_code": 137
+  },
+  "segment_exit_codes": {
+    "full": 137,
+    "full-memory-remainder": 0,
+    "full-continuation": 1
+  },
+  "segment_seconds": {
+    "full": 2423.801595124998,
+    "full-memory-remainder": 10.194475332973525,
+    "full-continuation": 863.4494466250762
+  }
+}

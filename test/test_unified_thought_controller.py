@@ -169,14 +169,14 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch):
             assert not errors.requires_grad
             result = policy_loss(errors, mask)
             assert result is not None and result.requires_grad
-            observed.append(True)
+            observed.append(getattr(model, '_sentence_trial', None))
             return result
         monkeypatch.setattr(model, '_selected_thought_policy_loss', credit)
         optimizer = model.getOptimizer(lr=.001)
         batch = (model.inputSpace.prepInput(['12 plus 1', '3 plus 4']), torch.zeros(2, 1, 1))
         model.runBatch(train=True, batchSize=2, optimizer=optimizer, batch_override=batch,
             questions=(What.supervised(0), What.supervised(1)))
-        assert observed == [True]
+        assert observed == [None]  # The answer is a batch-end objective.
         chooser = next(iter(model.selected_thought_choosers.values()))
         assert bool(chooser.mlp[-1].weight.detach().abs().any())
         owned = [id(p) for group in optimizer.param_groups for p in group['params']]

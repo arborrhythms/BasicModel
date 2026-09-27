@@ -1,12 +1,10 @@
-"""syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the parse-tree DEPTH
-cap on the serial grammatical reduction.
+"""syntacticOrder caps the fixed serial seal operation budget.
 
   * read from <architecture><syntacticOrder>, default 0 (unbounded/inert);
-  * 0 collapses the STM to a single S (byte-identical to before the knob);
-  * a positive value caps the NULL-seal reduce sweep to that many fold levels,
-    handing on a partially-composed forest (depth > 1);
-  * the <= word-count bound holds STRUCTURALLY (a reduce micro-step no-ops once
-    a row reaches depth 1), so a cap above the live depth still collapses fully.
+  * 0 uses the full fixed 2K budget; STOP is eligible once the row fits;
+  * a positive value limits the seal to that many joint operation rounds;
+  * unary rounds do not shrink the sequence, so an exhausted budget can leave
+    an incomplete forest. Binary-only fixtures below isolate the cap itself.
 """
 import os, sys, warnings, tempfile
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -76,9 +74,18 @@ def test_syntactic_order_defaults_zero_and_reads_config():
 
 
 def test_syntactic_order_zero_collapses_to_single_s():
-    # syntacticOrder=0 (default) runs the full cap-1 sweep -> depth 1.
+    # Binary-only selection reaches depth one within the full fixed budget.
     m = _build("XOR_grammar.xml")
     m.syntacticOrder = 0
+    chooser = m._stm_reducer().chooser
+    def binary(x, candidates, *_args, **_kwargs):
+        scores = x.new_full(candidates.shape[:3], -torch.inf)
+        scores[..., 0] = 0.
+        return x.new_zeros(*x.shape[:2], 1), scores
+    def unary(x, candidates, *_args, **_kwargs):
+        return x.new_zeros(*x.shape[:2], 1), x.new_full(candidates.shape[:3], -torch.inf)
+    chooser.score_binary = binary
+    chooser.score_unary = unary
     cap, _ = _fill_stm(m, depth=6)
     with torch.no_grad():
         _S, post_depth = m._stm_reduce_to_single_S()
@@ -93,10 +100,20 @@ def test_syntactic_order_caps_parse_tree_depth():
     m = _build("XOR_grammar.xml")
     start_depth = 6
     m.syntacticOrder = 2
+    chooser = m._stm_reducer().chooser
+    def binary(x, candidates, *_args, **_kwargs):
+        scores = x.new_full(candidates.shape[:3], -torch.inf)
+        scores[..., 0] = 0.
+        return x.new_zeros(*x.shape[:2], 1), scores
+    def unary(x, candidates, *_args, **_kwargs):
+        return x.new_zeros(*x.shape[:2], 1), x.new_full(candidates.shape[:3], -torch.inf)
+    chooser.score_binary = binary
+    chooser.score_unary = unary
     _fill_stm(m, depth=start_depth)
     with torch.no_grad():
         _S, post_depth = m._stm_reduce_to_single_S()
-    d = int(post_depth.max())
+    assert bool((post_depth < 0).all()), "unfinished rows cannot be committed"
+    d = int(post_depth.abs().max())
     assert d == start_depth - 2, (
         f"syntacticOrder=2 must fold exactly 2 levels (depth {start_depth} -> "
         f"{start_depth - 2}), got {d}")

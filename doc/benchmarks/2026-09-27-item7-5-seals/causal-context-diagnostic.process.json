@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-c",
+    "\nfrom pathlib import Path\nimport tempfile,torch,pytest\nfrom Models import BasicModel\nfrom test_sentence_compose import test_real_packed_seals_train_before_the_next_sentence\ncommit=BasicModel._commit_sentence\ndef checked(self,*args):\n    result=commit(self,*args)\n    counts=[len(row) for row in self.symbolSpace.discourse._inter_context_occurrences]\n    print('CONTEXT_COUNTS',args[1],counts,flush=True)\n    assert all(count >= 1 for count in counts)\n    return result\nBasicModel._commit_sentence=checked\nwith pytest.MonkeyPatch.context() as patch:\n    test_real_packed_seals_train_before_the_next_sentence(Path(tempfile.mkdtemp()),patch,False)\n"
+  ],
+  "pid": 32877,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 500172144,
+  "elapsed_seconds": 4.9090865830658,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/causal-context-diagnostic.log"
+}

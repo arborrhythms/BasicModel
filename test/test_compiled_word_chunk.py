@@ -369,9 +369,6 @@ def _tiny_canonical_model(
     # parity, so opt that auxiliary back in explicitly.
     _set("./architecture/training/intraLossWeight", 1.0)
     _set(
-        "./architecture/training/forwardGrammarWeight",
-        forward_grammar_weight)
-    _set(
         "./architecture/serialWordCapacity",
         max(int(value) for value in str(word_buckets).split(",")))
     _set("./architecture/serialWordBuckets", word_buckets)
@@ -491,7 +488,7 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
 
     monkeypatch.setattr(
         tensor_loop.languageSpace, "choose_capacity_binary",
-        forbidden_capacity_choice)
+        forbidden_capacity_choice, raising=False)
     tensor_loop._chart_compose_per_word = lambda: None
     tensor_loop._tensor_peer_while_eager = True
 
@@ -586,10 +583,8 @@ def test_tensor_peer_word_loop_rejects_external_full_stm(
     stm = model.conceptualSpace.stm
     stm._depth.fill_(int(stm.capacity))
 
-    with pytest.raises(
-            RuntimeError, match="entered a word loop with full STM"):
-        model._run_tensor_peer_word_pipeline(
-            int(model.inputSpace._ar_embedded_N.shape[1]))
+    with pytest.raises(RuntimeError, match='compose admission reached a full stack'):
+        model._run_tensor_peer_word_pipeline(int(model.inputSpace._ar_embedded_N.shape[1]))
 
 
 def test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies(
@@ -605,7 +600,7 @@ def test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies(
 
     monkeypatch.setattr(
         model.languageSpace, "choose_capacity_binary",
-        forbidden_capacity_choice)
+        forbidden_capacity_choice, raising=False)
     previous_backend = util.TheCompileBackend
     try:
         util.TheCompileBackend = "eager"
@@ -760,7 +755,8 @@ def test_functional_soft_reset_clears_only_selected_owner_rows():
 def test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths(
         tmp_path, monkeypatch):
     """The real forward/backward reuses one graph as the trip count changes."""
-    torch.manual_seed(313)
+    from Models import _ensure_grad_anchors
+    _ensure_grad_anchors(torch.device("cpu"))
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     model._prewarm_checkpoint_shapes()
     model._compiled_word_loop_fullgraph = True
@@ -774,6 +770,9 @@ def test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths(
     try:
         first = model._publish_compiled_sentence_state(compiled(raw))
         assert int(model._tensor_peer_trip_count) == 4
+        trace = model._reconstruction_stack()
+        assert bool(trace._choice_attempted[:, :12].any())
+        assert torch.equal(trace._choice_actions >= 0, trace._choice_attempted)
         (first[0].square().mean() + first[2].square().mean()).backward()
         assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
 
@@ -941,10 +940,8 @@ def test_tiny_canonical_detached_reverse_stops_at_root(tmp_path, monkeypatch):
     root.retain_grad()
     loss, _metric = model._detached_reverse_construction_loss()
     assert loss is not None and torch.isfinite(loss)
-    local = model.symbolSpace.reconstruction_stack.forward_loss()
-    assert local is not None and torch.isfinite(local)
-    assert 0.0 <= float(local.detach()) <= 1.0
-    (loss + model.forward_grammar_weight * local).backward()
+    assert model.symbolSpace.reconstruction_stack.forward_loss() is None
+    loss.backward()
 
     assert root.grad is None
     grads = [p.grad for p in chooser.parameters() if p.grad is not None]

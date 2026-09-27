@@ -1,0 +1,1739 @@
+{
+  "runs": {
+    "affected": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 3,
+      "completed": 3,
+      "counts": {
+        "passed": 3
+      },
+      "seconds": 6.702118167071603,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 256,
+        "max_files": 16
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "2d18723985587154d20b0fb158f40093c69c8d89a52106eef5ba11f762a6e295",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "a7887b22332f61e205dd7de012ae057e21023e8c7529d326cb585b499829c56d",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "051850a40cfa043b1e3ffdf76b0f0c0c348b344f21e33ce9b69bea21d40bfa57",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 499647856,
+      "peak_aggregate_memory_bytes": 499647856,
+      "compile_cache_retries": []
+    },
+    "affected-before-clock-fixture": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 285,
+      "completed": 285,
+      "counts": {
+        "passed": 251,
+        "failed": 1,
+        "skipped": 33
+      },
+      "seconds": 268.6981321249623,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "44881fca64022eaeb8e702fc580052fbbc6c0276b09bd734914f425798a24dd8",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "a7887b22332f61e205dd7de012ae057e21023e8c7529d326cb585b499829c56d",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_pair_driver.py": {
+          "measured": "a41e0c5a68e672ac1b499d83f171cdc4e21a81af86111559c29e9fe22db40814",
+          "current": "c19b6c5292e808eda3eeef3bc9c8fadd6ccbd42903c32720af315e755eb9d685"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "051850a40cfa043b1e3ffdf76b0f0c0c348b344f21e33ce9b69bea21d40bfa57",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+          "phase": "call",
+          "message": "test/test_compose_pair_driver.py:128: in test_evaluation_repeats_the_same_program_without_an_explore_trial\n    assert torch.equal(programs[0], programs[1])\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10f0493a0>(tensor([[[ 0, -1,  0],\\n         [ 2,  0, -1],\\n         [ 2,  0, -1],\\n         [ 2,  0, -1],\\n         [ 0, -1,  1],\\n   ...],\\n         [-1, -1, -1],\\n         [-1, -1, -1],\\n         [-1, -1, -1],\\n         [-1, -1, -1],\\n         [-1, -1, -1]]]), tensor([[[ 0, -1,  0],\\n         [ 2,  0, -1],\\n         [ 2,  0, -1],\\n         [ 2,  0, -1],\\n         [ 0, -1,  1],\\n   ...],\\n         [-1, -1, -1],\\n         [-1, -1, -1],\\n         [-1, -1, -1],\\n         [-1, -1, -1],\\n         [-1, -1, -1]]]))\nE    +    where <built-in method equal of type object at 0x10f0493a0> = torch.equal"
+        }
+      ],
+      "peak_worker_bytes": 5172417288,
+      "peak_aggregate_memory_bytes": 6917529928,
+      "compile_cache_retries": []
+    },
+    "affected-before-target-detach": {
+      "exit_code": 130,
+      "reason": "interrupted",
+      "selected": 84,
+      "completed": 45,
+      "counts": {
+        "passed": 43,
+        "failed": 2
+      },
+      "seconds": 478.6933362499112,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "0445ccc0ca7afbcf0e6e6db558d8a50a686cede3c9a5ee1ff21842e8666070fc",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "838e666a3778cb26abd9cd39e3a772d620fb9312c205a05f9535034abb5122b4",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+          "phase": "call",
+          "message": "test/test_generation_catalog.py:261: in test_normal_supervised_output_respects_gradient_contract\n    model.runBatch(train=True, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:14511: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14642: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15019: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24237: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18274: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22173: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21720: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21023: in _run_sealed_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:129: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20808: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_generation_catalog.py:228: in check_gradients\n    return backward(total, amp_scaler)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:2908: in _backward_training_loss\n    pullback()\nbin/SentenceCompose.py:95: in pullback\n    torch.autograd.backward(originals, gradients, retain_graph=True)\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:377: in backward\n    return handle_torch_function(\n.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function\n    result = mode.__torch_function__(public_api, types, args, kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:395: in backward\n    _engine_run_backward(\n.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward\n    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass\nE   RuntimeError: Trying to backward through the graph a second time (or directly access saved tensors after they have already been freed). Saved intermediate values of the graph are freed when you call .backward() or autograd.grad(). Specify retain_graph=True if you need to backward through the graph a second time or if you need to access saved tensors after calling backward."
+        },
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "message": "test/test_generation_catalog.py:261: in test_normal_supervised_output_respects_gradient_contract\n    model.runBatch(train=True, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:14511: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14642: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15019: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24237: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18274: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22173: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21720: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21023: in _run_sealed_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:129: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20808: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_generation_catalog.py:228: in check_gradients\n    return backward(total, amp_scaler)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:2908: in _backward_training_loss\n    pullback()\nbin/SentenceCompose.py:95: in pullback\n    torch.autograd.backward(originals, gradients, retain_graph=True)\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:377: in backward\n    return handle_torch_function(\n.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function\n    result = mode.__torch_function__(public_api, types, args, kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:395: in backward\n    _engine_run_backward(\n.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward\n    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass\nE   RuntimeError: Trying to backward through the graph a second time (or directly access saved tensors after they have already been freed). Saved intermediate values of the graph are freed when you call .backward() or autograd.grad(). Specify retain_graph=True if you need to backward through the graph a second time or if you need to access saved tensors after calling backward."
+        }
+      ],
+      "peak_worker_bytes": 3673379088,
+      "peak_aggregate_memory_bytes": 6843474344,
+      "compile_cache_retries": []
+    },
+    "affected-final": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 101,
+      "completed": 101,
+      "counts": {
+        "passed": 82,
+        "skipped": 18,
+        "failed": 1
+      },
+      "seconds": 323.04283491591923,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "4ec3786f1dc6e4a97a6fbe00661ce30acbac7f5e74caca110080f794e19fcfd6",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "941c137d42cb942c647213683fdb7ccaa0513226e5abbe18e64bcfcf4b1ad925",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "28ae8319d76c0e42be750b6186be46c4c9ad9f60d48b033acd619d1c2b8120b6",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "d2bf77ada8d8dbe23043e2c5b690004deb4b1095ba21757bd2a544e4a1b3cc86",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+          "phase": "call",
+          "message": "test/test_output_walk.py:374: in test_runbatch_does_not_train_generate_policy_without_supplied_answers\n    for g in unlabelled[\"total_grads\"])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   KeyError: 'total_grads'"
+        }
+      ],
+      "peak_worker_bytes": 6089513056,
+      "peak_aggregate_memory_bytes": 6215245480,
+      "compile_cache_retries": []
+    },
+    "affected-first": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 285,
+      "completed": 285,
+      "counts": {
+        "passed": 252,
+        "skipped": 33
+      },
+      "seconds": 267.1250046250643,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "44881fca64022eaeb8e702fc580052fbbc6c0276b09bd734914f425798a24dd8",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "a7887b22332f61e205dd7de012ae057e21023e8c7529d326cb585b499829c56d",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_pair_driver.py": {
+          "measured": "a41e0c5a68e672ac1b499d83f171cdc4e21a81af86111559c29e9fe22db40814",
+          "current": "c19b6c5292e808eda3eeef3bc9c8fadd6ccbd42903c32720af315e755eb9d685"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "5f3c3d45397d0ca0e597b8ab2785e62288f86338521b897d609bf470447cd2b5",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 5174121248,
+      "peak_aggregate_memory_bytes": 7456154288,
+      "compile_cache_retries": []
+    },
+    "affected-scratch": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 309,
+      "completed": 309,
+      "counts": {
+        "passed": 269,
+        "skipped": 33,
+        "failed": 7
+      },
+      "seconds": 492.7085202500457,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "17e01e8198404832b50618f7784b7d0cb73993cf7dae6eb65dbe62ade31352b8",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "941c137d42cb942c647213683fdb7ccaa0513226e5abbe18e64bcfcf4b1ad925",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "d2bf77ada8d8dbe23043e2c5b690004deb4b1095ba21757bd2a544e4a1b3cc86",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+          "phase": "call",
+          "message": "test/test_output_walk.py:226: in test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk\n    assert torch.allclose(idea, end)                        # zero-initialised conditioning\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10e6b53a0>(tensor([[[ 8.9438e-03,  8.9438e-03, -1.5471e-01, -1.9655e-01, -2.0327e-01,\\n           2.8203e-02, -1.4569e-01, -3.7055...e+00,  0.0000e+00,\\n           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\\n           0.0000e+00]]]), tensor([[[ 8.9438e-03,  8.9438e-03, -1.5471e-01, -1.9655e-01, -2.0327e-01,\\n           2.8203e-02, -1.4569e-01, -3.7055...e+00,  0.0000e+00,\\n           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\\n           0.0000e+00]]]))\nE    +    where <built-in method allclose of type object at 0x10e6b53a0> = torch.allclose"
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+          "phase": "call",
+          "message": "test/test_output_walk.py:325: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:305: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14509: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14632: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15007: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24217: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18257: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22153: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21700: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21003: in _run_sealed_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:123: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20791: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:282: in backward_probe\n    cost.sum(), params, retain_graph=True, allow_unused=True)\n    ^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'sum'"
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+          "phase": "call",
+          "message": "test/test_output_walk.py:325: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:305: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14509: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14632: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15007: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24217: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18257: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22153: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21700: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21003: in _run_sealed_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:123: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20791: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:282: in backward_probe\n    cost.sum(), params, retain_graph=True, allow_unused=True)\n    ^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'sum'"
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+          "phase": "call",
+          "message": "test/test_output_walk.py:362: in test_runbatch_does_not_train_generate_policy_without_supplied_answers\n    learned = _policy_training_probe(\ntest/test_output_walk.py:305: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14509: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14632: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15007: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24217: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18257: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22153: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21700: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21003: in _run_sealed_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:123: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20791: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:282: in backward_probe\n    cost.sum(), params, retain_graph=True, allow_unused=True)\n    ^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'sum'"
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+          "phase": "call",
+          "message": "test/test_output_walk.py:400: in test_runbatch_generate_policy_masks_rows_without_supplied_answers\n    got = _policy_training_probe(\ntest/test_output_walk.py:305: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14509: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14632: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15007: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24217: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18257: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22153: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21700: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21003: in _run_sealed_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:123: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20791: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:282: in backward_probe\n    cost.sum(), params, retain_graph=True, allow_unused=True)\n    ^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'sum'"
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows",
+          "phase": "call",
+          "message": "test/test_output_walk.py:546: in test_materialised_idea_follows_the_symbol_rows\n    assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())\nE   AssertionError: 0.2690536379814148\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10ac293a0>(tensor([[[ 8.9438e-03,  8.9438e-03, -1.5471e-01, -1.9655e-01, -2.0327e-01,\\n           2.8203e-02, -1.4569e-01, -3.7055...e+00,  0.0000e+00,\\n           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\\n           0.0000e+00]]]), tensor([[[ 8.9438e-03,  8.9438e-03, -1.5471e-01, -1.9655e-01, -2.0327e-01,\\n           2.8203e-02, -1.4569e-01, -3.7055...e+00,  0.0000e+00,\\n           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\\n           0.0000e+00]]]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10ac293a0> = torch.allclose"
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+          "phase": "call",
+          "message": "test/test_output_walk.py:902: in test_packed_recall_observes_captured_sentence_programs\n    assert len(history) == len(slots)\nE   assert 1 == 2\nE    +  where 1 = len(deque([AnswerProgram(rows=tensor([ 4,  6,  8, 10,  8,  4,  8]), word_rows=tensor([3, 5, 7, 9, 7, 3, 7]), activations=t...., 0., 1.],\\n        [0., 1., 0., 1.],\\n        [0., 1., 0., 1.],\\n        [0., 1., 0., 1.],\\n        [0., 1., 0., 1.]]))]))\nE    +  and   2 = len((0, 1))"
+        }
+      ],
+      "peak_worker_bytes": 6968908304,
+      "peak_aggregate_memory_bytes": 6968908304,
+      "compile_cache_retries": []
+    },
+    "affected-verified": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 47,
+      "completed": 47,
+      "counts": {
+        "passed": 46,
+        "failed": 1
+      },
+      "seconds": 609.2058642500779,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "message": "test/test_generation_catalog.py:261: in test_normal_supervised_output_respects_gradient_contract\n    model.runBatch(train=True, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:14521: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14652: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15804: in _run_batch_once\n    self._backward_training_loss(\ntest/test_generation_catalog.py:243: in check_gradients\n    assert gradients[0] is not None and bool(gradients[0].any())\nE   assert (tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]) is not None and False)\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method any of Tensor object at 0x7004b78640>()\nE    +      where <built-in method any of Tensor object at 0x7004b78640> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]).any"
+        }
+      ],
+      "peak_worker_bytes": 4440363832,
+      "peak_aggregate_memory_bytes": 6644506568,
+      "compile_cache_retries": []
+    },
+    "affected-verified-before-reconstruction-cost": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 104,
+      "completed": 104,
+      "counts": {
+        "passed": 88,
+        "failed": 1,
+        "skipped": 15
+      },
+      "seconds": 386.9928685419727,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "26f817808ab8c3229d9b0d32c88d20c8060b0e3e8c97803f26c3cee206913a71",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "941c137d42cb942c647213683fdb7ccaa0513226e5abbe18e64bcfcf4b1ad925",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "fa71d70ed3ea44c81e82ce16b4d724c8ed23d5f810377c967e1be56b0fcf195d",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "message": "test/test_generation_catalog.py:261: in test_normal_supervised_output_respects_gradient_contract\n    model.runBatch(train=True, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:14511: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14634: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15779: in _run_batch_once\n    self._backward_training_loss(\ntest/test_generation_catalog.py:243: in check_gradients\n    assert gradients[0] is not None and bool(gradients[0].any())\nE   assert (tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]) is not None and False)\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method any of Tensor object at 0x1488a05a0>()\nE    +      where <built-in method any of Tensor object at 0x1488a05a0> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]).any"
+        }
+      ],
+      "peak_worker_bytes": 6807427624,
+      "peak_aggregate_memory_bytes": 8914151144,
+      "compile_cache_retries": []
+    },
+    "documentation": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 112,
+      "completed": 112,
+      "counts": {
+        "passed": 112
+      },
+      "seconds": 5.262529582949355,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 1800.0,
+        "batch_size": 256,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 429966680,
+      "peak_aggregate_memory_bytes": 429966680,
+      "compile_cache_retries": []
+    },
+    "early-stop-memory": {
+      "exit_code": 137,
+      "reason": "memory",
+      "selected": 1,
+      "completed": 0,
+      "counts": {},
+      "seconds": 9.18677829101216,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 256,
+        "max_files": 16
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "4d91ecde9e3c0dd1c9384d47b7432a07c9d6f611655109bcbbea7646b5d42218",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "02ce8572508ab762f142d581dca23ccb77402e60e31ea68e7c1893a78a865ecb",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "cc50b74b753c33979aa6222ffef4c0c67fb89dabeb4a6b5b6b61f0e94af51fdd",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 8626134120,
+      "peak_aggregate_memory_bytes": 8251415368,
+      "compile_cache_retries": []
+    },
+    "explicit-and-gates": {
+      "exit_code": 137,
+      "reason": "memory",
+      "selected": 7,
+      "completed": 2,
+      "counts": {
+        "passed": 2
+      },
+      "seconds": 60.10547704203054,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 1,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "2d18723985587154d20b0fb158f40093c69c8d89a52106eef5ba11f762a6e295",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "a7887b22332f61e205dd7de012ae057e21023e8c7529d326cb585b499829c56d",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "051850a40cfa043b1e3ffdf76b0f0c0c348b344f21e33ce9b69bea21d40bfa57",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 8753732664,
+      "peak_aggregate_memory_bytes": 10531055144,
+      "compile_cache_retries": []
+    },
+    "explicit-verified": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 7,
+      "completed": 7,
+      "counts": {
+        "passed": 5,
+        "failed": 2
+      },
+      "seconds": 221.2367600420257,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 1,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25468: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25575: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3912: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11374: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16753: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16018: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25468: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25575: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3912: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11374: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16753: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16018: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+        }
+      ],
+      "peak_worker_bytes": 6381229528,
+      "peak_aggregate_memory_bytes": 6381229528,
+      "compile_cache_retries": []
+    },
+    "explicit-verified-before-reconstruction-cost": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 7,
+      "completed": 7,
+      "counts": {
+        "passed": 5,
+        "failed": 2
+      },
+      "seconds": 116.35504195897374,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 1,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "26f817808ab8c3229d9b0d32c88d20c8060b0e3e8c97803f26c3cee206913a71",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "941c137d42cb942c647213683fdb7ccaa0513226e5abbe18e64bcfcf4b1ad925",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "fa71d70ed3ea44c81e82ce16b4d724c8ed23d5f810377c967e1be56b0fcf195d",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25443: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25550: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3912: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11374: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16728: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15993: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25443: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25550: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3912: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11374: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16728: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15993: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store."
+        }
+      ],
+      "peak_worker_bytes": 6351722016,
+      "peak_aggregate_memory_bytes": 8337055880,
+      "compile_cache_retries": []
+    },
+    "full": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 4968,
+      "completed": 4968,
+      "counts": {
+        "passed": 4636,
+        "failed": 10,
+        "skipped": 321,
+        "xfailed": 1
+      },
+      "seconds": 5459.088247207925,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+          "phase": "call",
+          "message": "test/test_gradient_factorization.py:140: in test_normal_batch_logs_named_shared_operator_gradients\n    assert any(entry[\"reconstruction_norm\"] > 0 for entry in report.values())\nE   assert False\nE    +  where False = any(<generator object test_normal_batch_logs_named_shared_operator_gradients.<locals>.<genexpr> at 0x125d26a80>)"
+        },
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "message": "test/test_generation_catalog.py:261: in test_normal_supervised_output_respects_gradient_contract\n    model.runBatch(train=True, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:14521: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14652: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15804: in _run_batch_once\n    self._backward_training_loss(\ntest/test_generation_catalog.py:243: in check_gradients\n    assert gradients[0] is not None and bool(gradients[0].any())\nE   assert (tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]) is not None and False)\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method any of Tensor object at 0x17d3162b0>()\nE    +      where <built-in method any of Tensor object at 0x17d3162b0> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]).any"
+        },
+        {
+          "nodeid": "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+          "phase": "call",
+          "message": "test/test_item9b_followup.py:39: in test_interleave_reads_native_context_before_any_serial_word\n    assert calls == [(False, tuple(texts), True),\nE   AssertionError: assert [(False, ('th...lew'), False)] == [(False, ('th...flew'), True)]\nE     \nE     Right contains one more item: (True, ('the wug sat', 'the wug flew'), True)\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+          "phase": "call",
+          "message": "test/test_item9b_followup.py:39: in test_interleave_reads_native_context_before_any_serial_word\n    assert calls == [(False, tuple(texts), True),\nE   AssertionError: assert [(False, ('th...lew'), False)] == [(False, ('th...flew'), True)]\nE     \nE     Right contains one more item: (True, ('the wug sat', 'the wug flew'), True)\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_item9b_followup.py::test_interleave_epoch_reads_a_short_final_group_once",
+          "phase": "call",
+          "message": "test/test_item9b_followup.py:96: in test_interleave_epoch_reads_a_short_final_group_once\n    assert calls == [(False, tuple(texts[:2]), True),\nE   AssertionError: assert [(False, ('th...an',), False)] == [(False, ('th...), True), ...]\nE     \nE     At index 2 diff: (True, ('the wug flew',), False) != (True, ('the wug sat',), True)\nE     Right contains 3 more items, first extra item: (False, ('the wug ran',), True)\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_item9b_followup.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+          "phase": "call",
+          "message": "test/test_item9b_followup.py:138: in test_interleave_checkpoint_resumes_unread_serial_prefix\n    assert calls == [(True, False), (True, True)]\nE   assert [(True, False)] == [(True, False), (True, True)]\nE     \nE     Right contains one more item: (True, True)\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+          "phase": "call",
+          "message": "test/test_expectation_defaults.py:130: in test_native_runtime_reports_pairs_without_accumulating_or_updating\n    assert metrics[\"observations\"] == 2\nE   assert 1 == 2"
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+          "phase": "call",
+          "message": "test/test_expectation_defaults.py:166: in test_native_future_and_other_row_changes_do_not_change_first_estimate\n    assert comparison is not None\nE   assert None is not None"
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+          "phase": "call",
+          "message": "test/test_expectation_defaults.py:233: in test_expectation_off_keeps_every_packed_observation_in_ltm\n    assert len(store) - before == 2\nE   assert (1 - 0) == 2\nE    +  where 1 = len(TernaryTruthStore())"
+        },
+        {
+          "nodeid": "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+          "phase": "call",
+          "message": "test/test_thinking_kernel.py:52: in test_first_trained_read_reaches_depth3_end_state\n    self.assertIn(3, flat,\nE   AssertionError: 3 not found in [1, 1, 1, 1] : no depth-3 relative end-state in sweeps: [1, 1, 1, 1]"
+        }
+      ],
+      "peak_worker_bytes": 6642506064,
+      "peak_aggregate_memory_bytes": 14414248504,
+      "compile_cache_retries": []
+    },
+    "memory-diagnostic": {
+      "exit_code": 137,
+      "reason": "memory",
+      "selected": 1,
+      "completed": 0,
+      "counts": {},
+      "seconds": 8.542689625057392,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 256,
+        "max_files": 16
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "513cbeb6bf32a4ae89ac595426dd176b9ef54b990c7a0bce5b30c5a84becec41",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "02ce8572508ab762f142d581dca23ccb77402e60e31ea68e7c1893a78a865ecb",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "cc50b74b753c33979aa6222ffef4c0c67fb89dabeb4a6b5b6b61f0e94af51fdd",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 8671190024,
+      "peak_aggregate_memory_bytes": 8277187304,
+      "compile_cache_retries": []
+    },
+    "perception-pullback": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 11,
+      "completed": 11,
+      "counts": {
+        "passed": 11
+      },
+      "seconds": 179.70300570805557,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 10,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "17e01e8198404832b50618f7784b7d0cb73993cf7dae6eb65dbe62ade31352b8",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "941c137d42cb942c647213683fdb7ccaa0513226e5abbe18e64bcfcf4b1ad925",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "d2bf77ada8d8dbe23043e2c5b690004deb4b1095ba21757bd2a544e4a1b3cc86",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 6440310400,
+      "peak_aggregate_memory_bytes": 7078796968,
+      "compile_cache_retries": []
+    },
+    "reconstruction-cost-probe": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 21,
+      "completed": 21,
+      "counts": {
+        "passed": 19,
+        "failed": 2
+      },
+      "seconds": 177.248584749992,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "0445ccc0ca7afbcf0e6e6db558d8a50a686cede3c9a5ee1ff21842e8666070fc",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "941c137d42cb942c647213683fdb7ccaa0513226e5abbe18e64bcfcf4b1ad925",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "838e666a3778cb26abd9cd39e3a772d620fb9312c205a05f9535034abb5122b4",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+          "phase": "call",
+          "message": "    ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1863: in dispatch_trace\n    graph = tracer.trace(root, concrete_args)  # type: ignore[arg-type]\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:932: in trace\n    (self.create_arg(fn(*args)),),\n                     ^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1952: in wrapped\n    out = f(*tensors)  # type:ignore[call-arg]\n          ^^^^^^^^^^^\n<string>:1: in <lambda>\n    ???\n.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:924: in body_fn\n    bw_body_fn(*selected_fw_carries, *additional_inputs, *grad_carries),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:926: in flat_fn\n    fw_outs, grad_args = bw_fn(primals, tangents)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:497: in joint_helper\n    return inner_fn_with_anomaly(primals, tangents)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:489: in inner_fn_with_anomaly\n    return inner_fn(primals, tangents)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:313: in inner_fn\n    outs, tangent_mask = fn(*primals)\n                         ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:605: in fw_with_masks\n    fw_out = fn(*args)\n             ^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:1007: in call_wrapped\n    return self._wrapped_call(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:514: in __call__\n    raise e\n.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:500: in __call__\n    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:906: in module_call_wrapper\n    return self.call_module(mod, forward, args, kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1616: in call_module\n    return forward(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:899: in forward\n    return _orig_module_call(mod, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n<eval_with_key>.4941:1236: in forward\n    gather_48 = child_15.gather(1, safe_35);  safe_35 = None\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:2014: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/SentenceCompose.py:43: in pack\n    result = saved.get(key)\n             ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/weakref.py:198: in get\n    wr = self.data[key]\n         ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/__init__.py:929: in __hash__\n    raise TypeError(\"unhashable type: non-nested SymInt\")\nE   TypeError: unhashable type: non-nested SymInt"
+        },
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "message": "   ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1863: in dispatch_trace\n    graph = tracer.trace(root, concrete_args)  # type: ignore[arg-type]\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:932: in trace\n    (self.create_arg(fn(*args)),),\n                     ^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1952: in wrapped\n    out = f(*tensors)  # type:ignore[call-arg]\n          ^^^^^^^^^^^\n<string>:1: in <lambda>\n    ???\n.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:924: in body_fn\n    bw_body_fn(*selected_fw_carries, *additional_inputs, *grad_carries),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:926: in flat_fn\n    fw_outs, grad_args = bw_fn(primals, tangents)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:497: in joint_helper\n    return inner_fn_with_anomaly(primals, tangents)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:489: in inner_fn_with_anomaly\n    return inner_fn(primals, tangents)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:313: in inner_fn\n    outs, tangent_mask = fn(*primals)\n                         ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:605: in fw_with_masks\n    fw_out = fn(*args)\n             ^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:1007: in call_wrapped\n    return self._wrapped_call(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:514: in __call__\n    raise e\n.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:500: in __call__\n    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:906: in module_call_wrapper\n    return self.call_module(mod, forward, args, kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1616: in call_module\n    return forward(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:899: in forward\n    return _orig_module_call(mod, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n<eval_with_key>.10910:1236: in forward\n    gather_48 = child_15.gather(1, safe_35);  safe_35 = None\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:2014: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/SentenceCompose.py:43: in pack\n    result = saved.get(key)\n             ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/weakref.py:198: in get\n    wr = self.data[key]\n         ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/__init__.py:929: in __hash__\n    raise TypeError(\"unhashable type: non-nested SymInt\")\nE   TypeError: unhashable type: non-nested SymInt"
+        }
+      ],
+      "peak_worker_bytes": 3568996504,
+      "peak_aggregate_memory_bytes": 4757084736,
+      "compile_cache_retries": []
+    },
+    "saved-parameters": {
+      "exit_code": 137,
+      "reason": "memory",
+      "selected": 11,
+      "completed": 0,
+      "counts": {},
+      "seconds": 12.056732499971986,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 10,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "22b0bf552b546d2a4e579de8c0d57c941a230ecd632e3f91afc56ba7b5740a2c",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "b429ff8cb7acbc491c9ea912c578a65d1b321914c6f25b4bd82941d2b8ae9af0",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "d2bf77ada8d8dbe23043e2c5b690004deb4b1095ba21757bd2a544e4a1b3cc86",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 8717065344,
+      "peak_aggregate_memory_bytes": 9130042416,
+      "compile_cache_retries": []
+    },
+    "saved-values": {
+      "exit_code": 137,
+      "reason": "memory",
+      "selected": 11,
+      "completed": 0,
+      "counts": {},
+      "seconds": 10.019172959029675,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 10800,
+        "batch_size": 10,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "513cbeb6bf32a4ae89ac595426dd176b9ef54b990c7a0bce5b30c5a84becec41",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "bin/SentenceCompose.py": {
+          "measured": "02ce8572508ab762f142d581dca23ccb77402e60e31ea68e7c1893a78a865ecb",
+          "current": "92af0c1bcc5023cfdcb044ff9d3248465fb55dc27c26655aea47779369d0da5d"
+        },
+        "test/test_compose_records.py": {
+          "measured": "08c50f492b40ef2f6ff1a4e030aeceedb3746004af0260ed28bf477726633229",
+          "current": "5b164f198e405e434eb5af8ae5c94fec27f7d42495f0029951a414009335989e"
+        },
+        "test/test_generation_catalog.py": {
+          "measured": "aeeac3f7c26c83b135164a345e0c9281450058ccf23d60df2b189a07df540faf",
+          "current": "69858752f14458168942d3c05949b6e42f8cd9b26587a6b5a4ca85015f216d28"
+        },
+        "test/test_output_path_supervised.py": {
+          "measured": "3de3963ffcacea7f0f63f2d216f5a8c5c4e27655c42c6b97eb8c46f1743c4659",
+          "current": "9ec5d8bb9791f90e773108c944556b3ab0801a392ecfbda99157fe66fcffc877"
+        },
+        "test/test_output_walk.py": {
+          "measured": "35229c377b024f85a4a29173c23da1c043f36cd7e3f222bd9d6a163cc3288b27",
+          "current": "f3c6c502b864eceaa236ca94e1c6e5ef6dd40e4def2d319c1c0657afd3fffec7"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "cc50b74b753c33979aa6222ffef4c0c67fb89dabeb4a6b5b6b61f0e94af51fdd",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 8914574536,
+      "peak_aggregate_memory_bytes": 9132007848,
+      "compile_cache_retries": []
+    },
+    "target-detach-probe": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 11,
+      "completed": 11,
+      "counts": {
+        "passed": 8,
+        "failed": 3
+      },
+      "seconds": 549.3642509579659,
+      "limits": {
+        "memory_bytes": 17179869184,
+        "aggregate_memory_bytes": 17179869184,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 2,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 5400.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/Models.py": {
+          "measured": "372a3afdcea1c8143855053b4b1648f4b8d45ea93b2f999703aa3a59e756273a",
+          "current": "cc108a12c459096b9ae0027b0c31e300effcaf5a19fec28fc8979c5c8a83a278"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "69a99e007ff9280c9aa996ceeb98ca71faf36b7e8848246d67c7962e38144541",
+          "current": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_seals_train_before_the_next_sentence[False]",
+          "phase": "call",
+          "message": "test/test_sentence_compose.py:144: in test_real_packed_seals_train_before_the_next_sentence\n    model.runBatch(train=True, optimizer=optimizer, batchSize=2,\nbin/Models.py:14516: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14647: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15024: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24242: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18279: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22178: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21725: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21048: in _run_sealed_word_bricks\n    self._commit_sentence(chosen, sid, present, observations, predictions, wins)\ntest/test_sentence_compose.py:138: in observe\n    assert all(occurrence is not None for row in context for occurrence in row)\nE   assert False\nE    +  where False = all(<generator object test_real_packed_seals_train_before_the_next_sentence.<locals>.observe.<locals>.<genexpr> at 0x1459ae340>)"
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_seals_train_before_the_next_sentence[True]",
+          "phase": "call",
+          "message": "test/test_sentence_compose.py:144: in test_real_packed_seals_train_before_the_next_sentence\n    model.runBatch(train=True, optimizer=optimizer, batchSize=2,\nbin/Models.py:14516: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14647: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15024: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9571: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11065: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9271: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9083: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24242: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18279: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22178: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21725: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21048: in _run_sealed_word_bricks\n    self._commit_sentence(chosen, sid, present, observations, predictions, wins)\ntest/test_sentence_compose.py:138: in observe\n    assert all(occurrence is not None for row in context for occurrence in row)\nE   assert False\nE    +  where False = all(<generator object test_real_packed_seals_train_before_the_next_sentence.<locals>.observe.<locals>.<genexpr> at 0x14db58200>)"
+        },
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "message": "test/test_generation_catalog.py:261: in test_normal_supervised_output_respects_gradient_contract\n    model.runBatch(train=True, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:14516: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14647: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15799: in _run_batch_once\n    self._backward_training_loss(\ntest/test_generation_catalog.py:243: in check_gradients\n    assert gradients[0] is not None and bool(gradients[0].any())\nE   assert (tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]) is not None and False)\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method any of Tensor object at 0x70084e9fe0>()\nE    +      where <built-in method any of Tensor object at 0x70084e9fe0> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.]]).any"
+        }
+      ],
+      "peak_worker_bytes": 4382315368,
+      "peak_aggregate_memory_bytes": 6399778736,
+      "compile_cache_retries": []
+    }
+  },
+  "measurements": {
+    "source_delta": {},
+    "processes": {
+      "serial-baseline": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/profile_baseline.py",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/measurements/serial-baseline.json"
+        ],
+        "pid": 34823,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 6256318632,
+        "elapsed_seconds": 745.4206053749658,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/measurements/serial-baseline.log"
+      },
+      "packed": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+          "--parity",
+          "packed",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/measurements/packed.json"
+        ],
+        "pid": 36315,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5355001160,
+        "elapsed_seconds": 290.3039752910845,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/measurements/packed.log"
+      },
+      "single": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+          "--config",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+          "--parity",
+          "single",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/measurements/single.json"
+        ],
+        "pid": 36924,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5343221040,
+        "elapsed_seconds": 485.7448035829002,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7-5-seals/measurements/single.log"
+      }
+    },
+    "serial": {
+      "reviewed": {
+        "before_training": 0.10405020788311958,
+        "training": 0.10417700409889222,
+        "after_training": 0.10392807051539421
+      },
+      "current": {
+        "before_training": 0.1065397672355175,
+        "training": 0.1001331090927124,
+        "after_training": 0.10013789683580399
+      }
+    },
+    "training_sentences_per_second": 0.9189261372761699,
+    "batch_timing": {
+      "clock": "time.perf_counter; CPU synchronous wall time",
+      "compose_scope": "sentence_pair compose callbacks, excluding separately timed restore; cached perception",
+      "backward_scope": "BasicModel._backward_training_loss; optimizer steps are in other",
+      "scoring_scope": "sentence reconstruction and row-local prediction preview",
+      "snapshot_scope": "pre-sentence scratch tensor bindings; no deep model copy",
+      "restore_scope": "scratch STM/trace publication before each compose trial",
+      "other_scope": "perception, optimizer steps, winner commits, staging, answers and batch housekeeping",
+      "epoch_tail": "excluded here; unchanged baseline throughput includes epoch tails",
+      "rows": [
+        {
+          "exploit_compose": 25.38817575003486,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 107.13097037491389,
+          "snapshot": 7.080379873514175e-07,
+          "restore": 0.00014312495477497578,
+          "index": 0,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 134.3431945410557,
+          "other": 1.8239045831141993,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.0335332453250885
+              ],
+              [
+                0.06385217607021332
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 27.719246624968946,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 0.06447583297267556,
+          "snapshot": 5.830079317092896e-07,
+          "restore": 0.0001354999840259552,
+          "index": 1,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 27.98051774990745,
+          "other": 0.19665920897386968,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.006508322898298502
+              ],
+              [
+                0.06385217607021332
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.14041341608390212,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 0.0578039160463959,
+          "snapshot": 7.079215720295906e-07,
+          "restore": 0.00013341696467250586,
+          "index": 2,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.39225287502631545,
+          "other": 0.1939014180097729,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.006546690594404936
+              ],
+              [
+                0.07122419774532318
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.11750304198358208,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 0.049260249943472445,
+          "snapshot": 7.910421118140221e-07,
+          "restore": 0.00013037503231316805,
+          "index": 3,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.3297977920155972,
+          "other": 0.16290333401411772,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.033528219908475876
+              ],
+              [
+                0.06355027854442596
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 58.40771904203575,
+          "explore_compose": 62.9543397501111,
+          "exploit_backward": 1.9440016250591725,
+          "explore_backward": 0.3081344170495868,
+          "batch_backward": 0.0003278750227764249,
+          "sentence_scoring": 430.2098450838821,
+          "snapshot": 6.670597940683365e-07,
+          "restore": 0.00028087489772588015,
+          "index": 4,
+          "train": true,
+          "split": "train",
+          "warmup": true,
+          "total": 555.7692377500935,
+          "other": 1.944588414975442,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.029267260804772377,
+                0.029267260804772377
+              ],
+              [
+                0.07122419774532318,
+                0.07122419774532318
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.2541336660506204,
+          "explore_compose": 0.25677079206798226,
+          "exploit_backward": 0.30372687499038875,
+          "explore_backward": 0.31539524998515844,
+          "batch_backward": 0.00031104194931685925,
+          "sentence_scoring": 0.1272180419182405,
+          "snapshot": 6.249174475669861e-07,
+          "restore": 0.00027841690462082624,
+          "index": 5,
+          "train": true,
+          "split": "train",
+          "warmup": true,
+          "total": 1.4679176670033485,
+          "other": 0.2100829582195729,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.029267271980643272,
+                0.07876299321651459
+              ],
+              [
+                0.02660052292048931,
+                0.02660052292048931
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 4.6146624989341944,
+          "explore_compose": 0.21449879207648337,
+          "exploit_backward": 0.26575087499804795,
+          "explore_backward": 0.2572921250248328,
+          "batch_backward": 0.00031804200261831284,
+          "sentence_scoring": 0.1103168330155313,
+          "snapshot": 8.749775588512421e-07,
+          "restore": 0.00028320797719061375,
+          "index": 6,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 5.648218708927743,
+          "other": 0.1850954599212855,
+          "sentence_winners": [
+            [
+              true,
+              true
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.13531795144081116,
+                0.001200028695166111
+              ],
+              [
+                0.12891505658626556,
+                0.0036831521429121494
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.25163549988064915,
+          "explore_compose": 0.2532104578567669,
+          "exploit_backward": 0.297409416991286,
+          "explore_backward": 0.29213375004474074,
+          "batch_backward": 0.00031887495424598455,
+          "sentence_scoring": 0.12039933283813298,
+          "snapshot": 6.660120561718941e-07,
+          "restore": 0.0002698741154745221,
+          "index": 7,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 1.3992640830110759,
+          "other": 0.18388621031772345,
+          "sentence_winners": [
+            [
+              false,
+              true
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.0690159872174263,
+                0.09473877400159836
+              ],
+              [
+                0.10421229898929596,
+                0.033522192388772964
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.20949683396611363,
+          "explore_compose": 0.21071008301805705,
+          "exploit_backward": 0.24568925006315112,
+          "explore_backward": 0.24597820895723999,
+          "batch_backward": 0.00032220908906310797,
+          "sentence_scoring": 0.10459958284627646,
+          "snapshot": 8.749775588512421e-07,
+          "restore": 0.0002746250247582793,
+          "index": 8,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 1.1897583330282941,
+          "other": 0.17268666508607566,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.0688234195113182,
+                0.0688234195113182
+              ],
+              [
+                0.0265957061201334,
+                0.0265957061201334
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.20788691600318998,
+          "explore_compose": 0.21497445809654891,
+          "exploit_backward": 0.24729429103899747,
+          "explore_backward": 0.24681500007864088,
+          "batch_backward": 0.00032049999572336674,
+          "sentence_scoring": 0.10468204109929502,
+          "snapshot": 5.420297384262085e-07,
+          "restore": 0.00028195895720273256,
+          "index": 9,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 1.1949554170714691,
+          "other": 0.17269970977213234,
+          "sentence_winners": [
+            [
+              true,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.06881817430257797,
+                0.06877735257148743
+              ],
+              [
+                0.03352615237236023,
+                0.03678661212325096
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.24829437502194196,
+          "explore_compose": 0.25763995794113725,
+          "exploit_backward": 0.2909809169359505,
+          "explore_backward": 0.30587904097046703,
+          "batch_backward": 0.0003118750173598528,
+          "sentence_scoring": 0.11908558302093297,
+          "snapshot": 7.50063918530941e-07,
+          "restore": 0.00027362501714378595,
+          "index": 10,
+          "train": true,
+          "split": "train",
+          "warmup": false,
+          "total": 1.4052446669666097,
+          "other": 0.18277854297775775,
+          "sentence_winners": [
+            [
+              false,
+              true
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.07150636613368988,
+                0.07153799384832382
+              ],
+              [
+                0.19519537687301636,
+                0.1937326341867447
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.12020454194862396,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 0.048894832958467305,
+          "snapshot": 8.33999365568161e-07,
+          "restore": 0.00013583304826170206,
+          "index": 11,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.31935783301014453,
+          "other": 0.150121791055426,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.06897715479135513
+              ],
+              [
+                0.03352475166320801
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.14388591703027487,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 0.05712516698986292,
+          "snapshot": 7.919734343886375e-07,
+          "restore": 0.00013620802201330662,
+          "index": 12,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.35856750002130866,
+          "other": 0.15741941600572318,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.07660333812236786
+              ],
+              [
+                0.03352475166320801
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.14689354202710092,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 0.056956833926960826,
+          "snapshot": 6.669433787465096e-07,
+          "restore": 0.00013287493493407965,
+          "index": 13,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.361907958984375,
+          "other": 0.15792404115200043,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.11500171571969986
+              ],
+              [
+                0.04178476333618164
+              ]
+            ]
+          ]
+        },
+        {
+          "exploit_compose": 0.12240337498951703,
+          "explore_compose": 0.0,
+          "exploit_backward": 0.0,
+          "explore_backward": 0.0,
+          "batch_backward": 0.0,
+          "sentence_scoring": 0.04923570901155472,
+          "snapshot": 9.170034900307655e-07,
+          "restore": 0.00017200002912431955,
+          "index": 14,
+          "train": false,
+          "split": "validation",
+          "warmup": false,
+          "total": 0.32136816706042737,
+          "other": 0.14955616602674127,
+          "sentence_winners": [
+            [
+              false,
+              false
+            ]
+          ],
+          "sentence_costs": [
+            [
+              [
+                0.06969791650772095
+              ],
+              [
+                0.03352329134941101
+              ]
+            ]
+          ]
+        }
+      ],
+      "summaries": {
+        "warmup_training": {
+          "batches": 2,
+          "mean_seconds": {
+            "exploit_compose": 29.330926354043186,
+            "explore_compose": 31.605555271089543,
+            "exploit_backward": 1.1238642500247806,
+            "explore_backward": 0.3117648335173726,
+            "batch_backward": 0.00031945848604664207,
+            "sentence_scoring": 215.16853156290017,
+            "snapshot": 6.459886208176613e-07,
+            "restore": 0.0002796459011733532,
+            "other": 1.0773356865975074,
+            "total": 278.6185777085484
+          },
+          "fraction": {
+            "exploit_compose": 0.10527268710963372,
+            "explore_compose": 0.1134366399075902,
+            "exploit_backward": 0.004033701769881295,
+            "explore_backward": 0.0011189664238523862,
+            "batch_backward": 1.1465799900134966e-06,
+            "sentence_scoring": 0.772269147780875,
+            "snapshot": 2.3185410898673234e-09,
+            "restore": 1.0036872037509266e-06,
+            "other": 0.0038667044224325368
+          }
+        },
+        "warmed_training": {
+          "batches": 5,
+          "mean_seconds": {
+            "exploit_compose": 1.1063952247612179,
+            "explore_compose": 0.2302067497977987,
+            "exploit_backward": 0.2694249500054866,
+            "explore_backward": 0.26961962501518427,
+            "batch_backward": 0.000318300211802125,
+            "sentence_scoring": 0.11181667456403374,
+            "snapshot": 7.416121661663055e-07,
+            "restore": 0.00027665821835398674,
+            "other": 0.17942931761499495,
+            "total": 2.1674882418010384
+          },
+          "fraction": {
+            "exploit_compose": 0.5104503929589381,
+            "explore_compose": 0.10620899590509991,
+            "exploit_backward": 0.12430284271420657,
+            "explore_backward": 0.12439265866150596,
+            "batch_backward": 0.0001468521054294803,
+            "sentence_scoring": 0.05158813432414357,
+            "snapshot": 3.4215279781636793e-07,
+            "restore": 0.00012764000884457033,
+            "other": 0.08278214116903404
+          }
+        },
+        "evaluation": {
+          "batches": 8,
+          "mean_seconds": {
+            "exploit_compose": 6.737340776133351,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 13.43934036459541,
+            "snapshot": 7.499911589547992e-07,
+            "restore": 0.0001399166212650016,
+            "other": 0.3740487447939813,
+            "total": 20.550870552135166
+          },
+          "fraction": {
+            "exploit_compose": 0.3278372446092491,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 0.6539547962458022,
+            "snapshot": 3.6494374145959363e-08,
+            "restore": 6.8083062909694955e-06,
+            "other": 0.01820111434428353
+          }
+        }
+      }
+    },
+    "parity": {
+      "initial_parameters_sha256": true,
+      "initial_dictionary_sha256": true,
+      "sentences": true,
+      "mean_sentence_byte_cost": true
+    },
+    "byte_cost": {
+      "reviewed": {
+        "packed": 0.787799209356308,
+        "single": 0.6835970133543015
+      },
+      "current": {
+        "packed": 0.6496902331709862,
+        "single": 0.6496902331709862
+      }
+    }
+  },
+  "source_files": 669,
+  "source_sha256": "6e84d24b2e13424b5e2b171c64dcba7d64cfec8ff62439127eba584529c8637d",
+  "learned_utility": "unproven",
+  "publication": "awaiting Claude review; uncommitted"
+}

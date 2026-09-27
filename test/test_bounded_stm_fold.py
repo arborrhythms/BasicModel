@@ -50,22 +50,16 @@ def test_sentence_end_reduces_toward_root():
 
 def test_binary_reducer_is_space_role_free():
     import inspect, Language
-    src = inspect.getsource(Language.BinaryStructuredReductionLayer)
+    src = inspect.getsource(Language.OperationSelectionLayer)
     assert "op_space_role_idx" not in src and "position_space_role" not in src, "space_role machinery must be gone"
 
 
 def test_compose_single_reduction_space_role():
     m = _model()
-    lang = None
-    for mod in m.modules():
-        if type(mod).__name__ == "LanguageLayer" and len(getattr(mod, "_binary_layers", {})) > 0:
-            lang = mod; break
-    assert lang is not None, "no configured LanguageLayer found"
-    assert len(lang._binary_layers) == 1, (
-        f"expected a single reduction space_role, got binary space_roles {list(lang._binary_layers.keys())}")
-    # all reduce ops now live in the one space_role
-    only = next(iter(lang._binary_layers.values()))
-    assert only.r_reduce >= 8, f"merged space_role should hold all reduce ops, got r_reduce={only.r_reduce}"
+    layer = m.symbolSpace.languageLayer.operation_layer
+    assert layer is m._stm_reducer()
+    assert layer.r_reduce >= 8
+    assert layer.r_apply > 0
 
 
 def test_lift_lower_stay_invertible_cs_ops():
@@ -83,95 +77,20 @@ def test_lift_lower_stay_invertible_cs_ops():
             f"{cls.__name__} must stay invertible (non-quantized result)")
 
 
-def test_cap_equivalence_short_sentence():
-    """A non-binding hard capacity leaves the sentence root unchanged.
-
-    Capacity now also controls the *soft* occupancy-pressure threshold, so
-    arbitrary capacities are intentionally not equivalent at a nonzero
-    ``stmReduceTau``. Set that threshold to zero here to isolate the hard
-    demand controller, then compare two capacities larger than the observed
-    live-stack peak. Neither run may apply a demand reduction and both must
-    produce the same final root/depth.
-    """
+def test_seal_budget_is_fixed_even_when_unary_choices_do_not_shrink(monkeypatch):
     m = _model()
-    m.eval()
-    m.stm_reduce_tau = 0.0
-
     stm = m.conceptualSpace.stm
-    ss = stm._word_subspace
-
-    loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
-    items, _ = next(iter(loader))
-    x = m.inputSpace.prepInput(items)
-
-    # Measure the live-stack peak with a deliberately loose capacity.
-    LARGE_CAP = 32
-    ss.idea_ensure_capacity(LARGE_CAP)
-    m.conceptualSpace.Reset(hard=True)
-    ss._idea_capacity = LARGE_CAP
-    ss._idea_buffer = torch.zeros(
-        int(ss._idea_buffer.shape[0]), LARGE_CAP,
-        int(ss._idea_buffer.shape[2]))
-    ss._idea_max_depth_host = 0
-    ss._idea_depth.zero_()
-
-    with torch.no_grad(), warnings.catch_warnings():
-        warnings.filterwarnings("ignore")
-        m.forward(x)
-    peak_depth = int(stm._max_depth_host)
-    assert peak_depth > 0, "forward produced zero STM pushes; data/model mismatch"
-    assert peak_depth < LARGE_CAP, (
-        f"peak_depth={peak_depth} reached measurement cap={LARGE_CAP}; "
-        f"increase LARGE_CAP")
-
-    def _reset_to_cap(cap):
-        m.conceptualSpace.Reset(hard=True)
-        ss._idea_capacity = cap
-        ss._idea_buffer = torch.zeros(
-            int(ss._idea_buffer.shape[0]), cap,
-            int(ss._idea_buffer.shape[2]))
-        ss._idea_max_depth_host = 0
-        ss._idea_depth.zero_()
-
-    def _run_without_demand(cap):
-        _reset_to_cap(cap)
-        demand_applied = []
-        original_reduce = m._stm_bounded_reduce_step
-
-        def _recording_reduce(*args, **kwargs):
-            reduced = original_reduce(*args, **kwargs)
-            if kwargs.get("demand", False):
-                demand_applied.append(reduced.detach().clone())
-            return reduced
-
-        m._stm_bounded_reduce_step = _recording_reduce
-        try:
-            with torch.no_grad(), warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                m.forward(x)
-        finally:
-            m._stm_bounded_reduce_step = original_reduce
-        assert not any(bool(mask.any()) for mask in demand_applied), (
-            f"hard capacity demand applied with non-binding cap={cap}")
-        root = (m._stm_single_S.detach().clone()
-                if getattr(m, "_stm_single_S", None) is not None
-                else stm._buffer[:, :1, :].detach().clone())
-        return root, stm._depth.clone()
-
-    # Leave explicit headroom above the observed peak so neither capacity can
-    # enter the demand path. Sixteen is also the historical upper bound for
-    # this eight-column fixture, keeping the assertion stable if grammar
-    # choices reduce its current peak.
-    tight_cap = max(16, peak_depth + 1)
-    S_tight, depth_tight = _run_without_demand(tight_cap)
-    S_loose, depth_loose = _run_without_demand(tight_cap + 4)
-
-    assert torch.equal(depth_tight, depth_loose), (
-        f"STM depth differs: cap={tight_cap} → {depth_tight.tolist()}, "
-        f"cap={tight_cap+4} → {depth_loose.tolist()}")
-    assert torch.equal(S_tight, S_loose), (
-        f"STM sentence-S differs between cap={tight_cap} and "
-        f"cap={tight_cap+4}; "
-        f"max |Δ| = {(S_tight - S_loose).abs().max().item():.3e}. "
-        "Both runs are outside hard capacity demand and use the same "
-        "capacity-independent zero soft threshold.")
+    stm.begin_forward(1, device=torch.device('cpu'))
+    stm._depth.fill_(3)
+    stm._buffer.fill_(1)
+    calls = []
+    def unary_round(**kwargs):
+        calls.append(kwargs['row_gate'].clone())
+        return torch.ones(1, dtype=torch.bool)
+    monkeypatch.setattr(m, '_stm_operation_step', unary_round)
+    m.syntacticOrder = 0
+    root, depth = m._stm_reduce_to_single_S()
+    assert len(calls) == 2 * stm.capacity
+    assert depth.tolist() == [-3]
+    assert not m._compose_complete.any()
+    assert torch.isfinite(root).all()

@@ -909,7 +909,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
     end-to-end (which would require a full radix-mode parse with a
     'symbolize(C, C)' rule live in the grammar XML). The registry-+-
     compose-routing path is the contractual surface SymbolizeLayer must
-    plug into; downstream the BinaryStructuredReductionLayer calls
+    plug into; downstream the OperationSelectionLayer calls
     ``op(left, right)`` on the per-pair tensors through
     ``_BinaryGrammarOpAdapter.forward``, which itself just forwards
     to ``gl.compose(...)``.
@@ -1053,7 +1053,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         """Same as the prior test but exercises the production adapter
         path: ``_BinaryGrammarOpAdapter`` is the wrapper the signal
         router wraps each binary GrammarLayer with before calling
-        ``op(left, right)`` inside the BinaryStructuredReductionLayer.
+        ``op(left, right)`` inside the OperationSelectionLayer.
         The adapter's ``forward(left, right)`` just dispatches to
         ``gl.compose(left, right)`` (Language.py:1280-1282). Verify
         the adapter+SymbolizeLayer pair plug together as expected.
