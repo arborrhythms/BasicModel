@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-195.recycle.json"
+}

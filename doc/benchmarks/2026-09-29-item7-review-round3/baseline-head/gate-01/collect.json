@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

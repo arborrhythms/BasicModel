@@ -1,0 +1,13 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

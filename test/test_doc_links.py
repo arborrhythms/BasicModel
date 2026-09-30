@@ -1,4 +1,4 @@
-"""Every relative Markdown link under ``doc/`` and in ``README.md`` resolves.
+"""Every relative Markdown link under ``doc/``, ``README.md`` and ``todo.md`` resolves.
 
 Documentation is part of each milestone (mathematical-thinking plan,
 Phase 0): a spec that links a plan, a plan that links a test, or a README
@@ -16,9 +16,10 @@ _LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 def _markdown_files():
     files = sorted((_ROOT / "doc").rglob("*.md"))
-    readme = _ROOT / "README.md"
-    if readme.exists():
-        files.append(readme)
+    for name in ("README.md", "todo.md"):
+        path = _ROOT / name
+        if path.exists():
+            files.append(path)
     return files
 
 

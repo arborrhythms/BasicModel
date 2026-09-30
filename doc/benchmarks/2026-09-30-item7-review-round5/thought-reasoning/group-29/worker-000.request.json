@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+    "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+    "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+    "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+    "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+    "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+    "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/worker-000.recycle.json"
+}

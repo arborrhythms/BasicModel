@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lift_layer_no_raw_gate",
+    "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lower_layer_no_raw_gate",
+    "test/test_lift_lower_factorization.py::TestSigmaSPiSRetired::test_no_pi_S_on_symbolic_space",
+    "test/test_lift_lower_factorization.py::TestSigmaSPiSRetired::test_no_sigma_S_on_symbolic_space",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_ADJs_give_different_lower_outputs",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_VPs_give_different_lift_outputs",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_has_internal_sigma_trainable",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_self_contained_no_substrate_fallback",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_vs_lower_differ_after_perturbation",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_has_internal_pi_trainable",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_self_contained_no_substrate_fallback"
+  ],
+  "completed": [
+    "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lift_layer_no_raw_gate",
+    "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lower_layer_no_raw_gate",
+    "test/test_lift_lower_factorization.py::TestSigmaSPiSRetired::test_no_pi_S_on_symbolic_space",
+    "test/test_lift_lower_factorization.py::TestSigmaSPiSRetired::test_no_sigma_S_on_symbolic_space",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_ADJs_give_different_lower_outputs",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_VPs_give_different_lift_outputs",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_has_internal_sigma_trainable",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_self_contained_no_substrate_fallback",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_vs_lower_differ_after_perturbation",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_has_internal_pi_trainable",
+    "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_self_contained_no_substrate_fallback"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lift_layer_no_raw_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019704201258718967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lower_layer_no_raw_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001283339224755764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestSigmaSPiSRetired::test_no_pi_S_on_symbolic_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004049581475555897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestSigmaSPiSRetired::test_no_sigma_S_on_symbolic_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001393328420817852,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_ADJs_give_different_lower_outputs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002817499917000532,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_VPs_give_different_lift_outputs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013775001280009747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_has_internal_sigma_trainable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036049983464181423,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_self_contained_no_substrate_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001116541912779212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_vs_lower_differ_after_perturbation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013627908192574978,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_has_internal_pi_trainable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032291701063513756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_self_contained_no_substrate_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011312500573694706,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

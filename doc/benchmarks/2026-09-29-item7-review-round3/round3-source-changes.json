@@ -1,0 +1,206 @@
+{
+  "incoming_source": "baseline-candidate/source-manifest.json",
+  "source_digest": "86cc65d8640a5017c6e4c8c51a4902bb7928f6a79d590b5598ddafff200670fc",
+  "files": [
+    {
+      "path": "bin/ClauseJournal.py",
+      "before": "5fa4ac1b365334e3497700fa56f0575229b031da397919bf2eae25674c0b04a3",
+      "after": "9d5a72b024ba9114923ecfcbd61c1f5cb110cbb0a32c9762f8b503763133b65b"
+    },
+    {
+      "path": "bin/ConceptIndex.py",
+      "before": "be630e3b411cf33c7ad29409a92233b30344a11cd4adc7aa442c634d31522e65",
+      "after": "828c6c1a0ff673afe8928a609ccd5c1c67d12a3cd0e831ed6eabd8d8df71745b"
+    },
+    {
+      "path": "bin/Definitions.py",
+      "before": null,
+      "after": "a6d6c9e0f3f3ef81e27be553ea00aca9ded7cac5451f6d6148008c660f53bc18"
+    },
+    {
+      "path": "bin/Interpret.py",
+      "before": "de0bbb9207f43e09719100b1bc05567cc90fbfa9114c2481c6b88fbac13b7ecd",
+      "after": "59ead3b9418984864bd5209ca695d95296567a25df4aed1816169c1127202c18"
+    },
+    {
+      "path": "bin/Language.py",
+      "before": "65112c4635fddcdd9ef4d3a5796a124bfdbfcd515a1e8b3bcfb6fceaa667e010",
+      "after": "3b2b8bd9ff3a38c0b29273a2bb7d88707fac2ea384da199391aa659ffaa9fd3a"
+    },
+    {
+      "path": "bin/Layers.py",
+      "before": "052b9f44c9b24a5e1b4dbbdba2594571210a312ea7b41bd081abfbbd83d63c3f",
+      "after": "bbe0d199cfd13192060c30d8ff58fd424c112d3b94e485d50c45815f0a8ceb62"
+    },
+    {
+      "path": "bin/Models.py",
+      "before": "a9a68c60af000c5568dd34f7e25ea8a4088b44164a4e166d0e88dc2967a18f21",
+      "after": "ebbad4b67b4ac0d9cabb9d9532bd173f24b8eb6b24fb1ba339fd001c7d6cd99c"
+    },
+    {
+      "path": "bin/PerceptField.py",
+      "before": "1ea5e7106e12e2672dcecef4a0e1a4d8efb1b2492b705614e45206b377fcce07",
+      "after": "518cbb7fce037baeedb9df963a2bc33bf9a9440a950f79a8941ed3a267062306"
+    },
+    {
+      "path": "bin/PerceptProperties.py",
+      "before": "555e9a94a5a0c98fcd521f9898921d9f52f4f5b6ad3fafaf2a8592c46fb824ea",
+      "after": "beb4f71884dddfd2d8f1cfb4878fc0fbb62917e2ea554ba4f34502f549ecad8d"
+    },
+    {
+      "path": "bin/References.py",
+      "before": "ffe73055f57d3794d2d173739614019d2ce7d7610475433d1ec39a5da0b918f8",
+      "after": "011a05fb7b623762b88e0d642fbe5534432e0b5e4b524e4b24a68098d74bdda4"
+    },
+    {
+      "path": "bin/Spaces.py",
+      "before": "e72170e4947a2965c9f7e4021ff92706c693963c54972aefa425c4b4025cb0df",
+      "after": "4f53d01e32c21b32762e9cae559ffc1b0b3c9194d4628e45ed5d4e874a536a3e"
+    },
+    {
+      "path": "bin/Understanding.py",
+      "before": "7d73d2f4b620516bccd1cb694a936c373fd88a10a9ef6a7be5852d9aa940dd30",
+      "after": "5cf09b60605e4a38574e10b74816ff971789f2344534c76b451617fa40b4278e"
+    },
+    {
+      "path": "test/definition_fixtures.py",
+      "before": null,
+      "after": "73aa9f4a14b481eca7a52fb575a6c4e7bf9f48f47bc9b5435058f0f87a41c274"
+    },
+    {
+      "path": "test/test_attention_promotion.py",
+      "before": "90355e366da614cb1e5bd3e334e44573508a94c9169c5afa3b657ec0e19f3841",
+      "after": "9446fc2bce15e43de5560d325380b0a5d2b92a2d5c214d940a77587d576fcfce"
+    },
+    {
+      "path": "test/test_autobind_from_cs.py",
+      "before": "3bda4b4a3ff33dc358d21257cf4dc63921b3afc8eef35e35be63aa727e47f6b9",
+      "after": "e0bfb80955fe11ca1f47e123c89a880e9b18d22243fa3c5f086140a68531a6d6"
+    },
+    {
+      "path": "test/test_codebook_update_law.py",
+      "before": "400ab5595f7d4d3837e8a312cce8fe43bedfcb11390fdab31215e9cc42e6c327",
+      "after": "5340d23627639d2f31a98ed0b26b66f1e7135419ec667e192e543306bc39b0d9"
+    },
+    {
+      "path": "test/test_concept_capacity_policy.py",
+      "before": "e1fe85451bef2766b74062748858b106cb4aa2062af443474895b8587e6d463f",
+      "after": "baf1466450b4eacddb2c578e1c4895a19dd22be1e0a95d6600bf47cf76948462"
+    },
+    {
+      "path": "test/test_cs_sparse_weights.py",
+      "before": "39a87548f7556d523de6739eed8f41166bf4694b2e411304eb2e82981af55298",
+      "after": "d1318b38a3035853d019e87601a05fa43fb427fcd22af4395b8327118274de4d"
+    },
+    {
+      "path": "test/test_cs_symbol_table.py",
+      "before": "ea06fd48d234f3d02982190e52f74810ebe2fa2bd258a10e2e86400c3d56276d",
+      "after": "9f4a47242d9dd1eeb650d5f68d6bcfcd2a7c1b02ac822ecd21568405d5c3a529"
+    },
+    {
+      "path": "test/test_dual_towers.py",
+      "before": "34a36bacc42dbf28ab973214cc4ab34ba0376e92fae7188a22b607200368be74",
+      "after": "c313c257412f18c0dca1e09b94b18a3f681d83606c23703dff20f20bce4fee09"
+    },
+    {
+      "path": "test/test_item7_acceptance.py",
+      "before": "9738470000e0875e347b8fa313afd6a1fdff33e899c155c2fa674991ee2aeb22",
+      "after": "769bdc65f1150ce50017a99ad951bf09a311afa0bbffc9bf276d21e33f9fdbdc"
+    },
+    {
+      "path": "test/test_item7_definition_integrity.py",
+      "before": null,
+      "after": "cefe1e645205d95eaa0affea9981676c1986182c782928332b7a413ab60f1b36"
+    },
+    {
+      "path": "test/test_item7_definitions.py",
+      "before": null,
+      "after": "5a6eae4c83f8e688118febfa52873f8532f34fbd9699a9e0cb25d72449b05be8"
+    },
+    {
+      "path": "test/test_item7_taxonomy.py",
+      "before": "bd4f565c6e6995cc34733f4e420e41cffd7fcc67abaabdea624dd9c444de1653",
+      "after": "dc4f908dcb1e4162c555ec3ef96d4acebbe2bae8985093d7f071fa63379d40fe"
+    },
+    {
+      "path": "test/test_item7_word_admission.py",
+      "before": null,
+      "after": "373b88e3381fa4a25784d4e997e0514b198400a29d771635a71982e441e55799"
+    },
+    {
+      "path": "test/test_item9b_corrections.py",
+      "before": "72a8071c6ec24c36b0e6db036d91a6a83aa70d0e1afc5efbc7abd7e8a782de80",
+      "after": "cb7f75eae3edc5bb40889f5ce5bb40222eccfa5853daf05220a5d4dd2b9d5837"
+    },
+    {
+      "path": "test/test_item9b_interpret.py",
+      "before": "95f296b4129aa4d370b28b120e343690e9bc427cb38eeab111c3885309f511e9",
+      "after": "b1af98cc6379a8ce8eddfe9168948823e7098b7159c0f521f424c31704150e14"
+    },
+    {
+      "path": "test/test_iterated_symbolic_wave.py",
+      "before": "766fee2f6f964f9e075a5df1de65a818b900b67b7796f3e3e1a98b1ab98f1f3c",
+      "after": "d60db652f6feea94f8cc40796fb93b0f2f482d2edc417ed291aef3b1a48ad453"
+    },
+    {
+      "path": "test/test_lexical_reference_orders.py",
+      "before": "38723e6772f18c2725b97e0f8b884f94e31704a84642e40ae700dd4488214ff5",
+      "after": "1bd038f88aed12fac5b0a8b2e9786fab8aba8123520c3cd81a4dd8a82edcc7c2"
+    },
+    {
+      "path": "test/test_mereology_word_binding.py",
+      "before": "a0ba3d3cdb4991cfd30a267193d997b2f4577b0edfc201aacc68cbb52115bac2",
+      "after": "0ecb526798a1593b9543da6972abf398c60dbe2dd42f03ee1a7dad3617e8ef02"
+    },
+    {
+      "path": "test/test_order0_percept_definitions.py",
+      "before": "e440ea2b23bc6b486090520bcaefeb8b9a04e3513ec58c40e34a655581782f04",
+      "after": "deafe6b9aad21361a38dd77bdd8f65eb648bd7497c6168c584423789bafe4d29"
+    },
+    {
+      "path": "test/test_radix_layer_reverse.py",
+      "before": "d67c59af22edae41e0c730de57f959ab0b2b989d4e3e52c50e78ef96eefb01ec",
+      "after": "1311b3d8a1763cfecc8248efe1869ac0c704619d631c9cff2cd029240cfadcf9"
+    },
+    {
+      "path": "test/test_reconstruction_bank_contract.py",
+      "before": "76b56ebf55837326cccc35e58f5a337810bf7801f87fbb8c2e57ac22dfe2e7ab",
+      "after": "d97ba12b88e545ebeb7c85dbf9a993767d468314268aa1c5833d73b988b909b4"
+    },
+    {
+      "path": "test/test_reference_table.py",
+      "before": "674f666521af4b492b57cb761ae801aaf11c542aec5e5e7171a380e573274afd",
+      "after": "57956a10a30de84bee726887d5df5de94256f0dc7f8ed1e1a2c2fa6ee96d8bcf"
+    },
+    {
+      "path": "test/test_relevance_bases.py",
+      "before": "e40533ff19fb69ed2363b1e6e3d9287b62c52132d51a24feb88432d1d1998388",
+      "after": "12ee9c32b0417fc259993422885b6641c3c6cdffd57f4d909edd55a6808480da"
+    },
+    {
+      "path": "test/test_sparse_concept_e2e.py",
+      "before": "860fcdc976c8f0b366e395d8dd9656dd6066be5ed8684c18ce1f43138ac87565",
+      "after": "eb66e4a62ee912f75fc933fd111818564e5a96b32c2cdfe8443fbcb43e4e2671"
+    },
+    {
+      "path": "test/test_structural_checkpoint.py",
+      "before": "7b3ce78355435b37b4e0940f6336696945c60b860d3daeaba1cfe0c89782a82c",
+      "after": "e2a0f22d356b55ede74990e4499902c9b08f373cc6c3b8984b50f91398f4898c"
+    },
+    {
+      "path": "test/test_surface_grammar.py",
+      "before": "af241d1edff9d5e38d18c0d6e48ef2b288d564667e193fae2642ba3acef57888",
+      "after": "f07173bf4a0ea9c067fad9dcd0cc5a38b59e1b956fe710b1bfd8daec0a057a8e"
+    },
+    {
+      "path": "test/test_wholespace_property_migration.py",
+      "before": "807634b69f37f880b5b556d4a0c79a100aa3026c6d0d1a3820b1784b8f5a1c9f",
+      "after": "2f399e5303f0d2ce0cdebff5ba9f22da258be4c158088478d2474e456ccc9a10"
+    },
+    {
+      "path": "test/test_word_store.py",
+      "before": "67213e985ea5426a929990ffee189701609d67ae005e3300efa3fb065ba30467",
+      "after": "f4633fd99ee27c11de7bc570be8f1cf05b26562384d4ed601f058211ba3a859c"
+    }
+  ]
+}

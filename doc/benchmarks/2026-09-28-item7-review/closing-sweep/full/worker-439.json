@@ -1,0 +1,153 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids"
+  ],
+  "completed": [
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00052454206161201,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.983300697058439e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005048750899732113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025008292868733406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000246542040258646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024325004778802395,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0003007079940289259,
+      "message": "test/test_word_space_attach_knowledge.py:131: in test_symbolic_space_attach_creates_references_parameter\n    assert hasattr(ws, 'references')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'references')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0003233749885112047,
+      "message": "test/test_word_space_attach_knowledge.py:151: in test_symbolic_space_attach_creates_order_buffer\n    assert hasattr(ws, 'order')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'order')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00032525009009987116,
+      "message": "test/test_word_space_attach_knowledge.py:165: in test_symbolic_space_references_in_named_parameters\n    assert 'references' in names\nE   AssertionError: assert 'references' in []",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00029270804952830076,
+      "message": "test/test_word_space_attach_knowledge.py:175: in test_symbolic_space_order_in_named_buffers\n    assert 'order' in names\nE   AssertionError: assert 'order' in []",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0002607919741421938,
+      "message": "test/test_word_space_attach_knowledge.py:186: in test_symbolic_space_reattach_updates_in_place\n    refs_id_before = id(ws.references)\n                        ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041829096153378487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026750005781650543,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004410418914631009,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

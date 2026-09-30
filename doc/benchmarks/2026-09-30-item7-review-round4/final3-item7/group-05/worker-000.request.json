@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+    "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+    "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-05/worker-000.recycle.json"
+}

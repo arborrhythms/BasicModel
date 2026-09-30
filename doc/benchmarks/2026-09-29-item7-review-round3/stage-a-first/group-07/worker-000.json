@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+  ],
+  "completed": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05952445906586945,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.03324887505732477,
+      "message": "test/test_category_em_smoke.py:133: in test_codebook_enables_and_em_populates_on_real_model\n    fired = _run_forwards(model)\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_category_em_smoke.py:112: in _run_forwards\n    model.forward(ipt)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23815: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13584: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:83: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:16910: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+      "stdout": "Starting with dynamic 12-dim embedding (words added at runtime)\n  Building span table: 0/16 docs\n"
+    },
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.030777332955040038,
+      "message": "test/test_category_em_smoke.py:172: in test_mlp_chooser_sized_and_context_built\n    _run_forwards(model)\ntest/test_category_em_smoke.py:112: in _run_forwards\n    model.forward(ipt)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23815: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13584: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:83: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:16910: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+      "stdout": "Starting with dynamic 12-dim embedding (words added at runtime)\n  Building span table: 0/16 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

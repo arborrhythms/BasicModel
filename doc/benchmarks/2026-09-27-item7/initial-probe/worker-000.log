@@ -1,0 +1,41 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_sealed_row_has_shared_references_and_field_coordinates __________
+test/test_item7_storage.py:13: in test_sealed_row_has_shared_references_and_field_coordinates
+    assert store.refs.shape == (8, 3)
+           ^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'refs'
+_____ test_both_evidence_poles_survive_checkpoint_separately_from_neither ______
+test/test_item7_storage.py:23: in test_both_evidence_poles_survive_checkpoint_separately_from_neither
+    store.set_evidence(both, .8, .8)
+    ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'set_evidence'
+____________________ test_relation_kinds_have_no_catch_all _____________________
+test/test_item7_storage.py:32: in test_relation_kinds_have_no_catch_all
+    assert TernaryTruthStore.REL_OPERATOR == 3
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'TernaryTruthStore' has no attribute 'REL_OPERATOR'. Did you mean: 'REL_PARTOF'?
+__________________ test_relation_rows_never_enter_luminosity ___________________
+test/test_item7_storage.py:45: in test_relation_rows_never_enter_luminosity
+    assert light.sync_from_ltm() == 1
+E   assert 2 == 1
+E    +  where 2 = sync_from_ltm()
+E    +    where sync_from_ltm = TruthLayer(nDim=4, truths=2/8).sync_from_ltm
+______________ test_sentence_content_cannot_choose_its_own_trust _______________
+test/test_item7_storage.py:58: in test_sentence_content_cannot_choose_its_own_trust
+    assert actual == [.65]
+E   assert [-1.0] == [0.65]
+E     
+E     At index 0 diff: -1.0 != 0.65
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates
+FAILED test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither
+FAILED test/test_item7_storage.py::test_relation_kinds_have_no_catch_all - At...
+FAILED test/test_item7_storage.py::test_relation_rows_never_enter_luminosity
+FAILED test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust
+5 failed in 2.02s

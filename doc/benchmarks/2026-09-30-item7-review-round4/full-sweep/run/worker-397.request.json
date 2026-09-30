@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_detached_reverse_objective.py::test_reverse_construction_loss_stops_at_sentence_idea",
+    "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout",
+    "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+    "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-397.recycle.json"
+}

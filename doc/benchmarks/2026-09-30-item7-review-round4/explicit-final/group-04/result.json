@@ -1,0 +1,77 @@
+{
+  "exit_code": 125,
+  "reason": "running",
+  "selected": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+    "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+  ],
+  "completed": [],
+  "workers": [],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-04",
+  "elapsed_seconds": 3.325850084191188,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 182059848,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-04/collect.json"
+    ],
+    "pid": 80071,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 182059848,
+    "elapsed_seconds": 2.9580712909810245,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "active_workers": [
+    {
+      "name": "worker-000",
+      "progress_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-04/worker-000.json",
+      "device": "cpu"
+    }
+  ],
+  "active_worker": {
+    "name": "worker-000",
+    "progress_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-04/worker-000.json",
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,35 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______________ test_reading_and_closing_use_one_concept_allocator ______________
+doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py:7: in test_reading_and_closing_use_one_concept_allocator
+    assert model._concept_owner() is model.grammatical_thoughts.space
+E   assert ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) is ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...Layer()\n      (4): IntersectionLayer()\n      (5): NotLayer()\n      (6): PartLayer()\n      (7): EqualLayer()\n    )\n  )\n)
+E    +  where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = _concept_owner()
+E    +    where _concept_owner = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-2): 3 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n)._concept_owner
+E    +  and   ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...Layer()\n      (4): IntersectionLayer()\n      (5): NotLayer()\n      (6): PartLayer()\n      (7): EqualLayer()\n    )\n  )\n) = <Queries.GrammaticalThoughtRegistry object at 0x129bb9d00>.space
+E    +    where <Queries.GrammaticalThoughtRegistry object at 0x129bb9d00> = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-2): 3 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n).grammatical_thoughts
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_____ test_new_definition_symbols_do_not_alias_later_sentence_occurrences ______
+doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py:16: in test_new_definition_symbols_do_not_alias_later_sentence_occurrences
+    assert symbols.isdisjoint(store.row_ids[assertions].tolist())
+E   assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x12bc809e0>([3, 4, 5])
+E    +    where <built-in method isdisjoint of set object at 0x12bc809e0> = {1, 2, 3, 4, 5, 6, ...}.isdisjoint
+E    +    and   [3, 4, 5] = <built-in method tolist of Tensor object at 0x12b974820>()
+E    +      where <built-in method tolist of Tensor object at 0x12b974820> = tensor([3, 4, 5]).tolist
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator
+doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13589: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences
+2 failed, 2 warnings in 2.65s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-253.recycle.json"
+}

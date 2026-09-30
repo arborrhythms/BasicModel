@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/test/pytest_worker.py",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/schema-affected/worker-010.request.json",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/schema-affected/worker-010.json"
+  ],
+  "pid": 40661,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 425608488,
+  "elapsed_seconds": 3.6388732079649344,
+  "log": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/schema-affected/worker-010.log"
+}

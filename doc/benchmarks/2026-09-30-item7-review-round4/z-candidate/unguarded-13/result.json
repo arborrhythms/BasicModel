@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 15644586008,
+  "elapsed_seconds": 13.385044375201687
+}

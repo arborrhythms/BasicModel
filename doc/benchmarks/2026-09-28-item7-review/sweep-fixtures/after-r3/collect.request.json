@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_type_run_spans.py",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

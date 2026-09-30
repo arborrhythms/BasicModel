@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+    "--revision",
+    "1678ee1fb79c474ffaee5725fd035716de5f1913",
+    "--seed",
+    "5",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-5.json"
+  ],
+  "pid": 15277,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 6610622920,
+  "elapsed_seconds": 864.38995087496,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-5.log"
+}

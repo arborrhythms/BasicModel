@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-006.recycle.json"
+}

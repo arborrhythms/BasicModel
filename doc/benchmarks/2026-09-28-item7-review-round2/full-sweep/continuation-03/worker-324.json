@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_compute_learn_score]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_is_truth_obvious]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_resolves_contradiction]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_route_learned_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_maybe_learn_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[learn_relations_from_stm]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_relation_is_reducible]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_collapse_trust]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]"
+  ],
+  "completed": [
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_compute_learn_score]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_is_truth_obvious]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_resolves_contradiction]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_route_learned_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_maybe_learn_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[learn_relations_from_stm]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_relation_is_reducible]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_collapse_trust]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_compute_learn_score]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012612505815923214,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_children_in_codebook]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.354192297905684e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_is_truth_obvious]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.129196405410767e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_resolves_contradiction]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.820800576359034e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_route_learned_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.775002788752317e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_maybe_learn_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.683302439749241e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[learn_relations_from_stm]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.329201955348253e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_relation_is_reducible]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.749996777623892e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_collapse_trust]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.662506636232138e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002331166062504053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001183499931357801,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011582090519368649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001053375075571239,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

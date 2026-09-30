@@ -1,0 +1,113 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_impenetrable.py::TestOverlapPenalty::test_disjoint_codebook_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_equal_rows_damped_to_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_matched_trust_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_mismatched_trust_penalized",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
+    "test/test_impenetrable.py::TestVarianceFloor::test_collapse_triggers_variance_penalty",
+    "test/test_impenetrable.py::TestVarianceFloor::test_well_spread_no_penalty",
+    "test/test_impenetrable.py::TestDisabled::test_all_zero_weights_returns_zero",
+    "test/test_impenetrable.py::TestDisabled::test_disabled_short_circuits",
+    "test/test_impenetrable.py::TestWiring::test_returns_zero_tensor_without_codebook"
+  ],
+  "completed": [
+    "test/test_impenetrable.py::TestOverlapPenalty::test_disjoint_codebook_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_equal_rows_damped_to_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_matched_trust_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_mismatched_trust_penalized",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
+    "test/test_impenetrable.py::TestVarianceFloor::test_collapse_triggers_variance_penalty",
+    "test/test_impenetrable.py::TestVarianceFloor::test_well_spread_no_penalty",
+    "test/test_impenetrable.py::TestDisabled::test_all_zero_weights_returns_zero",
+    "test/test_impenetrable.py::TestDisabled::test_disabled_short_circuits",
+    "test/test_impenetrable.py::TestWiring::test_returns_zero_tensor_without_codebook"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_disjoint_codebook_zero_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001106166047975421,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_equal_rows_damped_to_zero_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005508330650627613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_matched_trust_zero_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005654578562825918,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_mismatched_trust_penalized",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005572082009166479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004623748827725649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestVarianceFloor::test_collapse_triggers_variance_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035850005224347115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestVarianceFloor::test_well_spread_no_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003125418443232775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestDisabled::test_all_zero_weights_returns_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002686670050024986,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestDisabled::test_disabled_short_circuits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000128875020891428,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestWiring::test_returns_zero_tensor_without_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017320807091891766,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

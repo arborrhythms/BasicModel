@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+    "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+    "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+    "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+    "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+    "test/test_grammatical_query_vps.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence",
+    "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-367.recycle.json"
+}

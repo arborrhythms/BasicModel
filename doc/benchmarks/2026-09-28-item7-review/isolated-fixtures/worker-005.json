@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+  ],
+  "completed": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 163.62996983306948,
+      "message": "test/test_unified_thought_controller.py:158: in test_runbatch_credits_each_controller_row_from_its_own_answer\n    query = registry.form('equal', ref, ref)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:2087: in form\n    value = self._payload(argument, work=work)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:1992: in _payload\n    row = _existing_row(self.space, reference)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:490: in _existing_row\n    raise ValueError('query concept has no allocated payload row')\nE   ValueError: query concept has no allocated payload row",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

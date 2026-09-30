@@ -1,0 +1,671 @@
+..................................s..................................... [ 43%]
+...........................s............................................ [ 86%]
+.........F.............                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_native_nonzero_composition_is_bit_identical_at_every_stance _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7666/test_native_nonzero_compositio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108507da0>
+
+    def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, monkeypatch):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+        snapshots = []
+        for enabled, staged, gain in ((True, False, 1.), (True, True, 0.), (True, True, 1.), (False, False, 1.)):
+            torch.manual_seed(948)
+            model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
+                training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "expectationGain": gain},
+                architecture_overrides={"readingAttention": True})
+            model.eval()
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+            with torch.no_grad():
+                # A nonzero readout makes the snapshot sensitive to content;
+                # the zero-init cursor bootstrap alone could hide leaked inputs.
+                model.reading_attention.scorer[-1].weight.fill_(.25)
+                _stage_fullgraph_tensor_peer(model, ["a bicycle has a wheel"])
+                if staged:
+                    discourse = model.symbolSpace.discourse
+                    observe(discourse, torch.ones(3, discourse.concept_dim))
+                    assert discourse.expect_next_meaning() is not None
+                cs = model.conceptualSpace
+                # Seed ordinary intent through its owner so the priority surface
+                # is live and nonuniform; use the real staged percepts for scope.
+                cs.prime_desire(torch.tensor([0, 1]), valence=1.)
+                before_priority = model._assemble_relevance_priority(cs, 0, None, None).clone()
+                model._reading_attention_step(1, cs.stm.snapshot(detach=True), model._staged_in_sub, None)
+                before_scope = cs._passback_scope_where.clone()
+>               out = model._forward_with_compiled_sentence_state(None)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:497: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8382: in _forward_with_compiled_sentence_state
+    return self._forward_per_stage(
+bin/Models.py:24297: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18220: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22233: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21786: in _run_tensor_peer_word_pipeline
+    TensorPeerWhilePipeline().run_cs_lanes_banked(
+bin/Models.py:1323: in run_cs_lanes_banked
+    result = torch.while_loop(cond, body, _carries_with_grad(initial))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:254: in while_loop
+    return _hop_compile_and_call(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:118: in _hop_compile_and_call
+    return torch.compile(fn, backend=backend, fullgraph=True)(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1261: in compile_wrapper
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:249: in _while_loop_op_wrapper
+    def _while_loop_op_wrapper(*args, **kwargs):
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+<eval_with_key>.5:149: in forward
+    while_loop = torch.ops.higher_order.while_loop(cond_fn_0, body_fn_0, (l_args_2_0_, l_args_2_1_, l_args_2_2_, l_args_2_3_, l_args_2_4_, l_args_2_5_, l_args_2_6_, l_args_2_7_, l_args_2_8_, l_args_2_9_, l_args_2_10_, l_args_2_11_, l_args_2_12_, l_args_2_13_, l_args_2_14_, l_args_2_15_, l_args_2_16_, l_args_2_17_, l_args_2_18_, l_args_2_19_, l_args_2_20_, l_args_2_21_, l_args_2_22_, l_args_2_23_, l_args_2_24_, l_args_2_25_, l_args_2_26_, l_args_2_27_, l_args_2_28_, l_args_2_29_, l_args_2_30_, l_args_2_31_, l_args_2_32_, l_args_2_33_, l_args_2_34_, l_args_2_35_, l_args_2_36_, l_args_2_37_, l_args_2_38_, l_args_2_39_, l_args_2_40_, l_args_2_41_, l_args_2_42_, l_args_2_43_, l_args_2_44_, l_args_2_45_, l_args_2_46_, l_args_2_47_, l_args_2_48_, l_args_2_49_, l_args_2_50_, l_args_2_51_, l_args_2_52_, l_args_2_53_, l_args_2_54_, l_args_2_55_, l_args_2_56_, l_args_2_57_, l_args_2_58_, l_args_2_59_, l_args_2_60_, l_args_2_61_, l_args_2_62_), (l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_10_cell_contents_ar_word_object_ids, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_buffers_cs_binary_rule_ids_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_buffers_cs_unary_rule_ids_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_copy_order_parameters_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_0_parameters_bias_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_0_parameters_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_2_parameters_bias_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_2_parameters_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_operand_order_parameters_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_parameters_tool_embedding_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_10_modules_gl_modules_verb_spec_parameters_bias_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_10_modules_gl_modules_verb_spec_parameters_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_11_modules_gl_modules_adv_edit_parameters_bias_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_11_modules_gl_modules_adv_edit_parameters_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_bias_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_d_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_raw_l_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_raw_u_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_15_modules_gl_modules_marker_map_parameters_bias_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_15_modules_gl_modules_marker_map_parameters_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_bias_weight_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_d_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_raw_l_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_raw_u_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_15_cell_contents_buffers_binary_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_15_cell_contents_buffers_unary_, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_17_cell_contents, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_20_cell_contents, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_21_cell_contents, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_22_cell_contents, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_3_cell_contents, l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_9_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_10_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_11_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_12_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_13_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_14_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_15_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_16_cell_contents_modules_subspace_what_parameters_w_, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_17_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_18_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_19_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_22_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_23_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_24_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_25_cell_contents_modules_subspace_what_modules_primitive_properties_parameters_members_, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_25_cell_contents_modules_subspace_what_parameters_w_, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_2_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_4_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_5_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_7_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_8_cell_contents, l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_9_cell_contents, l_args_1_closure_0_cell_contents_closure_12_cell_contents_closure_5_cell_contents, l_args_1_closure_0_cell_contents_closure_14_cell_contents, l_args_1_closure_0_cell_contents_closure_2_cell_contents, l_args_1_closure_0_cell_contents_closure_5_cell_contents_0_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_1_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_2_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_3_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_4_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_5_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_6_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_7_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_8_, l_args_1_closure_0_cell_contents_closure_5_cell_contents_9_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_0_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_10_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_1_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_2_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_3_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_4_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_5_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_6_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_7_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_8_, l_args_1_closure_0_cell_contents_closure_6_cell_contents_9_, l_args_1_closure_0_cell_contents_closure_7_cell_contents_0_, l_args_1_closure_0_cell_contents_closure_7_cell_contents_1_));  cond_fn_0 = body_fn_0 = l_args_2_0_ = l_args_2_1_ = l_args_2_2_ = l_args_2_3_ = l_args_2_4_ = l_args_2_5_ = l_args_2_6_ = l_args_2_7_ = l_args_2_8_ = l_args_2_9_ = l_args_2_10_ = l_args_2_11_ = l_args_2_12_ = l_args_2_13_ = l_args_2_14_ = l_args_2_15_ = l_args_2_16_ = l_args_2_17_ = l_args_2_18_ = l_args_2_19_ = l_args_2_20_ = l_args_2_21_ = l_args_2_22_ = l_args_2_23_ = l_args_2_24_ = l_args_2_25_ = l_args_2_26_ = l_args_2_27_ = l_args_2_28_ = l_args_2_29_ = l_args_2_30_ = l_args_2_31_ = l_args_2_32_ = l_args_2_33_ = l_args_2_34_ = l_args_2_35_ = l_args_2_36_ = l_args_2_37_ = l_args_2_38_ = l_args_2_39_ = l_args_2_40_ = l_args_2_41_ = l_args_2_42_ = l_args_2_43_ = l_args_2_44_ = l_args_2_45_ = l_args_2_46_ = l_args_2_47_ = l_args_2_48_ = l_args_2_49_ = l_args_2_50_ = l_args_2_51_ = l_args_2_52_ = l_args_2_53_ = l_args_2_54_ = l_args_2_55_ = l_args_2_56_ = l_args_2_57_ = l_args_2_58_ = l_args_2_59_ = l_args_2_60_ = l_args_2_61_ = l_args_2_62_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_10_cell_contents_ar_word_object_ids = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_buffers_cs_binary_rule_ids_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_buffers_cs_unary_rule_ids_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_copy_order_parameters_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_0_parameters_bias_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_0_parameters_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_2_parameters_bias_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_mlp_modules_2_parameters_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_modules_operand_order_parameters_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_chooser_parameters_tool_embedding_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_10_modules_gl_modules_verb_spec_parameters_bias_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_10_modules_gl_modules_verb_spec_parameters_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_11_modules_gl_modules_adv_edit_parameters_bias_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_11_modules_gl_modules_adv_edit_parameters_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_bias_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_d_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_raw_l_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_12_modules_gl_modules_pi_modules_layer_parameters_raw_u_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_15_modules_gl_modules_marker_map_parameters_bias_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_15_modules_gl_modules_marker_map_parameters_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_bias_weight_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_d_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_raw_l_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_11_cell_contents_language_layer_ref_modules_operation_layer_modules_ops_modules_9_modules_gl_modules_sigma_modules_layer_parameters_raw_u_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_15_cell_contents_buffers_binary_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_15_cell_contents_buffers_unary_ = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_17_cell_contents = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_20_cell_contents = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_21_cell_contents = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_22_cell_contents = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_3_cell_contents = l_args_1_closure_0_cell_contents_closure_10_cell_contents_closure_9_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_10_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_11_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_12_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_13_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_14_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_15_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_16_cell_contents_modules_subspace_what_parameters_w_ = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_17_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_18_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_19_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_22_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_23_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_24_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_25_cell_contents_modules_subspace_what_modules_primitive_properties_parameters_members_ = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_25_cell_contents_modules_subspace_what_parameters_w_ = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_2_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_4_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_5_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_7_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_8_cell_contents = l_args_1_closure_0_cell_contents_closure_11_cell_contents_closure_9_cell_contents = l_args_1_closure_0_cell_contents_closure_12_cell_contents_closure_5_cell_contents = l_args_1_closure_0_cell_contents_closure_14_cell_contents = l_args_1_closure_0_cell_contents_closure_2_cell_contents = l_args_1_closure_0_cell_contents_closure_5_cell_contents_0_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_1_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_2_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_3_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_4_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_5_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_6_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_7_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_8_ = l_args_1_closure_0_cell_contents_closure_5_cell_contents_9_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_0_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_10_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_1_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_2_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_3_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_4_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_5_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_6_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_7_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_8_ = l_args_1_closure_0_cell_contents_closure_6_cell_contents_9_ = l_args_1_closure_0_cell_contents_closure_7_cell_contents_0_ = l_args_1_closure_0_cell_contents_closure_7_cell_contents_1_ = None
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:64: in __call__
+    return super().__call__(
+.venv/lib/python3.12/site-packages/torch/_ops.py:543: in __call__
+    return torch.overrides.handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:64: in __call__
+    return super().__call__(
+.venv/lib/python3.12/site-packages/torch/_ops.py:549: in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:413: in dispatch
+    return kernel(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:341: in maybe_run_autograd
+    return self(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:64: in __call__
+    return super().__call__(
+.venv/lib/python3.12/site-packages/torch/_ops.py:549: in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:537: in dispatch
+    return kernel(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:307: in while_loop_dense
+    out = body_fn(*carried_vals, *additional_inputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:1007: in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.fx.graph_module._WrappedCall object at 0x14adad310>
+obj = GraphModule()
+args = (tensor(0), tensor(8), tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,....,
+        0., 0., 0., 0., 0., 0., 0., 0.]), tensor([-1, -1, -1, -1, -1, -1, -1, -1]), tensor([-1]), tensor([0.]), ...)
+kwargs = {}
+
+    def __call__(self, obj: Any, *args: Any, **kwargs: Any) -> Any:
+        try:
+            if self.cls_call is not None:
+                return self.cls_call(obj, *args, **kwargs)
+            else:
+                return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+        except Exception as e:
+            if not e.__traceback__:
+                raise AssertionError("Exception has no traceback") from e
+            topmost_framesummary: traceback.FrameSummary = (
+                traceback.StackSummary.extract(traceback.walk_tb(e.__traceback__))[-1]
+            )
+            if "eval_with_key" in topmost_framesummary.filename:
+                print(
+                    _WrappedCall._generate_error_message(topmost_framesummary),
+                    file=sys.stderr,
+                )
+>               raise e.with_traceback(None)  # noqa: B904
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               RuntimeError: index -6 is out of bounds for dimension 1 with size 152
+
+.venv/lib/python3.12/site-packages/torch/fx/graph_module.py:512: RuntimeError
+----------------------------- Captured stderr call -----------------------------
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/graph_module.py", line 500, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1783, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1794, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<eval_with_key>.7", line 1512, in forward
+    seal_events_1 = seal_events.scatter(1, index, getitem_176);  index = getitem_176 = None
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: index -6 is out of bounds for dimension 1 with size 152
+
+Call using an FX-traced Module, line 1512 of the traced Module's generated forward function:
+    getitem_176 = sealed[(slice(None, None, None), None)];  sealed = None
+    seal_events_1 = seal_events.scatter(1, index, getitem_176);  index = getitem_176 = None
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
+    eq_22 = kind == 1
+
+    binary_2 = and__12 & eq_22;  eq_22 = None
+
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_with_factored_derivation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance
+1 failed, 164 passed, 2 skipped, 1 deselected, 5 warnings in 21.99s

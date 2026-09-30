@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

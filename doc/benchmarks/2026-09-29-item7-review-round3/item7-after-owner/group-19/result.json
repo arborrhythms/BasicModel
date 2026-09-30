@@ -1,0 +1,376 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+    "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+    "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+    "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+    "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+    "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+    "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+    "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+    "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+    "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+    "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles"
+  ],
+  "completed": [
+    "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+    "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+    "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+    "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+    "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+    "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+    "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+    "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+    "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+    "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+    "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-19/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-19/worker-000.json"
+      ],
+      "pid": 22904,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 432751888,
+      "elapsed_seconds": 3.6991708748973906,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-19/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+        "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+        "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+        "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+        "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+        "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+        "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+        "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+        "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+        "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+        "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+        "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+        "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+        "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+        "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+        "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+        "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+        "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+        "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+        "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+        "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles"
+      ],
+      "completed": [
+        "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+        "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+        "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+        "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+        "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+        "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+        "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+        "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+        "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+        "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+        "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+        "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+        "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+        "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+        "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+        "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+        "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+        "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+        "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+        "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+        "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00034845806658267975,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017642499879002571,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.74160323292017e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008426669519394636,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00011008302681148052,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0011856250930577517,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017748749814927578,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001785083906725049,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0019807498902082443,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001419957960024476,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0015081251040101051,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009494589176028967,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.15829262137413e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001019874820485711,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018920840229839087,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0012091659009456635,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010903328657150269,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.047553292009979486,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000708084087818861,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00200645811855793,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008557499386370182,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00559837487526238,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009543041000142694,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-19",
+  "elapsed_seconds": 7.439392708009109,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 432751888,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-19/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-19/collect.json"
+    ],
+    "pid": 22896,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 422266056,
+    "elapsed_seconds": 3.4982166250701994,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-19/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+        "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+        "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+        "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+        "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+        "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+        "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+        "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+        "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+        "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+        "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+        "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+        "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+        "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+        "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+        "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+        "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+        "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+        "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+        "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+        "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

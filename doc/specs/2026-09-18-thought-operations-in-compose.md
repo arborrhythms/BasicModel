@@ -175,7 +175,7 @@ parse, but it may never manufacture a form absent from that model's
 `<thought>` list. `arma` remains a typed prediction result carrying the
 owned `[3, D]` expectation end state; it is not a fabricated root or a change
 to the 21-value compiled tuple. `true` remains absent until the deferred
-two-truths sealed-clause representation exists.
+two-truths ended-clause representation exists.
 
 ## 5. Required implementation order
 

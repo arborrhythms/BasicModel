@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes"
+  ],
+  "completed": [
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000999000039882958,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004484170349314809,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02483587502501905,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

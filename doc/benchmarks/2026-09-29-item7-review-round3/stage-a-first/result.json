@@ -1,0 +1,60 @@
+{
+  "groups": [
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_grounded_xor.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_concept_output.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_order0_attended_field.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_concept_memberships.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_order0_percept_definitions.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "selector": "test/test_router_fires_per_word.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    },
+    {
+      "selector": "test/test_category_em_smoke.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-07/result.json"
+    },
+    {
+      "selector": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-08/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

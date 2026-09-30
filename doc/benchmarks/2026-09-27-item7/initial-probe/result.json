@@ -1,0 +1,142 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates",
+    "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust"
+  ],
+  "completed": [
+    "test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates",
+    "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe/worker-000.json"
+      ],
+      "pid": 74800,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 429327656,
+      "elapsed_seconds": 3.634313957998529,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates",
+        "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+        "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust"
+      ],
+      "completed": [
+        "test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates",
+        "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+        "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00161108304746449,
+          "message": "test/test_item7_storage.py:13: in test_sealed_row_has_shared_references_and_field_coordinates\n    assert store.refs.shape == (8, 3)\n           ^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'TernaryTruthStore' object has no attribute 'refs'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.008760416996665299,
+          "message": "test/test_item7_storage.py:23: in test_both_evidence_poles_survive_checkpoint_separately_from_neither\n    store.set_evidence(both, .8, .8)\n    ^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'TernaryTruthStore' object has no attribute 'set_evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.999998681247234e-05,
+          "message": "test/test_item7_storage.py:32: in test_relation_kinds_have_no_catch_all\n    assert TernaryTruthStore.REL_OPERATOR == 3\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'TernaryTruthStore' has no attribute 'REL_OPERATOR'. Did you mean: 'REL_PARTOF'?",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.003962957998737693,
+          "message": "test/test_item7_storage.py:45: in test_relation_rows_never_enter_luminosity\n    assert light.sync_from_ltm() == 1\nE   assert 2 == 1\nE    +  where 2 = sync_from_ltm()\nE    +    where sync_from_ltm = TruthLayer(nDim=4, truths=2/8).sync_from_ltm",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00017658306751400232,
+          "message": "test/test_item7_storage.py:58: in test_sentence_content_cannot_choose_its_own_trust\n    assert actual == [.65]\nE   assert [-1.0] == [0.65]\nE     \nE     At index 0 diff: -1.0 != 0.65\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 1800.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe",
+  "elapsed_seconds": 7.327391874976456,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 429327656,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe/collect.json"
+    ],
+    "pid": 74759,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 425542880,
+    "elapsed_seconds": 3.499611833016388,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates",
+        "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+        "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

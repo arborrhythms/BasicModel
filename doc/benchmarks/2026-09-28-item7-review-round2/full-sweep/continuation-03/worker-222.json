@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+  ],
+  "completed": [
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008626041933894157,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0052237920463085175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004437583964318037,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005212165997363627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005250042071565986,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -50,7 +50,7 @@ taxonomy. Neither spelling implicitly enables the other.
 A model ordinarily declares one spelling in whichever of compose, thought,
 and generate it needs.
 
-`true` is reserved for the deferred two-truths sealed-clause representation;
+`true` is reserved for the deferred two-truths ended-clause representation;
 it has no production executor until that representation exists.
 
 Canonical `part` means `part(I1=part, I2=whole)`. Leaving `I1` open returns

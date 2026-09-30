@@ -1,0 +1,6 @@
+test/test_ispart_query_dispatch.py::test_part_layer_registered
+test/test_ispart_query_dispatch.py::test_part_structural_forward_passes_parent
+test/test_ispart_query_dispatch.py::test_part_dispatches_its_declared_pure_structural_face
+test/test_ispart_query_dispatch.py::test_retired_rule_query_attribute_fails_loudly
+
+4 tests collected in 0.55s

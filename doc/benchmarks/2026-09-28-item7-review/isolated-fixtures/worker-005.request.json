@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+  ],
+  "collect": false,
+  "recycle_file": "/private/tmp/item7-isolated-fixtures/worker-005.recycle.json"
+}

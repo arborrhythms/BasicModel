@@ -1,0 +1,13 @@
+{
+  "diagnostic_only": true,
+  "configuration": "data/MM_grammar_wording.xml",
+  "seed": null,
+  "word_id": 10,
+  "object_id": 11,
+  "clause_row_id": 12,
+  "clause_point_available_in_ltm": true,
+  "clause_has_inventory_row": false,
+  "lexical_order_lookup_returns_clause": true,
+  "program_reader_error": "query concept has no allocated payload row",
+  "note": "The diagnostic confirms the reader gap; it does not repair or pass the native packed-reading probe."
+}

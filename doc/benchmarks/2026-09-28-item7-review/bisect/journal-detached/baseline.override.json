@@ -1,0 +1,15 @@
+{
+  "mode": "journal-detached",
+  "scope": "Cut only the numerical clause-journal gradient branch; preserve every recorded value and end-state decision.",
+  "override_sha256": "3fc8c30b4e64ba785018b1945849664b4558341c9e1d176fb0fd8baf89f0d162",
+  "base_revision": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "configurations": [
+    {
+      "reference_rules": [],
+      "situation_weight": 0.0,
+      "expectation_weight": 0.0,
+      "expectation_loss": 0.0,
+      "sentence_expectation": false
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_codebook_enables_and_em_populates_on_real_model _____________
+test/test_category_em_smoke.py:138: in test_codebook_enables_and_em_populates_on_real_model
+    assert ws.category_codebook_enabled(), "codebook never enabled"
+E   AssertionError: codebook never enabled
+E   assert False
+E    +  where False = category_codebook_enabled()
+E    +    where category_codebook_enabled = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).category_codebook_enabled
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 12-dim embedding (words added at runtime)
+  Building span table: 0/16 docs
+=============================== warnings summary ===============================
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdtm241b9.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 6 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 7 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 8 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 9 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 10 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 11 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 12 gets records only, no weighted reading (overflow #15)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 13 gets records only, no weighted reading (overflow #17)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 14 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 15 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 16 gets records only, no weighted reading (overflow #29)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 17 gets records only, no weighted reading (overflow #33)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 18 gets records only, no weighted reading (overflow #39)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #41)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 20 gets records only, no weighted reading (overflow #43)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 21 gets records only, no weighted reading (overflow #45)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #51)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 23 gets records only, no weighted reading (overflow #55)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 24 gets records only, no weighted reading (overflow #57)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 25 gets records only, no weighted reading (overflow #59)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 26 gets records only, no weighted reading (overflow #61)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 27 gets records only, no weighted reading (overflow #63)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 28 gets records only, no weighted reading (overflow #67)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 29 gets records only, no weighted reading (overflow #69)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+1 failed, 27 warnings in 12.92s

@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 4/4 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_monotonic</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.060813084011897445</pre></td><td><pre>test/test_where_encoding_recovery.py:86: in test_allocate_monotonic
+    positions = [ws.allocate_position() for _ in range(8)]
+                 ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;allocate_position&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_position_persists_via_vocab_extras</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.027495167101733387</pre></td><td><pre>test/test_where_encoding_recovery.py:96: in test_allocate_position_persists_via_vocab_extras
+    ws.allocate_position()
+    ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;allocate_position&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_starts_at_one</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02711120794992894</pre></td><td><pre>test/test_where_encoding_recovery.py:80: in test_allocate_starts_at_one
+    self.assertEqual(ws.allocate_position(), 1)
+                     ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;allocate_position&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02737470797728747</pre></td><td><pre>test/test_where_encoding_recovery.py:127: in test_load_vocab_extras_without_counter_defaults_to_one
+    ws.load_vocab_extras(legacy_blob)
+    ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;load_vocab_extras&#x27;</pre></td><td><pre></pre></td></tr></table></body></html>

@@ -1,0 +1,14 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+  "device": "cpu"
+}

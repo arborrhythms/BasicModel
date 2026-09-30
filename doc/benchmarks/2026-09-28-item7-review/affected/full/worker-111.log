@@ -1,0 +1,16 @@
+F.....F..                                                                [100%]
+=================================== FAILURES ===================================
+_____ test_older_slot_unary_is_preserved_in_the_committed_postfix_program ______
+test/test_compose_records.py:34: in test_older_slot_unary_is_preserved_in_the_committed_postfix_program
+    positions, actions, targets = BasicModel._derivation_program(model)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: too many values to unpack (expected 3)
+________ test_one_word_packed_sentence_has_its_own_closing_and_program _________
+test/test_compose_records.py:137: in test_one_word_packed_sentence_has_its_own_closing_and_program
+    _, first, _ = BasicModel._derivation_program(model, t=0)
+    ^^^^^^^^^^^
+E   ValueError: too many values to unpack (expected 3)
+=========================== short test summary info ============================
+FAILED test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program
+FAILED test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program
+2 failed, 7 passed in 2.71s

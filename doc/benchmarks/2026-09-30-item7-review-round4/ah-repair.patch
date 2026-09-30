@@ -1,0 +1,43 @@
+--- bin/Language.py (before AH)
++++ bin/Language.py (after AH)
+@@ -13618,14 +13618,28 @@
+         references = getattr(entry, 'reference_ids', None)
+         references = concept_ids if references is None else references
+         native_ids = references.detach().to("cpu").tolist()
+-        if getattr(entry, 'reference_values', None) is not None:
++        supplied_values = getattr(entry, 'reference_values', None) is not None
++        if supplied_values:
+             leaves = entry.reference_values
+         elif bool((references != concept_ids).any()):
+             values = list(leaves.unbind(0))
++            store_reader = getattr(getattr(registry, 'space', None), '_closed_clause_store', None)
++            store = store_reader() if callable(store_reader) else None
+             for i in (references != concept_ids).nonzero().reshape(-1).tolist():
+-                if native_ids[i] > 0:
+-                    values[i] = registry._payload(('sym', int(native_ids[i]))).to(leaves)
++                identity = int(native_ids[i])
++                if identity > 0:
++                    if store is not None and store.index_of_row(identity) is not None:
++                        point = store.point_of_row(identity)
++                        if point is None:
++                            # A relative clause has no concept point. Its
++                            # reference remains available to clause recovery;
++                            # this concept-operand adapter cannot form it.
++                            return None
++                    else:
++                        point = registry._payload(('sym', identity))
++                    values[i] = point.to(leaves)
+             leaves = torch.stack(values)
++            supplied_values = True
+         lexical_forms = getattr(entry, "lexical_forms", None)
+         if lexical_forms is None:
+             lexical_forms = (None,) * len(native_ids)
+@@ -13690,7 +13704,7 @@
+             if len(operation.operand_roles) != 2:
+                 return None
+             try:
+-                if entry.reference_values is None:
++                if not supplied_values:
+                     canonical = registry.form(
+                         face, left_ref, right_ref, mode=mode, polarity=polarity)
+                 else:

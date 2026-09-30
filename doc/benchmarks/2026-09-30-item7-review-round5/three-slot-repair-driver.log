@@ -1,0 +1,19 @@
+XOR comparison: 49 attempts per tree; 15 exact repetitions.
+{'HEAD': {'completed_under_guard': 10, 'median_ending_mse': 0.06961572170257568}, 'before AK': {'completed_under_guard': 10, 'median_ending_mse': 0.13429675996303558}, 'candidate': {'completed_under_guard': 10, 'median_ending_mse': 0.05786815658211708}}
+{
+  "changed_files": [
+    "bin/ClauseJournal.py",
+    "bin/ClauseRow.py",
+    "bin/Queries.py",
+    "test/test_grammatical_query_vps.py",
+    "test/test_item7_predicate_identity.py",
+    "test/test_thought_operation_catalog.py"
+  ],
+  "source_files": 712,
+  "source_digest": "e8faf905cfe40c76e064a52bcf61e4063034a21f619d13b0a6e777e05569fdf1",
+  "original_three_assertions_unchanged": true,
+  "configuration_changes": [],
+  "no_item7_seed_setting": true,
+  "nonlayer_and_conjunction_unchanged_from_head": true,
+  "commit_state_unchanged": true
+}

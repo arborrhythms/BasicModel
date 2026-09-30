@@ -1,0 +1,159 @@
+{
+  "source_frozen": true,
+  "entries": [
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+      "round2_outcome": "passed",
+      "observed": "The existing owned-answer equality assertions pass; expected lexical payload setup then passes None from resolve_word_concept(plus, order=1) to _csw_row_of, which raises int(None).",
+      "cause_read_from_source": "Interpret.forward retains the native order of the replaced word row. This fixture assumes a raised order-1 object; Models._referent_representation likewise excludes order-0 identities with a source-order > 0 filter. This is an incomplete migration of the lexical referent path, not evidence that the prior owned-answer equality assertions failed.",
+      "references": [
+        "test/test_output_path_supervised.py:457",
+        "bin/Interpret.py:209",
+        "bin/Models.py:9438",
+        "bin/Spaces.py:19382"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+      "round2_outcome": "failed",
+      "observed": "The second install_layout changes part width from 3 to 5 with two words unchanged. The captured graph count becomes 2; the protected assertion requires 1. The same selector, line and 2 == 1 failure occur in the round-2 receipt.",
+      "scope_of_diagnosis": "The observed specialization is retained. Its individual Dynamo guard was not instrumented in this sweep.",
+      "references": [
+        "test/test_compiled_word_chunk.py:308"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+      "round2_outcome": "failed",
+      "observed": "The sentence root exists but root.grad_fn is None. The test fails before invoking the detached reverse student, at its unchanged live-root prerequisite.",
+      "cause_read_from_source": "Same named cause as round 2: sentence commit publishes detached history through the compatibility root. The student gradient assertions have not been reached.",
+      "references": [
+        "test/test_compiled_word_chunk.py:939",
+        "doc/benchmarks/2026-09-28-item7-review-round2/README.md:112"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+      "round2_outcome": "passed",
+      "observed": "Strict reload fails in _restore_structural_extras while rebuilding knowing identities: the referenced code owner has no _concept_allocator attribute. The test does not reach its state equality assertions.",
+      "cause_read_from_source": "Allocator restoration and knowing reconstruction occur in the same per-space loop, but knowing.code_owner may refer to another conceptual space. The reader directly accesses that owner allocator without ensuring its structural state is ready. This is an unresolved checkpoint restoration dependency after the shared identity-owner change; the trace proves the missing owner allocator, not a numeric state mismatch.",
+      "probable_fix_for_review": "Restore all allocator/row address state before rebuilding cross-space knowing fields, and handle an owner with no saved native allocation explicitly. A blind empty allocator fallback before its saved state is restored could lose addresses.",
+      "references": [
+        "bin/Models.py:4909",
+        "test/test_output_synthesis.py:507"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "round2_outcome": "failed",
+      "observed": "_program_entries indexes batch member 1 from a metadata tensor with only one batch row. The failure occurs before the policy-configuration assertions.",
+      "cause_or_diagnostic_limit": "Same named cause as the round-2 receipt: provisioning leaves one-row word-reference metadata for a later larger batch on the noncanonical path.",
+      "references": [
+        "bin/Models.py:13237",
+        "test/test_reasoning_cde_model.py:60"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence",
+      "round2_outcome": "passed",
+      "observed": "The unchanged total-store-size assertion expects two new rows after two packed sentences and observes eight. Later depth and unary-trace assertions are not reached.",
+      "cause_or_diagnostic_limit": "This count predates DEF rows in the same store. The sweep does not record the eight rows by kind, so it does not prove their precise partition or establish that a count-only port suffices.",
+      "references": [
+        "test/test_reduction_pressure.py:161"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+      "round2_outcome": "passed",
+      "observed": "Forward on the two RamsifiedModel sentences fails in ClauseRow.write_clause preflight: a nested relation has fewer than three resolved row references.",
+      "cause_or_diagnostic_limit": "Unresolved relation references at sentence closing. The specific child and source of the missing identity are not isolated by this sweep; this remains a runtime failure, not a fixture-count port.",
+      "references": [
+        "bin/ClauseRow.py:271",
+        "test/test_reasoning.py:313"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "round2_outcome": "passed",
+      "observed": "The assertion that provisioning made no external prediction binding passes. The following total-store-size assertion expects three rows and observes seven; later context assertions are not reached.",
+      "cause_or_diagnostic_limit": "The fixture counts the whole store, which now includes definitions alongside the three provisioned truths. Its asserted-row accounting needs a port; that port and the subsequent assertions have not been tested on this frozen source.",
+      "references": [
+        "test/test_sentence_expectation.py:257"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+      "round2_outcome": "failed",
+      "observed": "The identity-candidate training path fails at finish_clause with a completed field that has neither one nor three slots, before the equivalence verdict.",
+      "cause_or_diagnostic_limit": "The completed-field shape failure is retained. Its originating compose path was not isolated further in this sweep.",
+      "references": [
+        "bin/ClauseJournal.py:100",
+        "test/test_space_equiv_selfcheck.py:25"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+      "round2_outcome": "failed",
+      "observed": "After provisioning, get_what_slots(b=0) contains three slots; the existing assertion requires an empty episode.",
+      "cause_or_diagnostic_limit": "The provisioning hard-reset expectation remains unmet, as in the round-2 sweep.",
+      "references": [
+        "test/test_expectation_review.py:86"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero",
+      "round2_outcome": "passed",
+      "observed": "The old-checkpoint load fails before the zero-time assertions because the referenced knowing code owner has no _concept_allocator.",
+      "cause_or_diagnostic_limit": "Same allocator-restoration dependency as test_synthesized_answer_checkpoint_reloads_into_a_fresh_model in this ledger.",
+      "references": [
+        "bin/Models.py:4909",
+        "test/test_model_time_when.py:306"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "round2_outcome": "failed",
+      "observed": "Strict checkpoint restoration fails at the missing code-owner _concept_allocator, before optimizer, counter and RNG assertions.",
+      "cause_or_diagnostic_limit": "This is a new stopping cause for a round-2 regression. The measured optimizer layout repair remains 92/3 on both sides, but this complete checkpoint gate is still red because of the structural-restoration dependency.",
+      "references": [
+        "bin/Models.py:4909",
+        "test/test_fineweb_preflight.py:145"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+      "round2_outcome": "failed",
+      "observed": "After reading twelve words and revisiting lynx, word_concepts returns one identity but that identity occurs zero times in the published attended carrier. The unchanged assertion requires one occurrence.",
+      "cause_or_diagnostic_limit": "Stage A passed this test. Stage B replaces the word inventory row by its object; the remaining lookup/carrier identity mismatch needs an explicit word-to-object port or a runtime repair. The sweep alone does not establish which, so this remains red with the precise mismatch recorded.",
+      "references": [
+        "test/test_order0_attended_field.py:139"
+      ],
+      "gate_remains_failed": true,
+      "runtime_or_test_changes_after_sweep_started": false
+    }
+  ]
+}

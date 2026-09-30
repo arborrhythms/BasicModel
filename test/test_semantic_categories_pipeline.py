@@ -1,11 +1,7 @@
-"""End-to-end: shape the operator codebook from consequence, then recover
-grammatical categories from it (Phase R4-sem 3).
+"""Semantic category grouping from explicit operator consequences/signatures.
 
-Composes R4-sem 1 (``WholeSpace.shape_operators`` -- the live codebook
-shaped by truth/consequence through the soft superposition) with R4-sem 2
-(``recover_semantic_categories`` -- categories from the operators' semantic
-vectors). Demonstrates the full "live-codebook" pipeline the design calls
-for, and connects the recovery to the transitional grammar's participation.
+The retired WholeSpace operator shaper supplied these inputs previously.
+These are grouping mechanisms; chooser training is tested on LanguageSpace.
 """
 
 import os
@@ -22,50 +18,27 @@ if _BIN not in sys.path:
 import torch
 
 
-def _ws_with_ops(*op_names, nDim=8):
-    from Spaces import WholeSpace
-    ws = WholeSpace.__new__(WholeSpace)
-    ws.nDim = nDim
-    ws._operation_positions = {}
-    ws._operation_vectors = {}
-    for name in op_names:
-        ws._operation_positions[name] = len(ws._operation_positions) + 1
-        ws._operation_vectors[name] = ws._seed_operator_vector(name)
-    return ws
-
-
-def test_shape_then_recover_categorizes_by_operator_effect():
-    """Shape conjunction/disjunction from min/max consequence, then recover
-    symbol categories from the SHAPED codebook: symbols sharing an operator
-    (any position) cluster; symbols on the opposite-effect operator split."""
+def test_consequence_vectors_categorize_by_operator_effect():
+    """Equal consequence signatures cluster across argument positions."""
     from semantic_categories import recover_semantic_categories
-    ws = _ws_with_ops("conjunction", "disjunction")
     a = torch.tensor([[1.0], [1.0], [0.0], [0.0]])
     b = torch.tensor([[1.0], [0.0], [1.0], [0.0]])
-    q_and = torch.zeros(8); q_and[0] = 1.0
-    q_or = torch.zeros(8); q_or[1] = 1.0
-    ws.shape_operators(
-        [(q_and, a, b, torch.minimum(a, b)),
-         (q_or, a, b, torch.maximum(a, b))],
-        ["conjunction", "disjunction"])
+    from Language import GRAMMAR_LAYER_CLASSES
+    op_vectors = {name: GRAMMAR_LAYER_CLASSES[name]().compose(a, b).reshape(-1)
+                  for name in ("conjunction", "disjunction")}
     participation = {
         "n1": {("conjunction", 0)},
         "n2": {("conjunction", 1)},   # same operator, other position
         "v1": {("disjunction", 0)},
     }
-    cls = recover_semantic_categories(participation, ws._operation_vectors)
+    cls = recover_semantic_categories(participation, op_vectors)
     assert cls["n1"] == cls["n2"], cls       # same operator effect
     assert cls["n1"] != cls["v1"], cls       # opposite effect
 
 
 def test_recovers_on_transitional_grammar_participation():
-    """Semantic recovery runs on the real transitional grammar's role
-    participation (operator codebook seeded) and collapses the order-variant
-    role categories (CONJ_L3/4/5 share one operator slot -> one category) --
-    the role-collapse the structural learner also achieves, now via the
-    operator-vector signature."""
+    """Shared operator participation collapses order-variant categories."""
     from Language import Grammar, GRAMMAR_LAYER_CLASSES
-    from Spaces import WholeSpace
     from participation import role_participation
     from semantic_categories import recover_semantic_categories
 
@@ -76,12 +49,12 @@ def test_recovers_on_transitional_grammar_participation():
         os.path.dirname(os.path.abspath(__file__)), "fixtures",
         "transitional_pos.grammar"))
     part = role_participation(g)
-    # Seed an operator codebook for every semantic operator in the grammar.
-    seed = WholeSpace.__new__(WholeSpace)
-    seed.nDim = 16
-    op_vectors = {m: seed._seed_operator_vector(m)
-                  for sym in part for (m, _p) in part[sym]
-                  if m in GRAMMAR_LAYER_CLASSES}
+    # Explicit distinct operator signatures isolate the category grouping;
+    # no retired WholeSpace operator dictionary supplies them.
+    names = sorted({m for entries in part.values() for m, _ in entries
+                    if m in GRAMMAR_LAYER_CLASSES})
+    basis = torch.eye(len(names))
+    op_vectors = dict(zip(names, basis))
     cls = recover_semantic_categories(part, op_vectors, threshold=0.999)
     assert cls, "expected recovered categories"
 

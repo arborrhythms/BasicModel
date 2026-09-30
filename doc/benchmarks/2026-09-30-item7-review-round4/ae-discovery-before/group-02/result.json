@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+  ],
+  "completed": [
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02/worker-000.json"
+      ],
+      "pid": 66800,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 518882720,
+      "elapsed_seconds": 7.678398834075779,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.1351464169565588,
+          "message": "test/test_sentence_expectation.py:257: in test_real_provisioning_is_not_an_external_prediction_stream\n    assert len(model.symbolSpace.ltm_store) == 3\nE   assert 7 == 3\nE    +  where 7 = len(TernaryTruthStore())\nE    +    where TernaryTruthStore() = SymbolSpace(\\n  (subspace): SymbolSubSpace(\\n    (layers): ModuleList(\\n      (0): LanguageLayer(\\n        (operation_laye...ding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (languageSpace): LanguageSpace(\\n    (clause_scope): ClauseScope()\\n  )\\n).ltm_store\nE    +      where SymbolSpace(\\n  (subspace): SymbolSubSpace(\\n    (layers): ModuleList(\\n      (0): LanguageLayer(\\n        (operation_laye...ding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (languageSpace): LanguageSpace(\\n    (clause_scope): ClauseScope()\\n  )\\n) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-2): 3 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n).symbolSpace",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02",
+  "elapsed_seconds": 11.795203000074252,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 518882720,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02/collect.json"
+    ],
+    "pid": 66778,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 266437568,
+    "elapsed_seconds": 3.8003772501833737,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

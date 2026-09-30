@@ -108,12 +108,12 @@ class CheckpointMigrationDiagnostics:
     target_version: int
     dropped_state_keys: tuple[str, ...] = ()
     dropped_state_bytes: int = 0
-    quarantined_fields: tuple[str, ...] = ()
+    dropped_structure_fields: tuple[str, ...] = ()
 
     @property
     def migrated(self) -> bool:
         return self.source_version != self.target_version or bool(
-            self.dropped_state_keys or self.quarantined_fields)
+            self.dropped_state_keys or self.dropped_structure_fields)
 
     def messages(self) -> tuple[str, ...]:
         lines = []
@@ -125,11 +125,11 @@ class CheckpointMigrationDiagnostics:
                 f"tensor(s) ({mib:.1f} MiB); live property rows retain "
                 "deterministic initialization"
             )
-        if self.quarantined_fields:
+        if self.dropped_structure_fields:
             lines.append(
-                "checkpoint schema migration quarantined legacy WholeSpace "
-                "structure for ConceptualSpace import: "
-                + ", ".join(self.quarantined_fields)
+                "checkpoint schema migration dropped legacy WholeSpace word/META "
+                "structure (§11.4): "
+                + ", ".join(self.dropped_structure_fields)
             )
         return tuple(lines)
 
@@ -183,43 +183,36 @@ def _source_schema_version(checkpoint: Mapping[str, Any]) -> int:
         )
 
 
-def _quarantine_legacy_whole_structure(
-    out: dict[str, Any],
-) -> tuple[str, ...]:
-    """Move active legacy WS sidecars into a non-restored quarantine."""
-
-    quarantine: dict[str, Any] = {"version": 1}
-    fields: list[str] = []
-
-    vocab = out.get("vocab_extras")
+def _drop_legacy_whole_structure(out: dict[str, Any]) -> tuple[str, ...]:
+    """Discard retired WholeSpace word/META sidecars, including old quarantine."""
+    fields = []
+    if LEGACY_WHOLE_STRUCTURE_KEY in out:
+        out.pop(LEGACY_WHOLE_STRUCTURE_KEY)
+        fields.append(LEGACY_WHOLE_STRUCTURE_KEY)
+    vocab = out.get('vocab_extras')
     if isinstance(vocab, Mapping):
-        new_vocab = dict(vocab)
-        old_vocab: dict[str, Any] = {}
-        for key in ("well_known_atoms", "ws_taxonomy_extras"):
-            if key in new_vocab:
-                old_vocab[key] = new_vocab.pop(key)
-                fields.append(f"vocab_extras.{key}")
-        if old_vocab:
-            quarantine["vocab_extras"] = old_vocab
-            out["vocab_extras"] = new_vocab
-
-    structural = out.get("structural_extras")
-    if isinstance(structural, Mapping) and "whole_spaces" in structural:
-        new_structural = dict(structural)
-        quarantine["structural_whole_spaces"] = new_structural.pop(
-            "whole_spaces"
-        )
-        fields.append("structural_extras.whole_spaces")
-        out["structural_extras"] = new_structural
-
-    if len(quarantine) > 1:
-        previous = out.get(LEGACY_WHOLE_STRUCTURE_KEY)
-        if isinstance(previous, Mapping):
-            merged = dict(previous)
-            merged.update(quarantine)
-            quarantine = merged
-        out[LEGACY_WHOLE_STRUCTURE_KEY] = quarantine
+        clean = dict(vocab)
+        for key in ('well_known_atoms', 'ws_taxonomy_extras'):
+            if key in clean:
+                clean.pop(key)
+                fields.append('vocab_extras.' + key)
+        out['vocab_extras'] = clean
+    structural = out.get('structural_extras')
+    if isinstance(structural, Mapping):
+        clean = dict(structural)
+        if 'whole_spaces' in clean:
+            clean.pop('whole_spaces')
+            fields.append('structural_extras.whole_spaces')
+        out['structural_extras'] = clean
     return tuple(fields)
+
+
+def _warn_whole_migration(diagnostics):
+    if diagnostics.dropped_state_keys or diagnostics.dropped_structure_fields:
+        import warnings
+        warnings.warn('Dropping retired WholeSpace word and META rows; '
+                      'properties retain their a-priori examples (two-truths §11.4).',
+                      UserWarning, stacklevel=3)
 
 
 def migrate_wholespace_checkpoint(
@@ -273,21 +266,16 @@ def migrate_wholespace_checkpoint(
         and marker.get("whole_space_role") == WHOLESPACE_ROLE
     )
     if already_properties:
-        diagnostics = CheckpointMigrationDiagnostics(
-            source_version=source_version,
-            target_version=CHECKPOINT_SCHEMA_VERSION,
-        )
         unchanged = dict(checkpoint)
+        dropped_structure = _drop_legacy_whole_structure(unchanged)
+        diagnostics = CheckpointMigrationDiagnostics(
+            source_version=source_version, target_version=CHECKPOINT_SCHEMA_VERSION,
+            dropped_structure_fields=dropped_structure)
         if is_bundle:
-            # The loader performs further key canonicalization in-place.  Give
-            # it an independent container even on an idempotent schema-2 load
-            # so retrying/inspecting the caller's mapping stays safe.
-            unchanged["state_dict"] = dict(state_obj)
-        return CheckpointMigrationResult(
-            checkpoint=unchanged,
-            diagnostics=diagnostics,
-            legacy_state_shapes=legacy_shapes,
-        )
+            unchanged['state_dict'] = dict(state_obj)
+        _warn_whole_migration(diagnostics)
+        return CheckpointMigrationResult(checkpoint=unchanged, diagnostics=diagnostics,
+                                         legacy_state_shapes=legacy_shapes)
 
     dropped = tuple(
         str(key) for key in state_obj if is_legacy_wholespace_dense_key(key)
@@ -301,21 +289,22 @@ def migrate_wholespace_checkpoint(
     if is_bundle:
         out: dict[str, Any] = dict(checkpoint)
         out["state_dict"] = migrated_state
-        quarantined = _quarantine_legacy_whole_structure(out)
+        dropped_structure = _drop_legacy_whole_structure(out)
         out[CHECKPOINT_SCHEMA_KEY] = checkpoint_schema()
     else:
         # A raw state_dict must remain a raw state_dict; inserting metadata
         # would turn it into an unexpected model key.
         out = migrated_state
-        quarantined = ()
+        dropped_structure = ()
 
     diagnostics = CheckpointMigrationDiagnostics(
         source_version=source_version,
         target_version=CHECKPOINT_SCHEMA_VERSION,
         dropped_state_keys=dropped,
         dropped_state_bytes=dropped_bytes,
-        quarantined_fields=quarantined,
+        dropped_structure_fields=dropped_structure,
     )
+    _warn_whole_migration(diagnostics)
     return CheckpointMigrationResult(
         checkpoint=out,
         diagnostics=diagnostics,

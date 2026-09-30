@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_conceptual_recurrence.py::test_reconstruct_enum_retired",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_butterfly",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_dense_large_leading",
+    "test/test_conceptual_recurrence.py::test_mm5m_forward_finite_after_combine",
+    "test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip",
+    "test/test_conceptual_recurrence.py::test_no_recompile_fullgraph",
+    "test/test_conceptual_recurrence.py::test_combine_no_dropped_reverse",
+    "test/test_conceptual_recurrence.py::test_callosum_glue_init_average",
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "test/test_conceptual_recurrence.py::test_no_comprehension_seed_interface",
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+    "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-377.recycle.json"
+}

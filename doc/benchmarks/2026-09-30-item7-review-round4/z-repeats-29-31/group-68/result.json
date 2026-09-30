@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]"
+  ],
+  "completed": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-repeats-29-31/group-68/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-repeats-29-31/group-68/worker-000.json"
+      ],
+      "pid": 64180,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 556680656,
+      "elapsed_seconds": 5.375642125029117,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-repeats-29-31/group-68/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]"
+      ],
+      "completed": [
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.21304075000807643,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-repeats-29-31/group-68",
+  "elapsed_seconds": 7.692391709191725,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 556680656,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-repeats-29-31/group-68/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-repeats-29-31/group-68/collect.json"
+    ],
+    "pid": 64173,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180781896,
+    "elapsed_seconds": 2.0794329170603305,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-repeats-29-31/group-68/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

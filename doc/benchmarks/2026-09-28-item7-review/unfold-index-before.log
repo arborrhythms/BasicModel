@@ -1,0 +1,68 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value ___
+
+    def test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value():
+        store = TernaryTruthStore(4, capacity=8)
+        seen = []
+        def unfold(value, limit):
+            seen.append(value.clone())
+            return (7,), 1, True
+        store.configure_leaf_index(code_row=lambda ref: 99, unfold=unfold)
+        point = torch.tensor([1., 2., 3., 4.])
+        meaning = ConceptualMeaning.from_description(point)
+        from dataclasses import replace
+        meaning = replace(meaning, role_refs=(('sym', 1), None, None))
+        row = store.append_meaning(meaning)
+>       assert len(seen) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+test/test_item7_unfold_index.py:24: AssertionError
+____________ test_only_the_inverted_index_is_owned_or_checkpointed _____________
+
+    def test_only_the_inverted_index_is_owned_or_checkpointed():
+        store = TernaryTruthStore(4, capacity=8)
+        store.configure_leaf_index(unfold=lambda value, limit: ((int(value[0]),), 1, True))
+        a = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([2., 0., 0., 0.])))
+        b = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([3., 0., 0., 0.])))
+        assert store.rows_for_code(2) == (a,) and store.rows_for_code(3) == (b,)
+        for name in ('leaf_codes', 'leaf_offsets', '_leaf_used'):
+>           assert not hasattr(store, name)
+E           AssertionError: assert not True
+E            +  where True = hasattr(TernaryTruthStore(), 'leaf_codes')
+
+test/test_item7_unfold_index.py:37: AssertionError
+____________ test_unfold_candidates_are_the_current_priming_surface ____________
+
+    def test_unfold_candidates_are_the_current_priming_surface():
+        language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(),
+            reverse_inverses=lambda ops: (), generate_policy_logits=lambda point: point.new_zeros(1, 1))
+        basis = torch.eye(3)
+        weights = torch.tensor([1., 2., 1.])
+        active = lambda: weights
+>       cold = unfold_idea(language, basis, basis[0], 4, activation=active)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_unfold_index.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (namespace(_generate_binary_ops=(), _generate_unary_ops=(), reverse_inverses=<function test_unfold_candidates_are_the_...<lambda> at 0x128439da0>), tensor([[1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]]), tensor([1., 0., 0.]), 4)
+kwargs = {'activation': <function test_unfold_candidates_are_the_current_priming_surface.<locals>.<lambda> at 0x128439d00>}
+
+    @functools.wraps(func)
+    def decorate_context(*args, **kwargs):
+        # pyrefly: ignore [bad-context-manager]
+        with ctx_factory():
+>           return func(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: unfold_idea() got an unexpected keyword argument 'activation'
+
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: TypeError
+=========================== short test summary info ============================
+FAILED test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value
+FAILED test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed
+FAILED test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface
+3 failed in 2.01s

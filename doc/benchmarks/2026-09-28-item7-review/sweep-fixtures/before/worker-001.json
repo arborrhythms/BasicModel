@@ -1,0 +1,63 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[hi, there]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[12 plus 1]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[a...b]",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[hi, there]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[12 plus 1]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[a...b]",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00023624999448657036,
+      "message": "test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut\n    canonical = WholeSpace.stage_analysis_spans(\nbin/Spaces.py:23153: in stage_analysis_spans\n    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23217: in _stage_type_run_spans\n    prop_lut, discard_mask = _analysis_property_signature(self)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:21971: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[hi, there]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00017625000327825546,
+      "message": "test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut\n    canonical = WholeSpace.stage_analysis_spans(\nbin/Spaces.py:23153: in stage_analysis_spans\n    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23217: in _stage_type_run_spans\n    prop_lut, discard_mask = _analysis_property_signature(self)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:21971: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[12 plus 1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00017179199494421482,
+      "message": "test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut\n    canonical = WholeSpace.stage_analysis_spans(\nbin/Spaces.py:23153: in stage_analysis_spans\n    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23217: in _stage_type_run_spans\n    prop_lut, discard_mask = _analysis_property_signature(self)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:21971: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[a...b]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001449580304324627,
+      "message": "test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut\n    canonical = WholeSpace.stage_analysis_spans(\nbin/Spaces.py:23153: in stage_analysis_spans\n    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23217: in _stage_type_run_spans\n    prop_lut, discard_mask = _analysis_property_signature(self)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:21971: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00017512496560811996,
+      "message": "test/test_meronomy_ladder.py:235: in test_tiling_ladder_nests_units_in_space_bounded_wholes\n    WholeSpace.stage_analysis_spans(fake, _bytes(\"12 plus 1, ok\"))\nbin/Spaces.py:23153: in stage_analysis_spans\n    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23217: in _stage_type_run_spans\n    prop_lut, discard_mask = _analysis_property_signature(self)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:21971: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

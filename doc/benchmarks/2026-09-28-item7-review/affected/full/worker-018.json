@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 11.866417750017717,
+      "message": "test/test_output_walk.py:553: in test_materialised_idea_follows_the_symbol_rows\n    assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: allclose(): argument 'input' (position 1) must be Tensor, not NoneType",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

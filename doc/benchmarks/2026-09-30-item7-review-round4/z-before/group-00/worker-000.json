@@ -1,0 +1,53 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011995499953627586,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:25: in test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record\n    assert inventory(f.cs) == before\nE   AssertionError: assert {'next_id': 1...}, 'keys': {}} == {'next_id': 1...}, 'keys': {}}\nE     \nE     Omitting 2 identical items, use -vv to show\nE     Differing items:\nE     {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}} != {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}}\nE     {'next_id': 15} != {'next_id': 14}\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.013146750163286924,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:36: in test_referenced_phrase_is_read_from_ltm_without_an_inventory_row\n    assert inventory(f.cs) == before\nE   AssertionError: assert {'next_id': 1..., 16, 1): 16}} == {'next_id': 1...}, 'keys': {}}\nE     \nE     Differing items:\nE     {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}} != {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}}\nE     {'keys': {('clause-phrase', (13, 15), (-0.040670327842235565, -0.5728483200073242, 0.02586948499083519, 0.5340461134910583, -0.2189442366361618, 0.5116314888000488, ...)): 16, ('part-kind', 16, 1): 16}} != {'keys': {}}\nE     {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 4): 3, ...}} != {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 4): 3, ...}}\nE     {'next_id': 18} != {'next_id': 16}\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_part_and_implies_never_ask_thought_authorization",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.008319959044456482,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:51: in test_closing_part_and_implies_never_ask_thought_authorization\n    clause = finish_reading(f.language, entry, registry=f.registry)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/reading_fixtures.py:97: in finish_reading\n    return finish_clause(language, entry, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:348: in finish_clause\n    return recover(stack[0], top=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:216: in recover\n    left, left_ref = operand(operands[0], sentence=relation == 'implies')\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:203: in operand\n    child = recover(item)\n            ^^^^^^^^^^^^^\nbin/ClauseJournal.py:222: in recover\n    native = registry.clause_reference(relation)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:48: in unavailable\n    raise AssertionError('closing asked the thought registry for its relation identity')\nE   AssertionError: closing asked the thought registry for its relation identity",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.09398620808497071,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:90: in test_mm_grammar_part_under_disjunction_closes_at_full_inventory\n    row = f.store.write_clause(clause)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:227: in write_clause\n    raise ValueError('clause admission requires the shared concept allocator')\nE   ValueError: clause admission requires the shared concept allocator",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

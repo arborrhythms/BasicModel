@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "completed": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-work-82i12gz7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-after/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-after/group-00/worker-000.json"
+      ],
+      "pid": 68161,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2645528128,
+      "elapsed_seconds": 303.210270332871,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-after/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "completed": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 292.55069841700606,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-work-82i12gz7",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-after/group-00",
+  "elapsed_seconds": 306.1036824588664,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 2645528128,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-work-82i12gz7/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-after/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-after/group-00/collect.json"
+    ],
+    "pid": 68123,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 182993736,
+    "elapsed_seconds": 2.611832832917571,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-after/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

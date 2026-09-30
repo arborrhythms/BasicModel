@@ -1,0 +1,923 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+    "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+    "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+    "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots",
+    "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+    "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+    "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+    "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+    "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words",
+    "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+    "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+    "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind",
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles",
+    "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+    "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+    "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+  ],
+  "completed": [
+    "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+    "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+    "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+    "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots",
+    "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+    "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+    "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+    "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+    "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words",
+    "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+    "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+    "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind",
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles",
+    "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+    "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+    "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012396665988489985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010833750013262033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008939832914620638,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011570209171622992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006005707895383239,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00729412492364645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00783062493428588,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008431792026385665,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006566332885995507,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006412750110030174,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006158415926620364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012696041027083993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008259375113993883,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028197909705340862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0048979579005390406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004760791081935167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0044798338785767555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004330707946792245,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005159457912668586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019719998817890882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017074160277843475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.40080862515605986,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007783749606460333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006722457939758897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007519667036831379,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009161290945485234,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.049531833035871387,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005386709002777934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008212081156671047,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010213328059762716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039558298885822296,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029003625037148595,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2013535420410335,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7806554581038654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003039791015908122,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03036804194562137,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06798008317127824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003362791845574975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004645667038857937,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.028505624970421195,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029380000196397305,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027928041061386466,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5606973750982434,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20037574996240437,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02908179210498929,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029069208074361086,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02936654188670218,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19890449987724423,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029208166990429163,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.028438917128369212,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.051291916985064745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19850258389487863,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19496908294968307,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02908083307556808,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0036177500151097775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014898329973220825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011057499796152115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002228999976068735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004431251436471939,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05838324991054833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005215839482843876,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009876671247184277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011404589749872684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045291706919670105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028319580014795065,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.44366120803169906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023651248775422573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010547919664531946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001157082850113511,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001059291884303093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001684578601270914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005691251717507839,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011835874989628792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00876783300191164,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006301375105977058,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006369457812979817,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008719166973605752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006010124925523996,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008201750228181481,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003261375008150935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004114958923310041,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00877545797266066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009133666986599565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008665750036016107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008609666023403406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03977683302946389,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03798787482082844,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.037905167089775205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04258779203519225,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0423918750602752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.044443916995078325,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,45 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-probes/group-00/result.json": "9d42aeb50266ba85871e0b1ee150c9d76832e3cd2d2f9517c5bb20bc22ee03ed"
+  },
+  "aggregate_bytes": 8589934592,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 5,
+  "batches": [
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_uses_ten_affordable_slots_without_exceeding_budget"
+      ],
+      "estimated_seconds": 31,
+      "reserved_bytes": 1073741824
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity"
+      ],
+      "estimated_seconds": 31,
+      "reserved_bytes": 1073741824
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[8]"
+      ],
+      "estimated_seconds": 31,
+      "reserved_bytes": 1073741824
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]"
+      ],
+      "estimated_seconds": 31,
+      "reserved_bytes": 1073741824
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+      ],
+      "estimated_seconds": 31,
+      "reserved_bytes": 1073741824
+    }
+  ]
+}

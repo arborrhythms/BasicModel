@@ -1,0 +1,299 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_codebook_enables_and_em_populates_on_real_model _____________
+test/test_category_em_smoke.py:137: in test_codebook_enables_and_em_populates_on_real_model
+    assert len(getattr(ws, "_category_assign", {})) > 0, (
+E   AssertionError: no MetaSymbol -> centroid assignment recorded
+E   assert 0 > 0
+E    +  where 0 = len({})
+E    +    where {} = getattr(ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...yer()\n    )\n  )\n  (syntacticLayer): SyntacticLayer(\n    (layers): ModuleList()\n  )\n  (_category_vq): VectorQuantize()\n), '_category_assign', {})
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 12-dim embedding (words added at runtime)
+  Building span table: 0/16 docs
+=============================== warnings summary ===============================
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpjyctlk7t.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 29 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 30 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 32 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 33 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 35 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 36 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 38 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 39 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 41 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 42 gets records only, no weighted reading (overflow #15)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 44 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 45 gets records only, no weighted reading (overflow #17)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 47 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 48 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 50 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 51 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 53 gets records only, no weighted reading (overflow #25)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 54 gets records only, no weighted reading (overflow #26)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 56 gets records only, no weighted reading (overflow #27)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 57 gets records only, no weighted reading (overflow #28)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 59 gets records only, no weighted reading (overflow #32)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 60 gets records only, no weighted reading (overflow #33)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 62 gets records only, no weighted reading (overflow #34)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 63 gets records only, no weighted reading (overflow #35)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 65 gets records only, no weighted reading (overflow #41)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 66 gets records only, no weighted reading (overflow #42)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 68 gets records only, no weighted reading (overflow #48)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 69 gets records only, no weighted reading (overflow #49)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 71 gets records only, no weighted reading (overflow #54)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 72 gets records only, no weighted reading (overflow #55)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 74 gets records only, no weighted reading (overflow #61)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 75 gets records only, no weighted reading (overflow #62)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 77 gets records only, no weighted reading (overflow #66)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 78 gets records only, no weighted reading (overflow #67)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 80 gets records only, no weighted reading (overflow #69)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 81 gets records only, no weighted reading (overflow #70)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 83 gets records only, no weighted reading (overflow #74)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 84 gets records only, no weighted reading (overflow #75)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 86 gets records only, no weighted reading (overflow #82)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 87 gets records only, no weighted reading (overflow #83)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 89 gets records only, no weighted reading (overflow #88)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 90 gets records only, no weighted reading (overflow #89)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 92 gets records only, no weighted reading (overflow #93)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 93 gets records only, no weighted reading (overflow #94)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 95 gets records only, no weighted reading (overflow #95)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 96 gets records only, no weighted reading (overflow #96)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 98 gets records only, no weighted reading (overflow #97)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 99 gets records only, no weighted reading (overflow #98)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 101 gets records only, no weighted reading (overflow #102)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 102 gets records only, no weighted reading (overflow #103)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 104 gets records only, no weighted reading (overflow #105)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 105 gets records only, no weighted reading (overflow #106)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 107 gets records only, no weighted reading (overflow #110)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 108 gets records only, no weighted reading (overflow #111)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp73ggrdz4.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+1 failed, 2 passed, 111 warnings in 15.72s

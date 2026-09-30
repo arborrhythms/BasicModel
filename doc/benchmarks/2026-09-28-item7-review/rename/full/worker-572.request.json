@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_xml_kind_cannot_retag_a_different_grammatical_closing"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-572.recycle.json"
+}

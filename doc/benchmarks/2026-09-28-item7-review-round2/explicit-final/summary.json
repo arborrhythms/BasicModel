@@ -1,0 +1,174 @@
+{
+  "reason": "gate_failures",
+  "selected": 12,
+  "completed": 11,
+  "outcomes": {
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths": "passed",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary": "passed",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately": "passed",
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "failed",
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "failed",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal": "passed",
+    "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state": "skipped",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]": "passed",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]": "passed",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]": "passed",
+    "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient": "passed"
+  },
+  "counts": {
+    "passed": 8,
+    "failed": 2,
+    "skipped": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 99.88813329103868,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+      "stdout": "batch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0735\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.0683\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.0988\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.241s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.0694\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.0727\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.0680\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0970\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.0713\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.0709\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.0940\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.309s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0718\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0718\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0711\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.0705\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.234s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.0703\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.0704\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0705\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0985\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0701\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.0694\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.0693\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0695\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0694\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0690\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0687\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0687\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0688\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0688\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0686\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0682\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0677\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0675\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0676\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.309s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0676\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1228\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1873\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.209s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='loving loving' label=0.0000 predicted=0.4952 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.4947 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.4965 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.4960 MISMATCH\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-03/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 92.8780854169745,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', 'hello'), ('hello there', 'hello')]",
+      "stdout": "\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0690\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0831\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0806\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.241s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0796\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0881\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0625\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.241s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0857\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0709\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0743\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0724\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0668\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0860\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.233s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0813\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0681\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.242s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0825\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0743\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0696\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0776\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0822\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.305s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0788\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0835\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.238s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0893\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0972\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0910\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.0753\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.238s, 100.00%)\r\nTrain Loss: output=0.1753, reconstruction=0.0862\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.0755\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.0763\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.0820\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.239s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.0773\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.223s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.0819\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.241s, 100.00%)\r\nTrain Loss: output=0.1749, reconstruction=0.0830\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1749, reconstruction=0.0789\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.240s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.0838\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.234s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.0884\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.241s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.0802\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.192s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='hello hello' label=0.0000 predicted=0.5002 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5025 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5003 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5006 MISMATCH\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-03/worker-000.log"
+    }
+  ],
+  "resource_limited_cases": [
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "groups": [
+    {
+      "file": "test/test_compiled_word_chunk.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "file": "test/test_reverse_traversal.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "file": "test/test_word_store.py",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "file": "test/test_explicit_dimensions.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "file": "test/test_mm_xor.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "file": "test/test_thinking_kernel.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "file": "test/test_packed_reconstruction_parity.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    }
+  ],
+  "resources": [
+    {
+      "reason": "exit",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths"
+      ],
+      "elapsed_seconds": 57.49688900006004,
+      "peak_memory_bytes": 1598163728,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-00/worker-000.log"
+    },
+    {
+      "reason": "exit",
+      "selected": [
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "elapsed_seconds": 119.71036391705275,
+      "peak_memory_bytes": 4571861360,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-01/worker-000.log"
+    },
+    {
+      "reason": "memory",
+      "selected": [
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "elapsed_seconds": 9.599581541027874,
+      "peak_memory_bytes": 9305234848,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-02/worker-000.log"
+    },
+    {
+      "reason": "exit",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "elapsed_seconds": 196.62059920898173,
+      "peak_memory_bytes": 1095812920,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-03/worker-000.log"
+    },
+    {
+      "reason": "exit",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "elapsed_seconds": 50.950887458981015,
+      "peak_memory_bytes": 1190283136,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-04/worker-000.log"
+    },
+    {
+      "reason": "exit",
+      "selected": [
+        "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state"
+      ],
+      "elapsed_seconds": 3.572879832936451,
+      "peak_memory_bytes": 428721496,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-05/worker-000.log"
+    },
+    {
+      "reason": "exit",
+      "selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+      ],
+      "elapsed_seconds": 401.222891750047,
+      "peak_memory_bytes": 8258722800,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-06/worker-000.log"
+    },
+    {
+      "reason": "exit",
+      "selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+      ],
+      "elapsed_seconds": 202.10800366697367,
+      "peak_memory_bytes": 4751004280,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-06/worker-001.log"
+    }
+  ],
+  "source_matches_current": true,
+  "source_digest": "0d42ea689e6f5021024e84c69be1e5b5dbb78515870665146413041147d15e46",
+  "measurement_bridge": "../measurement-source-bridge.json",
+  "depth3": "Missing mature checkpoint is a skip; historical [1,1,1,1] campaign stays red."
+}

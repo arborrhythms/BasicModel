@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns"
+  ],
+  "completed": [
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.12559229193720967,
+      "message": "test/test_item7_byte_columns.py:25: in test_byte_scoring_ignores_empty_candidate_columns\n    torch.testing.assert_close(values[0], values[1], atol=0, rtol=0)\nE   AssertionError: Scalars are not equal!\nE   \nE   Expected 0.0007502115331590176 but got 0.000750092207454145.\nE   Absolute difference: 1.1932570487260818e-07\nE   Relative difference: 0.00015905607898367976",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

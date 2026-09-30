@@ -1,0 +1,25 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 4.546049040975049,
+      "message": "test/test_idea_decode_d3.py:99: in test_reverse_off_path_unchanged\n    m = _forward(_build(\"MM_mereology.xml\"))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_idea_decode_d3.py:28: in _build\n    m, _ = Models.BasicModel.from_config(p)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17302: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

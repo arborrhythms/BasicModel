@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

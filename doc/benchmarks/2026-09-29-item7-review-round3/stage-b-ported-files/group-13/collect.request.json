@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item9b_interpret.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,24 @@
+{
+  "git_diff_check": {
+    "exit_code": 2,
+    "warnings": [
+      "test/test_init_scale.py:113: new blank line at EOF.",
+      "test/test_phase2_end_to_end.py:147: new blank line at EOF.",
+      "test/test_reference_table.py:93: new blank line at EOF.",
+      "test/test_sparsity_regularizer.py:38: new blank line at EOF."
+    ],
+    "action": "Retained on the frozen tested source; no post-measurement formatting change."
+  },
+  "staged_changes": false,
+  "retired_api_search": {
+    "bind_meta": [],
+    "meta_members": [],
+    "ReferenceTable": [],
+    "word_obj_meta_and_interpretations": "Only saved-checkpoint migration access and explanatory prose remain in bin."
+  },
+  "after_owner_repair": {
+    "git_diff_check_exit_code": 0,
+    "formatting_ast_equality_receipt": "formatting-repair.json",
+    "staging_docstring_describes_full_interpret": true
+  }
+}

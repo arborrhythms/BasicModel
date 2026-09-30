@@ -61,7 +61,7 @@ class TestShamathaInlineGrammar(unittest.TestCase):
         not/union/intersection rules from the inline grammar block."""
         m = _fresh_model()
         self.assertIsInstance(
-            m.wholeSpace.propositional_negation, Layers.NotLayer)
+            m.symbolSpace.host_layer('SS', 'not'), Layers.NotLayer)
 
 
 if __name__ == "__main__":

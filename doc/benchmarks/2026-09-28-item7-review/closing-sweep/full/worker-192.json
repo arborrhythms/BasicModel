@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+    "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+    "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements",
+    "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[False]",
+    "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[True]",
+    "test/test_item9b_field_contract.py::test_vector_head_selects_symbols_without_truncating_knowing"
+  ],
+  "completed": [
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+    "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+    "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements",
+    "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[False]",
+    "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[True]",
+    "test/test_item9b_field_contract.py::test_vector_head_selects_symbols_without_truncating_knowing"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.021749833947978914,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres0/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres0/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres0/shared-inventory.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01861366699449718,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres1/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres1/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres1/shared-inventory.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018288791994564235,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres2/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres2/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres2/shared-inventory.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018113792059011757,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres3/shared-inventory.pt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres3/shared-inventory.pt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8147/test_inventory_checkpoint_pres3/shared-inventory.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005281208083033562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006512625026516616,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0062662080163136125,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006240207934752107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006209749961271882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006637958926148713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04135800001677126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030212791985832155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_field_contract.py::test_vector_head_selects_symbols_without_truncating_knowing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.052518291980959475,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,142 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+    "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "completed": [
+    "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+    "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-15/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-15/worker-000.json"
+      ],
+      "pid": 22834,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 425985344,
+      "elapsed_seconds": 3.6260275000240654,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-15/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+        "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+        "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+        "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+        "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+      ],
+      "completed": [
+        "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+        "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+        "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+        "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+        "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002649832982569933,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002627457957714796,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005842666840180755,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00123841711319983,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010391247924417257,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-15",
+  "elapsed_seconds": 7.372213416965678,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 425985344,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-15/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-15/collect.json"
+    ],
+    "pid": 22826,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 421627104,
+    "elapsed_seconds": 3.510067417053506,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-15/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+        "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+        "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+        "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+        "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

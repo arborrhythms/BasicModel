@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_codebook_update_law.py::test_law_truth_table",
+    "test/test_codebook_update_law.py::test_law_edge_cases",
+    "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+    "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+    "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+    "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+    "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+    "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+    "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-10/worker-000.recycle.json"
+}

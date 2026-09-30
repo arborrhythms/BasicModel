@@ -1,0 +1,9 @@
+{
+  "automation_id": "finish-item-7-review-receipt",
+  "status": "PAUSED",
+  "created_at": "2026-09-30T12:04:56.197424+00:00",
+  "purpose": "Finish the existing queued validation, finalize the source-matched receipt, and return here for Claude review. No commit.",
+  "cadence_minutes": 30,
+  "completed_at": "2026-09-30T17:44:02.052467+00:00",
+  "reason": "Measurement receipt complete; candidate remains red and is stopped for Claude review. No commit."
+}

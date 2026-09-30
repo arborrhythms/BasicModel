@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_ps_where.py::test_endpoint_sum_where_decodes_span",
+    "test/test_ps_where.py::test_endpoint_sum_where_rebase_preserves_length",
+    "test/test_ps_where.py::test_endpoint_sum_where_rejects_ambiguous_period",
+    "test/test_ps_where.py::test_endpoint_sum_where_batched"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-573.recycle.json"
+}

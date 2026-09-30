@@ -1,0 +1,12 @@
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_operator_superposition_resolves_against_codebook _____________
+test/test_operator_superposition.py:106: in test_operator_superposition_resolves_against_codebook
+    qv = ws.operation_vector(target)
+         ^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'operation_vector'
+=========================== short test summary info ============================
+FAILED test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook
+1 failed, 2 passed in 2.05s

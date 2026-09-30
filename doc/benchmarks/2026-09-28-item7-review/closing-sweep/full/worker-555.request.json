@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-555.recycle.json"
+}

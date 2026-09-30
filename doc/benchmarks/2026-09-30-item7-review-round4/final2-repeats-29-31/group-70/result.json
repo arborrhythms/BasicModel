@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word"
+  ],
+  "completed": [
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-70/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-70/worker-000.json"
+      ],
+      "pid": 83525,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435275120,
+      "elapsed_seconds": 8.99649400007911,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-70/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word"
+      ],
+      "completed": [
+        "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.07402608287520707,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-70",
+  "elapsed_seconds": 13.04448854108341,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435275120,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-70/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-70/collect.json"
+    ],
+    "pid": 83496,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181896008,
+    "elapsed_seconds": 3.357001959113404,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-70/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

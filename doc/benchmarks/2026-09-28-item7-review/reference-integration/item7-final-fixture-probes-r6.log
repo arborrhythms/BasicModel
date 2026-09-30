@@ -1,0 +1,122 @@
+.FF....                                                                  [100%]
+=================================== FAILURES ===================================
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+
+mode = 'both'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+>       probe = _run_forward_spying_fold(model)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_router_fires_per_word.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_router_fires_per_word.py:169: in _run_forward_spying_fold
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23708: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13473: in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+bin/Spaces.py:13862: in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12307: in _embed_ladder
+    return self._embed_ladder_word_major(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12447: in _embed_ladder_word_major
+    part_events = self._radix_part_events(pid_grid, part_offsets)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12044: in _radix_part_events
+    stamp = (registry.encode('input', offsets) if registry is not None else
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:27: in encode
+    intervals = self.intervals(name, indices)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:42: in intervals
+    torch._assert_async((~valid | (indices < end - start)).all(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10bd9eae0>
+func = <built-in method _assert_async of type object at 0x10ef153a0>, types = ()
+args = (tensor(False), 'occurrence exceeds its configured where-space capacity')
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: occurrence exceeds its configured where-space capacity
+
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+
+mode = 'per-word'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+>       probe = _run_forward_spying_fold(model)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_router_fires_per_word.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_router_fires_per_word.py:169: in _run_forward_spying_fold
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23708: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13473: in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+bin/Spaces.py:13862: in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12307: in _embed_ladder
+    return self._embed_ladder_word_major(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12447: in _embed_ladder_word_major
+    part_events = self._radix_part_events(pid_grid, part_offsets)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12044: in _radix_part_events
+    stamp = (registry.encode('input', offsets) if registry is not None else
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:27: in encode
+    intervals = self.intervals(name, indices)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:42: in intervals
+    torch._assert_async((~valid | (indices < end - start)).all(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10bd9f230>
+func = <built-in method _assert_async of type object at 0x10ef153a0>, types = ()
+args = (tensor(False), 'occurrence exceeds its configured where-space capacity')
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: occurrence exceeds its configured where-space capacity
+
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+=========================== short test summary info ============================
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+2 failed, 5 passed in 4.17s

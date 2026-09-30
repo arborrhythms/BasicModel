@@ -31,7 +31,7 @@ def _program_fixture():
 
 def test_older_slot_unary_is_preserved_in_the_committed_postfix_program():
     model, _, _ = _program_fixture()
-    positions, actions, targets = BasicModel._derivation_program(model)
+    positions, actions, targets, _ = BasicModel._derivation_program(model)
     assert positions.tolist() == [[0, 1]]
     assert actions.tolist() == [[[0, -1, 0], [2, 0, -1], [0, -1, 1], [1, 0, -1]]]
     # Unary doubling and ordered binary subtraction expose an operand swap.
@@ -93,7 +93,7 @@ def test_parallel_completion_guards_memory_without_serial_depths():
 def test_exploration_forces_one_used_round_for_each_packed_sentence():
     B, W, cap = 2, 4, 2
     actions = torch.full((B, 3 * W + W * 2 * cap), -1, dtype=torch.long)
-    # Interleaved rows have distinct sets of used rounds, including both seals.
+    # Interleaved rows have distinct sets of used rounds, including both endings.
     actions[0, [0, 3, 20, 6, 9, 12]] = 2
     actions[1, [1, 21, 7, 13]] = 1
     attempted = actions >= 0
@@ -122,7 +122,7 @@ def test_exploration_forces_one_used_round_for_each_packed_sentence():
 
 
 
-def test_one_word_packed_sentence_has_its_own_seal_and_program():
+def test_one_word_packed_sentence_has_its_own_closing_and_program():
     model, trace, ids = _program_fixture()
     model.inputSpace._sentence_pack_enabled = True
     model.inputSpace._packed_sentence_ids = torch.tensor([[0, 1]])
@@ -134,21 +134,21 @@ def test_one_word_packed_sentence_has_its_own_seal_and_program():
     owners, _, _ = BasicModel._compose_round_owners(model, ids)
     assert owners[0, 6:10].tolist() == [1] * 4
     assert owners[0, 10:14].tolist() == [0] * 4
-    _, first, _ = BasicModel._derivation_program(model, t=0)
-    final_positions, final, _ = BasicModel._derivation_program(model, t=1)
+    _, first, _, _ = BasicModel._derivation_program(model, t=0)
+    final_positions, final, _, _ = BasicModel._derivation_program(model, t=1)
     assert first[0, :2].tolist() == [[0, -1, 0], [2, 0, -1]]
     assert final_positions.tolist() == [[1]]
     assert final[0, :1].tolist() == [[0, -1, 0]]
 
 
-@pytest.mark.parametrize('seal_budget', (0, 1))
-def test_tensor_pipeline_records_both_one_word_packed_seals(tmp_path, monkeypatch, seal_budget):
+@pytest.mark.parametrize('closing_budget', (0, 1))
+def test_tensor_pipeline_records_both_one_word_packed_ends(tmp_path, monkeypatch, closing_budget):
     from test_compiled_word_chunk import _tiny_canonical_model
     from test_reverse_traversal import _stage_packed
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
                                   concept_rows=256, part_rows=128)
     model._tensor_peer_while_eager = True
-    model.syntacticOrder = seal_budget
+    model.syntacticOrder = closing_budget
     # Unary-only rounds keep occupancy fixed and exhaust the declared budget.
     # That exposes a packed/final budget mismatch without a random STOP.
     chooser = model.languageSpace.language_layer.operation_layer.chooser
@@ -176,7 +176,7 @@ def test_tensor_pipeline_records_both_one_word_packed_seals(tmp_path, monkeypatc
         width = 2 * model.conceptualSpace.stm.capacity
         assert bool(trace._choice_attempted[0, 3 * W])
         assert bool(trace._choice_attempted[0, 3 * W + width])
-        expected = min(seal_budget, width) if seal_budget > 0 else width
+        expected = min(closing_budget, width) if closing_budget > 0 else width
         assert int(trace._choice_attempted[0, 3 * W:3 * W + width].sum()) == expected
         assert int(trace._choice_attempted[0, 3 * W + width:3 * W + 2 * width].sum()) == expected
     finally:

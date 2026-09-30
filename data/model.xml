@@ -183,16 +183,6 @@
     <overlapWhereTiling>false</overlapWhereTiling>
     <codebookRetire>false</codebookRetire>
 
-    <!-- Single continuous truth bar in [0, 1] (read onto BOTH
-         ConceptualSpace and WholeSpace; overridable per-space).
-         1 = nothing learned/recorded (highest bar); 0 = everything
-         learned/recorded (no bar). Governs BOTH content-aware
-         learned-relation insertion into the relative-sentence codebook
-         AND WholeSpace truth recording (gold ingestion + training).
-         Replaces the retired binary accumulateTruth / truthMinMagnitude
-         switches. Default 1.0: truth-learning is OFF by default (opt-in by
-         lowering toward 0). -->
-    <truthCriterion>1.0</truthCriterion>
     <!-- Model-level trust multiplier for incoming assertions/testimony.
          Effective signed DoT = <trust> * incoming trust. Default 1.0 keeps
          configured/runtime trust values literal. -->
@@ -264,6 +254,11 @@
       <trainEmbedding>NONE</trainEmbedding>
       <!-- Embedding co-occurrence loss weight λ in JOINT mode. -->
       <embeddingScale>0.25</embeddingScale>
+      <!-- Prior situation contributes bounded context to code rotation.
+           Expectation weight reserves that share for the pre-input estimate. -->
+      <conceptualContextSituationWeight>0</conceptualContextSituationWeight>
+      <conceptualContextSituationAnchors>8</conceptualContextSituationAnchors>
+      <conceptualContextExpectationWeight>0</conceptualContextExpectationWeight>
 
       <!-- Load weights from weightsPath at construction. Training configs
            default to true so runs resume from existing checkpoints; stale
@@ -286,7 +281,7 @@
       <!-- Complete occupied local roles; root selects the old benchmark. -->
       <sentenceExpectationScope>structured</sentenceExpectationScope>
       <armaScale>0.0</armaScale>
-      <!-- Per-role negative image at the seal; zero is beginner's mind. -->
+      <!-- Per-role negative image at the closing; zero is beginner's mind. -->
       <expectationGain>1</expectationGain>
       <!-- Residual credit for prior-only queries through the ordinary chooser. -->
       <expectationPolicyWeight>0</expectationPolicyWeight>
@@ -533,10 +528,6 @@
          flatness on codebook rows).  0 disables. -->
     <decorrelationWeight>0.0</decorrelationWeight>
     <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
-    <!-- Truth recording + learned-relation acceptance are both governed by
-         the single continuous <truthCriterion> bar (declared under
-         <architecture>; 0 = record/accept all, 1 = none). The binary
-         truthMinMagnitude / accumulateTruth switches are retired. -->
   </WholeSpace>
 
   <OutputSpace>

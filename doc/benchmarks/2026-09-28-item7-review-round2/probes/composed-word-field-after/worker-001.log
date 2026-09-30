@@ -1,0 +1,33 @@
+...F...ss.Fss.ss                                                         [100%]
+=================================== FAILURES ===================================
+_______________________ test_population_inactive_is_noop _______________________
+test/test_sparse_concept_e2e.py:108: in test_population_inactive_is_noop
+    assert getattr(cs, "_sparse_fam", None) is None    # nothing populated
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert {0: (SparseLayer(), ConceptualAttentionLayer(\n  (conjunctive): SparseLayer()\n  (features): SparseLayer()\n))} is None
+E    +  where {0: (SparseLayer(), ConceptualAttentionLayer(\n  (conjunctive): SparseLayer()\n  (features): SparseLayer()\n))} = getattr(ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n), '_sparse_fam', None)
+_______________ test_getparameters_byte_identical_when_inactive ________________
+test/test_sparse_concept_e2e.py:199: in test_getparameters_byte_identical_when_inactive
+    assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]
+E   assert [4999617168, ...99614368, ...] == [4999617168, ...99614368, ...]
+E     
+E     Left contains 2 more items, first extra item: 4996547760
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sparse_concept_e2e.py::test_population_inactive_is_noop - As...
+FAILED test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive
+2 failed, 8 passed, 6 skipped, 3 warnings in 2.03s

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-28/worker-000.recycle.json"
+}

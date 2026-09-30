@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 12.326689749956131,
+      "message": "test/test_output_walk.py:592: in test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present\n    stop_truncated = m._output_truncated.clone()\n                     ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute '_output_truncated'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

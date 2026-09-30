@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

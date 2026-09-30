@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+    "test/test_space_equiv_selfcheck.py::test_perturbed_candidate_is_caught"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-184.recycle.json"
+}

@@ -80,7 +80,9 @@ def test_invalid_call_spends_no_work_and_never_executes():
 
 
 def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypatch):
-    from Queries import _existing_row
+    from Queries import _existing_row, ThoughtLTMCapability
+    from reasoning import TruthGroundedReasoner
+    from index_fixtures import append_indexed
     cs = _cs()
     ref = ('sym', cs.new_concept())
     cs._csw_concept_row(0, ref[1])
@@ -88,8 +90,12 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
                       role_refs=(ref, None, None))
     store = TernaryTruthStore(8)
     store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
-    store.append_meaning(meaning, kind="fact", trust=.6)
-    store.append_meaning(meaning, kind="fact", trust=-.4)
+    code = _existing_row(cs, ref)
+    append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=.6)
+    append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=-.4)
+    # This mechanism budgets primed candidate reads. Indexing precedes the
+    # query; its context supplies no generation work or renewal of the meter.
+    store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
     read, original = [], store.row
 
     def row(index):
@@ -98,9 +104,13 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
 
     monkeypatch.setattr(store, "row", row)
     meter = budget(2)
+    reader = TruthGroundedReasoner(store=store)
+    context = replace(_context(cs, store=store, work=meter),
+        ltm=ThoughtLTMCapability(store=reader.reasoning_store,
+            equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
     from test_query_vp_boundaries import _signature
     result = _signature('exist', 'I1').invoke(
-        _context(cs, store=store, work=meter), meaning)
+        context, meaning)
     assert read == [0] and result["records_scanned"] == 1
     assert result["support_true"] == pytest.approx(.6)
     assert result["support_false"] == 0 and "work_budget" in result["incomplete"]

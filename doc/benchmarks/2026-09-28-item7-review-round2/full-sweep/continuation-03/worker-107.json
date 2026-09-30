@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_attribute_removed",
+    "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_reverse_helper_removed",
+    "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_variants_removed",
+    "test/test_cs_stm_bookkeeping.py::TestSTMInstancePreserved::test_stm_attribute_exists",
+    "test/test_cs_stm_bookkeeping.py::TestSTMInstancePreserved::test_stm_has_push_peek_snapshot_clear",
+    "test/test_cs_stm_bookkeeping.py::TestCSForwardMutatesSTM::test_forward_pushes_to_stm",
+    "test/test_cs_stm_bookkeeping.py::TestSTMShiftAtCapacity::test_shift_drops_oldest",
+    "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_consume_intra_loss_finite_after_serial_sentence",
+    "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_no_accumulation_under_no_grad",
+    "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_predicted_idea_populated_after_per_word_push",
+    "test/test_cs_stm_bookkeeping.py::TestCSForwardArity::test_conceptual_forward_arity"
+  ],
+  "completed": [
+    "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_attribute_removed",
+    "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_reverse_helper_removed",
+    "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_variants_removed",
+    "test/test_cs_stm_bookkeeping.py::TestSTMInstancePreserved::test_stm_attribute_exists",
+    "test/test_cs_stm_bookkeeping.py::TestSTMInstancePreserved::test_stm_has_push_peek_snapshot_clear",
+    "test/test_cs_stm_bookkeeping.py::TestCSForwardMutatesSTM::test_forward_pushes_to_stm",
+    "test/test_cs_stm_bookkeeping.py::TestSTMShiftAtCapacity::test_shift_drops_oldest",
+    "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_consume_intra_loss_finite_after_serial_sentence",
+    "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_no_accumulation_under_no_grad",
+    "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_predicted_idea_populated_after_per_word_push",
+    "test/test_cs_stm_bookkeeping.py::TestCSForwardArity::test_conceptual_forward_arity"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_attribute_removed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029700416955165565,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_reverse_helper_removed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01446345797739923,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_variants_removed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014580167015083134,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestSTMInstancePreserved::test_stm_attribute_exists",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014517541974782944,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestSTMInstancePreserved::test_stm_has_push_peek_snapshot_clear",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013900499907322228,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestCSForwardMutatesSTM::test_forward_pushes_to_stm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016450375085696578,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestSTMShiftAtCapacity::test_shift_drops_oldest",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01887170795816928,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_consume_intra_loss_finite_after_serial_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.017688750056549907,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_no_accumulation_under_no_grad",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.017695499933324754,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestCSPredictThenPerceive::test_predicted_idea_populated_after_per_word_push",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01660370791796595,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_cs_stm_bookkeeping.py::TestCSForwardArity::test_conceptual_forward_arity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012683402746915817,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_mm_boolean.py::TestMMBoolean::test_encode_decode_by_best_fit",
+    "test/test_mm_boolean.py::TestMMBoolean::test_explicit_test_sentences"
+  ],
+  "completed": [
+    "test/test_mm_boolean.py::TestMMBoolean::test_encode_decode_by_best_fit",
+    "test/test_mm_boolean.py::TestMMBoolean::test_explicit_test_sentences"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_mm_boolean.py::TestMMBoolean::test_encode_decode_by_best_fit",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.0001337910071015358,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_boolean.py', 160, 'Skipped: slow (~37s end-to-end MM_boolean train) -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_boolean.py::TestMMBoolean::test_explicit_test_sentences",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00010050006676465273,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_boolean.py', 65, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+  ],
+  "completed": [
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017787492834031582,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05538250016979873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010858406312763691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02674441714771092,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029067666037008166,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026891959132626653,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

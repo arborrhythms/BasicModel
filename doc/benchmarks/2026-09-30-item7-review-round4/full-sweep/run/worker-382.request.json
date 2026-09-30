@@ -1,0 +1,20 @@
+{
+  "selectors": [
+    "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_has_model_wide_only",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+    "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nOutput",
+    "test/test_config_scoping.py::TestCreateFromConfig::test_reads_space_nOutput",
+    "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_guard_retired",
+    "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_ok_when_false",
+    "test/test_config_scoping.py::TestValidateConfig::test_symbol_dim_must_match_concept_dim",
+    "test/test_config_scoping.py::TestInferValidation::test_non_ir_infer_modes_raise_not_implemented"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-382.recycle.json"
+}

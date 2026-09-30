@@ -1,0 +1,132 @@
+{
+  "0": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-00.json"
+    ],
+    "pid": 15557,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 588072424,
+    "elapsed_seconds": 166.35083066602238,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-00.log"
+  },
+  "1": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-01.json"
+    ],
+    "pid": 16188,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 566543728,
+    "elapsed_seconds": 128.54303770884871,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-01.log"
+  },
+  "2": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-02.json"
+    ],
+    "pid": 16601,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 674252312,
+    "elapsed_seconds": 177.93194191693328,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-02.log"
+  },
+  "3": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-03.json"
+    ],
+    "pid": 17043,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 596051360,
+    "elapsed_seconds": 177.2512900000438,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-03.log"
+  },
+  "4": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-04.json"
+    ],
+    "pid": 17216,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 639108680,
+    "elapsed_seconds": 176.6340178749524,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-04.log"
+  },
+  "5": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-05.json"
+    ],
+    "pid": 17518,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 692160000,
+    "elapsed_seconds": 184.7653223341331,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-05.log"
+  },
+  "6": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-06.json"
+    ],
+    "pid": 17741,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 670058008,
+    "elapsed_seconds": 199.41148679191247,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-06.log"
+  },
+  "7": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-07.json"
+    ],
+    "pid": 17980,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 624231912,
+    "elapsed_seconds": 157.36760679096915,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-07.log"
+  },
+  "8": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-08.json"
+    ],
+    "pid": 18178,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 674661864,
+    "elapsed_seconds": 194.96847587497905,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-08.log"
+  },
+  "9": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-09.json"
+    ],
+    "pid": 18366,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 584992232,
+    "elapsed_seconds": 182.6629814999178,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-candidate/run-09.log"
+  }
+}

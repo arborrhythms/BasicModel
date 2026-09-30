@@ -1,0 +1,12 @@
+{
+  "groups": [
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

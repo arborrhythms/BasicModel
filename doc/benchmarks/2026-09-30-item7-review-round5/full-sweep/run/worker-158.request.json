@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-158.recycle.json"
+}

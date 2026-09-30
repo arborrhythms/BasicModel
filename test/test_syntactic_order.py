@@ -1,8 +1,8 @@
-"""syntacticOrder caps the fixed serial seal operation budget.
+"""syntacticOrder caps the fixed serial closing operation budget.
 
   * read from <architecture><syntacticOrder>, default 0 (unbounded/inert);
   * 0 uses the full fixed 2K budget; STOP is eligible once the row fits;
-  * a positive value limits the seal to that many joint operation rounds;
+  * a positive value limits the closing to that many joint operation rounds;
   * unary rounds do not shrink the sequence, so an exhausted budget can leave
     an incomplete forest. Binary-only fixtures below isolate the cap itself.
 """

@@ -1,0 +1,31 @@
+......FF                                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_three_slot_relation_closes_unindexed_numerical_operands _________
+test/test_item7_unindexed_relations.py:47: in test_three_slot_relation_closes_unindexed_numerical_operands
+    entry = replace(entry, leaves=leaves, rows=torch.full((3,), -1),
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:24: in __init__
+    ???
+bin/Understanding.py:87: in __post_init__
+    raise ValueError('program word IDs must be positive identities or -1, aligned to leaves')
+E   ValueError: program word IDs must be positive identities or -1, aligned to leaves
+___ test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows ___
+test/test_item7_unindexed_relations.py:82: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+    assert (store.refs[store.relations()] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x11f287b10>()
+E    +    where <built-in method all of Tensor object at 0x11f287b10> = tensor([[ 1, -1,  2],\n        [ 3, -1,  4],\n        [ 5, -1,  6],\n        [ 7, -1,  8],\n        [ 3,  1,  4],\n        ... 1,  9],\n        [10,  1, 11],\n        [13,  1, 14],\n        [15,  1, 16],\n        [18,  1, 19],\n        [20,  1, 21]]) > 0.all
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands
+FAILED test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+2 failed, 6 passed, 1 warning in 2.28s

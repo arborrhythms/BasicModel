@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_phase1_normalizer.py::test_normalizer_matches_thedata"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-305.recycle.json"
+}

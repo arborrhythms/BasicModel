@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-03/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-03/worker-000.json"
+      ],
+      "pid": 73036,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 513099168,
+      "elapsed_seconds": 7.53566262498498,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-03/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths"
+      ],
+      "completed": [
+        "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.360325540881604,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-03",
+  "elapsed_seconds": 13.586397292092443,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 513099168,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-03/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-03/collect.json"
+    ],
+    "pid": 72966,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433325304,
+    "elapsed_seconds": 5.793520457809791,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-03/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

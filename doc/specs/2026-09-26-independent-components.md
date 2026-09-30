@@ -40,7 +40,7 @@ target and the context are detached, so the loss shapes the predictor
 only. §2.6.4 of the accessible-mind spec already requires the *source*
 ideas to be live ("the gradient runs through the predictor and its live
 source ideas"); the code does not do this. The expectation's negative
-image enters the sealed idea and the thought context detached. At their
+image enters the ended idea and the thought context detached. At their
 defaults the relevant knobs are: inter-sentence prediction weight .1 with
 target and context detached; within-sentence prediction weight .1;
 expectation gain 1, detached; expectation policy weight 0; selected-thought
@@ -169,10 +169,10 @@ independent components of the world so far.
   says which columns are present, not which role each fills; "cat chases
   dog" and "dog chases cat" activate the same three columns (the
   superposition catastrophe). Roles are bound where they already are: at
-  the seal, by the three slots. What ICA adds is the *credit*: prediction
+  the closing, by the three slots. What ICA adds is the *credit*: prediction
   runs in column coordinates, so the correct assignment is the one under
   which the next frame is predictable, and a wrong binding yields surprise
-  that reaches the chooser's slot decisions through the seal.
+  that reaches the chooser's slot decisions through the closing.
 * **Within a field — two red things at once.** Not ICA's either:
   co-variation cannot separate two things present in the same frame.
   Features that pervade the same extent belong to the same whole (the
@@ -188,10 +188,10 @@ Not a pipeline. Identification fixes the *semantic skeleton* of a frame —
 which identity columns are present and which verb column fired — and
 nothing inside the phrases. Spans, determiners, adjectives, morphology,
 tense, prepositions, embedding and word order are the grammar's. The
-coupling is by gradient through the seal in both directions:
+coupling is by gradient through the closing in both directions:
 
 * **Upward:** the parse fixes how many sources the frame mixes and which
-  words fill which roles; the sealed row is what identification decomposes.
+  words fill which roles; the ended row is what identification decomposes.
   Grammar errors show up as smeared columns and are recorded as grammar
   limits.
 * **Downward:** the column inventory defines the candidate referents. At
@@ -199,7 +199,7 @@ coupling is by gradient through the seal in both directions:
   phrase to a column present in the recency buffer or in cued frames, or
   mint a new one. The independence and prediction losses are computed in
   column coordinates and their gradient reaches the compose operators and
-  the chooser through the seal by the straight-through path 7.5 defines.
+  the chooser through the closing by the straight-through path 7.5 defines.
 
 No word is anchored to an operator ([operators have no predefined
 surface](../../todo.md)): a word whose row usually serves as an object column
@@ -208,6 +208,33 @@ as noun or verb is decided per frame by which matrix its row best serves.
 Psychological analogue: Pinker's semantic bootstrapping (things → nouns,
 actions → verbs seed the syntactic categories) with Gleitman's syntactic
 bootstrapping as the reverse direction; both live in the loop.
+
+**The determiner is the lexical cue for the choice** *(Alec, 2026-09-28;
+[accessible mind §2.0.1](2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention))*.
+The bind-or-mint candidates of the downward coupling have words that ask
+for them: "a" lowers the noun phrase and mints a column, "the" lowers it and
+binds to a column already in the recency buffer or the cued frames, and
+"every" does not lower at all — the sentence "remains a high-order
+relation" between the concepts at their own order, and writes no identity
+column. *Amended (Alec, 2026-09-30): "every lowers like all but has a
+different plurality"; it lowers to the extension and chooses no member, so
+it still mints and binds no column
+([5.5 spec §6](2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers)).* This is a cue and not an anchor: the word biases the softmax
+through its learned row like any other, and surprise through the closing
+still credits the choice.
+
+*Which mint and which bind (Alec, 2026-09-28).* "Mint after 'a' and bind
+after 'the' seems reasonable if you mean that the mint or bind are those
+used by the identity tracking system." They are: the candidates of §3.2, a
+column present in the recency buffer or the cued frames, or "mint". They are
+not the minting of a concept or object row, which `interpret` does for an
+unknown word and discovery does for an unexplained recurrence: "a cat"
+introduces a new individual, not a new concept. The cue bears on the
+*choice* in the softmax; whether a column is then allocated is still gated
+by recurrence (§3.5). This is the novelty and familiarity of Heim (1982,
+1983), in which an indefinite requires that no file exist for its referent
+and a definite that one does, with the file card as the identity column.
+The learning gate is in §5.
 
 ### 2.8 Where it acts
 
@@ -245,15 +272,15 @@ individual and keeps the kind — which is why one word form can address a row
 at every order (11c entry 11). Likewise the surprise
 `r = o − ê` is measured over order-0 coordinates and the verb column is its
 order-1 generalization: a recurring pattern of change, not one change.
-The row a seal writes is one fused `NP VP` point because the primitives of
+The row a closing writes is one fused `NP VP` point because the primitives of
 our reality are spacetime events (Alec, 2026-09-27); the order-0 rows a frame
 is measured in are the generalizations of such events over where and when,
-so what the seal writes and what ICA reads are the same kind of thing.
+so what the closing writes and what ICA reads are the same kind of thing.
 
 ## 3. Mechanism
 
 3.1 **Independence loss over the LTM population.** For the retained chain
-of sealed rows (per stream row, then pooled), the sparse-coding negative
+of ended rows (per stream row, then pooled), the sparse-coding negative
 log-likelihood of each frame's content band under the current object
 columns with a heavy-tailed prior on the activations and unit-norm
 columns; in the square case this is maximum-likelihood ICA. Gradient flows
@@ -317,7 +344,7 @@ pass; measurements declare seeds 0/1/2 and report all of them.
 3. **Individuation within a word.** Two individuals sharing a word but with
    distinguishable property bands, each recurring, obtain two columns after
    the recurrence gate; before it, one.
-4. **Role binding is the seal's.** "cat chases dog" and "dog chases cat"
+4. **Role binding is the closing's.** "cat chases dog" and "dog chases cat"
    write different rows and identical independence loss. The test asserts
    the superposition catastrophe rather than hiding it.
 5. **One verb per S.** Over a synthetic stream of one event kind, the surprise
@@ -343,6 +370,11 @@ the same column across held-out streams; prediction error against the
 detached-target control; shuffled-order and renamed-vocabulary controls;
 seeds 0/1/2, declared before training, recorded and never tuned. Learned
 identity and learned verb reuse stay explicitly unproven until these pass.
+*Added in direction (Alec, 2026-09-28; §2.7):* the determiner cue — on
+held-out text the identity system's mint candidate is preferred after "a"
+and its bind candidate after "the", against a shuffled-determiner control
+and under the same prerequisite and seeds. It measures the choice in the
+softmax, not the allocation of a column.
 
 ## 6. Documentation required with implementation
 
@@ -368,7 +400,7 @@ the duality argument), and this spec's status line.
 * Priors on the number of sources: grammar and STM per frame, sparsity for
   which, mint and prune for how many (Claude, accepted).
 * Not a pipeline; ICA fixes the skeleton, grammar derives, coupled by
-  gradient through the seal (Claude, accepted).
+  gradient through the closing (Claude, accepted).
 * ICA does not solve role binding within a sentence; the three slots do
   (Claude, accepted).
 * Identity is a concept: the object columns are hosted in the conceptual
@@ -390,6 +422,8 @@ Choudrey, R. A., & Roberts, S. J. (2003). Variational mixture of Bayesian indepe
 Comon, P. (1994). Independent component analysis, a new concept? *Signal Processing, 36*, 287–314.
 Donoho, D. L. (2006). Compressed sensing. *IEEE Transactions on Information Theory, 52*, 1289–1306.
 Gleitman, L. (1990). The structural sources of verb meanings. *Language Acquisition, 1*, 3–55.
+Heim, I. (1982). *The semantics of definite and indefinite noun phrases* (Doctoral dissertation). University of Massachusetts, Amherst.
+Heim, I. (1983). File change semantics and the familiarity theory of definiteness. In R. Bäuerle, C. Schwarze, & A. von Stechow (Eds.), *Meaning, use, and interpretation of language* (pp. 164–189). de Gruyter.
 Hyvärinen, A., & Morioka, H. (2016). Unsupervised feature extraction by time-contrastive learning and nonlinear ICA. *Advances in Neural Information Processing Systems, 29*.
 Hyvärinen, A., & Morioka, H. (2017). Nonlinear ICA of temporally dependent stationary sources. *Proceedings of Machine Learning Research, 54*, 460–469.
 Kahneman, D., Treisman, A., & Gibbs, B. J. (1992). The reviewing of object files: Object-specific integration of information. *Cognitive Psychology, 24*, 175–219.

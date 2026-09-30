@@ -1,0 +1,20 @@
+....FF                                                                   [100%]
+=================================== FAILURES ===================================
+______ TestAutobindFiresFromCS.test_autobind_creates_meta_taxonomy_entry _______
+test/test_autobind_from_cs.py:134: in test_autobind_creates_meta_taxonomy_entry
+    size_before = len(ws.taxonomy)
+                      ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'taxonomy'
+__________ TestAutobindFiresFromCS.test_autobind_skips_negative_pids ___________
+test/test_autobind_from_cs.py:156: in test_autobind_skips_negative_pids
+    size_before = len(ws.taxonomy)
+                      ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'taxonomy'
+=========================== short test summary info ============================
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids
+2 failed, 4 passed in 2.17s

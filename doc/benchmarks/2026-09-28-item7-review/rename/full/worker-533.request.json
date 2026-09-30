@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[legacy]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-533.recycle.json"
+}

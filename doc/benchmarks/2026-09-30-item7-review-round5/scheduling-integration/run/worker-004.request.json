@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-004.recycle.json"
+}

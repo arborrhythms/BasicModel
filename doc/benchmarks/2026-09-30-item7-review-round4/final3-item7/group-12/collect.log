@@ -1,0 +1,4 @@
+test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference
+test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate
+
+2 tests collected in 2.39s

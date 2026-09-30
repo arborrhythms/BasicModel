@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+    "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+    "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot",
+    "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+    "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+    "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+    "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+    "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+    "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+    "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+    "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "completed": [
+    "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+    "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+    "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot",
+    "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+    "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+    "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+    "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+    "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+    "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+    "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+    "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004937080666422844,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038833166006952524,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020520901307463646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006631458061747253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005246040993370116,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031349994242191315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002684589708223939,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003862500889226794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016104580136016011,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047629198525100946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006280839443206787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014686250360682607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.054201655089855e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

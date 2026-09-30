@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding"
+  ],
+  "completed": [
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00324749993160367,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

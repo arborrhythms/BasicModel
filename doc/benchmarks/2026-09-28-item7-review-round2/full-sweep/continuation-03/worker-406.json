@@ -1,0 +1,193 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> true(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> false(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> non(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> conjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> disjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> what(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> where(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> when(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> query(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> swap(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> equals(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> not(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> part(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> intersection(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> join(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[15-S -> lower(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[16-S -> lift(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip"
+  ],
+  "completed": [
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> true(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> false(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> non(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> conjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> disjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> what(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> where(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> when(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> query(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> swap(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> equals(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> not(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> part(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> intersection(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> join(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[15-S -> lower(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[16-S -> lift(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> true(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010541605297476053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> false(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.062502067536116e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> non(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.541694842278957e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> conjunction(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.5500068962574e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> disjunction(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.525000885128975e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> what(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.574989624321461e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> where(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.445791900157928e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> when(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.324999362230301e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> query(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.566607721149921e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> swap(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.662499021738768e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> equals(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.51659569889307e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> not(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.50829528644681e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> part(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.575001265853643e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> intersection(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.529191836714745e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> join(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.49580392241478e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[15-S -> lower(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.524989243596792e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[16-S -> lift(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.612498641014099e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.104202035814524e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

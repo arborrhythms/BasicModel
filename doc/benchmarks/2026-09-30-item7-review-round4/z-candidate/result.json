@@ -1,0 +1,400 @@
+{
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "groups": [
+    {
+      "gate": 0,
+      "selector": "test/test_grounded_xor.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-00/result.json"
+    },
+    {
+      "gate": 1,
+      "selector": "test/test_concept_output.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-01/result.json"
+    },
+    {
+      "gate": 2,
+      "selector": "test/test_mm_xor.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-02/result.json"
+    },
+    {
+      "gate": 3,
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-03/result.json"
+    },
+    {
+      "gate": 4,
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-04/result.json"
+    },
+    {
+      "gate": 5,
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-05/result.json"
+    },
+    {
+      "gate": 6,
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-06/result.json"
+    },
+    {
+      "gate": 7,
+      "selector": "test/test_basicmodel.py::TestSPNN::test_xor_training",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-07/result.json"
+    },
+    {
+      "gate": 8,
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-08/result.json"
+    },
+    {
+      "gate": 9,
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-09/result.json"
+    },
+    {
+      "gate": 10,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-10/result.json"
+    },
+    {
+      "gate": 11,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-11/result.json"
+    },
+    {
+      "gate": 12,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-12/result.json"
+    },
+    {
+      "gate": 13,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-13/result.json"
+    },
+    {
+      "gate": 14,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-14/result.json"
+    },
+    {
+      "gate": 15,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-15/result.json"
+    },
+    {
+      "gate": 16,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-16/result.json"
+    },
+    {
+      "gate": 17,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-17/result.json"
+    },
+    {
+      "gate": 18,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-18/result.json"
+    },
+    {
+      "gate": 19,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-19/result.json"
+    },
+    {
+      "gate": 20,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-20/result.json"
+    },
+    {
+      "gate": 21,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-21/result.json"
+    },
+    {
+      "gate": 22,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-22/result.json"
+    },
+    {
+      "gate": 23,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-23/result.json"
+    },
+    {
+      "gate": 24,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-24/result.json"
+    },
+    {
+      "gate": 25,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-25/result.json"
+    },
+    {
+      "gate": 26,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-26/result.json"
+    },
+    {
+      "gate": 27,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-27/result.json"
+    },
+    {
+      "gate": 28,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "gate-28/result.json"
+    }
+  ],
+  "diagnostic_only": [
+    {
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15554916352,
+      "elapsed_seconds": 11.21445179102011
+    },
+    {
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15558651904,
+      "elapsed_seconds": 12.17402037512511
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15550574592,
+      "elapsed_seconds": 10.836161165963858
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 13082683640,
+      "elapsed_seconds": 10.372702541993931
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15622844440,
+      "elapsed_seconds": 14.828141707926989
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15644586008,
+      "elapsed_seconds": 13.385044375201687
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15668146296,
+      "elapsed_seconds": 168.01525637484156
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15663820872,
+      "elapsed_seconds": 139.98256395896897
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15669063776,
+      "elapsed_seconds": 136.07129012490623
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 1,
+      "reason": "completed",
+      "peak_memory_bytes": 15676780592,
+      "elapsed_seconds": 117.76442804094404
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15659724896,
+      "elapsed_seconds": 120.03252029092982
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15345676096,
+      "elapsed_seconds": 103.39890450006351
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15386079112,
+      "elapsed_seconds": 107.27044366695918
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15325622080,
+      "elapsed_seconds": 99.90801504184492
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15316873024,
+      "elapsed_seconds": 99.18948150007054
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 1,
+      "reason": "completed",
+      "peak_memory_bytes": 15318822720,
+      "elapsed_seconds": 100.14373316708952
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15307681600,
+      "elapsed_seconds": 97.96213879203424
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15375249240,
+      "elapsed_seconds": 94.39917562506162
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15384178544,
+      "elapsed_seconds": 88.87925008311868
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15279992616,
+      "elapsed_seconds": 84.94969204091467
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15326752576,
+      "elapsed_seconds": 84.2609219159931
+    }
+  ],
+  "reason": "failed"
+}

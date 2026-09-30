@@ -1,0 +1,53 @@
+{
+  "status": "ready_for_claude_review_red",
+  "prepared_at": "2026-09-30T21:31:36.036904+00:00",
+  "accepted": false,
+  "committed": false,
+  "source_manifest": "final-source.json",
+  "source_digest": "e8faf905cfe40c76e064a52bcf61e4063034a21f619d13b0a6e777e05569fdf1",
+  "source_audit": "final-receipt-audit.json",
+  "sweep": "full-sweep/summary.json",
+  "sweep_outcomes": {
+    "passed": 4793,
+    "skipped": 322,
+    "failed": 6,
+    "xfailed": 1
+  },
+  "sweep_minutes": 89.64268418820187,
+  "coverage": "full-sweep/coverage-audit.json",
+  "unresolved_failures": "full-sweep/findings.md",
+  "all_three_round4_failures_pass": true,
+  "all_thirteen_round3_failures_pass": true,
+  "item7_passed": 202,
+  "xor": {
+    "proofs": 49,
+    "passed": 44,
+    "failed": 5,
+    "exact_roundtrips": "12/15",
+    "xor_grammar": "both fail"
+  },
+  "mm_grammar": {
+    "completed": "10/10",
+    "median_ending_mse": 0.10661789774894714
+  },
+  "graph_release_peak_gib": 7.631049454212189,
+  "depth_three_campaign": "still red; mature checkpoint unavailable",
+  "documentation_links": {
+    "passed": 168,
+    "receipt": "documentation-links/group-00/result.json",
+    "tested_documentation_hashes_still_match": true
+  },
+  "git": {
+    "basicmodel": {
+      "head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "index_empty": true
+    },
+    "WikiOracle": {
+      "head": "850798fc0f4b1be5d115f5322dcc83d198b0bd0a",
+      "index_empty": true
+    }
+  },
+  "next_action": "Claude review; no additional fixes, measurements, commits or submodule bump requested by this hand-off",
+  "followup": "PAUSED",
+  "followup_paused_at": "2026-09-30T21:31:36.200095+00:00"
+}

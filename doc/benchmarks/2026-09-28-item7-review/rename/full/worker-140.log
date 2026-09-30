@@ -1,0 +1,67 @@
+ssssss.s.Fs..ssss.s.s                                                    [100%]
+=================================== FAILURES ===================================
+_______________________ test_silent_zero_sites_warn_once _______________________
+test/test_reconstruction_roundtrip.py:407: in test_silent_zero_sites_warn_once
+    model.runEpoch(optimizer=opt, batchSize=bs, split="train")
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16701: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15975: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16644: in _autobind_property_concepts
+    prop_rows = ws.property_rows_for_bytes(key)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23603: in property_rows_for_bytes
+    lut, discard = _analysis_property_signature(self)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22000: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+=============================== warnings summary ===============================
+test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13590: UserWarning: PartSpace._embed: input produced 11 tokens but nOutput=10; truncating 1 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (10 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (10 rows): concept 7 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (10 rows): concept 8 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (10 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (10 rows): concept 10 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once
+1 failed, 6 passed, 14 skipped, 8 warnings in 3.86s

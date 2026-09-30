@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+  ],
+  "completed": [
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-06/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-06/worker-000.json"
+      ],
+      "pid": 8938,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434980160,
+      "elapsed_seconds": 3.6112297910731286,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-06/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+      ],
+      "completed": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00386179203633219,
+          "message": "",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8466/test_integrated_checkpoint_res0/structure.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8466/test_integrated_checkpoint_res0/structure.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8466/test_integrated_checkpoint_res0/structure.ckpt\r\n"
+        },
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010016607120633125,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00033404200803488493,
+          "message": "",
+          "stdout": "Training wall-clock cap armed: 15s (checked between completed batches).\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/3]\r\nTrain Loss: output=1.0000, reconstruction=2.0000\r\nTraining wall-clock cap reached; finishing normally for final reporting/checkpoint save.\r\nFinal Stats:\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-06",
+  "elapsed_seconds": 7.3573759170249104,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 434980160,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-06/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-06/collect.json"
+    ],
+    "pid": 8930,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433259744,
+    "elapsed_seconds": 3.5223269580164924,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-06/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns"
+  ],
+  "completed": [
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10980616719461977,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

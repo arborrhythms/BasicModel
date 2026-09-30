@@ -1,0 +1,207 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+    "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+    "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+    "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+    "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]"
+  ],
+  "completed": [
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+    "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+    "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+    "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+    "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31/worker-000.json"
+      ],
+      "pid": 13837,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 445449608,
+      "elapsed_seconds": 6.419636499835178,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+        "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+        "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+        "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+        "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]"
+      ],
+      "completed": [
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+        "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+        "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+        "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+        "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010484792059287429,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006523542106151581,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005383874988183379,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004576875129714608,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007359159644693136,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011784875066950917,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.024485749891027808,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008512875065207481,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.45011362503282726,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6678333338350058,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31",
+  "elapsed_seconds": 11.989743542158976,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 445449608,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31/collect.json"
+    ],
+    "pid": 13826,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432768248,
+    "elapsed_seconds": 5.225915417075157,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+        "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+        "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+        "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+        "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

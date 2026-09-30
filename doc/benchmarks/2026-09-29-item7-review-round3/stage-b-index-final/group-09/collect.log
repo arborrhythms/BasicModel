@@ -1,0 +1,5 @@
+
+no tests collected in 0.45s
+ERROR: not found: /Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py::test_sixty_four_word_trace_is_bounded
+(no match in any of [<Module test_word_store.py>])
+

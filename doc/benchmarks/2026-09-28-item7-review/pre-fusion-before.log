@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_idea_caches_the_operand_addresses_recorded_before_fusion _________
+
+    def test_idea_caches_the_operand_addresses_recorded_before_fusion():
+        from ClauseJournal import finish_clause
+        from Understanding import AnswerProgram
+    
+        language = SimpleNamespace(_compose_binary_rules=[SimpleNamespace(method_name='lift',
+            clause_form='S', head_role=0, reference_kinds=(), lhs='S')], _compose_unary_rules=[])
+        left, right, result = torch.arange(12, dtype=torch.float32).reshape(3, 4)
+        frames = torch.zeros(3, 3, 4)
+        frames[2] = torch.stack((left, right, result))
+>       entry = AnswerProgram(rows=torch.tensor([0, 1]), word_rows=torch.tensor([0, 1]),
+            activations=torch.ones(2), leaves=torch.stack((left, right)), concept_ids=torch.tensor([1, 2]),
+            reference_ids=torch.tensor([7, 8]), actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1]]),
+            targets=torch.tensor([0, 1, 1]), end_state=torch.stack((result, result * 0, result * 0)),
+            operation_values=frames, operation_refs=torch.tensor([[-1, -1], [-1, -1], [1, -1]]))
+E       TypeError: AnswerProgram.__init__() got an unexpected keyword argument 'operation_refs'
+
+test/test_item7_end_state_storage.py:156: TypeError
+=========================== short test summary info ============================
+FAILED test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion
+1 failed, 8 deselected in 2.03s

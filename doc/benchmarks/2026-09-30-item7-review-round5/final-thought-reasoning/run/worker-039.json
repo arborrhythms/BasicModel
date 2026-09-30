@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded"
+  ],
+  "completed": [
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1256165001541376,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

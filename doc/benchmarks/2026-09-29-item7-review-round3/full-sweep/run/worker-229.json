@@ -1,0 +1,55 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected"
+  ],
+  "completed": [
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.35160729195922613,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\nuStarting with dynamic 6-dim embedding (words added at runtime)\nuStarting with dynamic 96-dim embedding (words added at runtime)\nuStarting with dynamic 6-dim embedding (words added at runtime)\nu"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

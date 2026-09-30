@@ -1,0 +1,65 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_implication_closes_bare_np_arguments_as_idea_clauses ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1234fc9b0>
+
+    def test_implication_closes_bare_np_arguments_as_idea_clauses(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+>       row = f.store.seal_clause(f.clause(('implies', 'rain', 'wet')))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_acceptance.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:610: in seal_clause
+    preflight(clause)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(),...n='implies', refs=(11, 9, 14), children=(), eternal=False, factored_refs=(11, 9, 14), role_leaves=((256,), (), (257,)))
+
+    def preflight(value):
+        nonlocal required, identities
+        if id(value) in visiting:
+            raise ValueError('clause derivation contains a cycle')
+        if id(value) in planned:
+            return planned[id(value)]
+        visiting.add(id(value))
+        if value.meaning.roles.shape != (3, self.nDim):
+            raise ValueError('clause meaning width differs from its truth store')
+        _program_state(value.derivation)
+        child_ids = tuple(preflight(child) for child in value.children)
+        if any(isinstance(ref, ClauseConcept) for ref in value.refs):
+            raise ValueError('phrase admission requires the native concept index')
+        refs = tuple(child_ids[r[1]] if isinstance(r, tuple) else r for r in value.refs)
+        for slot, ref in enumerate(value.refs):
+            if isinstance(ref, tuple):
+                child = value.children[ref[1]]
+                if value.relation is None and child.relation is not None:
+                    raise ValueError('a clause over a relation cannot fuse')
+            elif ref > 0:
+                point = (index_plan.points[ref] if index_plan is not None and ref in index_plan.points
+                         else self.point_of_row(ref))
+                if value.relation is None and point is None:
+                    raise ValueError('a clause over a relation cannot fuse')
+            elif value.relation is not None:
+                raise ValueError('a relation requires three resolved row references')
+        if value.relation == 'implies':
+            for slot in (0, 2):
+                ref = value.refs[slot]
+                if not isinstance(ref, tuple) and self.index_of_row(ref) is None:
+>                   raise ValueError('implication operands must be truth rows')
+E                   ValueError: implication operands must be truth rows
+
+bin/ClauseSeal.py:583: ValueError
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses
+1 failed, 11 deselected, 1 warning in 2.00s

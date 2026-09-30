@@ -1,0 +1,880 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+    "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+    "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+    "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+    "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode",
+    "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+    "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+    "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+    "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+    "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+    "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+    "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+    "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+    "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer",
+    "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+    "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+    "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+    "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+    "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+    "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+    "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+    "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+    "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+    "test/test_two_truth_stores.py::test_retired_relative_store_is_absent"
+  ],
+  "completed": [
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+    "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+    "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+    "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+    "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode",
+    "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+    "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+    "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+    "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+    "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+    "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+    "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+    "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+    "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer",
+    "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+    "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+    "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+    "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+    "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+    "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+    "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+    "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+    "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+    "test/test_two_truth_stores.py::test_retired_relative_store_is_absent"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-000.json"
+      ],
+      "pid": 57524,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430359848,
+      "elapsed_seconds": 3.6685647499980405,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "completed": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002391417045146227,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00211991707328707,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0015452079242095351,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00337033299729228,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002083707950077951,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010520790237933397,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-001.json"
+      ],
+      "pid": 57532,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430966056,
+      "elapsed_seconds": 3.8123669160995632,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+        "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+        "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+        "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+        "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+        "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+        "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+        "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+        "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode"
+      ],
+      "completed": [
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+        "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+        "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+        "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+        "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+        "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+        "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+        "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+        "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011957042035646737,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01373904210049659,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013885417021811008,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008345457958057523,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00823812501039356,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006227790960110724,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004317666054703295,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00844729202799499,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008703500032424927,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010775666916742921,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009957125061191618,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008804458077065647,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.020598749979399145,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0028373750392347574,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-002.json"
+      ],
+      "pid": 57540,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435045696,
+      "elapsed_seconds": 3.6937897090101615,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+        "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+        "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation"
+      ],
+      "completed": [
+        "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+        "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+        "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01182449993211776,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01483041699975729,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013635125011205673,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-003.json"
+      ],
+      "pid": 57548,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436847936,
+      "elapsed_seconds": 3.8229762909468263,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+        "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+        "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+        "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+        "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+        "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+        "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+        "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+        "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+        "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer"
+      ],
+      "completed": [
+        "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+        "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+        "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+        "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+        "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+        "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+        "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+        "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+        "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+        "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05044091702438891,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.033120375010184944,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00045825005508959293,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00034395791590213776,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.022996417013928294,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02233266702387482,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002978330012410879,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001932498998939991,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.022380916983820498,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001563624944537878,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005719580221921206,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004987081047147512,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005367080448195338,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00046333298087120056,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006609580013900995,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004940408980473876,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006242080125957727,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005249999230727553,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000800000037997961,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008408330613747239,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006764170248061419,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005870410241186619,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-004.json"
+      ],
+      "pid": 57558,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426575144,
+      "elapsed_seconds": 3.6868036669911817,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+        "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+        "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+        "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+        "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+        "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+        "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+        "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+        "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+        "test/test_two_truth_stores.py::test_retired_relative_store_is_absent"
+      ],
+      "completed": [
+        "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+        "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+        "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+        "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+        "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+        "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+        "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+        "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+        "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+        "test/test_two_truth_stores.py::test_retired_relative_store_is_absent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009058750001713634,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000216791988350451,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002020419342443347,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00043687503784894943,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003476249985396862,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007862499915063381,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009490828961133957,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006002919981256127,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010111250448971987,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_two_truth_stores.py::test_retired_relative_store_is_absent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 7.879198528826237e-05,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after",
+  "elapsed_seconds": 22.86083499994129,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 436847936,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/collect.json"
+    ],
+    "pid": 57506,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431162592,
+    "elapsed_seconds": 3.742061874945648,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/reader-fixtures-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+        "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+        "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+        "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+        "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+        "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+        "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+        "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+        "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+        "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode",
+        "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+        "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+        "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+        "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+        "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+        "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+        "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+        "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+        "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+        "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+        "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+        "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+        "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+        "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+        "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+        "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer",
+        "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+        "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+        "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+        "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+        "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+        "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+        "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+        "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+        "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+        "test/test_two_truth_stores.py::test_retired_relative_store_is_absent"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

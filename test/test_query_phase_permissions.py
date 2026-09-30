@@ -36,15 +36,12 @@ def _model():
 def _understanding(*completed):
     roles = torch.zeros(3, 8)
     roles[0] = 1
-    program = AnswerProgram(
-        rows=torch.tensor([0]), word_rows=torch.tensor([0]),
-        activations=torch.ones(1), leaves=roles[:1],
-        actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([-1]),
-        end_state=roles, concept_ids=torch.tensor([1]),
-    )
+    from Understanding import SentenceEndState
+    from Meaning import ConceptualMeaning
+    program = SentenceEndState(ConceptualMeaning.from_description(roles[0]))
     return Understanding(
         conceptual_state=roles[None].expand(len(completed), -1, -1),
-        answer_program=tuple(program if ready else None for ready in completed),
+        sentence_states=tuple(program if ready else None for ready in completed),
     )
 
 
@@ -93,7 +90,7 @@ def test_checked_executor_is_masked_throughout_each_sentence_path(monkeypatch, p
     else:
         monkeypatch.setattr(model, "_materialize_answer_idea", injected_query)
         call = lambda: model.reverseOutput(
-            understanding, AnswerDerivation(None, program=understanding.answer_program)
+            understanding, AnswerDerivation(None, sentence_states=understanding.sentence_states)
         )
     with pytest.raises(RuntimeError, match="sentence|query|boundary"):
         call()
@@ -346,10 +343,10 @@ def test_held_completed_understanding_owns_its_readiness_after_later_staging(mon
 
 def test_uncommitted_or_empty_program_rows_do_not_open_queries(monkeypatch):
     model = _model()
-    empty = SimpleNamespace(leaves=torch.zeros(0, 8))
+    empty = None
     for understanding in (
         Understanding(conceptual_state=torch.ones(2, 3, 8)),
-        Understanding(answer_program=(empty, None)),
+        Understanding(sentence_states=(empty, None)),
     ):
         monkeypatch.setattr(
             model, "_resolve_answer", lambda *args: model._assert_query_boundary(0)

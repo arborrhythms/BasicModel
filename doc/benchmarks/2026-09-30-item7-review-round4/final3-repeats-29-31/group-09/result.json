@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+  ],
+  "completed": [
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-09/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-09/worker-000.json"
+      ],
+      "pid": 87025,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 437175688,
+      "elapsed_seconds": 4.450675457948819,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-09/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+      ],
+      "completed": [
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.07305937493219972,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-09",
+  "elapsed_seconds": 6.706655457848683,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 437175688,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-09/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-09/collect.json"
+    ],
+    "pid": 87017,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181928776,
+    "elapsed_seconds": 1.9702632909175009,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-09/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

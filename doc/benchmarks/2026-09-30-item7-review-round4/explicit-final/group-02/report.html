@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>83.72704995796084</pre></td><td><pre>torch._subclasses.fake_tensor.DataDependentOutputException: aten.equal.default
+
+The above exception was the direct cause of the following exception:
+test/test_reverse_traversal.py:330: in test_packed_rows_reconstruct_each_sentence_separately
+    out = compiled(None)
+          ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.Unsupported: Data dependent operator
+E     Explanation: Operator `aten.equal.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.
+E     Hint: Consider wrapping the operator into a PyTorch-understood custom operator (see https://pytorch.org/tutorials/advanced/custom_ops_landing_page.html)
+E   
+E     Developer debug context: aten.equal.default
+E   
+E    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html
+E   
+E   from user code:
+E      File &quot;/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py&quot;, line 325, in &lt;lambda&gt;
+E       lambda _u: m._forward_with_compiled_sentence_state(None),
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 150, in masked
+E       return method(self, *args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 8179, in _forward_with_compiled_sentence_state
+E       return self._forward_per_stage(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 23879, in _forward_per_stage
+E       body_result = self._forward_body(
+E                     ^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 17776, in _forward_body
+E       return self._forward_body_per_word(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 22055, in _forward_body_per_word
+E       self._run_tensor_peer_word_pipeline(N_words))
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 20939, in _run_tensor_peer_word_pipeline
+E       isp._finalize_sentence_word_layout(active)
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py&quot;, line 10525, in _finalize_sentence_word_layout
+E       if not torch.equal(
+E              ^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py&quot;, line 122, in __torch_function__
+E       return func(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you&#x27;re reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=&quot;+dynamo&quot;</pre></td><td><pre></pre></td></tr></table></body></html>

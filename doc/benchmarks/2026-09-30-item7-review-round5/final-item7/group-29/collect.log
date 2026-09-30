@@ -1,0 +1,5 @@
+test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema
+test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english
+test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields
+
+3 tests collected in 1.02s

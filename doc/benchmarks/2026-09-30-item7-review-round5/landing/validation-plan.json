@@ -1,0 +1,57 @@
+{
+  "cases": [
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+    "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+    "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers"
+  ],
+  "files": [
+    "test/test_accessible_mind.py",
+    "test/test_query_work_budget.py",
+    "test/test_query_executors.py",
+    "test/test_replacement_kernel_contracts.py",
+    "test/test_taxonomy_policy.py",
+    "test/test_arithmetic_isolation.py"
+  ],
+  "item7": [
+    "test/test_item7_acceptance.py",
+    "test/test_item7_byte_columns.py",
+    "test/test_item7_clause_program.py",
+    "test/test_item7_clause_state.py",
+    "test/test_item7_closing_identities.py",
+    "test/test_item7_context.py",
+    "test/test_item7_definition_integrity.py",
+    "test/test_item7_definitions.py",
+    "test/test_item7_end_state_storage.py",
+    "test/test_item7_expectation.py",
+    "test/test_item7_grammar.py",
+    "test/test_item7_lesson_gradients.py",
+    "test/test_item7_nested_references.py",
+    "test/test_item7_point_owners.py",
+    "test/test_item7_predicate_identity.py",
+    "test/test_item7_predicate_storage.py",
+    "test/test_item7_property_cache_release.py",
+    "test/test_item7_property_only.py",
+    "test/test_item7_property_read_storage.py",
+    "test/test_item7_provenance.py",
+    "test/test_item7_reduction_deadline.py",
+    "test/test_item7_references.py",
+    "test/test_item7_retention.py",
+    "test/test_item7_row_schema.py",
+    "test/test_item7_selected_property_rows.py",
+    "test/test_item7_sentence_boundary.py",
+    "test/test_item7_sentence_gradients.py",
+    "test/test_item7_storage.py",
+    "test/test_item7_taxonomy.py",
+    "test/test_item7_truth_text.py",
+    "test/test_item7_unfold_index.py",
+    "test/test_item7_unindexed_relations.py",
+    "test/test_item7_word_admission.py",
+    "test/test_item7_word_interpretation.py"
+  ],
+  "docs": [
+    "test/test_doc_links.py"
+  ]
+}

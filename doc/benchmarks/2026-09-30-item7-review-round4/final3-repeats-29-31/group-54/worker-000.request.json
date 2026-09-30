@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-54/worker-000.recycle.json"
+}

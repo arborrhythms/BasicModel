@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probe_graph_owners.py::test_graph_release_memory_owners</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>6.803107917075977</pre></td><td><pre>/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_graph_owners.py:102: in test_graph_release_memory_owners
+    original.test_two_epoch_training_severs_cross_batch_graph()
+/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/test_word_store.py:892: in test_two_epoch_training_severs_cross_batch_graph
+    m.runEpoch(optimizer=opt, batchSize=batch_size, split=&quot;train&quot;)
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16265: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:14043: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14213: in _run_sentence_batch
+    with self._sentence_run(training=call[&#x27;train&#x27;], optimizer=call[&#x27;optimizer&#x27;],
+                                     ^^^^^^^^^^^^^
+E   KeyError: &#x27;train&#x27;</pre></td><td><pre></pre></td></tr></table></body></html>

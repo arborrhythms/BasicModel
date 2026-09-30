@@ -61,7 +61,7 @@ def test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids():
 
 def test_witnesses_write_alternatives_without_conjoining_their_literals():
     cs = _cs()
-    A, _, _ = cs.interpret_word([7], [1], key='word')
+    word, A = cs.interpret_word([7], [1], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
     row = cs._csw_row_of(A)
     cs.interpret_word([8], [2], key='word')
@@ -89,8 +89,8 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     letters = ps.percept_store.spell_out(b'love')
     whole = ws.property_rows_for_bytes(b'love')
     assert whole
-    A, _, _ = cs.interpret_word(letters, whole, key='love')
-    assert cs.concept_parts(A) == letters
+    word, A = cs.interpret_word(letters, whole, key='love')
+    assert cs.concept_parts(word) == letters
     assert ps.percept_store.get_id(b'love') is None
     store = Spaces._concept_alloc_of(cs).layer()
     row = cs._csw_row_of(A)
@@ -122,7 +122,7 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
 def test_alternatives_do_not_trigger_conjunctive_overcollection():
     cs = _cs()
     for n in range(6):
-        A, _, _ = cs.interpret_word([20 + n], [10 + n], key='word')
+        word, A = cs.interpret_word([20 + n], [10 + n], key='word')
     store = Spaces._concept_alloc_of(cs).layer()
     before = dict(store.features._index)
     cs.refine_over_collected()

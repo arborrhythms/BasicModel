@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,50 @@
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+_______________ test_runEpoch_dispatches_per_row_reset_per_batch _______________
+test/test_per_row_hard_reset.py:148: in test_runEpoch_dispatches_per_row_reset_per_batch
+    model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16701: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+test/test_per_row_hard_reset.py:145: in _spy
+    return original(hard_eos)
+           ^^^^^^^^^^^^^^^^^^
+bin/Models.py:15975: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16644: in _autobind_property_concepts
+    prop_rows = ws.property_rows_for_bytes(key)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23603: in property_rows_for_bytes
+    lut, discard = _analysis_property_signature(self)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22000: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 34.85%)
+batch = 2 (Δ=0.027s, 50.00%)
+=============================== warnings summary ===============================
+test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos
+test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_empty_or_all_false_is_noop
+test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state
+test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch
+1 failed, 3 passed, 5 warnings in 3.58s

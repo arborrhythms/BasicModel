@@ -1,0 +1,203 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_contractive_linear.py::test_constraints_hold_at_init_unary",
+    "test/test_contractive_linear.py::test_constraints_hold_at_init_binary_blocks",
+    "test/test_contractive_linear.py::test_blocks_shape_validation",
+    "test/test_contractive_linear.py::test_d_max_resolution",
+    "test/test_contractive_linear.py::test_legacy_layer_untouched",
+    "test/test_contractive_linear.py::test_constraints_hold_after_adversarial_descent[1-6-6]",
+    "test/test_contractive_linear.py::test_constraints_hold_after_adversarial_descent[2-8-4]",
+    "test/test_contractive_linear.py::test_stable_clamp_bounds_d_after_ascent",
+    "test/test_contractive_linear.py::test_constraints_hold_after_random_regression",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-True]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-True]",
+    "test/test_contractive_linear.py::test_square_W_Winverse_identity",
+    "test/test_contractive_linear.py::test_binary_right_inverse",
+    "test/test_contractive_linear.py::test_roundtrip_survives_optimizer_steps",
+    "test/test_contractive_linear.py::test_constraints_hold_under_ergodic_noise",
+    "test/test_contractive_linear.py::test_ergodic_d_matches_clean_law_at_zero_noise",
+    "test/test_contractive_linear.py::test_ergodic_roundtrip"
+  ],
+  "completed": [
+    "test/test_contractive_linear.py::test_constraints_hold_at_init_unary",
+    "test/test_contractive_linear.py::test_constraints_hold_at_init_binary_blocks",
+    "test/test_contractive_linear.py::test_blocks_shape_validation",
+    "test/test_contractive_linear.py::test_d_max_resolution",
+    "test/test_contractive_linear.py::test_legacy_layer_untouched",
+    "test/test_contractive_linear.py::test_constraints_hold_after_adversarial_descent[1-6-6]",
+    "test/test_contractive_linear.py::test_constraints_hold_after_adversarial_descent[2-8-4]",
+    "test/test_contractive_linear.py::test_stable_clamp_bounds_d_after_ascent",
+    "test/test_contractive_linear.py::test_constraints_hold_after_random_regression",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-True]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-True]",
+    "test/test_contractive_linear.py::test_square_W_Winverse_identity",
+    "test/test_contractive_linear.py::test_binary_right_inverse",
+    "test/test_contractive_linear.py::test_roundtrip_survives_optimizer_steps",
+    "test/test_contractive_linear.py::test_constraints_hold_under_ergodic_noise",
+    "test/test_contractive_linear.py::test_ergodic_d_matches_clean_law_at_zero_noise",
+    "test/test_contractive_linear.py::test_ergodic_roundtrip"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_contractive_linear.py::test_constraints_hold_at_init_unary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009018749697133899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_constraints_hold_at_init_binary_blocks",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003923330223187804,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_blocks_shape_validation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003341659903526306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_d_max_resolution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024095794651657343,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_legacy_layer_untouched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020404194947332144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_constraints_hold_after_adversarial_descent[1-6-6]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01793620898388326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_constraints_hold_after_adversarial_descent[2-8-4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005413583014160395,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_stable_clamp_bounds_d_after_ascent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008759415941312909,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_constraints_hold_after_random_regression",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008775540976785123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000979083008132875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007304999744519591,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005628339713439345,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005529170157387853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_W_Winverse_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005242910701781511,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_binary_right_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005974579835310578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_roundtrip_survives_optimizer_steps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006719083990901709,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_constraints_hold_under_ergodic_noise",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013701659627258778,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_ergodic_d_matches_clean_law_at_zero_noise",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003030420048162341,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_ergodic_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008800830692052841,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

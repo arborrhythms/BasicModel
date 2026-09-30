@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

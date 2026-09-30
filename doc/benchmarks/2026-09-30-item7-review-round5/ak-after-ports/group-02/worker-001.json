@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+    "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+    "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+    "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+    "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+    "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+  ],
+  "completed": [
+    "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+    "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+    "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+    "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+    "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+    "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038008298724889755,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00337349995970726,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002555625047534704,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022040829062461853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005665874807164073,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029201251454651356,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

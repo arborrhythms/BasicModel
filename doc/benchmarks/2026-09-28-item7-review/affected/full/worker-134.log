@@ -1,0 +1,18 @@
+...FF........                                                            [100%]
+=================================== FAILURES ===================================
+____________________ test_forward_stamps_stage0_analysis_pi ____________________
+test/test_abstraction_order_canonical.py:162: in test_forward_stamps_stage0_analysis_pi
+    an = ws0.analysis_store
+         ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?
+__________ test_forward_stamps_symbolic_emission_winner_at_pass_slot ___________
+test/test_abstraction_order_canonical.py:196: in test_forward_stamps_symbolic_emission_winner_at_pass_slot
+    assert stamped_any, ("no t>0 symbolic emission fired -- the fixture "
+E   AssertionError: no t>0 symbolic emission fired -- the fixture must exercise the multi-pass pump
+E   assert False
+=========================== short test summary info ============================
+FAILED test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi
+FAILED test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot
+2 failed, 11 passed in 2.58s

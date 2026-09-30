@@ -1,0 +1,26 @@
+{
+  "head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "protected": {
+    "data/XOR_grammar.xml": true,
+    "bin/Layers.py": true,
+    "bin/ClauseRow.py": true,
+    "bin/ConceptIndex.py": true,
+    "test/test_item7_taxonomy.py": true,
+    "data/MM_grammar.xml": true,
+    "test/test_explicit_dimensions.py": true,
+    "test/test_thinking_kernel.py": true,
+    "test/test_stm_relative_sentence_end_state.py": true,
+    "pytest.ini": true,
+    "NonLayer AST": true,
+    "ConjunctionLayer AST": true,
+    "test_mm_grammar_learns_xor_signal AST": true,
+    "test_forward_keeps_continuous_symbols assertions": true,
+    "parity assertions": true,
+    "parity test functions and tolerances": true
+  },
+  "parity_observer_port": "parity-capture.patch",
+  "item7_seed_calls": [],
+  "todo_links_checked": 81,
+  "todo_missing": [],
+  "todo_numbered_backreference_damage": false
+}

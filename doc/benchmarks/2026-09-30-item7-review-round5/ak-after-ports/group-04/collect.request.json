@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

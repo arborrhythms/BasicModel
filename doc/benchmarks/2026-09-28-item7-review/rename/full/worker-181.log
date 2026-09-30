@@ -1,0 +1,114 @@
+..FFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_ TestPerStageCachesRetiredAfterForward.test_cs_cache_not_present_after_forward _
+test/test_stage_caches_retired.py:114: in test_cs_cache_not_present_after_forward
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9007: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24288: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18222: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22617: in _forward_body_per_word
+    row = _append_observed_meaning(
+bin/Models.py:169: in _append_observed_meaning
+    raise ValueError('an observation requires its selected clause and shared index')
+E   ValueError: an observation requires its selected clause and shared index
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_ TestPerStageCachesRetiredAfterForward.test_ws_cache_not_present_after_forward _
+test/test_stage_caches_retired.py:102: in test_ws_cache_not_present_after_forward
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9007: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24288: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18222: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22617: in _forward_body_per_word
+    row = _append_observed_meaning(
+bin/Models.py:169: in _append_observed_meaning
+    raise ValueError('an observation requires its selected clause and shared index')
+E   ValueError: an observation requires its selected clause and shared index
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_ TestReverseRoundtripStillCompletes.test_runBatch_reverse_path_does_not_depend_on_cs_cache _
+test/test_stage_caches_retired.py:204: in test_runBatch_reverse_path_does_not_depend_on_cs_cache
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9007: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24288: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18222: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22617: in _forward_body_per_word
+    row = _append_observed_meaning(
+bin/Models.py:169: in _append_observed_meaning
+    raise ValueError('an observation requires its selected clause and shared index')
+E   ValueError: an observation requires its selected clause and shared index
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_ TestReverseRoundtripStillCompletes.test_terminal_stm_snapshot_available_after_forward _
+test/test_stage_caches_retired.py:140: in test_terminal_stm_snapshot_available_after_forward
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9007: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24288: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18222: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22617: in _forward_body_per_word
+    row = _append_observed_meaning(
+bin/Models.py:169: in _append_observed_meaning
+    raise ValueError('an observation requires its selected clause and shared index')
+E   ValueError: an observation requires its selected clause and shared index
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_______ TestReverseRoundtripStillCompletes.testreverse_via_terminal_stm ________
+test/test_stage_caches_retired.py:166: in testreverse_via_terminal_stm
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9007: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24288: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18222: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22617: in _forward_body_per_word
+    row = _append_observed_meaning(
+bin/Models.py:169: in _append_observed_meaning
+    raise ValueError('an observation requires its selected clause and shared index')
+E   ValueError: an observation requires its selected clause and shared index
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=========================== short test summary info ============================
+FAILED test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_cs_cache_not_present_after_forward
+FAILED test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_ws_cache_not_present_after_forward
+FAILED test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_runBatch_reverse_path_does_not_depend_on_cs_cache
+FAILED test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_terminal_stm_snapshot_available_after_forward
+FAILED test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm
+5 failed, 2 passed in 5.02s

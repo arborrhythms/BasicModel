@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/worker-000.json"
+  ],
+  "pid": 65226,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 435143928,
+  "elapsed_seconds": 6.900563583010808,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/worker-000.log"
+}

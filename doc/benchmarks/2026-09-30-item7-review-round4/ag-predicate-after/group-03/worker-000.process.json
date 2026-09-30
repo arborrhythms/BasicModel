@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-after/group-03/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-after/group-03/worker-000.json"
+  ],
+  "pid": 81044,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 8184782048,
+  "elapsed_seconds": 41.852053167065606,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-after/group-03/worker-000.log"
+}

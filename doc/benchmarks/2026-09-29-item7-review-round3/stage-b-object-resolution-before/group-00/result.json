@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-object-resolution-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-object-resolution-before/group-00/worker-000.json"
+      ],
+      "pid": 10614,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 437765320,
+      "elapsed_seconds": 3.56019800005015,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-object-resolution-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.5253203749889508,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py:40: in test_object_resolution_does_not_treat_its_word_as_a_second_object\n    assert cs.resolve_word_concept('hello', order=0) == obj\nE   AssertionError: assert None == 2\nE    +  where None = resolve_word_concept('hello', order=0)\nE    +    where resolve_word_concept = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).resolve_word_concept",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-object-resolution-before/group-00",
+  "elapsed_seconds": 5.512863375013694,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 437765320,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-object-resolution-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-object-resolution-before/group-00/collect.json"
+    ],
+    "pid": 10610,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179929928,
+    "elapsed_seconds": 1.7260234580608085,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-object-resolution-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+  ],
+  "completed": [
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-before/group-00/worker-000.json"
+      ],
+      "pid": 11794,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 600409552,
+      "elapsed_seconds": 4.450451874989085,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+      ],
+      "completed": [
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.47743108309805393,
+          "message": "bin/Models.py:3113: in getOptimizer\n    remapped = remap_optimizer_state_by_name(\nbin/checkpoint_migrations.py:739: in remap_optimizer_state_by_name\n    raise ValueError(\"optimizer parameter-group layout differs\")\nE   ValueError: optimizer parameter-group layout differs\n\nThe above exception was the direct cause of the following exception:\ntest/test_fineweb_preflight.py:146: in test_checkpoint_restores_optimizer_counters_and_rng\n    opt = restored.getOptimizer(lr=1e-4)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:3129: in getOptimizer\n    raise ValueError(message) from exc\nE   ValueError: [BasicModel] Optimizer checkpoint was not restored: optimizer parameter-group layout differs",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8485/test_checkpoint_restores_optim0/resume.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8485/test_checkpoint_restores_optim0/resume.ckpt\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-before/group-00",
+  "elapsed_seconds": 6.459524582955055,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 600409552,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-before/group-00/collect.json"
+    ],
+    "pid": 11780,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180634440,
+    "elapsed_seconds": 1.7807869169628248,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

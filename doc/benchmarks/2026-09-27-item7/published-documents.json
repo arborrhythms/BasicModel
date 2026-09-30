@@ -1,0 +1,18 @@
+{
+  "base": "92b1573180a664d2278d3623737311893ac5145d",
+  "basicmodel_commit": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "wikioracle_commit": "850798fc0f4b1be5d115f5322dcc83d198b0bd0a",
+  "files": [
+    "doc/FutureWork.md",
+    "doc/LLMEquivalence.md",
+    "doc/diagrams/gen_diagrams.py",
+    "doc/plans/2026-09-27-item-6-8-one-attention.md",
+    "doc/specs/2026-09-26-independent-components.md",
+    "todo.md"
+  ],
+  "coauthor": "Codex <noreply@openai.com>",
+  "pushed": true,
+  "documentation_selected": 115,
+  "documentation_completed": 115,
+  "documentation_exit_code": 0
+}

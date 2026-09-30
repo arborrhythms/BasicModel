@@ -1,0 +1,77 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____________ test_selected_clause_tree_owns_its_local_references ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10bcb0050>
+
+    def test_selected_clause_tree_owns_its_local_references(monkeypatch):
+        _, registry, language, entry, _ = _nested(monkeypatch)
+        meaning = language.program_meaning(entry, registry)
+        # The semantic projector's constituent inventory is a separate namespace.
+        # It must not replace the selected clause tree's local child address.
+        meaning = replace(meaning, role_refs=(meaning.role_refs[0], meaning.role_refs[1],
+                                             ('constituent', 7)))
+>       clause = clause_from_program(language, entry, meaning=meaning, registry=registry)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_clause_program.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/ClauseSeal.py:264: in clause_from_program
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:247: in recover
+    return Clause(described, point=None if relation else (
+<string>:11: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 10), ('sym', 1), ('constituent', ...None, None, None), bindings=(), scope=(), sentence_kind='relation'), relation='part', refs=(10, 1, 11), children=()),))
+
+    def __post_init__(self):
+        if self.relation not in (None, 'part', 'whole', 'equal', 'implies', 'operator'):
+            raise ValueError('unknown clause relation')
+        if len(self.refs) != 3:
+            raise ValueError('a clause has three reference slots')
+        if self.relation is None:
+            if (not torch.is_tensor(self.point) or self.point.ndim != 1
+                    or self.point.shape != self.meaning.roles[0].shape
+                    or not bool(torch.isfinite(self.point).all())):
+                raise ValueError('an absolute clause requires its grammar-fused point')
+        elif self.point is not None:
+            raise ValueError('a relative clause has no fused point')
+        for name in ('where', 'when'):
+            value = getattr(self, name)
+            if value is not None and (not torch.is_tensor(value) or value.shape != (4,)
+                                      or not bool(torch.isfinite(value).all())):
+                raise ValueError('a sealed field has one finite four-coordinate band')
+        for reference in self.refs:
+            if isinstance(reference, tuple):
+                if (len(reference) != 2 or reference[0] != 'clause'
+                        or type(reference[1]) is not int
+                        or not 0 <= reference[1] < len(self.children)):
+>                   raise ValueError('unavailable child clause')
+E                   ValueError: unavailable child clause
+
+bin/ClauseSeal.py:73: ValueError
+_________ test_idea_chain_is_a_retention_reference_to_its_prior_state __________
+
+    def test_idea_chain_is_a_retention_reference_to_its_prior_state():
+        store, _ = clause_store()
+        first = store.seal_clause(idea_clause())
+        second = store.seal_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))
+>       assert store.meaning_of(second).role_refs[0] == store.occurrence_of(first)
+E       AssertionError: assert None == ('ltm', '9637bd6923fa4252a10d72939c022521', 0)
+E        +  where ('ltm', '9637bd6923fa4252a10d72939c022521', 0) = occurrence_of(0)
+E        +    where occurrence_of = TernaryTruthStore().occurrence_of
+
+test/test_item7_retention.py:57: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references
+FAILED test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state
+2 failed, 1 warning in 2.13s

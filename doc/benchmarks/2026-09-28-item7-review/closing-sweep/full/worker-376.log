@@ -1,0 +1,11 @@
+....F                                                                    [100%]
+=================================== FAILURES ===================================
+________________ test_symbolic_space_uses_sparsity_regularizer _________________
+test/test_sparsity_regularizer.py:43: in test_symbolic_space_uses_sparsity_regularizer
+    assert hasattr(WholeSpace, "_build_sparsity_regularizer"), \
+E   AssertionError: WholeSpace should expose a factory for its regularizer
+E   assert False
+E    +  where False = hasattr(<class 'Spaces.WholeSpace'>, '_build_sparsity_regularizer')
+=========================== short test summary info ============================
+FAILED test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer
+1 failed, 4 passed in 2.32s

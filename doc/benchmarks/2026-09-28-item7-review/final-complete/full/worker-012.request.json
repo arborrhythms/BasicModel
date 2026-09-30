@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/final-complete/full/worker-012.recycle.json"
+}

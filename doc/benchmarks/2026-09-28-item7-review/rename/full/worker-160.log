@@ -1,0 +1,76 @@
+.FFs                                                                     [100%]
+=================================== FAILURES ===================================
+_________________________ test_run_record_schema_smoke _________________________
+test/test_recon_bench.py:18: in test_run_record_schema_smoke
+    rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+bin/recon_bench.py:213: in run_config
+    _epoch_loop()
+bin/recon_bench.py:197: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16701: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15975: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16644: in _autobind_property_concepts
+    prop_rows = ws.property_rows_for_bytes(key)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23603: in property_rows_for_bytes
+    lut, discard = _analysis_property_signature(self)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22000: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+_________________ test_decode_rows_align_with_last_eval_batch __________________
+test/test_recon_bench.py:55: in test_decode_rows_align_with_last_eval_batch
+    rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+bin/recon_bench.py:213: in run_config
+    _epoch_loop()
+bin/recon_bench.py:197: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16701: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15975: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16644: in _autobind_property_concepts
+    prop_rows = ws.property_rows_for_bytes(key)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23603: in property_rows_for_bytes
+    lut, discard = _analysis_property_signature(self)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22000: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+=============================== warnings summary ===============================
+test/test_recon_bench.py::test_run_record_schema_smoke
+test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_recon_bench.py::test_run_record_schema_smoke - RuntimeError:...
+FAILED test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+2 failed, 1 passed, 1 skipped, 2 warnings in 4.45s

@@ -1,0 +1,194 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+    "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+    "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+  ],
+  "completed": [
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+    "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+    "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-00/worker-000.json"
+      ],
+      "pid": 11013,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 433997120,
+      "elapsed_seconds": 3.6303333750693128,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "completed": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004357084049843252,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0028492079582065344,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0026922080432996154,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002873667050153017,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0029454169562086463,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002884875051677227,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00522254197858274,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006844124989584088,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0026292920811101794,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-00",
+  "elapsed_seconds": 7.483786334050819,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 493454608,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-00/collect.json"
+    ],
+    "pid": 11005,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 493454608,
+    "elapsed_seconds": 3.6243640839820728,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

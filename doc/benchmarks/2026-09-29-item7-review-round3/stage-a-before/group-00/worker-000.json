@@ -1,0 +1,153 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_fuse_parts_before_word_admission",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_same_parts_after_property_change_write_nothing",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_property_read_selects_rows_and_in_bracket_events",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-2]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_fuse_parts_before_word_admission",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_same_parts_after_property_change_write_nothing",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_property_read_selects_rows_and_in_bracket_events",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-2]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_fuse_parts_before_word_admission",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.6069879590068012,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:28: in test_23_fuse_parts_before_word_admission\n    assert cs.concept_parts(word) == [fused]\nE   assert [0, 1, 2, 3] == [4]\nE     \nE     At index 0 diff: 0 != 4\nE     Left contains 3 more items, first extra item: 1\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_same_parts_after_property_change_write_nothing",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.007790834060870111,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:37: in test_23_same_parts_after_property_change_write_nothing\n    assert snapshot(cs) == before\nE   assert (3, {1: 0, 2:....0, 1.0), ...) == (2, {1: 0}, {....0, 1.0), ...)\nE     \nE     At index 0 diff: 3 != 2\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_26_full_row_inventory_leaves_no_word_identity",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0028446250362321734,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:52: in test_26_full_row_inventory_leaves_no_word_identity\n    assert snapshot(cs) == before\nE   assert (2, {1: 0}, {..., {}, (), ...) == (1, {}, {}, {}, {}, (), ...)\nE     \nE     At index 0 diff: 2 != 1\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.008830250008031726,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:70: in test_29_shared_whole_does_not_evidence_an_absent_word\n    assert field[slot, 0, 1].count_nonzero() == 0\nE   assert tensor(1) == 0\nE    +  where tensor(1) = <built-in method count_nonzero of Tensor object at 0x122f94140>()\nE    +    where <built-in method count_nonzero of Tensor object at 0x122f94140> = tensor([1., 0.], grad_fn=<SelectBackward0>).count_nonzero",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0459229169646278,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:100: in test_29_each_reading_publishes_only_its_words\n    assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)\nE   AssertionError: ('MM_xor.xml', 'hello world', 'hello', 6, 8)\nE   assert not tensor(True)\nE    +  where tensor(True) = <built-in method any of Tensor object at 0x122fbb750>()\nE    +    where <built-in method any of Tensor object at 0x122fbb750> = tensor([[1., 0.]]).any",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.22683620802126825,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:100: in test_29_each_reading_publishes_only_its_words\n    assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)\nE   AssertionError: ('MM_grammar.xml', 'hello world', 'hello', 6, 11)\nE   assert not tensor(True)\nE    +  where tensor(True) = <built-in method any of Tensor object at 0x1233b5b80>()\nE    +    where <built-in method any of Tensor object at 0x1233b5b80> = tensor([[1., 0.]]).any",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.20267324999440461,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:100: in test_29_each_reading_publishes_only_its_words\n    assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)\nE   AssertionError: ('XOR_grammar.xml', 'hello world', 'hello', 6, 11)\nE   assert not tensor(True)\nE    +  where tensor(True) = <built-in method any of Tensor object at 0x1236faad0>()\nE    +    where <built-in method any of Tensor object at 0x1236faad0> = tensor([[1., 0.]]).any",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_property_read_selects_rows_and_in_bracket_events",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0013399169547483325,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:125: in test_property_read_selects_rows_and_in_bracket_events\n    field = read_percepts((raw[:, :0], spans[:, :0], primitive, raw, spans),\nbin/PerceptField.py:77: in read_percepts\n    pair = primitive.evidence_on_counts(counts)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:117: in observed\n    assert rows is not None and rows.tolist() == [17], 'unreferenced property rows evaluated'\nE   AssertionError: unreferenced property rows evaluated\nE   assert (None is not None)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7581970830215141,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor\n    ???\nE   AssertionError",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7444472919451073,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor\n    ???\nE   AssertionError",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-2]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8223434999817982,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor\n    ???\nE   AssertionError",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1365352909779176,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor\n    ???\nE   AssertionError",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.147136416984722,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor\n    ???\nE   AssertionError",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-2]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1435540419770405,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor\n    ???\nE   AssertionError",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

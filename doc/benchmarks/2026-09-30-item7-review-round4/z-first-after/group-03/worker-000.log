@@ -1,0 +1,29 @@
+....F                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_three_slot_closing_registers_its_composite_operand ____________
+test/test_item7_clause_program.py:94: in test_three_slot_closing_registers_its_composite_operand
+    row = store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:341: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:297: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:297: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:299: in preflight
+    raise ValueError('predicate identity requires the clause index')
+E   ValueError: predicate identity requires the clause index
+=============================== warnings summary ===============================
+test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand
+1 failed, 4 passed, 1 warning in 2.25s

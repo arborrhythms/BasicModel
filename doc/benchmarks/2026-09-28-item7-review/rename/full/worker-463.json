@@ -1,0 +1,163 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_activation_priming_multiply.py::test_apply_priming_multiplies_activation",
+    "test/test_activation_priming_multiply.py::test_apply_priming_identity_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_activation_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+    "test/test_activation_priming_multiply.py::test_taxonomy_default_config",
+    "test/test_activation_priming_multiply.py::test_configure_priming_overrides_defaults",
+    "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+    "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+    "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+    "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+    "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+    "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+    "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming"
+  ],
+  "completed": [
+    "test/test_activation_priming_multiply.py::test_apply_priming_multiplies_activation",
+    "test/test_activation_priming_multiply.py::test_apply_priming_identity_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_activation_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+    "test/test_activation_priming_multiply.py::test_taxonomy_default_config",
+    "test/test_activation_priming_multiply.py::test_configure_priming_overrides_defaults",
+    "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+    "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+    "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+    "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+    "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+    "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+    "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_multiplies_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036916695535182953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_identity_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001777089200913906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011437502689659595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_none_activation_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010750000365078449,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013100006617605686,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016862491611391306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_default_config",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.541702456772327e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_configure_priming_overrides_defaults",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010379101149737835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.14169941097498e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005577499978244305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010908290278166533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002340839710086584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018733402248471975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003885830519720912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004564999835565686,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

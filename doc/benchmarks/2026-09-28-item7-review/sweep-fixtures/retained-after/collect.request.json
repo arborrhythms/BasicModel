@@ -1,0 +1,21 @@
+{
+  "selectors": [
+    "test/test_type_run_spans.py",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+    "test/test_where_encoding_recovery.py",
+    "test/test_semantic_categories_pipeline.py",
+    "test/test_active_codebook_reads.py",
+    "test/test_operator_superposition.py",
+    "test/test_serial_stm_split.py",
+    "test/test_basicmodel.py",
+    "test/test_item7_property_only.py",
+    "test/test_wholespace_property_migration.py",
+    "test/test_connective_supervision.py",
+    "test/test_mlp_transform_chooser.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,160 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+______ test_part_testimony_symbols_the_parent_one_order_above_the_object _______
+
+    def test_part_testimony_symbols_the_parent_one_order_above_the_object():
+        cs, interpret = _operator()
+        word_cat = interpret.lookup_word([7], [1], form='cat')
+        cat = interpret.forward(word_cat, order=1)
+        word_animal = interpret.lookup_word([8], [1], form='animal')
+        animal = interpret.forward(word_animal, order=1)
+>       parent = cs.index_part_row(cat, animal)
+                 ^^^^^^^^^^^^^^^^^
+
+test/test_item7_taxonomy.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+name = 'index_part_row'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute 'index_part_row'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________ test_one_meta_generalizes_over_several_words_and_objects ___________
+
+    def test_one_meta_generalizes_over_several_words_and_objects():
+        cs, interpret = _operator()
+        first = interpret.lookup_word([7], [1], form='bank')
+        second = interpret.lookup_word([8], [1], form='shore')
+        river = interpret.forward(first)
+        money = cs.new_concept()
+        _concept_alloc_of(cs).reference_orders[money] = 1
+>       meta = cs.bind_meta((first, second), (river, money))
+               ^^^^^^^^^^^^
+
+test/test_item7_taxonomy.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+name = 'bind_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute 'bind_meta'. Did you mean: 'is_meta'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________ test_meta_binding_does_not_discriminate_at_binding_time ____________
+
+    def test_meta_binding_does_not_discriminate_at_binding_time():
+        cs, interpret = _operator()
+        word = interpret.lookup_word([7], [1], form='bank')
+        first = interpret.forward(word)
+        second = cs.new_concept()
+        _concept_alloc_of(cs).reference_orders[second] = 1
+>       meta = cs.bind_meta((word,), (first, second))
+               ^^^^^^^^^^^^
+
+test/test_item7_taxonomy.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+name = 'bind_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute 'bind_meta'. Did you mean: 'is_meta'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______ test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined ______
+
+    def test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined():
+        cs, _ = _operator()
+>       with pytest.warns(UserWarning, match='WholeSpace.*taxonomy'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT WARN. No warnings of type (<class 'UserWarning'>,) were emitted.
+E        Emitted warnings: [].
+
+test/test_item7_taxonomy.py:56: Failed
+=============================== warnings summary ===============================
+test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+FAILED test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects
+FAILED test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time
+FAILED test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined
+4 failed, 1 warning in 2.08s

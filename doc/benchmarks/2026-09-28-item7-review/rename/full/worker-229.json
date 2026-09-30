@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_monotonic",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_position_persists_via_vocab_extras",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_starts_at_one",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one"
+  ],
+  "completed": [
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_monotonic",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_position_persists_via_vocab_extras",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_starts_at_one",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_monotonic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05119533301331103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_position_persists_via_vocab_extras",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03733449999708682,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_starts_at_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018234499963000417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018595249974168837,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

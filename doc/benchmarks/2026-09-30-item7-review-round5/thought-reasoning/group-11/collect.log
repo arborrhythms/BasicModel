@@ -1,0 +1,7 @@
+test/test_query_grammar_loader.py::test_order_expansion_preserves_non_rule_lists_and_expands_only_rule_bodies
+test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[complete.grammar]
+test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[ladder.grammar]
+test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[default.grammar]
+test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[shamatha.grammar]
+
+5 tests collected in 2.55s

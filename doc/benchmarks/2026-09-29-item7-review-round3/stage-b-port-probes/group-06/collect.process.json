@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-06/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-06/collect.json"
+  ],
+  "pid": 7830,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 433243360,
+  "elapsed_seconds": 3.5546419579768553,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-06/collect.log"
+}

@@ -1,0 +1,83 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_query_executors.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping",
+    "test/test_query_executors.py::test_what_preserves_the_complete_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction"
+  ],
+  "completed": [
+    "test/test_query_executors.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping",
+    "test/test_query_executors.py::test_what_preserves_the_complete_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_query_executors.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005892292014323175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003725290996953845,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022056250600144267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_what_preserves_the_complete_question_and_schedules_same_controller",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004145415965467691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022617910290136933,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019568749703466892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002444875077344477,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

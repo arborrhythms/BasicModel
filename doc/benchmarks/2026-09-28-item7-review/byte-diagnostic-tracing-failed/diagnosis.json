@@ -1,0 +1,4 @@
+{
+  "reason": "Python loop body was still enclosed by the compiled reconstruction wrapper; Dynamo rejected data-dependent bool. Single diagnostic was stopped after the same driver incompatibility was known.",
+  "production_source_changed": false
+}

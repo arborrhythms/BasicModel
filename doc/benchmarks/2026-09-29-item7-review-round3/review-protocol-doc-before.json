@@ -1,0 +1,10 @@
+{
+  "doc/Testing.md": {
+    "sha256": "ecdc8fef265c1d511eecc802ffaf0ac4c01176b80611d85dc7c638209162f302",
+    "missing_contract": "Required recurring XOR table: both XOR_exact CLI gates and every slow MM_xor case are not yet listed together in the current test protocol."
+  },
+  "todo.md": {
+    "sha256": "ef195e6cbd55db926bca5a37b88b1fdaec48224234aada6b208a5de78180e91a",
+    "stale_contract": "Item 7 still labels section 14 the current work list and describes the admission-only forcing as current, before the later section 17/18 amendments."
+  }
+}

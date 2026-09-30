@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]"
+  ],
+  "completed": [
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-41/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-41/worker-000.json"
+      ],
+      "pid": 88058,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 554878368,
+      "elapsed_seconds": 4.939470958197489,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-41/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]"
+      ],
+      "completed": [
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.206353957997635,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-41",
+  "elapsed_seconds": 7.343777791131288,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 554878368,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-41/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-41/collect.json"
+    ],
+    "pid": 88045,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181814088,
+    "elapsed_seconds": 2.120114249875769,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-repeats-29-31/group-41/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

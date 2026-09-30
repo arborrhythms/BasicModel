@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_area_in_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_higher_for_closer_points",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_in_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_consistent_field_near_area",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_in_signed_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_isa_part_gradient",
+    "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_luminosity_gradient",
+    "test/test_conceptual_introspection.py::TestSTEWrapper::test_backward_routes_to_query",
+    "test/test_conceptual_introspection.py::TestSTEWrapper::test_forward_returns_answer",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_arity_metadata",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_forward_shapes",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layer_classes_parked_in_legacy",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layers_lossy"
+  ],
+  "completed": [
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_area_in_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_higher_for_closer_points",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_in_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_consistent_field_near_area",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_in_signed_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_isa_part_gradient",
+    "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_luminosity_gradient",
+    "test/test_conceptual_introspection.py::TestSTEWrapper::test_backward_routes_to_query",
+    "test/test_conceptual_introspection.py::TestSTEWrapper::test_forward_returns_answer",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_arity_metadata",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_forward_shapes",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layer_classes_parked_in_legacy",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layers_lossy"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_area_in_unit_interval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026729190722107887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_higher_for_closer_points",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045875017531216145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_in_unit_interval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005237909499555826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_consistent_field_near_area",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002636250574141741,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_in_signed_unit_interval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007017080206423998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_isa_part_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012649916810914874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_luminosity_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005056669469922781,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestSTEWrapper::test_backward_routes_to_query",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023116683587431908,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestSTEWrapper::test_forward_returns_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013566692359745502,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_arity_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010187504813075066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_forward_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036912504583597183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layer_classes_parked_in_legacy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.63329803198576e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layers_lossy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.595789015293121e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

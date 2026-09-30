@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011253666132688522,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

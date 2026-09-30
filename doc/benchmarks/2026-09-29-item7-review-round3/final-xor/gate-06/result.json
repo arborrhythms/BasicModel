@@ -1,0 +1,92 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "completed": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06/worker-000.json"
+      ],
+      "pid": 18426,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 607896992,
+      "elapsed_seconds": 127.68674170784652,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 123.93741937493905,
+          "message": "test/test_mm_xor.py:179: in test_mm_grammar_learns_xor_signal\n    self._fit_xor(os.path.join(_PROJECT, \"data\", \"MM_grammar.xml\"),\ntest/test_mm_xor.py:165: in _fit_xor\n    self.assertLess(best_loss, threshold,\nE   AssertionError: 0.20906077325344086 not less than 0.2 : XOR loss 0.209061 after at most 900 epochs",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06",
+  "elapsed_seconds": 131.56171816703863,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 607896992,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06/collect.json"
+    ],
+    "pid": 18418,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 436110560,
+    "elapsed_seconds": 3.637426834087819,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

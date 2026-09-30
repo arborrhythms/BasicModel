@@ -1,0 +1,85 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___ test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record ____
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:25: in test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record
+    assert inventory(f.cs) == before
+E   AssertionError: assert {'next_id': 1...}, 'keys': {}} == {'next_id': 1...}, 'keys': {}}
+E     
+E     Omitting 2 identical items, use -vv to show
+E     Differing items:
+E     {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}} != {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}}
+E     {'next_id': 15} != {'next_id': 14}
+E     Use -v to get more diff
+_______ test_referenced_phrase_is_read_from_ltm_without_an_inventory_row _______
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:36: in test_referenced_phrase_is_read_from_ltm_without_an_inventory_row
+    assert inventory(f.cs) == before
+E   AssertionError: assert {'next_id': 1..., 16, 1): 16}} == {'next_id': 1...}, 'keys': {}}
+E     
+E     Differing items:
+E     {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}} != {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}}
+E     {'keys': {('clause-phrase', (13, 15), (-0.040670327842235565, -0.5728483200073242, 0.02586948499083519, 0.5340461134910583, -0.2189442366361618, 0.5116314888000488, ...)): 16, ('part-kind', 16, 1): 16}} != {'keys': {}}
+E     {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 4): 3, ...}} != {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 4): 3, ...}}
+E     {'next_id': 18} != {'next_id': 16}
+E     Use -v to get more diff
+________ test_closing_part_and_implies_never_ask_thought_authorization _________
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:51: in test_closing_part_and_implies_never_ask_thought_authorization
+    clause = finish_reading(f.language, entry, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:216: in recover
+    left, left_ref = operand(operands[0], sentence=relation == 'implies')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:203: in operand
+    child = recover(item)
+            ^^^^^^^^^^^^^
+bin/ClauseJournal.py:222: in recover
+    native = registry.clause_reference(relation)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:48: in unavailable
+    raise AssertionError('closing asked the thought registry for its relation identity')
+E   AssertionError: closing asked the thought registry for its relation identity
+_______ test_mm_grammar_part_under_disjunction_closes_at_full_inventory ________
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py:90: in test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+    row = f.store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:227: in write_clause
+    raise ValueError('clause admission requires the shared concept allocator')
+E   ValueError: clause admission requires the shared concept allocator
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_part_and_implies_never_ask_thought_authorization
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+4 failed, 5 warnings in 4.03s

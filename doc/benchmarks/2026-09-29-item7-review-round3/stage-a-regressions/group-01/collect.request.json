@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_router_fires_per_word.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,42 @@
+{
+  "status": "stopped_for_Claude_review_candidate_red",
+  "basicmodel_head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "WikiOracle_head": "850798fc0f4b1be5d115f5322dcc83d198b0bd0a",
+  "staged_changes": false,
+  "source_files": 704,
+  "source_digest": "c573224ffd71917af1932208e298170fd2dd9bde206bf47a391275029095a70a",
+  "matching_receipts": {
+    "full-sweep": true,
+    "explicit-after-owner": true,
+    "final-xor-after-owner": true,
+    "candidate-mm-grammar-final": true,
+    "candidate-reconstruction-final": true
+  },
+  "protected_gates_unchanged": {
+    "test/test_grounded_xor.py": true,
+    "test/test_concept_output.py": true,
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "test/test_thinking_kernel.py": true,
+    "test/test_packed_reconstruction_parity.py": true
+  },
+  "deferred_methods_unchanged": {
+    "NonLayer.forward": true,
+    "ConjunctionLayer.forward": true
+  },
+  "documentation_link_cases_passed": 126,
+  "documentation_link_receipt": "documentation-final/group-00/result.json",
+  "git_diff_check_exit": 0,
+  "damaged_todo_links": [],
+  "full_sweep_outcomes": {
+    "passed": 4714,
+    "skipped": 322,
+    "failed": 13,
+    "xfailed": 1
+  },
+  "full_sweep_complete_unique_coverage": true,
+  "diagnoses_cover_all_failures": true,
+  "configurations_changed_this_pass": [],
+  "item7_seed_calls": [],
+  "documentation_status_note": "Only the plain-text 126/126 result and diff-check status were inserted after the final link run; no link was added or changed."
+}

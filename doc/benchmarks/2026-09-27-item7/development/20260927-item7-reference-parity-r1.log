@@ -1,0 +1,29 @@
+.....F.........                                                          [100%]
+=================================== FAILURES ===================================
+_________ test_10_packed_pending_and_eager_seals_write_identical_rows __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1306dd850>
+
+    def test_10_packed_pending_and_eager_seals_write_identical_rows(monkeypatch):
+        _cs, registry, language, entry, _ = _nested(monkeypatch)
+        stores = [_write_selected_observation(language, registry, entry, path)
+                  for path in ('eager', 'pending', 'packed')]
+        def addresses(store):
+            def address(cid):
+                row = store.index_of_row(cid)
+                return ('concept', cid) if row is None else ('clause', row)
+            return [tuple(address(int(cid)) for cid in store.refs[row]) for row in range(len(store))]
+        for store in stores[1:]:
+            assert addresses(store) == addresses(stores[0])
+            for name in ('slots', 'rel_type', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'where', 'when'):
+>               torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
+E               AssertionError: Tensor-likes are not equal!
+E               
+E               Mismatched elements: 1 / 16 (6.2%)
+E               Greatest absolute difference: 0.8999999761581421 at index (1,)
+E               Greatest relative difference: 1.0 at index (1,)
+
+test/test_selected_nested_meaning.py:74: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_seals_write_identical_rows
+1 failed, 14 passed in 11.88s

@@ -1,0 +1,13 @@
+{
+  "reason": "Defer only unstarted historical candidate XOR jobs until fresh reconstruction has completed, to avoid concurrent large diagnostics consuming the measurement resources. No running test or completed outcome is discarded.",
+  "stopped": [
+    {
+      "pid": 72497,
+      "label": "ah-candidate"
+    },
+    {
+      "pid": 73342,
+      "label": "ai-candidate"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-197.recycle.json"
+}

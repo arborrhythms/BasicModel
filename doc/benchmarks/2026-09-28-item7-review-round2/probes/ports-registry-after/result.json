@@ -1,0 +1,138 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "completed": [
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/worker-000.json"
+      ],
+      "pid": 76312,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 439027104,
+      "elapsed_seconds": 3.9069945419905707,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction"
+      ],
+      "completed": [
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0313374160323292,
+          "message": "test/test_shamatha_inline_grammar.py:63: in test_dnf_stack_wired_into_conceptual_space\n    self.assertIsInstance(\nE   AssertionError: None is not an instance of <class 'Language.NotLayer'>",
+          "stdout": "Starting with dynamic 8-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.012633875012397766,
+          "message": "",
+          "stdout": "Starting with dynamic 8-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/worker-001.json"
+      ],
+      "pid": 76322,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 437405040,
+      "elapsed_seconds": 3.979650874971412,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+      ],
+      "completed": [
+        "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003924500080756843,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after",
+  "elapsed_seconds": 11.957010166021064,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 439027104,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/collect.json"
+    ],
+    "pid": 76296,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435029168,
+    "elapsed_seconds": 3.842059792019427,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-registry-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+        "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

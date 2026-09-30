@@ -111,6 +111,7 @@ class ThoughtGrammarContext(GrammarContext):
     max_records: int = 1024
     max_steps: int = 8
     max_expansions: int = 1024
+    operand_references: tuple = ()
 
     def __post_init__(self):
         super().__post_init__()
@@ -867,6 +868,8 @@ class ThoughtLTMCapability:
             # Only what may expose a stored meaning to serial context.
             sources.append({key: record[key] for key in
                             ('occurrence', 'origin', 'text', 'trust', 'match')})
+            # Existence uses external event authority. The separate ended
+            # identification pair is exposed by true, never used as trust.
             signed = float(record['trust'])
             if record['meaning'].polarity != description.polarity:
                 signed = -signed
@@ -876,6 +879,25 @@ class ThoughtLTMCapability:
                 'familiarity': positive + negative, 'meaning': description.detached(),
                 'candidates': tuple(sources),
                 'records_scanned': result['records_scanned'], 'incomplete': result['incomplete']}
+
+    def end_evidence(self, reference, *, max_records, work):
+        """Read the two poles of one addressed ended clause, under the same bound."""
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        from Layers import TernaryTruthStore
+        if not isinstance(store, TernaryTruthStore) or reference not in store._index_occurrences:
+            raise ValueError('ended clause occurrence is unavailable')
+        if not max_records:
+            raise ValueError('ended clause is unavailable within the query read limit')
+        work.require('record')
+        index = store._index_occurrences[reference]
+        meaning = store.meaning_of(index)
+        if meaning is None:
+            raise ValueError('ended clause metadata is unavailable')
+        positive, negative = float(store.c_plus[index]), float(store.c_minus[index])
+        if store.KINDS[int(store.record_kind[index])] in ('question', 'estimate'):
+            positive = negative = 0.
+        return dict(support_true=positive, support_false=negative, meaning=meaning,
+                    occurrence=reference, records_scanned=1, incomplete=())
 
     def retrieve(self, question, *, max_records, work):
         result = self._cued(question, max_records=max_records, work=work)
@@ -981,6 +1003,14 @@ def _exist(context, arguments):
     keyword = {} if context.work is None else {"work": context.work}
     return context.reasoner.existence_evidence(
         _argument(arguments, 'I1'), max_records=context.max_records, **keyword)
+
+
+def _true(context, arguments):
+    reference = dict(context.operand_references).get('I1')
+    reader = getattr(context.ltm, 'end_evidence', None)
+    if reference is None or not callable(reader):
+        raise ValueError('true requires an addressed ended clause')
+    return reader(reference, max_records=context.max_records, work=context.work)
 
 
 def _part(context, arguments):
@@ -1171,7 +1201,7 @@ def _quantize(context, arguments):
 def _not(context, arguments):
     """A declared thought negates serial content with the shared operator.
 
-    Absence in a seal is evidence, never a command to call this operator.
+    Absence in a closing is evidence, never a command to call this operator.
     Only the ordinary chooser may select it; its result is an inference.
     """
     from Language import NotLayer
@@ -1259,7 +1289,7 @@ class ThoughtExecutorDescriptor:
 # and ownership are constrained by the subsystem write target above.
     @property
     def result_kind(self):
-        return {'exist': 'truth', 'part': 'concept', 'isPart': 'truth',
+        return {'exist': 'truth', 'true': 'truth', 'part': 'concept', 'isPart': 'truth',
                 'equal': 'truth', 'lookup': 'set', 'quantize': 'code',
                 'arma': 'prediction', 'what': 'subgoal'}.get(self.semantic_id,
                     {Mind.SERIAL: 'concept', Mind.SYMBOLIC: 'code',
@@ -1277,6 +1307,8 @@ _thought_executors = (
         (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'inference', _not),
     ThoughtExecutorDescriptor('exist', 'ltm-facts', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'fact', _exist),
+    ThoughtExecutorDescriptor('true', 'ltm-facts', ('description',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'fact', _true),
     ThoughtExecutorDescriptor('part', 'conceptual-taxonomy', ('concept', 'concept'), Mind.SERIAL,
         (Mind.KNOWING, Mind.SYMBOLIC, Mind.SERIAL, Mind.MERONYMY, Mind.TAXONOMY, Mind.BUDGET),
         (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING), 'meronymy', _part),
@@ -1300,6 +1332,7 @@ THOUGHT_EXECUTORS = MappingProxyType({d.semantic_id: d for d in _thought_executo
 _THOUGHT_METHODS = {
     'not': {'conceptual_space': ('payload',)},
     'exist': {'ltm': ('existence_evidence', 'resolve_description')},
+    'true': {'ltm': ('end_evidence', 'resolve_description')},
     'part': {'conceptual_space': ('payload', 'order'), 'taxonomy': ('evidence', 'neighbors')},
     'isPart': {'taxonomy': ('evidence', 'neighbors')},
     'equal': {'conceptual_space': ('payload', 'equal')},
@@ -1323,7 +1356,7 @@ def _descriptor_context(context, descriptor):
     fallback = {'conceptual_space': set(), 'ltm': set(), 'taxonomy': set()}
     methods = {
         Mind.SERIAL: ('ltm', ('lookup', 'resolve_held_description')),
-        Mind.LTM: ('ltm', ('existence_evidence', 'resolve_description')),
+        Mind.LTM: ('ltm', ('existence_evidence', 'end_evidence', 'resolve_description')),
         Mind.EXPECTATION: ('ltm', ('expectation',)),
         Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'quantize', 'order')),
         Mind.SYMBOLIC: ('conceptual_space', ('payload', 'equal', 'quantize', 'order')),
@@ -1465,6 +1498,8 @@ _signatures = []
 for name in ('isTrue', 'exist'):
     _signatures.append(_signature(name, 'exist', 'ltm-facts', (0,), ('description',),
         'truth', 'fact', _exist, compose_faces=('exist',)))
+_signatures.append(_signature('true', 'true', 'ltm-facts', (0,), ('description',),
+    'truth', 'fact', _true, compose_faces=('true',)))
 for names, roles in [(('isPart', 'part', 'queryPart', 'PartOf'), (0, 2)),
                      (('isWhole', 'whole'), (2, 0))]:
     for name in names:
@@ -1728,7 +1763,8 @@ class GrammaticalThoughtRegistry:
     This registry owns neither an alias menu nor a second structural catalogue.
     A descriptor without a selected thought form is absent; a structural
     family omitted from `<thought>` remains pure grammar. Native VP identities
-    stay checkpointed named concepts on the existing conceptual-space owner.
+    for part and implies are the closing's row-free predicate identities;
+    other VPs stay checkpointed named concepts on the conceptual-space owner.
     """
 
     _NAME_PREFIX = 'grammatical-vp:'
@@ -1794,8 +1830,9 @@ class GrammaticalThoughtRegistry:
 
         A small structural model may have fewer concept rows than the grammar's
         executable thought faces.  It must still construct and compose its
-        grammar.  Preflight every *missing* VP as one group; if that group does
-        not fit, retain only already checkpointed bindings and mark the other
+        grammar. Part needs no inventory row. Preflight every missing inventory
+        VP as one group; if that group does not fit, retain part and already
+        checkpointed bindings and mark the other
         structural families unavailable for thought.  This is a setup-time
         capability decision, never a lazy allocation or an arbitrary
         declaration-order prefix.
@@ -1804,7 +1841,9 @@ class GrammaticalThoughtRegistry:
         bound, missing = [], []
         names = getattr(space, '_frozen_named', {})
         for identity in registry._declared_identities:
-            if registry._name(identity) in names:
+            if identity[1] == 'part':
+                bound.append(identity)
+            elif registry._name(identity) in names:
                 # A checkpointed binding is authoritative but still must name
                 # an active aligned native row before it becomes executable.
                 registry._reference(identity)
@@ -1826,6 +1865,15 @@ class GrammaticalThoughtRegistry:
             bound.extend(missing)
         registry._limit_to_bound_identities(bound)
         return registry
+
+    def clause_reference(self, relation):
+        """Canonical ended predicate, independent of thought authorization."""
+        from ClauseRow import predicate_identity
+        relation = 'part' if relation in ('whole', 'equal', 'generic') else relation
+        if relation in ('part', 'implies'):
+            return ('sym', predicate_identity(relation))
+        operation = self.operation_spec(relation)
+        return self._reference((self.descriptors[operation.semantic_id].domain, operation.semantic_id))
 
     def _preflight_missing_vps(self, count):
         """Check both ID and order-zero snap capacity before any VP mint.
@@ -1877,16 +1925,23 @@ class GrammaticalThoughtRegistry:
     def _name(cls, identity):
         return cls._NAME_PREFIX + ':'.join(identity)
 
+    def _identifier(self, identity):
+        if identity[1] == 'part':
+            from ClauseRow import predicate_identity
+            return predicate_identity('part')
+        return getattr(self.space, '_frozen_named', {}).get(self._name(identity))
+
     def _reference(self, identity, *, work=None):
         if identity not in self.identities:
             raise ValueError('grammatical thought operation is not registered')
-        identifier = getattr(self.space, '_frozen_named', {}).get(self._name(identity))
+        identifier = self._identifier(identity)
         if type(identifier) is not int or identifier < 1:
             raise ValueError('grammatical thought VP binding is unavailable')
         reference = ('sym', identifier)
         if work is not None:
             work.require('reference')
-        _existing_row(self.space, reference)
+        if identity[1] != 'part':
+            _existing_row(self.space, reference)
         return reference
 
     def _operation_form(self, structural_id):
@@ -1933,8 +1988,12 @@ class GrammaticalThoughtRegistry:
         return operation
 
     def _payload(self, reference, *, work=None):
+        from ClauseRow import predicate_point, predicate_relation
         if work is not None:
             work.require('payload')
+        relation = predicate_relation(concept_reference(reference)[1])
+        if relation in ('part', 'implies'):
+            return predicate_point(relation, _basis(self.space))
         row = _existing_row(self.space, reference)
         basis = _basis(self.space)
         if not 0 <= row < len(basis):
@@ -2230,8 +2289,7 @@ class GrammaticalThoughtRegistry:
             raise ValueError('thought meaning has no grammatical VP')
         reference = concept_reference(meaning.role_refs[1])
         identity = next((identity for identity in self.identities
-                         if getattr(self.space, '_frozen_named', {}).get(
-                             self._name(identity)) == reference[1]), None)
+                         if self._identifier(identity) == reference[1]), None)
         if identity is None:
             raise ValueError('thought VP is not a registered grammatical operation')
         if verify_reference:
@@ -2316,7 +2374,10 @@ class GrammaticalThoughtRegistry:
             # preparation/read above.  Avoid a second observable boundary
             # call while retaining :meth:`ThoughtSignature.invoke`'s guard
             # for direct checked calls.
-            evidence = signature._invoke_permitted(context, *arguments)
+            invocation = replace(context, operand_references=tuple(
+                (role, meaning.role_refs[self._slot_for_operand(role)])
+                for role in signature.occupied_roles))
+            evidence = signature._invoke_permitted(invocation, *arguments)
         except QueryWorkExhausted:
             # Result metadata comes from the grammar-owned named VP identity;
             # do not retry its native row lookup after the shared meter has

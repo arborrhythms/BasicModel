@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 2/2 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.5233268330339342</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py:14: in test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+    assert m._generated_word_text(point[None, None], torch.tensor([1])) == (&#x27;hello&#x27;,)
+E   AssertionError: assert (None,) == (&#x27;hello&#x27;,)
+E     
+E     At index 0 diff: None != &#x27;hello&#x27;
+E     Use -v to get more diff</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.024839082965627313</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py:30: in test_reference_update_law_uses_the_definition_index
+    assert torch.equal(vq.update_mask_fn(32, None), reference_update_mask(False, [obj], 32))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: equal(): argument &#x27;input&#x27; (position 1) must be Tensor, not NoneType</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr></table></body></html>

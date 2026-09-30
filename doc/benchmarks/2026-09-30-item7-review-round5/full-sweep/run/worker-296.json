@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048375013284385204,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 6/6 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.002629209076985717</pre></td><td><pre>test/test_concept_capacity_policy.py:75: in test_explicit_word_triple_capacity_failure_is_atomic
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    &quot;word_obj_meta&quot;: dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;ConceptAllocator&#x27; object has no attribute &#x27;word_obj_meta&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.001610749983228743</pre></td><td><pre>test/test_concept_capacity_policy.py:88: in test_automatic_capacity_mode_reuses_known_identity_without_recycling
+    known = cs.interpret_word([10], (0,), key=&quot;known&quot;)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018804579740390182</pre></td><td><pre>test/test_concept_capacity_policy.py:116: in test_serial_property_autobind_does_not_persist_sentence_chain
+    cs._autobind_property_concepts(
+bin/Spaces.py:16665: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0023315410362556577</pre></td><td><pre>test/test_concept_capacity_policy.py:137: in test_rejected_word_does_not_consume_location_fallback_rows
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    &quot;word_obj_meta&quot;: dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;ConceptAllocator&#x27; object has no attribute &#x27;word_obj_meta&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0016516250325366855</pre></td><td><pre>test/test_concept_capacity_policy.py:137: in test_rejected_word_does_not_consume_location_fallback_rows
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    &quot;word_obj_meta&quot;: dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;ConceptAllocator&#x27; object has no attribute &#x27;word_obj_meta&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0015967079671099782</pre></td><td><pre>test/test_concept_capacity_policy.py:160: in test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    &quot;word_obj_meta&quot;: dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;ConceptAllocator&#x27; object has no attribute &#x27;word_obj_meta&#x27;</pre></td><td><pre></pre></td></tr></table></body></html>

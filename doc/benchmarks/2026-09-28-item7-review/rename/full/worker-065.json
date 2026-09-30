@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state"
+  ],
+  "completed": [
+    "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007933339802548289,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

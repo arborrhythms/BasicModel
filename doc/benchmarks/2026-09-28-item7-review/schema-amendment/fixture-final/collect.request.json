@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_lexical_reference_orders.py",
+    "test/test_doc_links.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

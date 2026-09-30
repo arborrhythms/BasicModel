@@ -97,10 +97,10 @@ def test_sampling_temperature_is_read_from_the_shared_xml_element():
         model.symbolSpace.soft_reset()
 
 
-def test_zero_temperature_prefix_uses_execution_order_for_packed_seals():
+def test_zero_temperature_prefix_uses_execution_order_for_packed_ends():
     from types import SimpleNamespace as NS
     from Models import BasicModel
-    # Two one-word sentences: first seal is group 1, final seal is group 0.
+    # Two one-word sentences: first closing is group 1, final closing is group 0.
     actions = torch.full((1, 14), -1, dtype=torch.long)
     actions[0, [0, 10, 3, 6]] = 2
     forced = torch.zeros_like(actions, dtype=torch.bool)

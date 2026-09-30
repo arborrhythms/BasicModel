@@ -1,0 +1,29 @@
+{
+  "selectors": [
+    "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+    "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+    "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+    "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+    "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+    "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+    "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+    "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+    "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+    "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+    "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-139.recycle.json"
+}

@@ -1,0 +1,50 @@
+F.............FFFF.                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_flag_off_does_not_call_stack_route_forward ________________
+test/test_subspace_what_stm_contract.py:981: in test_flag_off_does_not_call_stack_route_forward
+    orig = ws._stack_route_forward
+           ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_stack_route_forward'. Did you mean: '_stage0_unity_forward'?
+____________ test_symbolic_space_stack_route_uses_canonical_forward ____________
+test/test_subspace_what_stm_contract.py:1475: in test_symbolic_space_stack_route_uses_canonical_forward
+    orig_forward = ws.languageLayer.forward
+                   ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'languageLayer'
+_______ test_symbolic_space_reverse_dispatches_to_language_layer_reverse _______
+test/test_subspace_what_stm_contract.py:1539: in test_symbolic_space_reverse_dispatches_to_language_layer_reverse
+    orig_reverse = ws.languageLayer.reverse
+                   ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'languageLayer'
+______ test_symbolic_space_reverse_flag_off_does_not_call_language_layer _______
+test/test_subspace_what_stm_contract.py:1583: in test_symbolic_space_reverse_flag_off_does_not_call_language_layer
+    orig_reverse = ws.languageLayer.reverse
+                   ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'languageLayer'
+______ test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules _______
+test/test_subspace_what_stm_contract.py:1616: in test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules
+    ss = ws.symbolSpace
+         ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'symbolSpace'
+=============================== warnings summary ===============================
+test/test_subspace_what_stm_contract.py::test_flag_off_does_not_call_stack_route_forward
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_subspace_what_stm_contract.py::test_flag_off_does_not_call_stack_route_forward
+FAILED test/test_subspace_what_stm_contract.py::test_symbolic_space_stack_route_uses_canonical_forward
+FAILED test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_language_layer_reverse
+FAILED test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_off_does_not_call_language_layer
+FAILED test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules
+5 failed, 14 passed, 1 warning in 2.62s

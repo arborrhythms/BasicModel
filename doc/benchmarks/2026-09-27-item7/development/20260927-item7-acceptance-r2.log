@@ -1,0 +1,54 @@
+....F..F...                                                              [100%]
+=================================== FAILURES ===================================
+_______ test_02_part_uses_object_concepts_and_reassertion_joins_evidence _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f466090>
+
+    def test_02_part_uses_object_concepts_and_reassertion_joins_evidence(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('part', 'cats', 'animals'))
+        row = f.store.seal_clause(clause, trust=.6)
+        assert f.store.refs[row, 0] == f.noun('cats')
+        assert f.store.refs[row, 2] in f.cs.word_concepts('animals')
+        assert f.store.seal_clause(clause, trust=.8) == row and len(f.store) == 1
+>       assert f.store.consequents_by_row(f.noun('cats')) == [int(f.store.refs[row, 2])]
+E       assert [(0, 16, (0.8...920929, 0.0))] == [16]
+E         
+E         At index 0 diff: (0, 16, (0.800000011920929, 0.0)) != 16
+E         Use -v to get more diff
+
+test/test_item7_acceptance.py:130: AssertionError
+__________ test_06_implication_keeps_two_unasserted_relation_operands __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f5a40e0>
+
+    def test_06_implication_keeps_two_unasserted_relation_operands(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('implies', ('part', 'cats', 'animals'), ('part', 'cats', 'breathers')))
+        row = f.store.seal_clause(clause, trust=.7)
+        assert f.store.rel_type[:3].tolist() == [1, 1, 2]
+        assert row == 2 and f.store.trust[:2].tolist() == [0., 0.]
+        assert not f.store.slots[row, [0, 2]].any()
+>       assert tuple(r['index'] for r in f.store.relation_operands(row)) == (0, 1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_acceptance.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+.0 = <tuple_iterator object at 0x11f4810f0>
+
+>   assert tuple(r['index'] for r in f.store.relation_operands(row)) == (0, 1)
+                 ^^^^^^^^^^
+E   KeyError: 'index'
+
+test/test_item7_acceptance.py:147: KeyError
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence
+FAILED test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands
+2 failed, 9 passed, 1 warning in 2.55s

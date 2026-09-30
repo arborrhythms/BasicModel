@@ -1,0 +1,12 @@
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-implies]
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-part]
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-implies]
+
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 tests collected in 2.87s

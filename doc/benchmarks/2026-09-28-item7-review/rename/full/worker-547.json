@@ -1,0 +1,47 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_decode_exemplars.py::test_mm_decode_builds_and_wires_idea_decode",
+    "test/test_decode_exemplars.py::test_mm_phrase_decode_builds_and_wires_idea_decode",
+    "test/test_decode_exemplars.py::test_mm_decode_forward_smoke"
+  ],
+  "completed": [
+    "test/test_decode_exemplars.py::test_mm_decode_builds_and_wires_idea_decode",
+    "test/test_decode_exemplars.py::test_mm_phrase_decode_builds_and_wires_idea_decode",
+    "test/test_decode_exemplars.py::test_mm_decode_forward_smoke"
+  ],
+  "slow_selected": [
+    "test/test_decode_exemplars.py::test_mm_decode_builds_and_wires_idea_decode",
+    "test/test_decode_exemplars.py::test_mm_phrase_decode_builds_and_wires_idea_decode",
+    "test/test_decode_exemplars.py::test_mm_decode_forward_smoke"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_decode_exemplars.py::test_mm_decode_builds_and_wires_idea_decode",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012670806609094143,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_decode_exemplars.py', 41, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decode_exemplars.py::test_mm_phrase_decode_builds_and_wires_idea_decode",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.424996096640825e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_decode_exemplars.py', 47, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decode_exemplars.py::test_mm_decode_forward_smoke",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.700008038431406e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_decode_exemplars.py', 53, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

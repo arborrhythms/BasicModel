@@ -1,0 +1,983 @@
+......s..........FF....................................FF....F.......... [ 34%]
+................F....FF......FFFF.FFFFF..........s......FFFFFF.F.....ss. [ 68%]
+.ss.ss............................................................       [100%]
+=================================== FAILURES ===================================
+________________________ test_interpret_word_structure _________________________
+
+    def test_interpret_word_structure():
+        cs = _cs()
+        # PS gives the word-parts (pids 65,66,67); WS gives the word-whole (WORD).
+        A, B, C = cs.interpret_word([65, 66, 67], WORD)
+        # A = WORD-symbol: parts = the word-parts, whole = the word-whole.
+        assert set(cs.concept_parts(A)) == {65, 66, 67}
+        assert cs.concept_wholes(A) == [WORD]
+        # B = OBJECT-symbol: maximally unspecified -- ATOM <= UNIVERSE, to be refined.
+        assert cs.concept_parts(B) == [("sym", A)]
+        assert cs.concept_wholes(B) == []
+        # C = META-concept (P2 flip, sec 4c): the ORDERED PAIR
+        # [whole=word-symbol, part=object-symbol] -- roles are positional slots
+        # of an ordered pair, not containment claims.
+        assert cs.concept_parts(C) == [("sym", B)]
+>       assert cs.concept_wholes(C) == [("sym", A)]
+E       AssertionError: assert [] == [('sym', 1)]
+E         
+E         Right contains one more item: ('sym', 1)
+E         Use -v to get more diff
+
+test/test_cs_symbol_table.py:168: AssertionError
+_____________ test_meta_pair_is_discretizable_and_persists_resolve _____________
+
+    def test_meta_pair_is_discretizable_and_persists_resolve():
+        """The META is the sec-4c ordered pair: its discrete reading is exact
+        ([whole=A, part=B]) and -- per the SINGLETON principle (a sym-sym 1:1
+        row is unit-set/pair STRUCTURE, not an id-of-indiscernibles tie) -- it
+        survives resolve_identities."""
+        cs = _cs()
+        A, B, C = cs.interpret_word([65, 66], WORD)
+        alloc = cs._concept_allocator
+>       assert alloc.store_of(C).discretize_row(C) == (("sym", A), ("sym", B))
+E       AssertionError: assert None == (('sym', 1), ('sym', 2))
+E        +  where None = discretize_row(3)
+E        +    where discretize_row = ConceptualAttentionLayer(\n  (conjunctive): SparseLayer()\n  (features): SparseLayer()\n).discretize_row
+E        +      where ConceptualAttentionLayer(\n  (conjunctive): SparseLayer()\n  (features): SparseLayer()\n) = store_of(3)
+E        +        where store_of = <Layers.ConceptAllocator object at 0x109c3b620>.store_of
+
+test/test_cs_symbol_table.py:179: AssertionError
+__________ TestConstruction.test_gate_off_builds_relative_store_only ___________
+
+self = <test_ltm_consolidation.TestConstruction testMethod=test_gate_off_builds_relative_store_only>
+
+    def test_gate_off_builds_relative_store_only(self):
+        m = _make_model(_OFF_CONFIG)
+        ss = m.symbolSpace
+>       self.assertFalse(m.ltm_consolidation)
+E       AssertionError: True is not false
+
+test/test_ltm_consolidation.py:103: AssertionError
+_____________ TestConstruction.test_gate_on_builds_ltm_store_only ______________
+
+self = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...ding()
+    (wordEncoding): WordEncoding()
+  )
+  (languageSpace): LanguageSpace(
+    (clause_scope): ClauseScope()
+  )
+)
+name = 'relative_store'
+
+    def __getattr__(self, name):
+        # nn.Module.__getattr__ resolves registered submodules / params /
+        # buffers and real instance attrs first; everything else (the
+        # coordinator's API + Space-contract fields) forwards to the held
+        # SymbolSubSpace. Guarded so a lookup before ``subspace`` is
+        # registered raises cleanly instead of recursing.
+        try:
+>           return super().__getattr__(name)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+bin/Language.py:14627: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...ding()
+    (wordEncoding): WordEncoding()
+  )
+  (languageSpace): LanguageSpace(
+    (clause_scope): ClauseScope()
+  )
+)
+name = 'relative_store'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'SymbolSpace' object has no attribute 'relative_store'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_ltm_consolidation.TestConstruction testMethod=test_gate_on_builds_ltm_store_only>
+
+    def test_gate_on_builds_ltm_store_only(self):
+        from Layers import TernaryTruthStore
+        m = _make_model(_ON_CONFIG)
+        ss = m.symbolSpace
+        self.assertTrue(m.ltm_consolidation)
+        self.assertIsInstance(ss.ltm_store, TernaryTruthStore)
+>       self.assertIsNone(ss.relative_store,
+                          ^^^^^^^^^^^^^^^^^
+                          "gate ON -> RelativeTruthStore is retired")
+
+test/test_ltm_consolidation.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:14631: in __getattr__
+    return getattr(sub, name)
+           ^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:6423: in __getattr__
+    return super().__getattr__(name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = SymbolSubSpace(
+  (layers): ModuleList(
+    (0): LanguageLayer(
+      (operation_layer): OperationSelectionLayer(
+    ...      (2): Linear(in_features=90, out_features=45, bias=True)
+      )
+    )
+    (_ltm_store): TernaryTruthStore()
+  )
+)
+name = 'relative_store'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'SymbolSubSpace' object has no attribute 'relative_store'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ TestProvisioning.test_provisioned_rows_are_real_encodings ___________
+
+self = <test_ltm_consolidation.TestProvisioning testMethod=test_provisioned_rows_are_real_encodings>
+
+    def test_provisioned_rows_are_real_encodings(self):
+        m = _make_model_provisioned(_SERIAL_CONFIG)
+        store = m.symbolSpace.ltm_store
+        # The REAL parse lands a non-zero NP1 for every row (no all-zero row,
+        # and no mean-pool placeholder -- it is the actual parsed end-state).
+        for i in range(len(store)):
+>           self.assertGreater(float(store.row(i)["np1"].norm()), 0.0)
+E           AssertionError: 0.0 not greater than 0.0
+
+test/test_ltm_consolidation.py:187: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+______ TestTruthLayerLtmView.test_truth_layer_not_attached_when_gate_off _______
+
+self = <test_ltm_consolidation.TestTruthLayerLtmView testMethod=test_truth_layer_not_attached_when_gate_off>
+
+    def test_truth_layer_not_attached_when_gate_off(self):
+        m = _make_model(_OFF_CONFIG)
+>       self.assertIsNone(m.symbolSpace.truth_layer.ltm_backed)
+E       AssertionError: TernaryTruthStore() is not None
+
+test/test_ltm_consolidation.py:563: AssertionError
+______ TestRuntimeUserIngestion.test_user_rows_land_alongside_provisioned ______
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_user_rows_land_alongside_provisioned>
+
+    def test_user_rows_land_alongside_provisioned(self):
+        from Layers import TernaryTruthStore as T
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+        # lazy provisioning fired first (3 XML truths, earliest ticks) ...
+        self.assertTrue(m._ltm_provisioned)
+        self.assertEqual(
+            store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist(), [0, 1, 2])
+        # ... then one real end-state row per user truth, tagged + trusted.
+        user_rows = store.rows_of_origin(T.ORIGIN_USER).tolist()
+        self.assertEqual(len(user_rows), 2)
+        r0 = store.row(user_rows[0])
+        r1 = store.row(user_rows[1])
+        self.assertAlmostEqual(r0["trust"], 0.9, places=5)
+        self.assertAlmostEqual(r1["trust"], -0.5, places=5)
+        self.assertEqual(r0["text"], "hello world")
+        self.assertEqual(r1["text"], "loving there")
+>       self.assertGreater(float(r0["np1"].norm()), 0.0,
+                           "real parse, not a placeholder")
+E       AssertionError: 0.0 not greater than 0.0 : real parse, not a placeholder
+
+test/test_ltm_consolidation.py:686: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+__ TestRuntimeUserIngestion.test_view_and_serve_surface_read_ltm_backed_data ___
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_view_and_serve_surface_read_ltm_backed_data>
+
+    def test_view_and_serve_surface_read_ltm_backed_data(self):
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+        # The view covers provisioned + user rows; sources carry the texts
+        # clarifications reference.
+        self.assertEqual(int(tl.count.item()), sum(
+            int(store.rel_type[i]) == store.REL_NONE for i in range(len(store))))
+        self.assertIn("hello world", tl._sources)
+        self.assertIn("loving there", tl._sources)
+        self.assertIn(0.9, [round(t, 5) for t in tl._trusts if t is not None])
+        # Serve surface: score / clarifications / assessment are cached on
+        # the model exactly as the legacy path did.
+        self.assertIsInstance(m._last_truth_score, float)
+        self.assertIsInstance(m._last_clarifications, list)
+        assessment = m._last_truth_assessment
+        self.assertIsInstance(assessment, dict)
+        for k in ("support", "conflict", "ignorance"):
+            self.assertIn(k, assessment)
+            self.assertGreaterEqual(assessment[k], 0.0)
+            self.assertLessEqual(assessment[k], 1.0)
+        # The view is non-degenerate: luminosity reads the LTM-backed rows.
+>       self.assertNotEqual(tl.luminosity(), 0.0)
+E       AssertionError: 0.0 == 0.0
+
+test/test_ltm_consolidation.py:713: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+______________ test_word_whole_accumulates_parts_without_raising _______________
+
+    def test_word_whole_accumulates_parts_without_raising():
+        ss = _whole_space()
+        ss.subspace.what.enable_ramsification(2)
+        pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+>       Spaces.ConceptualSpace._autobind_word_wholes(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None, pid_2d, vec_tensor, word_groups, tokens, ss)
+E       AttributeError: type object 'ConceptualSpace' has no attribute '_autobind_word_wholes'
+
+test/test_mereology_word_binding.py:64: AttributeError
+_________________ test_same_word_reuses_one_whole_idempotently _________________
+
+    def test_same_word_reuses_one_whole_idempotently():
+        ss = _whole_space()
+        ss.subspace.what.enable_ramsification(2)
+        pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+>       Spaces.ConceptualSpace._autobind_word_wholes(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None, pid_2d, vec_tensor, word_groups, tokens, ss)
+E       AttributeError: type object 'ConceptualSpace' has no attribute '_autobind_word_wholes'
+
+test/test_mereology_word_binding.py:85: AttributeError
+________________ test_short_word_below_threshold_does_not_raise ________________
+
+    def test_short_word_below_threshold_does_not_raise():
+        ss = _whole_space()
+        ss.subspace.what.enable_ramsification(2)
+        pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+>       Spaces.ConceptualSpace._autobind_word_wholes(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None, pid_2d, vec_tensor, word_groups, tokens, ss)
+E       AttributeError: type object 'ConceptualSpace' has no attribute '_autobind_word_wholes'
+
+test/test_mereology_word_binding.py:101: AttributeError
+_____________________ test_gate_on_routes_to_word_binding ______________________
+
+    def test_gate_on_routes_to_word_binding():
+        ss = _whole_space()
+        ss.subspace.what.enable_ramsification(2)
+        ss._mereology_raise = True
+        stub = _cs_stub(ss)
+        pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+        stub._maybe_autobind_meta(
+            pid_2d, vec_tensor, word_groups=word_groups, tokens=tokens)
+>       assert "abc" in getattr(ss, "_word_whole_ss", {})
+E       AssertionError: assert 'abc' in {}
+E        +  where {} = getattr(WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...eLayer()\n  (_sparsity): SparsityRegLayer()\n  (_smoothing): SmoothingRegLayer()\n  (_impenetrable): ImpenetrableLayer()\n), '_word_whole_ss', {})
+
+test/test_mereology_word_binding.py:116: AssertionError
+____________________ test_gate_on_creates_word_object_meta _____________________
+
+    def test_gate_on_creates_word_object_meta():
+        """The orchestrator mints the per-word A/B/C relation-only symbols on CS
+        (Alec 2026-06-17, meta reshaped 2026-07-02): A = word-symbol (word-parts
+        with the word-whole), B = object-symbol (NOTHING/EVERYTHING poles, to be
+        refined), C = META-concept = a FIRST-ORDER concept whose TWO PARTS are the
+        symbol for the word and the symbol for the object (a combination, not a
+        subsumption; the pairing is also available separately in references for
+        serial mode)."""
+        ss = _whole_space()
+        ss.subspace.what.enable_ramsification(2)
+        ss._mereology_raise = True
+        stub = _cs_stub(ss)
+        pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc" -> 10,11,12
+        stub._maybe_autobind_meta(
+            pid_2d, vec_tensor, word_groups=word_groups, tokens=tokens)
+        wom = getattr(stub, "_word_obj_meta", {})
+>       assert "abc" in wom
+E       AssertionError: assert 'abc' in {}
+
+test/test_mereology_word_binding.py:146: AssertionError
+___________________ test_meronomy_two_words_keyed_by_surface ___________________
+
+    def test_meronomy_two_words_keyed_by_surface():
+        """Meronomy word grid (Spaces _embed_radix under <synthesis>meronomy>):
+        word_groups is a WORD grid ([the=0, sep=-1, cat=1]) and the META key comes
+        from the word SURFACE (``word_texts``), not the lexer ``tokens`` (which are
+        chunk-indexed / empty in raw serial mode). One A/B/C per word -> 'the','cat'.
+        """
+        ss = _whole_space()
+        ss.subspace.what.enable_ramsification(2)
+        ss._mereology_raise = True
+        stub = _cs_stub(ss)
+        # "the cat": the=pids 10,11,12 (word 0); sep slot -1; cat=20,21,22 (word 1).
+        pid_2d = torch.tensor([[10, 11, 12, 0, 20, 21, 22, 0]], dtype=torch.long)
+        word_groups = torch.tensor([[0, 0, 0, -1, 1, 1, 1, -1]], dtype=torch.long)
+        vec_tensor = torch.randn(1, 8, _D)
+        # raw mode: tokens empty -> the key MUST be sourced from word_texts.
+        stub._maybe_autobind_meta(
+            pid_2d, vec_tensor, word_groups=word_groups, tokens=None,
+            word_texts=[["the", "cat"]])
+        wom = getattr(stub, "_word_obj_meta", {})
+>       assert set(wom.keys()) == {"the", "cat"}
+E       AssertionError: assert set() == {'cat', 'the'}
+E         
+E         Extra items in the right set:
+E         'cat'
+E         'the'
+E         Use -v to get more diff
+
+test/test_mereology_word_binding.py:178: AssertionError
+_________________ test_cs_owns_relation_taxonomy_by_reference __________________
+
+    def test_cs_owns_relation_taxonomy_by_reference():
+        """S3 relocation (Fix #1; doc/specs "relation-only completion"): CS owns the
+        relation taxonomy BY REFERENCE -- its forwarding accessors return the
+        terminal WholeSpace's taxonomy, so callers can migrate WS->CS behavior-
+        equivalently. The physical position-keyed dicts stay on WS (insert_whole /
+        insert_meta mint codebook rows atomically; a physical move is gated on the
+        deferred meta-vector retirement)."""
+        ss = _whole_space()
+        ss.subspace.what.enable_ramsification(2)
+        pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc"
+>       Spaces.ConceptualSpace._autobind_word_wholes(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None, pid_2d, vec_tensor, word_groups, tokens, ss)
+E       AttributeError: type object 'ConceptualSpace' has no attribute '_autobind_word_wholes'
+
+test/test_mereology_word_binding.py:193: AttributeError
+___________ test_word_A_symbol_is_location_concept_no_duplicate_knit ___________
+
+    def test_word_A_symbol_is_location_concept_no_duplicate_knit():
+        """A-merge (2026-07-02 plan, Task 9): the per-span location concept IS the
+        word A-symbol -- one knit per word, with the specific whole surviving the
+        pruning round (the generic word-class is dropped as the looser whole)."""
+        ss = _whole_space()
+        ss._mereology_raise = True
+        stub = _cs_stub(ss)
+        pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+        word_texts = [["abc"]]
+        percept_where = torch.tensor([[0, 1, 2, -1, -1, -1]], dtype=torch.long)
+        ss._staged_analysis_spans = torch.tensor([[[0, 3]]], dtype=torch.long)
+        stub._maybe_autobind_meta(pid_2d, vec_tensor, word_groups=word_groups,
+                                  tokens=tokens, word_texts=word_texts,
+                                  percept_where=percept_where)
+>       A, B, C = stub._word_obj_meta["abc"]
+                  ^^^^^^^^^^^^^^^^^^^
+
+test/test_mereology_word_binding.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...   (_sparsity): SparsityRegLayer()
+    (_smoothing): SmoothingRegLayer()
+    (_impenetrable): ImpenetrableLayer()
+  )
+)
+name = '_word_obj_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_word_obj_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ test_two_words_only_bind_words_and_do_not_create_a_sentence_concept ______
+
+    def test_two_words_only_bind_words_and_do_not_create_a_sentence_concept():
+        ss = _whole_space()
+        ss._mereology_raise = True
+        stub = _cs_stub(ss)
+        pid_2d = torch.tensor([[10, 11, 20, 21, 0, 0]], dtype=torch.long)
+        word_groups = torch.tensor([[0, 0, 1, 1, -1, -1]], dtype=torch.long)
+        vec_tensor = torch.randn(1, 6, _D)
+        tokens = [["ab", "cd"]]
+        stub._maybe_autobind_meta(pid_2d, vec_tensor, word_groups=word_groups,
+                                  tokens=tokens)
+>       assert set(stub._word_obj_meta) == {"ab", "cd"}
+                   ^^^^^^^^^^^^^^^^^^^
+
+test/test_mereology_word_binding.py:258: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...   (_sparsity): SparsityRegLayer()
+    (_smoothing): SmoothingRegLayer()
+    (_impenetrable): ImpenetrableLayer()
+  )
+)
+name = '_word_obj_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_word_obj_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ TestInsertRelationPrimitive.test_insert_relation_children_and_trust ______
+
+self = <test_relative_sentence_codebook_insertion.TestInsertRelationPrimitive testMethod=test_insert_relation_children_and_trust>
+
+    def test_insert_relation_children_and_trust(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        D = int(ws.nDim)
+        pred_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea1_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea2_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        trust = (0.5, 0.1, 0.3, 0.1)
+>       ret = ws.insert_relation(pred_pos, idea1_pos, idea2_pos,
+              ^^^^^^^^^^^^^^^^^^
+                                 trust=trust)
+
+test/test_relative_sentence_codebook_insertion.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): UnionLayer()
+      (3): IntersectionLayer()
+    )
+  )
+)
+name = 'insert_relation'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_relation'. Did you mean: 'insert_operations'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ TestInsertRelationPrimitive.test_insert_relation_idempotent __________
+
+self = <test_relative_sentence_codebook_insertion.TestInsertRelationPrimitive testMethod=test_insert_relation_idempotent>
+
+    def test_insert_relation_idempotent(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        D = int(ws.nDim)
+        pred_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea1_pos = ws.insert_whole(init_vec=torch.zeros(D))
+        idea2_pos = ws.insert_whole(init_vec=torch.zeros(D))
+>       ws.insert_relation(pred_pos, idea1_pos, idea2_pos,
+        ^^^^^^^^^^^^^^^^^^
+                           trust=(1, 0, 0, 0))
+
+test/test_relative_sentence_codebook_insertion.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): UnionLayer()
+      (3): IntersectionLayer()
+    )
+  )
+)
+name = 'insert_relation'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_relation'. Did you mean: 'insert_operations'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ TestInsertRelationPrimitive.test_insert_relation_rejects_nonpositive _____
+
+self = <test_relative_sentence_codebook_insertion.TestInsertRelationPrimitive testMethod=test_insert_relation_rejects_nonpositive>
+
+    def test_insert_relation_rejects_nonpositive(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        D = int(ws.nDim)
+        good = ws.insert_whole(init_vec=torch.zeros(D))
+        with self.assertRaises(ValueError):
+>           ws.insert_relation(0, good, good)
+            ^^^^^^^^^^^^^^^^^^
+
+test/test_relative_sentence_codebook_insertion.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_relation'. Did you mean: 'insert_operations'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestInsertMetaTrustKwarg.test_insert_meta_trust_survives_vocab_extras_roundtrip _
+
+self = <test_relative_sentence_codebook_insertion.TestInsertMetaTrustKwarg testMethod=test_insert_meta_trust_survives_vocab_extras_roundtrip>
+
+    def test_insert_meta_trust_survives_vocab_extras_roundtrip(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"persist_trust")
+        sid = ws.insert_whole()
+>       meta = ws.insert_meta(pid, sid, trust=(1, 0, 0, 0))
+               ^^^^^^^^^^^^^^
+
+test/test_relative_sentence_codebook_insertion.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): UnionLayer()
+      (3): IntersectionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ TestInsertMetaTrustKwarg.test_insert_meta_with_trust_stores __________
+
+self = <test_relative_sentence_codebook_insertion.TestInsertMetaTrustKwarg testMethod=test_insert_meta_with_trust_stores>
+
+    def test_insert_meta_with_trust_stores(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"with_trust")
+        sid = ws.insert_whole()
+>       meta = ws.insert_meta(pid, sid, trust=(2, 0, 1, 1))
+               ^^^^^^^^^^^^^^
+
+test/test_relative_sentence_codebook_insertion.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): UnionLayer()
+      (3): IntersectionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______ TestInsertMetaTrustKwarg.test_insert_meta_without_trust_unchanged _______
+
+self = <test_relative_sentence_codebook_insertion.TestInsertMetaTrustKwarg testMethod=test_insert_meta_without_trust_unchanged>
+
+    def test_insert_meta_without_trust_unchanged(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"no_trust")
+        sid = ws.insert_whole()
+>       meta = ws.insert_meta(pid, sid)
+               ^^^^^^^^^^^^^^
+
+test/test_relative_sentence_codebook_insertion.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): UnionLayer()
+      (3): IntersectionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ test_meta_is_structural_ordered_pair_over_word_and_object ___________
+
+    def test_meta_is_structural_ordered_pair_over_word_and_object():
+        cs = _cs_active()
+        A, B, C = cs.interpret_word([1, 2], WORD, key="cat")
+        assert cs._concept_source_order(C) == 2
+        assert cs.concept_parts(C) == [('sym', B)]
+>       assert cs.concept_wholes(C) == [('sym', A)]
+E       AssertionError: assert [] == [('sym', 1)]
+E         
+E         Right contains one more item: ('sym', 1)
+E         Use -v to get more diff
+
+test/test_sparse_concept_e2e.py:86: AssertionError
+=============================== warnings summary ===============================
+test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_seals_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_mereology_word_binding.py: 10 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_cs_symbol_table.py::test_interpret_word_structure - Assertio...
+FAILED test/test_cs_symbol_table.py::test_meta_pair_is_discretizable_and_persists_resolve
+FAILED test/test_ltm_consolidation.py::TestConstruction::test_gate_off_builds_relative_store_only
+FAILED test/test_ltm_consolidation.py::TestConstruction::test_gate_on_builds_ltm_store_only
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+FAILED test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_truth_layer_not_attached_when_gate_off
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data
+FAILED test/test_mereology_word_binding.py::test_word_whole_accumulates_parts_without_raising
+FAILED test/test_mereology_word_binding.py::test_same_word_reuses_one_whole_idempotently
+FAILED test/test_mereology_word_binding.py::test_short_word_below_threshold_does_not_raise
+FAILED test/test_mereology_word_binding.py::test_gate_on_routes_to_word_binding
+FAILED test/test_mereology_word_binding.py::test_gate_on_creates_word_object_meta
+FAILED test/test_mereology_word_binding.py::test_meronomy_two_words_keyed_by_surface
+FAILED test/test_mereology_word_binding.py::test_cs_owns_relation_taxonomy_by_reference
+FAILED test/test_mereology_word_binding.py::test_word_A_symbol_is_location_concept_no_duplicate_knit
+FAILED test/test_mereology_word_binding.py::test_two_words_only_bind_words_and_do_not_create_a_sentence_concept
+FAILED test/test_relative_sentence_codebook_insertion.py::TestInsertRelationPrimitive::test_insert_relation_children_and_trust
+FAILED test/test_relative_sentence_codebook_insertion.py::TestInsertRelationPrimitive::test_insert_relation_idempotent
+FAILED test/test_relative_sentence_codebook_insertion.py::TestInsertRelationPrimitive::test_insert_relation_rejects_nonpositive
+FAILED test/test_relative_sentence_codebook_insertion.py::TestInsertMetaTrustKwarg::test_insert_meta_trust_survives_vocab_extras_roundtrip
+FAILED test/test_relative_sentence_codebook_insertion.py::TestInsertMetaTrustKwarg::test_insert_meta_with_trust_stores
+FAILED test/test_relative_sentence_codebook_insertion.py::TestInsertMetaTrustKwarg::test_insert_meta_without_trust_unchanged
+FAILED test/test_sparse_concept_e2e.py::test_meta_is_structural_ordered_pair_over_word_and_object
+24 failed, 178 passed, 8 skipped, 110 warnings in 8.03s

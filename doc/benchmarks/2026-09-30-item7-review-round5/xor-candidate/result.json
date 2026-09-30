@@ -1,0 +1,210 @@
+{
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "groups": [
+    {
+      "gate": 0,
+      "selector": "test/test_grounded_xor.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-00/result.json"
+    },
+    {
+      "gate": 1,
+      "selector": "test/test_concept_output.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-01/result.json"
+    },
+    {
+      "gate": 2,
+      "selector": "test/test_mm_xor.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-02/result.json"
+    },
+    {
+      "gate": 3,
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-03/result.json"
+    },
+    {
+      "gate": 4,
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-04/result.json"
+    },
+    {
+      "gate": 5,
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-05/result.json"
+    },
+    {
+      "gate": 6,
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-06/result.json"
+    },
+    {
+      "gate": 7,
+      "selector": "test/test_basicmodel.py::TestSPNN::test_xor_training",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-07/result.json"
+    },
+    {
+      "gate": 8,
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-08/result.json"
+    },
+    {
+      "gate": 9,
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-09/result.json"
+    },
+    {
+      "gate": 10,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-10/result.json"
+    },
+    {
+      "gate": 11,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-11/result.json"
+    },
+    {
+      "gate": 12,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-12/result.json"
+    },
+    {
+      "gate": 13,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-13/result.json"
+    },
+    {
+      "gate": 14,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-14/result.json"
+    },
+    {
+      "gate": 15,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-15/result.json"
+    },
+    {
+      "gate": 16,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-16/result.json"
+    },
+    {
+      "gate": 17,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-17/result.json"
+    },
+    {
+      "gate": 18,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-18/result.json"
+    },
+    {
+      "gate": 19,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-19/result.json"
+    },
+    {
+      "gate": 20,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-20/result.json"
+    },
+    {
+      "gate": 21,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-21/result.json"
+    },
+    {
+      "gate": 22,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-22/result.json"
+    },
+    {
+      "gate": 23,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-23/result.json"
+    },
+    {
+      "gate": 24,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-24/result.json"
+    },
+    {
+      "gate": 25,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-25/result.json"
+    },
+    {
+      "gate": 26,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-26/result.json"
+    },
+    {
+      "gate": 27,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-27/result.json"
+    },
+    {
+      "gate": 28,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-28/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

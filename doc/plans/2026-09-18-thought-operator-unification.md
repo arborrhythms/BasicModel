@@ -204,10 +204,10 @@ complete internal question through the existing boundary controller. The first
 reviewer probe must establish this exact distinction; no code may retain a
 hidden interpretation of a removed `query` attribute.
 
-`true` remains a unary operation over a sealed clause reference. Its executor
+`true` remains a unary operation over a ended clause reference. Its executor
 is typed to that clause and returns evidence, not a new relation row. The
 two-truths representation is still deferred; item 0 supplies the catalog and
-rejection behavior until a sealed clause is available.
+rejection behavior until a ended clause is available.
 
 ### Families, open roles and converse forms
 
@@ -383,7 +383,7 @@ green. The result must show:
   compiled-tuple contracts.
 
 This closes catalog unification only. `true` remains deliberately absent until
-the deferred two-truths sealed-clause representation supplies its structural
+the deferred two-truths ended-clause representation supplies its structural
 meaning. Learned controller utility, residual credit, generation-catalog
 ownership, expectation gates, two-truths and forgetting remain their separately
 ordered work.

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+  ],
+  "collect": false,
+  "recycle_file": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/schema-affected/worker-015.recycle.json"
+}

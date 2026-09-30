@@ -72,10 +72,10 @@ def test_packed_reverse_loss_matches_serial_sentence_layout():
     """A packed sentence remaps storage, not chooser semantics or logits."""
     torch.manual_seed(19)
     words, leaf_dim, idea_dim = 4, 7, 9
-    seal_width = 2
+    closing_width = 2
     chooser = ReverseConstructionChooser(
         idea_dim=idea_dim, n_rules=6, max_words=words,
-        max_steps=3 * words + seal_width,
+        max_steps=3 * words + closing_width,
         leaf_dim=leaf_dim, hidden=16).to("cpu")
     leaves = torch.randn(1, words, leaf_dim)
     part_ids = torch.arange(1, words + 1).reshape(1, words, 1)
@@ -84,8 +84,8 @@ def test_packed_reverse_loss_matches_serial_sentence_layout():
     serial = ReconstructionStack(batch=1, max_depth=16)
     packed = ReconstructionStack(batch=1, max_depth=16)
     for stack, steps in (
-            (serial, 3 * words + seal_width),
-            (packed, 3 * words + words * seal_width)):
+            (serial, 3 * words + closing_width),
+            (packed, 3 * words + words * closing_width)):
         stack.store_leaves(leaves)
         stack.store_word_parts(part_ids, part_mask)
         stack.prepare_choices(
@@ -99,9 +99,9 @@ def test_packed_reverse_loss_matches_serial_sentence_layout():
             stack.record_choice(
                 index, torch.tensor([rule]), arity=arity,
                 mask=torch.tensor([True]))
-    # The serial trace compacts its NULL-seal choices immediately after 3W.
+    # The serial trace compacts its NULL-closing choices immediately after 3W.
     # The final sentence uses group zero in both layouts. Intermediate
-    # packed sentences use end-word+1; no final group aliases an earlier seal.
+    # packed sentences use end-word+1; no final group aliases an earlier closing.
     for offset, rule in enumerate((3, 4)):
         serial.record_choice(
             3 * words + offset, torch.tensor([rule]), arity=2,

@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_reverse_left_shift.py::test_left_shift_packs_real_positions_to_front",
+    "test/test_reverse_left_shift.py::test_left_shift_all_real_passthrough",
+    "test/test_reverse_left_shift.py::test_left_shift_all_padding_zeros_out",
+    "test/test_reverse_left_shift.py::test_left_shift_preserves_relative_order"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-380.recycle.json"
+}

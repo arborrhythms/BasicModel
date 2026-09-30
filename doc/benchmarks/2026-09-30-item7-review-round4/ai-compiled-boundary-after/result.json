@@ -1,0 +1,12 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "running"
+}

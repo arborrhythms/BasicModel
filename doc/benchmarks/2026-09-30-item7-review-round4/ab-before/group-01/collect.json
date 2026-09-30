@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

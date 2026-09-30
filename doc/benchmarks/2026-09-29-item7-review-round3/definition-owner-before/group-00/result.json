@@ -1,0 +1,103 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-before/group-00/worker-000.json"
+      ],
+      "pid": 21928,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 517031160,
+      "elapsed_seconds": 4.342905374942347,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.0207352498546243,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py:7: in test_reading_and_closing_use_one_concept_allocator\n    assert model._concept_owner() is model.grammatical_thoughts.space\nE   assert ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n) is ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...Layer()\\n      (4): IntersectionLayer()\\n      (5): NotLayer()\\n      (6): PartLayer()\\n      (7): EqualLayer()\\n    )\\n  )\\n)\nE    +  where ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n) = _concept_owner()\nE    +    where _concept_owner = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-2): 3 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n)._concept_owner\nE    +  and   ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...Layer()\\n      (4): IntersectionLayer()\\n      (5): NotLayer()\\n      (6): PartLayer()\\n      (7): EqualLayer()\\n    )\\n  )\\n) = <Queries.GrammaticalThoughtRegistry object at 0x129bb9d00>.space\nE    +    where <Queries.GrammaticalThoughtRegistry object at 0x129bb9d00> = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-2): 3 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n).grammatical_thoughts",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.1655072090215981,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py:16: in test_new_definition_symbols_do_not_alias_later_sentence_occurrences\n    assert symbols.isdisjoint(store.row_ids[assertions].tolist())\nE   assert False\nE    +  where False = <built-in method isdisjoint of set object at 0x12bc809e0>([3, 4, 5])\nE    +    where <built-in method isdisjoint of set object at 0x12bc809e0> = {1, 2, 3, 4, 5, 6, ...}.isdisjoint\nE    +    and   [3, 4, 5] = <built-in method tolist of Tensor object at 0x12b974820>()\nE    +      where <built-in method tolist of Tensor object at 0x12b974820> = tensor([3, 4, 5]).tolist",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-before/group-00",
+  "elapsed_seconds": 6.306294583948329,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 517031160,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-before/group-00/collect.json"
+    ],
+    "pid": 21913,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179929928,
+    "elapsed_seconds": 1.7275632079690695,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_reading_and_closing_use_one_concept_allocator",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_owner.py::test_new_definition_symbols_do_not_alias_later_sentence_occurrences"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

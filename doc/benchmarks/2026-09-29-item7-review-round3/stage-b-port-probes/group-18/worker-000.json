@@ -1,0 +1,143 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta",
+    "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "completed": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta",
+    "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0021535420091822743,
+      "message": "test/test_item7_taxonomy.py:17: in test_part_testimony_symbols_the_parent_one_order_above_the_object\n    word_cat = interpret.lookup_word([7], [1], form='cat')\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00189129204954952,
+      "message": "test/test_item7_taxonomy.py:34: in test_one_meta_generalizes_over_several_words_and_objects\n    first = interpret.lookup_word([7], [1], form='bank')\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002188917016610503,
+      "message": "test/test_item7_taxonomy.py:51: in test_meta_binding_does_not_discriminate_at_binding_time\n    word = interpret.lookup_word([7], [1], form='bank')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001918042078614235,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.74580179899931e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0015750839374959469,
+      "message": "test/test_item7_taxonomy.py:84: in test_closing_uses_the_ordered_object_parent_and_deduplicates_it\n    first = interpret.forward(interpret.lookup_word([7], [1], form='cat'))\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018310409504920244,
+      "message": "test/test_item7_taxonomy.py:110: in test_failed_closing_does_not_leave_a_taxonomy_prefix\n    left = interpret.forward(interpret.lookup_word([7], [1], form='cat'))\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0017830419819802046,
+      "message": "test/test_item7_taxonomy.py:127: in test_retiring_one_testimony_object_preserves_its_shared_meta\n    word = interpret.lookup_word([7], [], form='bank')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0021810829639434814,
+      "message": "test/test_item7_taxonomy.py:147: in test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index\n    word = interpret.lookup_word([7], [], form='wug')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0046128330286592245,
+      "message": "test/test_item7_taxonomy.py:166: in test_closing_binds_subject_form_to_particular_without_widening_compose_access\n    clause = f.clause(('lift', ('lower', 'the', 'cat'), 'runs'))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:85: in clause\n    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)\n                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:72: in program\n    root = visit(tree)\n           ^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in visit\n    values = tuple(visit(child) for child in children)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in <genexpr>\n    values = tuple(visit(child) for child in children)\n                   ^^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in visit\n    values = tuple(visit(child) for child in children)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in <genexpr>\n    values = tuple(visit(child) for child in children)\n                   ^^^^^^^^^^^^\ntest/test_item7_acceptance.py:59: in visit\n    obj = self.noun(node)\n          ^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:51: in noun\n    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0030267919646576047,
+      "message": "test/test_item7_taxonomy.py:182: in test_native_phrase_admission_is_atomic\n    clause = f.clause(('part', 'cat', ('verb', 'chases', 'mouse')))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:85: in clause\n    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)\n                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:72: in program\n    root = visit(tree)\n           ^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in visit\n    values = tuple(visit(child) for child in children)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in <genexpr>\n    values = tuple(visit(child) for child in children)\n                   ^^^^^^^^^^^^\ntest/test_item7_acceptance.py:59: in visit\n    obj = self.noun(node)\n          ^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:51: in noun\n    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00328062498010695,
+      "message": "test/test_item7_taxonomy.py:182: in test_native_phrase_admission_is_atomic\n    clause = f.clause(('part', 'cat', ('verb', 'chases', 'mouse')))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:85: in clause\n    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)\n                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:72: in program\n    root = visit(tree)\n           ^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in visit\n    values = tuple(visit(child) for child in children)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in <genexpr>\n    values = tuple(visit(child) for child in children)\n                   ^^^^^^^^^^^^\ntest/test_item7_acceptance.py:59: in visit\n    obj = self.noun(node)\n          ^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:51: in noun\n    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0032600410049781203,
+      "message": "test/test_item7_taxonomy.py:202: in test_selected_anaphor_form_binds_to_its_own_end_particular\n    prior = f.store.write_clause(f.clause(('lift', 'cat', 'runs')))\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:85: in clause\n    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)\n                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:72: in program\n    root = visit(tree)\n           ^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in visit\n    values = tuple(visit(child) for child in children)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:67: in <genexpr>\n    values = tuple(visit(child) for child in children)\n                   ^^^^^^^^^^^^\ntest/test_item7_acceptance.py:59: in visit\n    obj = self.noun(node)\n          ^^^^^^^^^^^^^^^\ntest/test_item7_acceptance.py:51: in noun\n    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

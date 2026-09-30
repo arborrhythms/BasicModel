@@ -1,0 +1,1114 @@
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -29,6 +29,22 @@
+     if frames is None:
+         raise ValueError('the open reading has no numerical operation journal')
+     stack = []
++    def metadata(words):
++        # These are input identification poles, never the source's authority.
++        evidence = program.leaf_evidence
++        if evidence is None:
++            pair = (0., 0.)
++        else:
++            selected = evidence[list(words)]
++            known = selected > 0
++            minimum = torch.where(known, selected, torch.inf).amin(0)
++            pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
++        orders = program.leaf_orders
++        if program.reference_orders is not None:
++            orders = (program.reference_orders if orders is None else
++                      torch.where(program.reference_orders >= 0, program.reference_orders, orders))
++        order = 0 if orders is None else max(0, int(orders[list(words)].max()))
++        return dict(order=order, evidence=pair)
+     # Each node owns the exact grammar action and its live operands.
+     for action, (kind, local, word) in enumerate(program.actions.detach().cpu().tolist()):
+         if kind < 0:
+@@ -265,6 +281,7 @@
+             subject_word_id=(-1 if registry is None else
+                              registry.space.concept_id_at_row(int(program.word_rows[head(role_nodes[0])["leaves"][0]])) or -1),
+             factored_refs=factored_refs,
++            **metadata(root['leaves']),
+             eternal=relation is None and node['rule'] is None and node['ref'] > 0
+             and program.symbol_when is None,
+             **bands(root))
+@@ -312,5 +329,6 @@
+             operation = 'part'
+             references = references[2], references[1], references[0]
+         return Clause(meaning, relation=operation, refs=tuple(references), children=tuple(children),
++                      **metadata(tuple(range(len(values)))),
+                       **bands(dict(leaves=tuple(range(len(values))))))
+     return recover(stack[0], top=True)
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -45,8 +45,16 @@
+     when: Any = field(default=None, repr=False)
+     eternal: bool = False
+     factored_refs: tuple | None = None
++    order: int = 0
++    evidence: tuple = (0., 0.)
+ 
+     def __post_init__(self):
++        import math
++        if type(self.order) is not int or self.order < 0:
++            raise ValueError('a clause order must be a nonnegative integer')
++        if len(self.evidence) != 2 or any(not math.isfinite(float(x)) or not 0 <= float(x) <= 1
++                                        for x in self.evidence):
++            raise ValueError('clause evidence requires two finite poles in [0, 1]')
+         if self.relation not in (None, 'part', 'whole', 'equal', 'implies', 'operator'):
+             raise ValueError('unknown clause relation')
+         if len(self.refs) != 3:
+@@ -345,13 +353,11 @@
+                 if relation == 'implies' and any(
+                         self.index_of_row(ref) is None for ref in (references[0], references[2])):
+                     raise ValueError('implication operands must be truth rows')
+-            degree = float(trust) if asserted else 0.
+-            positive = max(0., min(1., degree))
+-            negative = max(0., min(1., -degree))
+-            if not value.meaning.polarity:
+-                positive, negative = negative, positive
+-            if asserted and evidence is not None:
+-                positive, negative = map(float, evidence)
++            degree = max(-1., min(1., float(trust))) if asserted else 0.
++            # Identification belongs to the ended field, including an
++            # embedded field with no assertion authority. Provenance is a
++            # separate scalar and cannot create or overwrite either pole.
++            positive, negative = map(float, value.evidence if evidence is None or not asserted else evidence)
+ 
+             def append(refs):
+                 tag = tags[relation]
+@@ -392,7 +398,8 @@
+                     mode=value.meaning.mode, polarity=True, role_refs=role_refs)
+                 row_id = value.refs[0] if value.eternal else int(allocate(value.point if relation is None else None))
+                 row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
+-                    trust=degree, stream=stream, surprise=surprise if asserted else -1.)
++                    trust=degree, stream=stream, surprise=surprise if asserted else -1.,
++                    evidence=(positive, negative), order=value.order)
+                 if row < 0:
+                     raise RuntimeError('clause capacity changed after preflight')
+                 self.row_ids[row] = row_id
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -14796,7 +14796,7 @@
+         return rows, activations, bands, orders, valid
+ 
+     def commit_word_reference_slab(
+-            self, rows, activations, active_rows, *, orders=None):
++            self, rows, activations, active_rows, *, orders=None, evidence=None):
+         """Own the word-aligned, quantized CSLang -> SymbolSpace handoff.
+ 
+         ConceptualSpace retains continuous ideas only in its eight-slot STM.
+@@ -14827,6 +14827,17 @@
+         object.__setattr__(
+             self, "_word_reference_activations", committed_activations)
+         object.__setattr__(self, "_word_reference_mask", valid)
++        # Keep a supplied pair intact. A scalar-only serial reference has
++        # support on its expressed pole; it cannot manufacture a both value.
++        if evidence is None:
++            signed = committed_activations.squeeze(-1)
++            evidence = torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1)
++        if not torch.is_tensor(evidence) or evidence.shape != (*rows.shape, 2):
++            raise ValueError('word reference evidence requires an aligned pair')
++        torch._assert_async((torch.isfinite(evidence) & (evidence >= 0) & (evidence <= 1)).all(),
++                            'word reference evidence requires finite poles in [0, 1]')
++        object.__setattr__(self, '_word_reference_evidence',
++                           torch.where(valid[..., None], evidence.detach(), torch.zeros_like(evidence)))
+         if orders is not None:
+             if (not torch.is_tensor(orders)
+                     or tuple(orders.shape) != tuple(rows.shape)):
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -7701,8 +7701,8 @@
+         """Rebuild the materialized view from the attached LTM store.
+ 
+         Selects the provisioned + user rows (``rows_of_origin``) in row
+-        order and rewrites ``truths[:n]`` = flattened row * row trust,
+-        together with ``count`` / ``_sources`` / ``_trusts`` /
++        order and expands each independent evidence pole into ``truths[:n]``,
++        together with ``count`` / ``_sources`` / scalar source ``_trusts`` /
+         ``_nonempty``, then drops any staged pending entries (the view
+         supersedes per-cell candidates recorded during ingestion
+         forwards). Conversation rows stay out: they are the training-time
+@@ -7732,7 +7732,7 @@
+                     continue
+                 self.truths[len(trusts)] = self._flatten_ltm_row(store, row_i).to(self.truths) * t
+                 sources.append(store.text_of(row_i))
+-                trusts.append(t)
++                trusts.append(float(store.trust[row_i]))
+         n = len(trusts)
+         self.count.fill_(n)
+         self._nonempty = n > 0
+@@ -9028,13 +9028,14 @@
+                              torch.zeros(capacity, dtype=torch.long))
+         self.register_buffer('timestamp', torch.zeros(capacity))
+         self.register_buffer('trust', torch.zeros(capacity))
++        self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
+         self.register_buffer('c_plus', torch.zeros(capacity))
+         self.register_buffer('c_minus', torch.zeros(capacity))
+         self.register_buffer('refs', torch.full((capacity, 3), -1, dtype=torch.long))
+         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
+         self.register_buffer('where', torch.zeros(capacity, 4))
+         self.register_buffer('when', torch.zeros(capacity, 4))
+-        self.register_buffer('truth_schema', torch.tensor(7, dtype=torch.long))
++        self.register_buffer('truth_schema', torch.tensor(8, dtype=torch.long))
+         self.register_buffer('surprise', torch.full((capacity,), -1.))
+         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
+@@ -9562,7 +9563,7 @@
+                     self.index_stream[row] = -1
+                 meaning = self.meaning_of(row)
+                 if meaning is not None:
+-                    terms, complete = self._meaning_leaf_terms(meaning)
++                    terms, complete = self._meaning_leaf_terms(meaning, order=int(self.order[row]))
+                     self._append_leaf_terms(row, terms, complete, int(self.index_stream[row]))
+             self._leaf_index_missing = False
+             self._leaf_needs_owner_reindex = self._index_unfold is None
+@@ -9573,9 +9574,15 @@
+         # Older checkpoints did not score surprise: unknown is not perfect.
+         state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
+         old_schema = prefix + 'truth_schema' not in state_dict
+-        old_trust = state_dict.get(prefix + 'trust', self.trust)
+-        state_dict.setdefault(prefix + 'c_plus', old_trust.clamp_min(0))
+-        state_dict.setdefault(prefix + 'c_minus', (-old_trust).clamp_min(0))
++        # Scalar trust cannot reconstruct missing identification evidence.
++        state_dict.setdefault(prefix + 'c_plus', torch.zeros_like(self.c_plus))
++        state_dict.setdefault(prefix + 'c_minus', torch.zeros_like(self.c_minus))
++        if prefix + 'order' not in state_dict:
++            import warnings
++            warnings.warn('Legacy LTM rows have unknown order; decoding requires an explicit order stamp.',
++                          UserWarning, stacklevel=2)
++            state_dict[prefix + 'order'] = torch.full_like(self.order, -1)
++        state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
+         for name in ('refs', 'row_ids', 'where', 'when', 'truth_schema'):
+             state_dict.setdefault(prefix + name, getattr(self, name).clone())
+ 
+@@ -9726,7 +9733,7 @@
+ 
+     @torch.no_grad()
+     def append_meaning(self, meaning, *, kind="fact", rel_type=None,
+-                       trust=0.0, timestamp=None, stream=-1, surprise=-1.):
++                       trust=0.0, timestamp=None, stream=-1, surprise=-1., evidence=None, order=0):
+         """Commit a complete description with explicit evidential provenance."""
+         if not isinstance(meaning, ConceptualMeaning):
+             raise TypeError("append_meaning requires a ConceptualMeaning")
+@@ -9747,7 +9754,12 @@
+         surprise = float(surprise)
+         if not math.isfinite(surprise) or not (surprise == -1. or 0. <= surprise <= 1.):
+             raise ValueError("surprise must be unknown (-1) or in [0, 1]")
+-        terms, complete = self._meaning_leaf_terms(meaning)
++        if type(order) is not int or order < 0:
++            raise ValueError('a stored field requires a nonnegative order')
++        evidence = (0., 0.) if evidence is None else tuple(map(float, evidence))
++        if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
++            raise ValueError('evidence poles must be finite and in [0, 1]')
++        terms, complete = self._meaning_leaf_terms(meaning, order=order)
+         meaning = self.bind_constituents(meaning, reserve=1, stream=stream)
+         if meaning is None:
+             return -1
+@@ -9759,8 +9771,8 @@
+             rel_type = self.REL_OPERATOR if bool(meaning.role_mask[1:].any()) else self.REL_NONE
+         self.rel_type[n] = int(rel_type)
+         self.trust[n] = max(-1.0, min(1.0, float(trust)))
+-        self.c_plus[n] = max(0., float(self.trust[n]))
+-        self.c_minus[n] = max(0., -float(self.trust[n]))
++        self.c_plus[n], self.c_minus[n] = evidence
++        self.order[n] = order
+         self.surprise[n] = surprise
+         self.origin[n] = self.ORIGIN_CONVERSATION
+         self.record_kind[n] = self.KINDS.index(kind)
+@@ -9998,7 +10010,7 @@
+ 
+     @torch.no_grad()
+     def append(self, np1, vp=None, np2=None, *, rel_type=REL_NONE,
+-               trust=0.0, timestamp=None, kind="fact") -> int:
++               trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
+         """Append one ternary row. ``Null`` slots (``None``) store the zero
+         vector. ``trust`` is clamped to ``[-1, 1]``. ``timestamp`` defaults to
+         the next monotonic tick. Returns the row index, or ``-1`` when the
+@@ -10009,19 +10021,19 @@
+                          dtype=torch.bool, device=self.slots.device),
+             mode="interrogative" if kind == "question" else "assertive")
+         return self.append_meaning(meaning, kind=kind, rel_type=rel_type,
+-                                   trust=trust, timestamp=timestamp)
+-
+-    def append_idea(self, np1, *, trust=0.0, timestamp=None, kind="fact") -> int:
++                                   trust=trust, timestamp=timestamp, evidence=evidence, order=order)
++
++    def append_idea(self, np1, *, trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
+         """Append a one-role description; legacy callers explicitly write facts."""
+         return self.append(np1, None, None, rel_type=self.REL_NONE,
+-                           trust=trust, timestamp=timestamp, kind=kind)
++                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order)
+ 
+     def append_relation(self, np1, vp, np2, *, rel_type=REL_OPERATOR,
+-                        trust=0.0, timestamp=None, kind="fact") -> int:
++                        trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
+         """Append an IDEA-RELATION-IDEA (``NP VP NP``); ``np2=None`` ->
+         ``NP VP .``."""
+         return self.append(np1, vp, np2, rel_type=rel_type,
+-                           trust=trust, timestamp=timestamp, kind=kind)
++                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order)
+ 
+     def row(self, idx: int) -> dict:
+         """Read slots, evidence, stable provenance and an owned meaning.
+@@ -10038,6 +10050,7 @@
+             'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
+             'timestamp': float(self.timestamp[i].item()),
+             'trust': float(self.trust[i].item()),
++            'order': int(self.order[i]),
+             'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
+             'corners': self.corners(i),
+             'refs': self.refs[i].clone(),
+@@ -10090,8 +10103,6 @@
+         if not math.isfinite(float(trust)):
+             raise ValueError("fact trust must be finite")
+         self.trust[i] = max(-1.0, min(1.0, float(trust)))
+-        self.c_plus[i] = max(0., float(self.trust[i]))
+-        self.c_minus[i] = max(0., -float(self.trust[i]))
+ 
+     @torch.no_grad()
+     def set_evidence(self, idx, positive, negative):
+@@ -10170,8 +10181,6 @@
+         self.record_kind[:count].masked_fill_(
+             facts, self.KINDS.index("unverified"))
+         self.trust[:count].masked_fill_(selected, 0)
+-        self.c_plus[:count].masked_fill_(selected, 0)
+-        self.c_minus[:count].masked_fill_(selected, 0)
+ 
+     @torch.no_grad()
+     def clear_origin(self, origin: int, *, retained_occurrences=()) -> int:
+@@ -10265,7 +10274,7 @@
+         self.origin[:n_keep] = self.origin[keep]
+         for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
+                      'occurrence_id', 'metadata_required', 'semantic_fingerprint',
+-                     'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when'):
++                     'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when', 'order'):
+             values = getattr(self, name)
+             values[:n_keep] = values[keep]
+         alive = set(int(value) for value in self.occurrence_id[:n_keep].tolist())
+@@ -10291,6 +10300,7 @@
+             getattr(self, name)[n_keep:c].zero_()
+         self.refs[n_keep:c].fill_(-1)
+         self.row_ids[n_keep:c].fill_(-1)
++        self.order[n_keep:c].fill_(-1)
+         self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
+         self.count.fill_(n_keep)
+         self.rebuild_leaf_postings()
+@@ -10322,6 +10332,7 @@
+         self.c_minus.zero_()
+         self.refs.fill_(-1)
+         self.row_ids.fill_(-1)
++        self.order.fill_(-1)
+         self.where.zero_()
+         self.when.zero_()
+         self.leaf_complete.zero_()
+--- a/bin/MemoryIndex.py
++++ b/bin/MemoryIndex.py
+@@ -26,13 +26,15 @@
+         self._index_occurrences = {}
+         self._index_code_row = None
+         self._index_unfold = None
++        self._index_order_of = None
+         self._leaf_needs_owner_reindex = False
+ 
+-    def configure_leaf_index(self, *, code_row=None, unfold=None):
++    def configure_leaf_index(self, *, code_row=None, unfold=None, order_of=None):
+         """Bind the current grammar owner. Code addresses do not supply terms."""
+-        if any(value is not None and not callable(value) for value in (code_row, unfold)):
++        if any(value is not None and not callable(value) for value in (code_row, unfold, order_of)):
+             raise TypeError('leaf index adapters must be callable')
+         self._index_code_row, self._index_unfold = code_row, unfold
++        self._index_order_of = order_of
+ 
+     @staticmethod
+     def _checked_leaf_terms(terms):
+@@ -42,10 +44,10 @@
+             raise ValueError('leaf codes require three sequences of nonnegative code addresses')
+         return terms
+ 
+-    def _meaning_leaf_terms(self, meaning, *, max_nodes=1024, work=None):
++    def _meaning_leaf_terms(self, meaning, *, order=0, max_nodes=1024, work=None):
+         """Unfold the actual occupied values, following only structural refs."""
+         remaining, active = [int(max_nodes)], set()
+-        def visit(value):
++        def visit(value, field_order):
+             if id(value) in active or remaining[0] <= 0:
+                 return ((), (), ()), (False, False, False)
+             remaining[0] -= 1
+@@ -54,18 +56,20 @@
+             for role, reference in enumerate(value.role_refs):
+                 codes, known = (), not bool(value.role_mask[role])
+                 child = None
++                child_order = field_order
+                 if reference is not None and reference[0] == 'constituent':
+                     child = value.constituents[reference[1]]
+                 elif reference is not None and reference[0] == 'ltm':
+                     index = self._index_occurrences.get(reference)
+                     child = None if index is None else self.meaning_of(index)
++                    child_order = -1 if index is None else int(self.order[index])
+                 if not known and child is not None:
+-                    recovered, status = visit(child)
++                    recovered, status = visit(child, child_order)
+                     codes, known = tuple(itertools.chain.from_iterable(recovered)), all(status)
+-                elif not known and self._index_unfold is not None and remaining[0] > 0:
++                elif not known and field_order >= 0 and self._index_unfold is not None and remaining[0] > 0:
+                     allowance = min(remaining[0], work.remaining) if work is not None else remaining[0]
+-                    recovered = (self._index_unfold(value.roles[role].detach(), allowance, work=work)
+-                                 if work is not None else self._index_unfold(value.roles[role].detach(), allowance))
++                    recovered = self._index_unfold(value.roles[role].detach(), allowance,
++                                                   order=field_order, work=work)
+                     if recovered is not None:
+                         codes, spent, known = recovered
+                         if type(spent) is not int or not 0 <= spent <= remaining[0]:
+@@ -76,7 +80,7 @@
+                 complete.append(known)
+             active.remove(id(value))
+             return self._checked_leaf_terms(terms), tuple(complete)
+-        return visit(meaning)
++        return visit(meaning, order)
+ 
+     def leaf_terms(self, row, role):
+         """Audit a row by inverting the global postings; no forward list exists."""
+@@ -176,7 +180,7 @@
+         self.rebuild_leaf_postings()
+         for row in range(len(self)):
+             meaning = self.meaning_of(row)
+-            terms, complete = (((), (), ()), (False, False, False)) if meaning is None else self._meaning_leaf_terms(meaning)
++            terms, complete = (((), (), ()), (False, False, False)) if meaning is None else self._meaning_leaf_terms(meaning, order=int(self.order[row]))
+             self._append_leaf_terms(row, terms, complete, int(streams[row]))
+         self._leaf_needs_owner_reindex = self._index_unfold is None
+ 
+@@ -227,7 +231,16 @@
+         """
+         if type(max_candidates) is not int or max_candidates < 0:
+             raise ValueError('candidate limit must be a nonnegative integer')
+-        terms, _ = self._meaning_leaf_terms(cue, work=work)
++        # An already structured query carries native references, whose orders
++        # are owned by the concept table. Stored rows always use their stamp.
++        cue_order = 0
++        if self._index_order_of is not None and self._index_code_row is not None:
++            for reference in cue.role_refs:
++                if reference is not None and reference[0] in ('sym', 'meta'):
++                    code = self._index_code_row(reference)
++                    if code is not None:
++                        cue_order = max(cue_order, self._index_order_of(code))
++        terms, _ = self._meaning_leaf_terms(cue, order=cue_order, work=work)
+         postings = [self._leaf_postings.get((code, role), ())
+                     for role, codes in enumerate(terms) if bool(cue.role_mask[role])
+                     for code in set(codes)]
+@@ -285,13 +298,16 @@
+ 
+ 
+ @torch.no_grad()
+-def unfold_idea(language, basis, idea, limit, *, work=None, activation=None):
++def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
++                order=0, order_of=None, sigma_inverse=None):
+     """Unfold a detached idea with the current generate MLP and tied faces.
+ 
+     Neither recorded actions nor expected leaf codes are inputs. Stops count
+     as recovered codes only within numerical tolerance of a dictionary row;
+     stopping on an off-codebook root is an explicit failure, not root snapping.
+     """
++    if type(order) is not int or order < 0:
++        raise ValueError('unfolding requires the stored nonnegative order stamp')
+     limit = min(int(limit), 128)
+     weights = activation() if callable(activation) else activation
+     if not torch.is_tensor(weights):
+@@ -305,11 +321,12 @@
+     candidate_basis = basis[candidates.to(basis.device)]
+     binary, unary = language._generate_binary_ops, language._generate_unary_ops
+     inverses = language.reverse_inverses(binary)
+-    pending, codes, operations, spent, complete = [idea.detach()], [], [], 0, True
++    pending, codes, operations, spent, complete = [(idea.detach(), order)], [], [], 0, True
+     while pending and spent < limit:
+         if work is not None and not work.consume('unfold'):
+             break
+-        top = pending.pop().reshape(1, -1)
++        value, current_order = pending.pop()
++        top = value.reshape(1, -1)
+         if not bool(torch.isfinite(top).all()):
+             raise FloatingPointError('nonfinite idea during grammar unfolding')
+         spent += 1
+@@ -324,7 +341,7 @@
+                 complete = False
+                 break
+             operations.append(('binary', action))
+-            pending.extend((right[0], left[0]))
++            pending.extend(((right[0], current_order), (left[0], current_order)))
+         elif action < len(binary) + len(unary):
+             value, unavailable = language.reverse_unary_step(
+                 top, index - len(binary), gate, ops=unary, return_status=True)
+@@ -332,17 +349,32 @@
+                 complete = False
+                 break
+             operations.append(('unary', action - len(binary)))
+-            pending.append(value[0])
++            pending.append((value[0], current_order))
+         else:
+             # Terminal words can only name currently active symbols.
+             distance = (candidate_basis.detach().to(top) - top).norm(dim=-1)
++            if order_of is not None:
++                eligible = distance.new_tensor([order_of(int(code)) <= current_order
++                                                 for code in candidates], dtype=torch.bool)
++                distance = distance.masked_fill(~eligible, torch.inf)
+             value, row = distance.min(0)
+             if float(value) > 1e-4 * max(1., float(top.norm())):
+                 complete = False
+                 break
+             code = int(candidates[row])
++            # Named abstractions are themselves valid retrieval terms. Their
++            # lower-order witnesses are unfolded under the same work budget.
+             codes.append(code)
+-            operations.append(('code', code))
++            current_order = current_order if order_of is None else order_of(code)
++            if current_order:
++                children = () if sigma_inverse is None else sigma_inverse(code, current_order)
++                if not children:
++                    complete = False
++                    break
++                operations.append(('sigma', current_order, code))
++                pending.extend((point, current_order - 1) for point in reversed(children))
++            else:
++                operations.append(('code', code))
+     return {'codes': tuple(codes), 'operations': tuple(operations), 'spent': spent,
+             'complete': complete and not pending}
+ 
+@@ -362,11 +394,30 @@
+             return _existing_row(space, reference)
+         except ValueError:
+             return None
+-    def unfold(value, limit, *, work=None):
++    def sigma_inverse(code, order):
++        # Use the existing sigma inverse's learned case choice. The stamp
++        # determines how many rungs must be decoded before a terminal read.
++        from Spaces import _concept_alloc_of
++        sigma = _concept_alloc_of(space).layer(0)
++        basis = _basis(space)
++        request = basis.new_zeros(sigma.nOutput, 1)
++        if not 0 <= code < len(request):
++            return ()
++        request[code] = 1.
++        attributed = sigma.attribute_presence(request, start=code, end=code + 1)[:, 0]
++        width = sigma.nOutput
++        signed = attributed[:width] - attributed[width + 1:2 * width + 1]
++        chosen = (signed != 0).nonzero().flatten().tolist()
++        if not chosen or any(space._row_order(row) != order - 1 for row in chosen):
++            return ()
++        return tuple(basis[row] * signed[row] for row in chosen)
++    def unfold(value, limit, *, order=0, work=None):
+         result = unfold_idea(language, _basis(space), value, limit, work=work,
+-                             activation=space.priming_weights)
++                             activation=space.priming_weights, order=order,
++                             order_of=space._row_order, sigma_inverse=sigma_inverse)
+         return result['codes'], result['spent'], result['complete']
+-    store.configure_leaf_index(code_row=code_row, unfold=unfold if language is not None else None)
++    store.configure_leaf_index(code_row=code_row, unfold=unfold if language is not None else None,
++                               order_of=space._row_order)
+     from ClauseRow import attach_clause_index
+     attach_clause_index(model, store, space)
+     import weakref
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -13133,6 +13133,11 @@
+                 actions=acts[:L], targets=targets[b], end_state=end_state[b],
+                 concept_ids=selected_ids, reference_ids=reference_ids,
+                 reference_orders=reference_orders, lexical_forms=selected_forms,
++                **{name: value[b].index_select(0, pos.to(value.device))
++                   for name, value in (
++                       ('leaf_orders', getattr(self.symbolSpace, '_word_reference_orders', None)),
++                       ('leaf_evidence', getattr(self.symbolSpace, '_word_reference_evidence', None)))
++                   if torch.is_tensor(value)},
+                 operation_values=(None if journal is None else
+                     journal[b, columns[b, :L].clamp_min(0)].reshape(L, 3, leaf_slab.shape[-1])),
+                 operation_refs=(None if addresses is None else
+@@ -20401,8 +20406,9 @@
+             values[0][b].zero_()
+             values[0][b, :depth] = field.detach()
+             values[1][b] = depth
+-            for index in (2, 3):
+-                values[index][b].zero_()
++            values[2][b].fill_(-1)
++            values[2][b, :depth] = clause.order
++            values[3][b].zero_()
+             values[4][b].fill_(-1)
+             values[5][b].zero_()
+             values[5][b, :depth] = 1.
+@@ -20522,7 +20528,10 @@
+                 refs = tuple(ref if type(ref) is int and ref > 0 else -1 for ref in clause.refs)
+             query = (self.languageSpace.program_meaning(entries[b], registry)
+                      if clause.meaning.mode == 'interrogative' and registry is not None else None)
+-            fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query))
++            fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query,
++                clause.order if index is None else int(store.order[index]),
++                clause.evidence if index is None else (float(store.c_plus[index]), float(store.c_minus[index])),
++                self.conceptualSpace._incoming_trust_multiplier() if index is None else float(store.trust[index])))
+         self._sentence_fields[sid] = tuple(fields)
+         record_categories = getattr(self.languageSpace, 'record_category_observations', None)
+         trace = getattr(self, '_reconstruction_stack', lambda: None)()
+--- a/bin/Queries.py
++++ b/bin/Queries.py
+@@ -868,13 +868,13 @@
+             # Only what may expose a stored meaning to serial context.
+             sources.append({key: record[key] for key in
+                             ('occurrence', 'origin', 'text', 'trust', 'match')})
+-            pair = record.get('evidence')
+-            pair = ((max(0., float(record['trust'])), max(0., -float(record['trust'])))
+-                    if pair is None else pair)
++            # Existence uses external event authority. The separate ended
++            # identification pair is exposed by true, never used as trust.
++            signed = float(record['trust'])
+             if record['meaning'].polarity != description.polarity:
+-                pair = pair[1], pair[0]
+-            positive += record['match'] * pair[0]
+-            negative += record['match'] * pair[1]
++                signed = -signed
++            positive += record['match'] * max(0., signed)
++            negative += record['match'] * max(0., -signed)
+         return {'support_true': min(1., positive), 'support_false': min(1., negative),
+                 'familiarity': positive + negative, 'meaning': description.detached(),
+                 'candidates': tuple(sources),
+--- a/bin/Understanding.py
++++ b/bin/Understanding.py
+@@ -60,12 +60,14 @@
+     operation_values: Any = None
+     operation_refs: Any = None
+     operation_relations: Any = None
++    leaf_orders: Any = None
++    leaf_evidence: Any = None
+     @property
+     def _tensor_fields(self):
+         core = ("rows", "word_rows", "activations", "leaves", "actions",
+                 "targets", "end_state", "concept_ids")
+         return core + tuple(name for name in ("reference_ids", "reference_orders", "symbol_where", "symbol_when",
+-                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations")
++                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "leaf_orders", "leaf_evidence")
+                             if getattr(self, name) is not None)
+ 
+     def __post_init__(self) -> None:
+@@ -105,6 +107,13 @@
+         if self.operation_relations is not None and (self.operation_relations.shape != (self.actions.shape[0],2)
+                 or self.operation_relations.dtype != torch.bool):
+             raise ValueError('operation reference kinds must align to operand addresses')
++        if self.leaf_orders is not None and (self.leaf_orders.shape != ids.shape
++                or self.leaf_orders.dtype != torch.long or bool((self.leaf_orders < -1).any())):
++            raise ValueError('leaf orders must align with the open reading')
++        if self.leaf_evidence is not None and (self.leaf_evidence.shape != (*ids.shape, 2)
++                or not bool(torch.isfinite(self.leaf_evidence).all())
++                or bool(((self.leaf_evidence < 0) | (self.leaf_evidence > 1)).any())):
++            raise ValueError('leaf evidence requires two finite poles in [0, 1]')
+         forms = self.lexical_forms
+         if forms is None:
+             forms = (None,) * int(self.rows.numel())
+@@ -171,9 +180,19 @@
+     where: Any = None
+     when: Any = None
+     query: Any = None
++    order: int = 0
++    evidence: tuple = (0., 0.)
++    trust: float = 0.
+ 
+     def __post_init__(self):
+         from Meaning import ConceptualMeaning
++        import math
++        if type(self.order) is not int or self.order < -1:
++            raise ValueError('completed field order must be nonnegative or unknown (-1)')
++        if len(self.evidence) != 2 or any(not math.isfinite(float(x)) or not 0 <= float(x) <= 1 for x in self.evidence):
++            raise ValueError('completed evidence requires two finite poles in [0, 1]')
++        if not math.isfinite(float(self.trust)) or not -1 <= float(self.trust) <= 1:
++            raise ValueError('completed source trust must be a finite scalar in [-1, 1]')
+         if not isinstance(self.meaning, ConceptualMeaning):
+             raise TypeError('a sentence end state requires a conceptual field')
+         if int(self.meaning.role_mask.sum()) not in (1, 3):
+@@ -201,7 +220,7 @@
+         return type(self)(self.meaning.detached(), self.refs, self.row_id,
+             None if self.where is None else self.where.detach(),
+             None if self.when is None else self.when.detach(),
+-            None if self.query is None else self.query.detached())
++            None if self.query is None else self.query.detached(), self.order, self.evidence, self.trust)
+ 
+ 
+ @dataclass(frozen=True)
+--- a/test/test_accessible_mind.py
++++ b/test/test_accessible_mind.py
+@@ -99,7 +99,7 @@
+ def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
+     store = TernaryTruthStore(8, capacity=4)
+     calls = []
+-    def unfold(idea, limit):
++    def unfold(idea, limit, **kwargs):
+         calls.append((idea.clone(), limit))
+         return (11, 23), 3, True
+     store.configure_leaf_index(unfold=unfold)
+@@ -380,8 +380,8 @@
+     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
+     meaning = registry.form('part', a, b, mode='assertive')
+     original = TernaryTruthStore(8, capacity=4)
+-    original.append_meaning(meaning, kind='fact')
+-    original.append_meaning(meaning, kind='observation')
++    original.append_meaning(meaning, kind='fact', order=2)
++    original.append_meaning(meaning, kind='observation', order=2)
+     state = copy.deepcopy(original.state_dict())
+     for key in ('posting_codes', 'posting_roles', 'posting_rows', 'leaf_complete', 'index_stream'):
+         del state[key]
+@@ -406,8 +406,8 @@
+     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
+     meaning = registry.form('part', a, b, mode='assertive')
+     store = TernaryTruthStore(8, capacity=4)
+-    store.append_meaning(meaning)
+-    append_indexed(store, meaning, terms=((3, 7), (), (11,)))
++    store.append_meaning(meaning, order=2)
++    append_indexed(store, meaning, terms=((3, 7), (), (11,)), order=2)
+     assert store.leaf_terms(0, 0) == ()
+     assert not bool(store.leaf_complete[0, 0])
+     from Queries import _existing_row
+--- a/test/test_item7_acceptance.py
++++ b/test/test_item7_acceptance.py
+@@ -164,7 +164,7 @@
+ 
+ def test_07_equality_writes_two_independent_part_rows(monkeypatch):
+     f = SentenceFixture(monkeypatch)
+-    first = f.store.write_clause(f.clause(('equal', 'morning-star', 'evening-star')), trust=.7)
++    first = f.store.write_clause(f.clause(('equal', 'morning-star', 'evening-star')), trust=.7, evidence=(.7, 0.))
+     assert len(f.store) == 2
+     assert f.store.refs[0].tolist() == f.store.refs[1, [2, 1, 0]].tolist()
+     f.store.set_evidence(first, .2, .4)
+@@ -186,7 +186,7 @@
+     for attitude in ('certain', 'doubtful'):
+         f.store.write_clause(f.clause(('lift', 'it', ('verb', attitude, inner))), trust=.8)
+     assert f.store.row(0)['evidence'] == (0., 0.)
+-    f.store.write_clause(f.clause(('not', inner)), trust=.6)
++    f.store.write_clause(f.clause(('not', inner)), trust=.6, evidence=(0., .6))
+     assert f.store.row(0)['evidence'] == pytest.approx((0., .6))
+ 
+ 
+--- a/test/test_item7_provenance.py
++++ b/test/test_item7_provenance.py
+@@ -23,7 +23,7 @@
+                    children=(child,))
+     with store.clause_assertions(trust=.7, origin=store.ORIGIN_USER,
+                                 text='he said cats are animals') as rows:
+-        assert store.write_clause(outer) == 1
++        assert store.write_clause(outer, evidence=(.7, 0.)) == 1
+     assert rows == [1]
+     assert store.row(0)['kind'] == 'unverified'
+     assert store.row(0)['evidence'] == (0., 0.)
+@@ -31,7 +31,7 @@
+     assert store.row(1)['evidence'] == pytest.approx((.7, 0.))
+     with store.clause_assertions(trust=.8, origin=store.ORIGIN_USER,
+                                 text='cats are animals') as rows:
+-        assert store.write_clause(child) == 0
++        assert store.write_clause(child, evidence=(.8, 0.)) == 0
+     assert rows == [0] and len(store) == 2
+     assert store.row(0)['evidence'] == pytest.approx((.8, 0.))
+ 
+--- a/test/test_item7_retention.py
++++ b/test/test_item7_retention.py
+@@ -18,7 +18,7 @@
+ def test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner():
+     store, _ = clause_store()
+     first = store.write_clause(idea_clause())
+-    store.configure_leaf_index(unfold=lambda field, limit: ((11, 12, 13), 1, True))
++    store.configure_leaf_index(unfold=lambda field, limit, **kwargs: ((11, 12, 13), 1, True))
+     target = store.write_clause(idea_clause(), expectation=comparison(store, first))
+     assert len(store) == 3 and target == 2
+     pair = store.expectation_pair(target)
+--- a/test/test_item7_storage.py
++++ b/test/test_item7_storage.py
+@@ -1,4 +1,8 @@
+-"""Two-truths storage and provenance contracts (item 7, §§1–4)."""
++"""Two-truths storage and provenance contracts (item 7, §§1–4).
++
++The September 28 amendment keeps fixture identification evidence explicit
++beside source trust; equal numbers below are independently supplied.
++"""
+ from types import SimpleNamespace
+ from dataclasses import replace
+ 
+@@ -38,7 +42,7 @@
+ 
+ def test_relation_rows_never_enter_luminosity():
+     store = TernaryTruthStore(4, capacity=8)
+-    idea = store.append_idea(torch.tensor([1., 0., 0., 0.]), trust=.6)
++    idea = store.append_idea(torch.tensor([1., 0., 0., 0.]), trust=.6, evidence=(.6, 0.))
+     relation = store.append_relation(torch.ones(4), torch.ones(4),
+         torch.ones(4), rel_type=store.REL_PARTOF, trust=1.)
+     store.set_origin(idea, store.ORIGIN_PROVISIONED)
+@@ -122,7 +126,7 @@
+     assert store.row(0)['evidence'] == (0., 0.)
+     assert store.refs[1, 2] == store.row_ids[0]
+     assert not bool(store.slots[1, 2].any())
+-    assert store.write_clause(child, trust=.8) == 0
++    assert store.write_clause(child, trust=.8, evidence=(.8, 0.)) == 0
+     assert len(store) == 2
+     assert store.row(0)['evidence'] == pytest.approx((.8, 0.))
+     store.set_trust(1, 0.)
+@@ -152,7 +156,7 @@
+     converse = replace(source, refs=(2, 3, 1),
+                        meaning=replace(source.meaning, roles=source.meaning.roles[[2, 1, 0]]))
+     value = replace(source, companions=(converse,))
+-    store.write_clause(value, trust=.75)
++    store.write_clause(value, trust=.75, evidence=(.75, 0.))
+     assert store.relations(store.REL_PARTOF).tolist() == [0, 1]
+     assert store.refs[:2].tolist() == [[1, 3, 2], [2, 3, 1]]
+     store.set_evidence(0, .2, .7)
+@@ -197,8 +201,8 @@
+ 
+ def test_negation_contributes_negative_evidence_without_erasing_positive():
+     store, _ = clause_store()
+-    store.write_clause(part_clause(), trust=.8)
+-    store.write_clause(part_clause(polarity=False), trust=.7)
++    store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.))
++    store.write_clause(part_clause(polarity=False), trust=.7, evidence=(0., .7))
+     assert len(store) == 1
+     assert store.row(0)['evidence'] == pytest.approx((.8, .7))
+ 
+@@ -207,7 +211,7 @@
+     import copy
+     store, _ = clause_store()
+     clause = idea_clause()
+-    row = store.write_clause(clause, trust=.6)
++    row = store.write_clause(clause, trust=.6, evidence=(.6, 0.))
+     restored, _ = clause_store()
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+@@ -218,10 +222,10 @@
+ 
+ def test_migration_drops_catch_all_rows_and_initializes_missing_refs():
+     store = TernaryTruthStore(4, capacity=8)
+-    store.append_idea(torch.ones(4), trust=.5)
++    store.append_idea(torch.ones(4), trust=.5, evidence=(.5, 0.))
+     store.append_relation(torch.ones(4), torch.ones(4), torch.ones(4))
+     state = store.state_dict()
+-    for key in ('truth_schema', 'refs', 'row_ids', 'where', 'when', 'c_plus', 'c_minus'):
++    for key in ('truth_schema', 'refs', 'row_ids', 'where', 'when'):
+         state.pop(key)
+     restored = TernaryTruthStore(4, capacity=8)
+     with pytest.warns(UserWarning, match='legacy REL_OTHER'):
+@@ -233,7 +237,7 @@
+ 
+ def test_migration_discards_all_old_provisioned_rows_for_reprovisioning():
+     store = TernaryTruthStore(4, capacity=8)
+-    store.append_idea(torch.ones(4), trust=.5)
++    store.append_idea(torch.ones(4), trust=.5, evidence=(.5, 0.))
+     old = store.append_idea(torch.ones(4), trust=.8)
+     store.set_origin(old, store.ORIGIN_PROVISIONED)
+     state = store.state_dict()
+@@ -296,7 +300,7 @@
+     store.write_clause(part_clause(), trust=.2)
+     for _ in range(store.capacity - 1):
+         store.append_idea(points[1])
+-    assert store.write_clause(part_clause(), trust=.8) == 0
++    assert store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.)) == 0
+     assert len(store) == store.capacity
+     assert store.row(0)['evidence'] == pytest.approx((.8, 0.))
+ 
+--- a/test/test_item7_unfold_index.py
++++ b/test/test_item7_unfold_index.py
+@@ -12,7 +12,7 @@
+ def test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value():
+     store = TernaryTruthStore(4, capacity=8)
+     seen = []
+-    def unfold(value, limit):
++    def unfold(value, limit, **kwargs):
+         seen.append(value.clone())
+         return (7,), 1, True
+     store.configure_leaf_index(code_row=lambda ref: 99, unfold=unfold)
+@@ -29,7 +29,7 @@
+ 
+ def test_only_the_inverted_index_is_owned_or_checkpointed():
+     store = TernaryTruthStore(4, capacity=8)
+-    store.configure_leaf_index(unfold=lambda value, limit: ((int(value[0]),), 1, True))
++    store.configure_leaf_index(unfold=lambda value, limit, **kwargs: ((int(value[0]),), 1, True))
+     a = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([2., 0., 0., 0.])))
+     b = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([3., 0., 0., 0.])))
+     assert store.rows_for_code(2) == (a,) and store.rows_for_code(3) == (b,)
+--- a/test/test_ltm_consolidation.py
++++ b/test/test_ltm_consolidation.py
+@@ -57,6 +57,13 @@
+             return (x.new_full((*x.shape[:2], 1), 1e6),
+                     x.new_full(candidates.shape[:-1], -1e6))
+         chooser.score_binary, chooser.score_unary = binary, unary
++        # Provisioning mechanism: independently identified input. This fixture
++        # forces reading evidence as well as grammar, never authority.
++        from dataclasses import replace
++        original_write = m.symbolSpace.ltm_store.write_clause
++        def identified(clause, **kwargs):
++            return original_write(replace(clause, evidence=(.8, 0.)), **kwargs)
++        m.symbolSpace.ltm_store.write_clause = identified
+     return m
+ 
+ 
+@@ -257,7 +264,7 @@
+         A = torch.zeros(D); A[0] = 1.0
+         P = torch.zeros(D); P[2] = 1.0
+         B = torch.zeros(D); B[1] = 1.0
+-        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8)
++        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8, evidence=(.8, 0.))
+         # No explicit store= -> the consolidation path picks the ltm_store.
+         q = torch.zeros(cw); q[0] = 1.0
+         res = cs.reason(q, 0.5, parthood_threshold=0.5)
+@@ -294,7 +301,7 @@
+         A = torch.zeros(D); A[0] = 1.0
+         P = torch.zeros(D); P[2] = 1.0
+         B = torch.zeros(D); B[1] = 1.0
+-        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8)
++        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8, evidence=(.8, 0.))
+         np1_before = store.row(idx)["np1"].clone()
+         ante = torch.zeros(cw); ante[0] = 1.0
+         cons = torch.zeros(cw); cons[1] = 1.0
+@@ -543,9 +550,9 @@
+         a = torch.zeros(D); a[0] = 1.0
+         b = torch.zeros(D); b[1] = 1.0
+         store.append_idea(a, trust=0.5)                     # conversation
+-        i_prov = store.append_idea(a, trust=0.9)
++        i_prov = store.append_idea(a, trust=0.9, evidence=(.9, 0.))
+         store.set_origin(i_prov, T.ORIGIN_PROVISIONED, text="prov")
+-        i_user = store.append_idea(b, trust=-0.5)
++        i_user = store.append_idea(b, trust=-0.5, evidence=(0., .5))
+         store.set_origin(i_user, T.ORIGIN_USER, text="user")
+         n = tl.sync_from_ltm()
+         self.assertEqual(n, 2)
+@@ -756,9 +763,9 @@
+         store.reset()
+         D = store.nDim
+         v = torch.zeros(D); v[0] = 1.0
+-        i0 = store.append_idea(v, trust=0.9)
++        i0 = store.append_idea(v, trust=0.9, evidence=(.9, 0.))
+         store.set_origin(i0, T.ORIGIN_PROVISIONED, text="cat")
+-        i1 = store.append_idea(v, trust=0.8)
++        i1 = store.append_idea(v, trust=0.8, evidence=(.8, 0.))
+         store.set_origin(i1, T.ORIGIN_USER, text="hello world")
+         store.append_idea(v, trust=0.3)                    # ORIGIN_CONVERSATION
+         return store
+@@ -824,7 +831,7 @@
+         store.reset()
+         D = store.nDim
+         v = torch.zeros(D); v[0] = 1.0
+-        i0 = store.append_idea(v, trust=0.7)
++        i0 = store.append_idea(v, trust=0.7, evidence=(.7, 0.))
+         store.set_origin(i0, T.ORIGIN_PROVISIONED, text="p")
+         store.append_idea(v, trust=0.2)                    # conversation
+         sd = m.state_dict()
+--- a/test/test_query_executors.py
++++ b/test/test_query_executors.py
+@@ -24,7 +24,8 @@
+     for ref in refs:
+         cs._csw_concept_row(0, ref[1])
+     store = TernaryTruthStore(8)
+-    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref))
++    from index_fixtures import one_hot_unfold
++    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), unfold=one_hot_unfold)
+     idea = replace(_meaning(), role_refs=refs)
+     first = store.append_meaning(idea, kind="fact", trust=0.6)
+     second = store.append_meaning(idea, kind="fact", trust=-0.4)
+--- a/test/test_item7_row_schema.py
++++ b/test/test_item7_row_schema.py
+@@ -0,0 +1,209 @@
++"""September 28 amendment: source trust, observed evidence, and field order."""
++from dataclasses import replace
++
++import pytest
++import torch
++
++from ClauseRow import Clause
++from Layers import TernaryTruthStore
++from Meaning import ConceptualMeaning
++
++
++def store_and_clause():
++    store = TernaryTruthStore(4, capacity=8)
++    identities = iter(range(10, 100))
++    store.configure_clause_index(allocate=lambda _point: next(identities),
++                                 concept_point=lambda _cid: torch.ones(4))
++    point = torch.tensor([.2, .4, .6, .8])
++    return store, Clause(ConceptualMeaning.from_description(point), point=point)
++
++
++def test_source_trust_does_not_supply_identification_evidence():
++    store, clause = store_and_clause()
++    row = store.write_clause(clause, trust=.8)
++    assert store.row(row)['trust'] == pytest.approx(.8)
++    assert store.row(row)['evidence'] == (0., 0.)
++
++
++def test_changing_source_trust_preserves_both_and_neither():
++    store, clause = store_and_clause()
++    both = store.write_clause(clause, trust=.8, evidence=(.6, .6))
++    neither = store.write_clause(clause, trust=.8, evidence=(0., 0.))
++    store.set_trust(both, -.3)
++    store.set_trust(neither, -.3)
++    assert store.row(both)['evidence'] == pytest.approx((.6, .6))
++    assert store.row(neither)['evidence'] == (0., 0.)
++    assert store.row(both)['trust'] == store.row(neither)['trust'] == pytest.approx(-.3)
++    store.set_evidence(both, .9, .2)
++    assert store.row(both)['trust'] == pytest.approx(-.3)
++
++
++def test_clause_order_and_evidence_are_stored_without_a_program():
++    store, clause = store_and_clause()
++    clause = replace(clause, order=3, evidence=(.75, .5))
++    row = store.write_clause(clause, trust=.9)
++    assert store.row(row)['order'] == 3
++    assert store.row(row)['evidence'] == pytest.approx((.75, .5))
++    restored = TernaryTruthStore(4, capacity=8)
++    restored.load_state_dict(store.state_dict(), strict=True)
++    assert restored.row(row)['order'] == 3
++    assert restored.row(row)['trust'] == pytest.approx(.9)
++    assert restored.row(row)['evidence'] == pytest.approx((.75, .5))
++    assert not hasattr(restored, 'clause_derivation')
++
++
++def test_row_compaction_preserves_each_order_and_pole():
++    store, clause = store_and_clause()
++    first = store.write_clause(replace(clause, order=1, evidence=(.2, .1)), trust=.4)
++    store.set_origin(first, store.ORIGIN_USER)
++    second = store.write_clause(replace(clause, order=3, evidence=(.6, .5)), trust=.7)
++    occurrence = store.occurrence_of(second)
++    assert store.clear_origin(store.ORIGIN_USER) == 1
++    assert store.occurrence_of(0) == occurrence
++    assert store.row(0)['order'] == 3
++    assert store.row(0)['evidence'] == pytest.approx((.6, .5))
++    assert store.row(0)['trust'] == pytest.approx(.7)
++
++
++def test_embedded_identification_does_not_grant_source_authority():
++    store, clause = store_and_clause()
++    child = replace(clause, evidence=(.8, .4), order=2)
++    parent = replace(clause, children=(child,), refs=(('clause', 0), -1, -1),
++                     evidence=(.9, .3), order=2)
++    row = store.write_clause(parent, trust=.7)
++    assert row == 1 and store.row(0)['trust'] == 0.
++    assert store.row(0)['evidence'] == pytest.approx((.8, .4))
++    assert store.row(1)['trust'] == pytest.approx(.7)
++    assert store.row(1)['evidence'] == pytest.approx((.9, .3))
++
++
++def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
++    from reading_fixtures import finish_reading
++    from test_item7_acceptance import SentenceFixture
++    fixture = SentenceFixture(monkeypatch)
++    reading = replace(fixture.program(('sum', 'cat', 'animal')),
++        leaf_orders=torch.tensor([3, 3]),
++        leaf_evidence=torch.tensor([[.8, .7], [.6, 0.]]))
++    clause = finish_reading(fixture.language, reading, registry=fixture.registry)
++    row = fixture.store.write_clause(clause, trust=.4)
++    assert fixture.store.row(row)['order'] == 3
++    assert fixture.store.row(row)['evidence'] == pytest.approx((.6, .7))
++    assert fixture.store.row(row)['trust'] == pytest.approx(.4)
++
++
++def test_index_unfolding_reads_the_stored_order():
++    store, clause = store_and_clause()
++    seen = []
++    def unfold(value, limit, *, order, work=None):
++        seen.append(order)
++        return (1,), 1, True
++    store.configure_leaf_index(unfold=unfold)
++    row = store.write_clause(replace(clause, order=3), trust=.8)
++    store.reindex_meanings()
++    assert seen == [3, 3]
++    assert store.leaf_terms(row, 0) == (1,)
++
++
++def test_abstract_unfold_descends_each_sigma_rung():
++    from types import SimpleNamespace
++    from MemoryIndex import unfold_idea
++    basis = torch.eye(3)
++    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(),
++        reverse_inverses=lambda _ops: (),
++        generate_policy_logits=lambda value: value.new_zeros(len(value), 1))
++    calls = []
++    def descend(code, order):
++        calls.append((code, order))
++        return (basis[code - 1],)
++    result = unfold_idea(language, basis, basis[2], 8, activation=torch.ones(3) * 2,
++                         order=2, order_of=int, sigma_inverse=descend)
++    assert result['complete'] and result['codes'] == (2, 1, 0)
++    assert calls == [(2, 2), (1, 1)]
++    assert result['spent'] == 3
++
++
++def test_old_scalar_checkpoint_does_not_invent_evidence_or_order():
++    store, clause = store_and_clause()
++    store.write_clause(clause, trust=.8)
++    state = store.state_dict()
++    for name in ('order', 'c_plus', 'c_minus'):
++        del state[name]
++    restored = TernaryTruthStore(4, capacity=8)
++    with pytest.warns(UserWarning, match='unknown order'):
++        restored.load_state_dict(state, strict=True)
++    assert restored.row(0)['order'] == -1
++    assert restored.row(0)['evidence'] == (0., 0.)
++    assert restored.row(0)['trust'] == pytest.approx(.8)
++
++
++def test_native_word_reference_accepts_both_without_touching_its_signed_value():
++    from types import SimpleNamespace
++    from Language import SymbolSpace
++    owner = SimpleNamespace()
++    signed = torch.tensor([[[.2]]])
++    result = SymbolSpace.commit_word_reference_slab(owner, torch.tensor([[1]]), signed,
++        torch.tensor([[True]]), orders=torch.tensor([[3]]), evidence=torch.tensor([[[.8, .6]]]))
++    torch.testing.assert_close(result, signed, rtol=0, atol=0)
++    torch.testing.assert_close(owner._word_reference_evidence, torch.tensor([[[.8, .6]]]), rtol=0, atol=0)
++
++
++def test_withdrawing_authority_preserves_identification():
++    store, clause = store_and_clause()
++    row = store.write_clause(replace(clause, evidence=(.8, .6)), trust=.9,
++                             origin=store.ORIGIN_USER, kind='fact')
++    store.withdraw_origin(store.ORIGIN_USER)
++    assert store.row(row)['trust'] == 0.
++    assert store.row(row)['evidence'] == pytest.approx((.8, .6))
++
++
++def test_luminosity_view_does_not_present_identification_as_trust():
++    from Layers import TruthLayer
++    store, clause = store_and_clause()
++    store.write_clause(replace(clause, evidence=(.8, .6)), trust=-.3,
++                       origin=store.ORIGIN_USER, kind='fact')
++    light = TruthLayer(4, max_truths=8)
++    light.attach_ltm(store)
++    assert light.sync_from_ltm() == 2
++    assert light._trusts == pytest.approx([-.3, -.3])
++    before = light.luminosity()
++    store.set_trust(0, .9)
++    light.sync_from_ltm()
++    assert light.luminosity() == before
++    assert light._trusts == pytest.approx([.9, .9])
++
++
++def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monkeypatch):
++    import util
++    from Language import SymbolSpace
++    from test_meronomy_ladder import _build_ladder_variant
++    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
++    model = _build_ladder_variant(tmp_path, 'row_schema', [
++        ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>')])
++    model._tensor_peer_while_eager = True
++    model._chart_compose_per_word = lambda: None
++    model._install_unit_span_fn()
++    model.reconstruct_in_loop = False
++    model.loss.reconstruction_scale = 0.
++    commit = SymbolSpace.commit_word_reference_slab
++    calls = []
++    def paired(owner, rows, activations, active, **kwargs):
++        calls.append(rows.shape)
++        kwargs['evidence'] = activations.new_tensor([.8, .6]).expand(*rows.shape, 2)
++        return commit(owner, rows, activations, active, **kwargs)
++    monkeypatch.setattr(SymbolSpace, 'commit_word_reference_slab', paired)
++    try:
++        inputs = model.inputSpace.prepPackedInput([['1 plus 2']])
++        model.runBatch(train=False, batchSize=1, split='runtime',
++                       batch_override=(inputs, torch.zeros(1, 1, 0)))
++        field = model._sentence_fields[0][0]
++        store = model.symbolSpace.ltm_store
++        row = store.index_of_row(field.row_id)
++        assert calls and row is not None
++        assert field.evidence == pytest.approx((.8, .6))
++        assert store.row(row)['evidence'] == pytest.approx((.8, .6))
++        assert store.row(row)['order'] == field.order
++        assert store.row(row)['trust'] == pytest.approx(field.trust)
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++        torch._dynamo.reset()

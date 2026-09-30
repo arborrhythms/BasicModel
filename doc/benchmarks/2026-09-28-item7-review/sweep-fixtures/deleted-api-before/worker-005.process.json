@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-005.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-005.json"
+  ],
+  "pid": 51766,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 474563856,
+  "elapsed_seconds": 3.713438375038095,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-005.log"
+}

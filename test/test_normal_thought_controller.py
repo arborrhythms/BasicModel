@@ -17,6 +17,7 @@ from Meaning import ConceptualMeaning
 from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry, ThoughtResult
 from test_cs_symbol_table import _cs
+from reading_fixtures import sentence_state
 from Understanding import Understanding
 from What import WhatQuestion
 
@@ -276,8 +277,8 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
     model.what_thinking_detach = "episode"
 
     with model._query_boundary_scope((0,)):
-        selected = model._run_selected_program_thoughts(
-            (program(),), work_budget=16)
+        selected = model._run_selected_sentence_thoughts(
+            (sentence_state(language, program(), registry),), work_budget=16)
 
     assert len(selected) == 1
     row, result = selected[0]
@@ -331,7 +332,9 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
         concept_ids=torch.tensor([-1]), lexical_forms=(None,))
 
     with model._query_boundary_scope((0,)):
-        selected = model._run_selected_program_thoughts((entry,), work_budget=16)
+        # The ordinary chooser also pays for its context reads. Give this
+        # executor mechanism the normal budget through its conclusion.
+        selected = model._run_selected_sentence_thoughts((sentence_state(language, entry, registry),), work_budget=32)
 
     assert len(selected) == 1
     row, result = selected[0]
@@ -447,18 +450,13 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
     # carrier is deliberately ordinary, rather than a second surface path.
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
     monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
-    monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
             len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
     )
     monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
-    understanding = Understanding(answer_program=(
-        program(),))
+    understanding = Understanding(sentence_states=(
+        sentence_state(language, program(), registry),))
     question = WhatQuestion.present(0)
 
     first = model.resolveAnswer(understanding, question)
@@ -494,11 +492,6 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
     monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
-    monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
             len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
@@ -506,7 +499,7 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
     monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
 
     derivation = model.resolveAnswer(
-        Understanding(answer_program=(program(),)), WhatQuestion.present(0))
+        Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
     torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
@@ -534,11 +527,6 @@ def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
     model.reconstruct_in_loop = False
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
-    monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
     monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
@@ -569,12 +557,12 @@ def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
                   "semantic_id": "arma", "result_kind": "prediction"},
         work=SimpleNamespace(spent=4))
     monkeypatch.setattr(
-        model, "_run_selected_program_thoughts",
+        model, "_run_selected_sentence_thoughts",
         lambda programs, *, work_budget: ((0, selected),),
     )
 
     derivation = model.resolveAnswer(
-        Understanding(answer_program=(program(),)), WhatQuestion.present(0))
+        Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
 
     torch.testing.assert_close(
         derivation.conceptual_answer[0], estimate_roles.detach())
@@ -604,11 +592,6 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
     monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
-    monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
             len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
@@ -625,7 +608,7 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
 
     monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
     derivation = model.resolveAnswer(
-        Understanding(answer_program=(program(),)), WhatQuestion.present(0))
+        Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
     assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"
@@ -655,11 +638,6 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
     monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
-    monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
             len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
@@ -674,7 +652,7 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
                 "support_true": 1.0, "support_false": 0.0}
 
     monkeypatch.setattr(model, "answer_query", legacy_reasoner)
-    understanding = Understanding(answer_program=(program(),))
+    understanding = Understanding(sentence_states=(sentence_state(language, program(), registry),))
     question = WhatQuestion.inference(0, prompt="is the part in the whole?")
 
     result = model.resolveAnswer(understanding, question)
@@ -708,11 +686,6 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
     monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
-    monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
             len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
@@ -725,7 +698,7 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
     )
 
     result = model.resolveAnswer(
-        Understanding(answer_program=(program(),)),
+        Understanding(sentence_states=(sentence_state(language, program(), registry),)),
         WhatQuestion.inference(0, prompt="is the part in the whole?"),
     )
 
@@ -756,18 +729,13 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
     monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
-    monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
             len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]),
             ({},) * len(questions)),
     )
     monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
-    understanding = Understanding(answer_program=(program(),))
+    understanding = Understanding(sentence_states=(sentence_state(language, program(), registry),))
     produced = torch.zeros(1, 1, 3, dtype=program().leaves.dtype)
     execution = (None, produced, produced)
     monkeypatch.setattr(model, "_capture_understanding", lambda _: understanding)
@@ -805,11 +773,6 @@ def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatc
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
     monkeypatch.setattr(
-        model, "_materialize_entries",
-        lambda entries, base, budget: (base, torch.empty(
-            base.shape[0], 0, device=base.device, dtype=torch.long)),
-    )
-    monkeypatch.setattr(
         model, "_what_grammar_context",
         lambda questions, **kwargs: (torch.zeros(
             len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
@@ -821,7 +784,7 @@ def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatc
                   "support_false": 0.0, "incomplete": ()},
         work=SimpleNamespace(spent=3))
     monkeypatch.setattr(
-        model, "_run_selected_program_thoughts",
+        model, "_run_selected_sentence_thoughts",
         lambda programs, *, work_budget: ((0, selected),),
     )
     calls = []
@@ -835,9 +798,9 @@ def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatc
             {"operation": "legacy-row", "row": 1},), ()
 
     monkeypatch.setattr(model, "_resolve_step", legacy_resolve, raising=False)
-    first_program = program()
+    first_program = sentence_state(language, program(), registry)
     derivation = model.resolveAnswer(
-        Understanding(answer_program=(first_program, None)), WhatQuestion.present(0))
+        Understanding(sentence_states=(first_program, None)), WhatQuestion.present(0))
 
     assert calls == []
     assert derivation.step == ()

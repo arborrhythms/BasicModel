@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step"
+  ],
+  "completed": [
+    "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2889339169487357,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -39,79 +39,8 @@ class _PerceptStore:
         self._size = int(active)
 
 
-def test_symbolize_forward_ignores_exact_inactive_ps_and_ws_rows():
-    from Language import SymbolizeLayer
-
-    ps_store = _PerceptStore(
-        [[0.0, 0.8], [0.8, 0.0], [0.0, 1.0]], active=1)
-    ws_cb = _PrefixCodebook(
-        [[0.8, 0.0], [0.0, 0.8], [0.2, 0.2], [1.0, 0.0]], active=2)
-
-    class _WholeSpace:
-        def __init__(self):
-            self.subspace = SimpleNamespace(what=ws_cb)
-            self._ws_pos_to_row = {}
-            self.ps_row = None
-            self.ws_row = None
-
-        def ensure_ps_position(self, row):
-            self.ps_row = int(row)
-            return 10 + int(row)
-
-        def ensure_ws_position(self, row, kind="ws"):
-            self.ws_row = int(row)
-            return 20 + int(row)
-
-        def insert_meta(self, ps_pos, ws_pos, fused_vec=None):
-            self._ws_pos_to_row[30] = 0
-            return 30
-
-        def record_lbg_pull(self, ws_pos, vec):
-            return None
-
-        def maybe_split_lbg(self, ws_pos):
-            return None
-
-    ws = _WholeSpace()
-    layer = SymbolizeLayer(
-        nInput=2, nOutput=2, wholeSpace=ws,
-        perceptualSpace=SimpleNamespace(percept_store=ps_store))
-
-    # Both operands exactly match reserved rows.  The best selectable prefix
-    # rows are row 0 in each table, and prefix ids remain global ids.
-    out = layer.forward(torch.tensor([0.0, 1.0]), torch.tensor([1.0, 0.0]))
-
-    assert ws.ps_row == 0
-    assert ws.ws_row == 0
-    assert torch.equal(out.detach(), ws_cb.active_prototypes()[0].detach())
 
 
-def test_symbolize_reverse_ignores_exact_inactive_meta_row():
-    from Language import SymbolizeLayer
-
-    ws_cb = _PrefixCodebook(
-        [[0.8, 0.0], [0.0, 0.8], [0.2, 0.2], [1.0, 0.0]], active=2)
-    ps_store = _PerceptStore([[0.0, 1.0], [1.0, 1.0]], active=2)
-
-    class _WholeSpace:
-        subspace = SimpleNamespace(what=ws_cb)
-        _ws_row_to_pos = {0: 10, 3: 30}
-        _pos_kind = {11: "ps", 12: "ws", 31: "ps", 32: "ws"}
-        _ps_pos_to_row = {11: 0, 31: 1}
-        _ws_pos_to_row = {12: 1, 32: 3}
-
-        @staticmethod
-        def taxonomy_children(pos):
-            return {10: [11, 12], 30: [31, 32]}.get(int(pos), [])
-
-    layer = SymbolizeLayer(
-        nInput=2, nOutput=2, wholeSpace=_WholeSpace(),
-        perceptualSpace=SimpleNamespace(percept_store=ps_store))
-
-    left, right = layer.reverse(torch.tensor([1.0, 0.0]))
-
-    assert torch.equal(left, ps_store.codebook[0])
-    assert torch.equal(right, ws_cb.active_prototypes()[1])
 
 
 def test_radix_ws_decode_searches_bound_active_intersection_with_remap():

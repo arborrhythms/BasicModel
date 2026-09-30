@@ -36,7 +36,7 @@ def test_normal_truthset_replacement_keeps_live_thought_constituents_and_credit(
     store, reference = _seed(model)
     memory, roles = _pin(model, reference)
     model._ltm_provisioned = True
-    monkeypatch.setattr(model, "_ltm_ingest_truth_texts", lambda *args: [])
+    monkeypatch.setattr(model, "_ltm_ingest_truth_texts", lambda *args, **kwargs: [])
     model._store_truths_into_ltm(store, model.symbolSpace.truth_layer, [], [])
     assert len(store) == 1
     assert store.occurrence_of(0) == reference and store.row(0)["kind"] == "unverified"

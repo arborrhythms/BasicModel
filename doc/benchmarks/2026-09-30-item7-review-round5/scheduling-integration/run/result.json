@@ -1,0 +1,230 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_uses_ten_affordable_slots_without_exceeding_budget",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[8]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_uses_ten_affordable_slots_without_exceeding_budget",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[8]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-000.json"
+      ],
+      "pid": 17485,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 47448640,
+      "elapsed_seconds": 1.3417277089320123,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_uses_ten_affordable_slots_without_exceeding_budget"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_uses_ten_affordable_slots_without_exceeding_budget"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_uses_ten_affordable_slots_without_exceeding_budget",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 7.333280518651009e-05,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-001.json"
+      ],
+      "pid": 17486,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 43745880,
+      "elapsed_seconds": 2.315133416093886,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.345791138708591e-05,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-002.json"
+      ],
+      "pid": 17487,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 40370728,
+      "elapsed_seconds": 3.2844120000954717,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[8]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[8]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00043941684998571873,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-003.json"
+      ],
+      "pid": 17488,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 34931192,
+      "elapsed_seconds": 4.247847291873768,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005082909483462572,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-004.json"
+      ],
+      "pid": 17489,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 30392848,
+      "elapsed_seconds": 5.219435834093019,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00019954191520810127,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run",
+  "elapsed_seconds": 7.0075570829212666,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 196889288,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/collect.json"
+    ],
+    "pid": 17474,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 45335080,
+    "elapsed_seconds": 1.3134629160631448,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_uses_ten_affordable_slots_without_exceeding_budget",
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity",
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[8]",
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]",
+        "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

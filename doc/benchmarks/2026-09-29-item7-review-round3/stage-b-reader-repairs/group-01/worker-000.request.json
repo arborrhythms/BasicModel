@@ -1,0 +1,20 @@
+{
+  "selectors": [
+    "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-01/worker-000.recycle.json"
+}

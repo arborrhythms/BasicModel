@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 304.9980107501615,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

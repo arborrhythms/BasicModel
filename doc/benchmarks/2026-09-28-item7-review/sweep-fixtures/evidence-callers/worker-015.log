@@ -1,0 +1,26 @@
+.........FF...                                                           [100%]
+=================================== FAILURES ===================================
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH] _
+test/test_replacement_kernel_contracts.py:96: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees
+    assert result.posture == posture
+E   AssertionError: assert 'UNKNOWN' == 'BOTH'
+E     
+E     - BOTH
+E     + UNKNOWN
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE] _
+test/test_replacement_kernel_contracts.py:96: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees
+    assert result.posture == posture
+E   AssertionError: assert 'UNKNOWN' == 'TRUE'
+E     
+E     - TRUE
+E     + UNKNOWN
+=============================== warnings summary ===============================
+test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]
+2 failed, 12 passed, 1 warning in 2.15s

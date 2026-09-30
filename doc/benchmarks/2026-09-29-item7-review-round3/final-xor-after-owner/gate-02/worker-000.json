@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+  ],
+  "slow_selected": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 32.53502045897767,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

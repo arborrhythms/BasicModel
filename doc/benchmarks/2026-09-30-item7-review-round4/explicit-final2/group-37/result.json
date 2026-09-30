@@ -1,0 +1,129 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-37/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-37/worker-000.json"
+      ],
+      "pid": 83598,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 565872104,
+      "elapsed_seconds": 9.37331920908764,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-37/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+      ],
+      "completed": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.28641529101878405,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.3427898748777807,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.27542895800434053,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004427500534802675,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-37",
+  "elapsed_seconds": 13.15611037495546,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 565872104,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-37/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-37/collect.json"
+    ],
+    "pid": 83588,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181453616,
+    "elapsed_seconds": 3.2554270001128316,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-37/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_modality_configs.py::TestModalityConfigsBuildAndForward::test_all_live_configs_build_with_canonical_shapes"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-625.recycle.json"
+}

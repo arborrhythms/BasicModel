@@ -1,0 +1,23 @@
+sssssss................................F................................ [ 48%]
+................................................................ssssssss [ 97%]
+ssss                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_unrelated_true_episode_cannot_establish_the_next_parent_relation _____
+test/test_taxonomy_policy.py:33: in test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+    order = terminal_model_index(model, fact.role_refs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/index_fixtures.py:19: in terminal_model_index
+    rows = torch.tensor([_existing_row(space, reference) for reference in references
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:477: in _existing_row
+    raise ValueError('query concept reference is unavailable')
+E   ValueError: query concept reference is unavailable
+=============================== warnings summary ===============================
+test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+1 failed, 128 passed, 19 skipped, 1 warning in 5.72s

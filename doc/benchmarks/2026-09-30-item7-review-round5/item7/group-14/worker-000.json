@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+  ],
+  "completed": [
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009543584194034338,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008991834009066224,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00609895889647305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008256916888058186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003357750130817294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004126542015001178,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

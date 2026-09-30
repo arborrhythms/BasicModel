@@ -1,0 +1,18 @@
+......F...                                                               [100%]
+=================================== FAILURES ===================================
+_______ test_property_model_category_vq_and_parser_context_are_cs_owned ________
+test/test_wholespace_property_migration.py:290: in test_property_model_category_vq_and_parser_context_are_cs_owned
+    cs._maybe_autobind_meta(None, None)
+    ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?
+=============================== warnings summary ===============================
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned
+1 failed, 9 passed, 1 warning in 2.24s

@@ -29,7 +29,6 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from Layers import VectorQuantize
-from References import ReferenceTable
 from Spaces import reference_update_mask, Space
 
 V, D = 6, 4
@@ -91,13 +90,6 @@ def test_law_edge_cases():
     assert m.tolist() == [True, True, False, True, True, True]
 
 
-def test_table_accessors():
-    t = ReferenceTable()
-    t.bind(word=5, obj=2, licensed=True)
-    t.bind(word=3, obj=2, licensed=True)   # synonym: same object
-    t.bind(word=9, obj=0, licensed=True)
-    assert t.bound_words() == [3, 5, 9]
-    assert t.bound_objects() == [0, 2], "deduplicated object ids"
 
 
 # ---------------------------------------------------------------------------
@@ -180,8 +172,7 @@ def _stub_space(vq):
 
 def test_install_and_dark_discipline():
     vq = make_vq()
-    table = ReferenceTable()
-    table.bind(word=1, obj=3, licensed=True)
+    table = types.SimpleNamespace(bound_words=lambda: [1], bound_objects=lambda: [3])
     sp = _stub_space(vq)
     assert sp.install_reference_update_law(lambda: table, side='object')
     _knob(None)
@@ -210,8 +201,7 @@ def test_install_word_side_and_no_table():
     try:
         assert vq.update_mask_fn(V, None) is None, (
             "no table yet: legacy (the getter is lazy)")
-        t = ReferenceTable()
-        t.bind(word=2, obj=0, licensed=True)
+        t = types.SimpleNamespace(bound_words=lambda: [2], bound_objects=lambda: [0])
         holder['table'] = t
         m = vq.update_mask_fn(V, None)
         assert torch.equal(m, reference_update_mask(False, [2], V)), (

@@ -1,0 +1,93 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+  ],
+  "completed": [
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01000770810060203,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006292416015639901,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00713537517003715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00719383405521512,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007523207925260067,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009118749992921948,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.005505749955773354,
+      "message": "test/test_item7_unindexed_relations.py:53: in test_three_slot_relation_closes_unindexed_numerical_operands\n    row = f.store.write_clause(clause, trust=.6)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:333: in write_clause\n    preflight(clause)\nbin/ClauseRow.py:300: in preflight\n    else self.point_of_row(ref))\n         ^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:225: in point_of_row\n    raise ValueError(f'unavailable shared row {reference}')\nE   ValueError: unavailable shared row 4010033338316264258",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2311201668344438,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

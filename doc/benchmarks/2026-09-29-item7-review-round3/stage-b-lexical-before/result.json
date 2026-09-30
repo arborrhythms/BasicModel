@@ -1,0 +1,12 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_lexical_reference_orders.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

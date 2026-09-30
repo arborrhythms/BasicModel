@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-306.recycle.json"
+}

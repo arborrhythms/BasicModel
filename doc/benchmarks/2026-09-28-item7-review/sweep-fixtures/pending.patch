@@ -1,0 +1,1945 @@
+--- a/test/test_meronomy_ladder.py
++++ b/test/test_meronomy_ladder.py
+@@ -6,7 +6,6 @@
+ """
+ import os
+ import sys
+-import types
+ from pathlib import Path
+ 
+ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+@@ -24,6 +23,7 @@
+ 
+ from Spaces import WholeSpace  # noqa: E402
+ import Legacy  # noqa: E402
++from property_fixtures import property_reader  # noqa: E402
+ 
+ 
+ def _bytes(s):
+@@ -44,22 +44,22 @@
+ def test_word_and_grammatical_cuts_equal_the_meronomy_cut(surface):
+     u = _bytes(surface)
+     canonical = WholeSpace.stage_analysis_spans(
+-        types.SimpleNamespace(analysis_mode="meronomy"), u)
++        property_reader(analysis_mode="meronomy"), u)
+     for mode in ("word", "grammatical"):
+         legacy = WholeSpace.stage_analysis_spans(
+-            types.SimpleNamespace(analysis_mode=mode), u)
++            property_reader(analysis_mode=mode), u)
+         assert torch.equal(legacy, canonical), (mode, legacy, canonical)
+ 
+ 
+ @pytest.mark.parametrize("mode", ["byte", "raw", "sentence"])
+ def test_undivided_legacy_modes_stage_no_spans(mode):
+-    fake = types.SimpleNamespace(analysis_mode=mode)
++    fake = property_reader(analysis_mode=mode)
+     assert WholeSpace.stage_analysis_spans(fake, _bytes("abc def")) is None
+     assert fake._staged_property_signatures is None
+ 
+ 
+ def test_meronomy_cut_with_no_unity_stages_nothing():
+-    fake = types.SimpleNamespace(analysis_mode="meronomy")
++    fake = property_reader(analysis_mode="meronomy")
+     assert WholeSpace.stage_analysis_spans(fake, None) is None
+ 
+ 
+@@ -231,7 +231,7 @@
+ # -- Phase 2, step 1: the descending tiling ladder (coarse over fine) -----------
+ 
+ def test_tiling_ladder_nests_units_in_space_bounded_wholes():
+-    fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=True)
++    fake = property_reader(analysis_mode="meronomy", digit_wholes=True)
+     WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1, ok"))
+     clause, coarse, fine = fake._staged_tiling_ladder
+     assert [tuple(x) for x in clause[0].tolist() if x[1] > x[0]] == [(0, 9), (10, 13)]   # cut at the comma
+@@ -242,11 +242,11 @@
+     assert fake._staged_unit_parent[0].tolist() == [0, 0, 1, 2, 2, 3]
+     assert torch.equal(fake._staged_unit_spans, fine)
+     # Letter/digit flips are not unit boundaries (contract 3 priors): one unit.
+-    fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=False)
++    fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
+     WholeSpace.stage_analysis_spans(fake, _bytes("w0 abc123"))
+     assert [tuple(x) for x in fake._staged_unit_spans[0].tolist() if x[1] > x[0]] == [(0, 2), (3, 9)]
+     # Without digit wholes the digit run is one unit under one coarse whole.
+-    fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=False)
++    fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
+     WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1"))
+     assert fake._staged_unit_parent[0].tolist() == [0, 1, 2]
+ 
+--- a/test/test_type_run_spans.py
++++ b/test/test_type_run_spans.py
+@@ -9,7 +9,6 @@
+ """
+ import os
+ import sys
+-import types
+ from pathlib import Path
+ 
+ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+@@ -22,6 +21,7 @@
+ from Spaces import (WholeSpace, Codebook, _LUT_ANALYSIS_TYPE, _type_run_spans,
+                     _derive_type_lut, _analysis_type_lut,
+                     _TYPE_SPACE, _TYPE_LETTER, _TYPE_DIGIT, _TYPE_PUNCT)
++from property_fixtures import property_reader
+ 
+ 
+ def _bytes(s, n=None):
+@@ -135,11 +135,10 @@
+ 
+ 
+ # -- WholeSpace.stage_analysis_spans (LUT + cutter, mode gate) ------------------
+-# The method reads only ``self.analysis_mode``, so a SimpleNamespace stands in
+-# for a full WholeSpace (mirrors the property_spans(None, ...) unbound pattern).
++# The small owner supplies real primitive coefficients for the unbound cut.
+ 
+ def _stage(mode, s, n=None):
+-    fake = types.SimpleNamespace(analysis_mode=mode)
++    fake = property_reader(analysis_mode=mode)
+     u = _bytes(s, n)
+     return WholeSpace.stage_analysis_spans(fake, u)
+ 
+@@ -150,7 +149,7 @@
+ 
+ 
+ def test_stage_none_input_returns_none():
+-    fake = types.SimpleNamespace(analysis_mode="word")
++    fake = property_reader(analysis_mode="word")
+     assert WholeSpace.stage_analysis_spans(fake, None) is None
+ 
+ 
+@@ -161,21 +160,14 @@
+ 
+ def test_stage_accepts_three_dim_unity():
+     # [B, 1, N] unity (the codebook-selection layout) -> row 0 is read.
+-    fake = types.SimpleNamespace(analysis_mode="word")
++    fake = property_reader(analysis_mode="word")
+     u = _bytes("a...b").unsqueeze(1)         # [1, 1, 5]
+     out = WholeSpace.stage_analysis_spans(fake, u)
+     assert out[0].tolist() == [[0, 1], [1, 4], [4, 5]]
+ 
+ 
+-# == the four TYPE rows ARE a WS-owned subspace's .what (source of truth) ======
+-# doc/plans/2026-07-10-wholes-are-types-segmentation.md, T2 (Alec 2026-07-10).
+-# The analysis cut's byte->type LUT is DERIVED from the four tagged rows of the
+-# frozen ``.what`` codebook of ``WholeSpace.type_subspace`` -- a dedicated
+-# WS-owned SubSpace (calculations in Spaces, DATA in SubSpaces; "properties are
+-# WholeSpace.what" made literal). The codebook is a Codebook -- a Tensor --
+-# whose W is a plain, non-Parameter tensor; the module constant is only the
+-# no-subspace fallback. These build a LIVE WholeSpace via the same test-config
+-# harness as test_property_tiling.
++# The live analysis owner reads one learned property basis. Teaching tags name
++# its canonical rows; they do not form a second frozen dictionary.
+ 
+ from Layers import LETTER, DIGIT, WHITESPACE, PUNCT
+ from Spaces import Tensor, SubSpace
+@@ -189,7 +181,7 @@
+ 
+ 
+ def _live_ws(analysis="word", nS=_NS):
+-    """A LIVE WholeSpace owning a frozen ``type_subspace`` for the cut."""
++    """A live WholeSpace owning the learned primitive-property basis."""
+     _populate_test_config(
+         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
+         wordDim=_D, outputDim=_D,
+@@ -209,68 +201,63 @@
+     assert torch.equal(_derive_type_lut(pk), _LUT_ANALYSIS_TYPE)
+ 
+ 
+-# -- (a) a built model's live WS has the type subspace, exactly four tags ------
+-
+-def test_live_ws_has_type_subspace_with_four_tagged_rows():
++# -- the one learned property inventory ---------------------------------------
++
++def test_live_ws_has_one_property_basis_with_canonical_teaching_rows():
++    from Spaces import _CANONICAL_PROPERTY_ROWS
+     ws = _live_ws("word")
+-    sub = ws.type_subspace
++    sub = ws.subspace
+     assert isinstance(sub, SubSpace)
+     tc = sub.what
+     assert isinstance(tc, Codebook) and isinstance(tc, Tensor)
+-    # The SubSpace adopted the codebook on its .what slot (unmuxed placement).
+-    assert sub.codebook_slot == "what" and not sub.muxed
+-    # Exactly four tagged rows, one class each.
+-    assert tc.property_kind == {0: {WHITESPACE}, 1: {LETTER},
+-                                2: {DIGIT}, 3: {PUNCT}}
+-    assert ws.type_property_rows() == {WHITESPACE: 0, LETTER: 1,
+-                                       DIGIT: 2, PUNCT: 3}
+-    # Frozen by construction: W is a plain tensor, NOT an nn.Parameter, and the
+-    # whole subspace exposes no Parameter (so an optimizer can never see it).
+-    assert torch.is_tensor(tc.getW()) and not isinstance(tc.getW(), nn.Parameter)
+-    assert list(sub.parameters()) == []
+-
+-
+-def test_type_subspace_is_idempotent_on_rebuild():
++    assert ws.type_subspace is None
++    assert tc.property_kind is None
++    assert ws.well_known_atoms == {name: row for row, (name, _kind)
++                                  in enumerate(_CANONICAL_PROPERTY_ROWS)}
++    expected = property_reader().subspace.what.primitive_properties.coefficients()
++    assert torch.equal(tc.primitive_properties.coefficients()[:len(expected)], expected)
++    assert torch.is_tensor(tc.getW()) and tc.getW().requires_grad
++    assert isinstance(tc.primitive_properties.members, nn.Parameter)
++
++
++def test_property_teaching_rows_are_idempotent_on_rebuild():
+     a = _live_ws("word")
+     b = _live_ws("word")
+-    assert (a.type_subspace.what.property_kind
+-            == b.type_subspace.what.property_kind)
+-    # Re-running the build on the SAME space lands the same tags.
+-    pk_before = dict(a.type_subspace.what.property_kind)
++    assert a.well_known_atoms == b.well_known_atoms
++    names = dict(a.well_known_atoms)
++    a.subspace.what.primitive_properties.teach(names["digit"], [ord("2")], [.25])
++    coefficients = a.subspace.what.primitive_properties.coefficients().clone()
+     a._build_type_subspace()
+-    assert a.type_subspace.what.property_kind == pk_before
+-
+-
+-def test_byte_mode_builds_no_type_subspace():
+-    # byte/raw/sentence stage no spans, so they build no type subspace and the
+-    # cut falls back to the frozen module LUT (byte-identical).
++    assert a.well_known_atoms == names
++    assert torch.equal(a.subspace.what.primitive_properties.coefficients(), coefficients)
++    assert a.type_subspace is None
++
++
++def test_byte_mode_owns_properties_without_a_type_dictionary():
+     ws = _live_ws("byte")
+     assert ws.type_subspace is None
+-    assert _analysis_type_lut(ws) is _LUT_ANALYSIS_TYPE
+-    # ... and no type-codebook key rides the checkpoint blob for byte configs.
+-    assert "type_property_kinds" not in ws.vocab_extras()
++    assert torch.equal(_analysis_type_lut(ws), _LUT_ANALYSIS_TYPE)
++    assert not hasattr(ws, "vocab_extras")
++    assert any("primitive_properties.members" in key for key in ws.state_dict())
+ 
+ 
+ def test_type_subspace_adds_no_state_dict_keys():
+-    # The frozen type subspace holds a plain (non-Parameter) .what W and only
+-    # persistent=False buffers, so owning it adds nothing to the WholeSpace
+-    # state_dict -- checkpoint keys for a word-mode WS match a byte-mode WS
+-    # exactly on the type-subspace front.
++    # There is no second type dictionary in a property-only WholeSpace.
+     word = _live_ws("word")
+     keys = [k for k in word.state_dict().keys() if "type_subspace" in k]
+     assert keys == []
+ 
+ 
+-# -- (b) the derived cut is byte-identical to the previous LUT cut -------------
++# -- native cuts equal the same a-priori primitive definitions ----------------
+ 
+ def _cut_from_rows(ws, byte_rows):
+     u = torch.tensor(byte_rows, dtype=torch.long)
+     return WholeSpace.stage_analysis_spans(ws, u)
+ 
+ 
+-def _cut_from_module(byte_rows):
++def _cut_from_apriori_properties(byte_rows):
+     u = torch.tensor(byte_rows, dtype=torch.long)
+-    fake = types.SimpleNamespace(analysis_mode="word")
++    fake = property_reader(analysis_mode="word")
+     return WholeSpace.stage_analysis_spans(fake, u)
+ 
+ 
+@@ -293,65 +280,52 @@
+         [255] * N,                                # all high bytes -> one run
+     ]
+     live = _cut_from_rows(ws, samples)
+-    module = _cut_from_module(samples)
++    module = _cut_from_apriori_properties(samples)
+     assert torch.equal(live, module), (live.tolist(), module.tolist())
+-    # And explicitly: a high-byte run is ONE letter-run whole.
+-    assert live[4].tolist()[0] == [0, 4]
+-
+-
+-# -- (c) checkpoint save/load preserves the rows, tags, and the cut ------------
+-
+-def test_checkpoint_roundtrip_preserves_tags_and_cut():
++    # DEL is a control; the following three bytes share the high-byte property.
++    assert [span for span in live[4].tolist() if span[1] > span[0]] == [[0, 1], [1, 4]]
++
++
++# -- checkpoint save/load preserves learned memberships and their cut --------
++
++def test_checkpoint_roundtrip_preserves_property_definitions_and_cut():
+     a = _live_ws("word")
+-    extras = a.vocab_extras()
+-    assert extras["type_property_kinds"] == {
+-        0: [WHITESPACE], 1: [LETTER], 2: [DIGIT], 3: [PUNCT]}
++    definitions = a.subspace.what.primitive_properties
++    definitions.teach(a.well_known_atoms["digit"], [ord("2")], [.25])
++    state = a.state_dict()
+     b = _live_ws("word")
+-    # Wipe B's type subspace to prove the LOAD (not the build) restores it.
+-    b.type_subspace = None
+-    b._type_lut_cache = None
+-    b.load_vocab_extras(extras)
+-    assert b.type_subspace is not None
+-    assert b.type_subspace.what.property_kind == {
+-        0: {WHITESPACE}, 1: {LETTER}, 2: {DIGIT}, 3: {PUNCT}}
+-    assert torch.equal(_analysis_type_lut(b), _LUT_ANALYSIS_TYPE)
+-    # The cut is unchanged after the roundtrip.
++    with torch.no_grad():
++        b.subspace.what.primitive_properties.members.zero_()
++    b.load_state_dict(state, strict=True)
++    assert b.type_subspace is None
++    assert b.subspace.what.property_kind == a.subspace.what.property_kind
++    assert torch.equal(b.subspace.what.primitive_properties.coefficients(),
++                       definitions.coefficients())
+     rows = [list(b"ab 12! xy") + [0]]
+-    assert torch.equal(_cut_from_rows(b, rows), _cut_from_module(rows))
+-
+-
+-# -- (d) the type subspace is frozen: no Parameter, untouched by training ------
+-
+-def test_type_subspace_is_not_a_parameter_and_survives_a_backward():
++    assert torch.equal(_cut_from_rows(b, rows), _cut_from_rows(a, rows))
++
++
++def test_property_memberships_are_owned_parameters_and_train():
+     ws = _live_ws("word")
+-    tc = ws.type_subspace.what
+-    before = tc.getW().clone()
+-    # It carries no trainable Parameter, so a WholeSpace-wide optimizer step
+-    # cannot reach it. Simulate the harshest case: run SGD over EVERY Parameter
+-    # the WholeSpace exposes (the type subspace IS a registered submodule, so
+-    # ws.parameters() would surface any Parameter it carried) and confirm the
+-    # type rows are untouched.
++    tc = ws.subspace.what
++    members = tc.primitive_properties.members
++    before = members.detach().clone()
++    names = dict(ws.well_known_atoms)
+     params = list(ws.parameters())
+-    assert all(p is not tc.getW() for p in params)   # W is not among them
+-    opt = torch.optim.SGD(params, lr=0.1) if params else None
+-    if opt is not None:
+-        opt.zero_grad()
+-        # A dummy loss over the trainable params; the type subspace is not in
+-        # the graph, so it receives no gradient and no update.
+-        loss = sum(p.pow(2).sum() for p in params)
+-        loss.backward()
+-        opt.step()
+-    assert torch.equal(tc.getW(), before)
+-    assert tc.property_kind == {0: {WHITESPACE}, 1: {LETTER},
+-                                2: {DIGIT}, 3: {PUNCT}}
++    assert any(p is members for p in params)
++    opt = torch.optim.SGD(params, lr=0.1)
++    opt.zero_grad()
++    tc.primitive_properties.coefficients().square().sum().backward()
++    opt.step()
++    assert not torch.equal(members, before)
++    assert ws.well_known_atoms == names
+ 
+ 
+ # == the digit whole (<digitWholes>, Alec 2026-09-10) ==========================
+ 
+ def _digit_spans(s, n=None):
+-    from Spaces import _analysis_digit_mask
+     t = _types(s, n)
+-    return _type_run_spans(t, singleton=_analysis_digit_mask(None, t, False))[0].tolist()
++    return _type_run_spans(t, singleton=(t == _TYPE_DIGIT))[0].tolist()
+ 
+ 
+ def test_digit_wholes_cut_each_digit():
+@@ -362,24 +336,24 @@
+ 
+ 
+ def test_stage_digit_wholes_knob():
+-    fake = types.SimpleNamespace(analysis_mode="word", digit_wholes=True)
++    fake = property_reader(analysis_mode="word", digit_wholes=True)
+     assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
+         [[0, 1], [1, 2], [3, 7], [8, 9]]
+-    fake = types.SimpleNamespace(analysis_mode="word", digit_wholes=False)
++    fake = property_reader(analysis_mode="word", digit_wholes=False)
+     assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
+         [[0, 2], [3, 7], [8, 9]]
+     assert WholeSpace.stage_analysis_spans(
+-        types.SimpleNamespace(analysis_mode="word"), _bytes("14 plus 1"))[0].tolist() == \
++        property_reader(analysis_mode="word"), _bytes("14 plus 1"))[0].tolist() == \
+         [[0, 2], [3, 7], [8, 9]]                                  # default: unchanged
+ 
+ 
+ def test_digit_wholes_property_basis_signature(tmp_path):
+-    from Spaces import _analysis_digit_mask, _analysis_property_signature
++    from Spaces import _digit_signature_bits, _analysis_property_signature
+     from test_wholespace_property_migration import _small_property_model
+     ws = _small_property_model(tmp_path).wholeSpace
+     lookup, discarded = _analysis_property_signature(ws)
+     sig = lookup[_bytes("x12 9")]
+-    single = _analysis_digit_mask(ws, sig, True)
++    single = (sig & _digit_signature_bits(ws)) != 0
+     assert single[0].tolist() == [False, True, True, False, True]
+     out = _type_run_spans(sig, discard_mask=discarded, singleton=single)
+     assert out[0].tolist() == [[0, 1], [1, 2], [2, 3], [4, 5]]
+--- /dev/null
++++ b/test/property_fixtures.py
+@@ -0,0 +1,21 @@
++"""Small analysis owner with the same taught primitive properties as WholeSpace."""
++from types import SimpleNamespace
++
++import torch
++
++from Layers import char_class_region
++from PerceptProperties import PrimitiveProperties
++from Spaces import _CANONICAL_PROPERTY_ROWS
++
++
++def property_reader(*, analysis_mode="word", **attributes):
++    definitions = PrimitiveProperties(len(_CANONICAL_PROPERTY_ROWS))
++    byte_ids = torch.arange(256)
++    for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
++        examples = (char_class_region(byte_ids, [kind]) > 0).float()
++        definitions.teach(row, byte_ids, examples)
++    return SimpleNamespace(
++        analysis_mode=analysis_mode,
++        subspace=SimpleNamespace(what=SimpleNamespace(primitive_properties=definitions)),
++        well_known_atoms={name: row for row, (name, _kind) in enumerate(_CANONICAL_PROPERTY_ROWS)},
++        **attributes)
+--- a/test/test_where_encoding_recovery.py
++++ b/test/test_where_encoding_recovery.py
+@@ -1,134 +1,45 @@
+-"""Stage 2: ``WhereEncoding.recover`` + ``WholeSpace.allocate_position``.
+-
+-Covers the integer-recovery primitive on ``WhereEncoding`` and the
+-monotonic position counter on ``WholeSpace`` introduced by
+-[`doc/plans/2026-05-28-where-keyed-taxonomy.md`](../doc/plans/2026-05-28-where-keyed-taxonomy.md).
+-
+-``recover(vec) -> int`` is the inverse view onto a sinusoidal encoding:
+-it delegates to ``QuadratureEncoding.decode`` (atan2-based), snaps to
+-the nearest integer, and validates the result is in ``[0, maxP)``.
+-``WhereEncoding(maxP, nWhere=0)`` (the disabled / no-op encoding form,
+-which is the current default everywhere) must raise — recovery has no
+-meaning when the encoding is zero-width.
+-
+-``WholeSpace.allocate_position()`` returns monotonically increasing
+-positive ints starting at 1. Position 0 is reserved as the
+-frozen-zeros anchor (never allocated to a content row). The counter
+-survives ``vocab_extras`` save/load.
+-"""
+-
+-from __future__ import annotations
+-
+-import os
+-import sys
+-import unittest
++"""Native concept IDs replace the retired WholeSpace position namespace."""
++from types import SimpleNamespace
+ 
+ import torch
+ 
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-
+-_HERE = os.path.dirname(os.path.abspath(__file__))
+-_PROJECT = os.path.dirname(_HERE)
+-_BIN = os.path.join(_PROJECT, "bin")
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-_DATA_DIR = os.path.join(_PROJECT, "data")
+-_CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
+-_DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
++from test_structural_checkpoint import _allocator, _model_with
+ 
+ 
+-def _make_radix_model():
+-    """Build the MM_xor radix-chunking model for fixture-backed tests."""
+-    import warnings
+-    import Models
+-    import Language
+-    from util import init_config
+-    init_config(path=_CONFIG, defaults_path=_DEFAULTS)
+-    Language.TheGrammar._configured = False
+-    with warnings.catch_warnings():
+-        warnings.filterwarnings("ignore")
+-        m, _ = Models.BasicModel.from_config(_CONFIG)
+-    Models.TheData.load("xor")
+-    m.eval()
+-    return m
++def _owner():
++    allocator = _allocator()
++    space = SimpleNamespace(_concept_allocator=allocator)
++    return allocator, space, _model_with(space, SimpleNamespace())
+ 
+ 
+-# ---------------------------------------------------------------------------
+-# ``WhereEncoding.recover`` RETIRED (2026-06-04, modality re-architecture
+-# Phase 4): .where no longer keys the codebook (identity is the row index),
+-# so the .where -> int identity inverse was removed and its
+-# TestWhereEncodingRecover suite is dropped with it. The position counter
+-# below (WholeSpace.allocate_position) is row/position-keyed, not
+-# .where-quadrature-based, and is kept.
+-# ---------------------------------------------------------------------------
++def test_allocate_starts_at_one():
++    allocator, _space, _model = _owner()
++    assert allocator.new_concept() == 1
+ 
+ 
+-# ---------------------------------------------------------------------------
+-# ``WholeSpace.allocate_position`` — monotonic positive-int allocator.
+-# ---------------------------------------------------------------------------
++def test_allocate_monotonic():
++    allocator, _space, _model = _owner()
++    positions = [allocator.new_concept() for _ in range(8)]
++    assert positions == list(range(1, 9))
+ 
+ 
+-class TestSymbolSpaceAllocatePosition(unittest.TestCase):
+-    """Monotonic position counter on WholeSpace; position 0 reserved."""
+-
+-    def test_allocate_starts_at_one(self):
+-        """First call returns 1 (position 0 is the reserved anchor)."""
+-        m = _make_radix_model()
+-        ws = m.wholeSpace
+-        self.assertEqual(ws.allocate_position(), 1)
+-
+-    def test_allocate_monotonic(self):
+-        """Subsequent calls return strictly increasing ints."""
+-        m = _make_radix_model()
+-        ws = m.wholeSpace
+-        positions = [ws.allocate_position() for _ in range(8)]
+-        self.assertEqual(positions, list(range(1, 9)),
+-                         "allocate_position must produce 1, 2, 3, …")
+-
+-    def test_allocate_position_persists_via_vocab_extras(self):
+-        """``next_position`` survives a ``vocab_extras`` roundtrip."""
+-        m = _make_radix_model()
+-        ws = m.wholeSpace
+-        # Burn a few positions on the live SS.
+-        for _ in range(5):
+-            ws.allocate_position()
+-        # The next allocation would yield 6.
+-        self.assertEqual(ws.allocate_position(), 6)
+-        blob = ws.vocab_extras()
+-        self.assertIn("next_position", blob,
+-                      "vocab_extras must persist the position counter")
+-        self.assertEqual(int(blob["next_position"]), 7,
+-                         "next_position should point at the NEXT unused "
+-                         "position (7 after 1..6 were taken)")
+-
+-        # Build a fresh model + apply the blob; new SS should resume the
+-        # counter rather than restart at 1.
+-        m2 = _make_radix_model()
+-        ss2 = m2.wholeSpace
+-        ss2.load_vocab_extras(blob)
+-        self.assertEqual(ss2.allocate_position(), 7,
+-                         "after load, the next allocation must be 7, not 1")
+-
+-    def test_load_vocab_extras_without_counter_defaults_to_one(self):
+-        """Older blobs without ``next_position`` start the counter at 1."""
+-        m = _make_radix_model()
+-        ws = m.wholeSpace
+-        # Construct a minimal extras blob with no ``next_position`` key.
+-        legacy_blob = {
+-            "well_known_atoms": {},
+-            "paired_orth_to_sem": {},
+-            "paired_next_row": -1,
+-            "taxonomy": {},
+-            "taxonomy_parent": {},
+-            "meta_pair_to_idx": {},
+-        }
+-        ws.load_vocab_extras(legacy_blob)
+-        self.assertEqual(ws.allocate_position(), 1,
+-                         "legacy blob without next_position must default "
+-                         "the counter to 1")
++def test_allocate_position_persists_via_structural_extras(tmp_path):
++    allocator, _space, model = _owner()
++    for _ in range(5):
++        allocator.new_concept()
++    assert allocator.new_concept() == 6
++    path = tmp_path / 'concept-counter.ckpt'
++    model.save_weights(path)
++    saved = torch.load(path, map_location='cpu', weights_only=False)
++    blob = saved['structural_extras']['conceptual_spaces'][0]['allocator']
++    assert 'next_id' in blob
++    assert int(blob['next_id']) == 7
++    restored, _space2, model2 = _owner()
++    assert model2.load_weights(path)
++    assert restored.new_concept() == 7
+ 
+ 
+-if __name__ == "__main__":
+-    unittest.main()
++def test_restore_without_counter_defaults_to_one():
++    allocator, space, model = _owner()
++    model._restore_allocator_extras(space, {})
++    assert allocator.new_concept() == 1
+--- a/test/test_semantic_categories_pipeline.py
++++ b/test/test_semantic_categories_pipeline.py
+@@ -1,11 +1,7 @@
+-"""End-to-end: shape the operator codebook from consequence, then recover
+-grammatical categories from it (Phase R4-sem 3).
++"""Semantic category grouping from explicit operator consequences/signatures.
+ 
+-Composes R4-sem 1 (``WholeSpace.shape_operators`` -- the live codebook
+-shaped by truth/consequence through the soft superposition) with R4-sem 2
+-(``recover_semantic_categories`` -- categories from the operators' semantic
+-vectors). Demonstrates the full "live-codebook" pipeline the design calls
+-for, and connects the recovery to the transitional grammar's participation.
++The retired WholeSpace operator shaper supplied these inputs previously.
++These are grouping mechanisms; chooser training is tested on LanguageSpace.
+ """
+ 
+ import os
+@@ -22,50 +18,27 @@
+ import torch
+ 
+ 
+-def _ws_with_ops(*op_names, nDim=8):
+-    from Spaces import WholeSpace
+-    ws = WholeSpace.__new__(WholeSpace)
+-    ws.nDim = nDim
+-    ws._operation_positions = {}
+-    ws._operation_vectors = {}
+-    for name in op_names:
+-        ws._operation_positions[name] = len(ws._operation_positions) + 1
+-        ws._operation_vectors[name] = ws._seed_operator_vector(name)
+-    return ws
+-
+-
+-def test_shape_then_recover_categorizes_by_operator_effect():
+-    """Shape conjunction/disjunction from min/max consequence, then recover
+-    symbol categories from the SHAPED codebook: symbols sharing an operator
+-    (any position) cluster; symbols on the opposite-effect operator split."""
++def test_consequence_vectors_categorize_by_operator_effect():
++    """Equal consequence signatures cluster across argument positions."""
+     from semantic_categories import recover_semantic_categories
+-    ws = _ws_with_ops("conjunction", "disjunction")
+     a = torch.tensor([[1.0], [1.0], [0.0], [0.0]])
+     b = torch.tensor([[1.0], [0.0], [1.0], [0.0]])
+-    q_and = torch.zeros(8); q_and[0] = 1.0
+-    q_or = torch.zeros(8); q_or[1] = 1.0
+-    ws.shape_operators(
+-        [(q_and, a, b, torch.minimum(a, b)),
+-         (q_or, a, b, torch.maximum(a, b))],
+-        ["conjunction", "disjunction"])
++    from Language import GRAMMAR_LAYER_CLASSES
++    op_vectors = {name: GRAMMAR_LAYER_CLASSES[name]().compose(a, b).reshape(-1)
++                  for name in ("conjunction", "disjunction")}
+     participation = {
+         "n1": {("conjunction", 0)},
+         "n2": {("conjunction", 1)},   # same operator, other position
+         "v1": {("disjunction", 0)},
+     }
+-    cls = recover_semantic_categories(participation, ws._operation_vectors)
++    cls = recover_semantic_categories(participation, op_vectors)
+     assert cls["n1"] == cls["n2"], cls       # same operator effect
+     assert cls["n1"] != cls["v1"], cls       # opposite effect
+ 
+ 
+ def test_recovers_on_transitional_grammar_participation():
+-    """Semantic recovery runs on the real transitional grammar's role
+-    participation (operator codebook seeded) and collapses the order-variant
+-    role categories (CONJ_L3/4/5 share one operator slot -> one category) --
+-    the role-collapse the structural learner also achieves, now via the
+-    operator-vector signature."""
++    """Shared operator participation collapses order-variant categories."""
+     from Language import Grammar, GRAMMAR_LAYER_CLASSES
+-    from Spaces import WholeSpace
+     from participation import role_participation
+     from semantic_categories import recover_semantic_categories
+ 
+@@ -76,12 +49,12 @@
+         os.path.dirname(os.path.abspath(__file__)), "fixtures",
+         "transitional_pos.grammar"))
+     part = role_participation(g)
+-    # Seed an operator codebook for every semantic operator in the grammar.
+-    seed = WholeSpace.__new__(WholeSpace)
+-    seed.nDim = 16
+-    op_vectors = {m: seed._seed_operator_vector(m)
+-                  for sym in part for (m, _p) in part[sym]
+-                  if m in GRAMMAR_LAYER_CLASSES}
++    # Explicit distinct operator signatures isolate the category grouping;
++    # no retired WholeSpace operator dictionary supplies them.
++    names = sorted({m for entries in part.values() for m, _ in entries
++                    if m in GRAMMAR_LAYER_CLASSES})
++    basis = torch.eye(len(names))
++    op_vectors = dict(zip(names, basis))
+     cls = recover_semantic_categories(part, op_vectors, threshold=0.999)
+     assert cls, "expected recovered categories"
+ 
+--- a/test/test_active_codebook_reads.py
++++ b/test/test_active_codebook_reads.py
+@@ -4,9 +4,7 @@
+ 
+ import os
+ import sys
+-import types
+ 
+-import pytest
+ import torch
+ 
+ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+@@ -16,7 +14,7 @@
+ if _BIN not in sys.path:
+     sys.path.insert(0, _BIN)
+ 
+-from Spaces import Codebook, ConceptualSpace, WholeSpace
++from Spaces import Codebook
+ 
+ 
+ def _codebook(rows, active):
+@@ -37,17 +35,6 @@
+     return cb
+ 
+ 
+-def _whole_space(cb):
+-    ws = object.__new__(WholeSpace)
+-    torch.nn.Module.__init__(ws)
+-    object.__setattr__(ws, "subspace", types.SimpleNamespace(what=cb, basis=cb))
+-    object.__setattr__(ws, "_codebook", "quantize")
+-    ws.vq_chunk_budget = 1 << 20
+-    ws._next_position = 1
+-    ws._pos_kind = {}
+-    ws._ws_pos_to_row = {}
+-    ws._ws_row_to_pos = {}
+-    return ws
+ 
+ 
+ def test_active_prototypes_and_reverse_ignore_inactive_exact_match():
+@@ -74,40 +61,8 @@
+     assert torch.equal(cb.reverse(query)[0, 0], cb.getW()[2])
+ 
+ 
+-def test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match():
+-    cb = _codebook(
+-        [[0.0, 0.0], [0.5, 0.0], [-0.5, 0.0], [0.8, 0.8]],
+-        active=2,
+-    )
+-    ws = _whole_space(cb)
+-    query = torch.tensor([0.8, 0.8])
+-
+-    row, _distance = ws.nearest_ws_row(query)
+-    assert 0 <= row < 2
+-
+-    target = ws._nearest_symbol_target(query.reshape(1, 1, 2))
+-    assert any(torch.equal(target[0, 0], active) for active in cb.getW()[:2])
+-    assert not torch.equal(target[0, 0], cb.getW()[3])
+-
+-    snapped, indices = ws._snap_to_terminal_ste(query.reshape(1, 2), cb)
+-    assert int(indices.item()) < 2
+-    assert not torch.equal(snapped[0], cb.getW()[3])
+ 
+ 
+-def test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation():
+-    cb = _codebook(
+-        [[0.0, 0.0], [0.5, 0.0], [-0.5, 0.0], [0.8, 0.8]],
+-        active=2,
+-    )
+-    ws = _whole_space(cb)
+-
+-    before = (ws._next_position, dict(ws._pos_kind), dict(ws._ws_row_to_pos))
+-    with pytest.raises(ValueError, match="cannot bind an inactive WS row 3"):
+-        ws.ensure_ws_position(3)
+-    assert (ws._next_position, ws._pos_kind, ws._ws_row_to_pos) == before
+-
+-    pos = ws.ensure_ws_position(1)
+-    assert ws._ws_row_to_pos[1] == pos
+ 
+ 
+ def test_membership_read_is_independent_of_active_and_inactive_codes():
+@@ -122,33 +77,5 @@
+     torch.testing.assert_close(after, before, atol=0, rtol=0)
+ 
+ 
+-def test_topk_priming_scores_only_active_rows():
+-    cb = _codebook(
+-        [[1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]],
+-        active=1,
+-    )
+-    ws = _whole_space(cb)
+-    ws._intent_boosts = torch.ones(4)
+-    # Position 0 is an exact match only for inactive row 1. Position 1 is the
+-    # best match to the sole active row and therefore must survive top-k.
+-    act = torch.tensor([[[0.0, 1.0], [0.8, 0.2]]])
+-
+-    mask = ws._topk_priming_mask(act)
+-    assert mask.reshape(-1).tolist() == [0.0, 1.0]
+ 
+ 
+-def test_semantic_arrangement_is_invariant_to_inactive_tail():
+-    cb = _codebook(
+-        [[1.0, 0.0], [0.0, 1.0], [10.0, 10.0], [-10.0, -10.0]],
+-        active=2,
+-    )
+-    ws = _whole_space(cb)
+-    ws.analysis_store = cb
+-    ws.semantic_arrangement_weight = 1.0
+-
+-    first = ws.semantic_arrangement_loss(torch.tensor([0]))
+-    with torch.no_grad():
+-        cb.getW()[2:].copy_(torch.tensor([[1000.0, -3.0], [-500.0, 700.0]]))
+-    second = ws.semantic_arrangement_loss(torch.tensor([0]))
+-
+-    assert torch.equal(first, second)
+--- a/test/test_operator_superposition.py
++++ b/test/test_operator_superposition.py
+@@ -1,20 +1,12 @@
+-"""Operator-superposition composition (Phase 9).
++"""Standalone numerical operator mixtures and their one-hot limit.
+ 
+-doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md ("Operator-
+-Superposition Composition" + integration map): STM applies a SOFT operator
+-distribution over the operator-prefixed tree (resolved against the SS
+-operation codebook) instead of a hard part-of-speech grammar. A one-hot
+-distribution reduces to the typed grammar (compatibility); a spread
+-distribution superposes operators -- load-bearing for discriminating
+-A AND B from A OR B.
++The current sentence chooser's hard paths are tested separately. WholeSpace's
++retired operator-codebook lookup is dispositioned in the item-7 review receipt.
+ """
+ 
+-import copy
+ import os
+ import sys
+-import warnings
+ 
+-import pytest
+ import torch
+ 
+ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+@@ -57,54 +49,3 @@
+         {"intersection": 0.5, "union": 0.5}, left, right)
+     assert torch.allclose(soft, 0.5 * inter + 0.5 * union)
+     assert not torch.allclose(soft, inter) and not torch.allclose(soft, union)
+-
+-
+-# -- codebook-resolved superposition (model) --------------------------
+-
+-@pytest.fixture(autouse=True)
+-def _restore_global_singletons():
+-    import Language
+-    from util import TheXMLConfig
+-    snap = {
+-        "data": copy.deepcopy(TheXMLConfig._data),
+-        "sources": list(TheXMLConfig._sources),
+-        "requirements": list(TheXMLConfig._requirements),
+-        "grammar": copy.deepcopy(Language.TheGrammar.__dict__),
+-    }
+-    try:
+-        yield
+-    finally:
+-        TheXMLConfig._data = copy.deepcopy(snap["data"])
+-        TheXMLConfig._sources = list(snap["sources"])
+-        TheXMLConfig._requirements = list(snap["requirements"])
+-        Language.TheGrammar.__dict__.clear()
+-        Language.TheGrammar.__dict__.update(copy.deepcopy(snap["grammar"]))
+-        Language.TheGrammar._configured = False
+-
+-
+-def _make_model():
+-    import Models
+-    import Language
+-    from util import init_config
+-    init_config(path=_CONFIG, defaults_path=_DEFAULTS)
+-    Language.TheGrammar._configured = False
+-    with warnings.catch_warnings():
+-        warnings.filterwarnings("ignore")
+-        m, _ = Models.BasicModel.from_config(_CONFIG)
+-    m.eval()
+-    return m
+-
+-
+-def test_operator_superposition_resolves_against_codebook():
+-    """Querying an operation's own codebook vector yields a distribution
+-    that peaks on that operation."""
+-    import Language
+-    ws = _make_model().wholeSpace
+-    g = Language.TheGrammar
+-    ops = sorted({r.method_name for r in g.rules if r.method_name})
+-    target = ops[0]
+-    qv = ws.operation_vector(target)
+-    dist = ws.operator_superposition(qv)
+-    assert set(dist) == set(ops), (set(dist), set(ops))
+-    assert max(dist, key=dist.get) == target, (target, dist)
+-    assert abs(sum(dist.values()) - 1.0) < 1e-5   # a normalized distribution
+--- a/test/test_serial_stm_split.py
++++ b/test/test_serial_stm_split.py
+@@ -1,15 +1,7 @@
+-"""Stage 7 of doc/plans/MeronomyPlan.md: the serial-mode duals.
++"""Constituent-stack ownership and the serial/parallel sigma contract.
+ 
+-MeronomySpec §6 (rev 2026-06-10c/11), §10.11. The two workspaces:
+-the PS-side idea stack (existing ``_idea_*`` — structurally unchanged,
+-semantic content) and the new SS-side constituent stack (symbolic codes
+-under analysis). Moves: split (SS analysis, serial π form), shift (the
+-callosum crossing at codebook words), reduce (PS synthesis, serial σ
+-form, via the existing driver). Exactly one workspace write per move;
+-shifted content is the semantic referent, never the word code (except
+-stop... mention-shifts, which carry the form verbatim — the zero-band
+-signature marks it); marker words bind the router and shift nothing;
+-parallel mode leaves both serial stacks untouched.
++WholeSpace's retired word-dictionary SHIFT fixtures are dispositioned in the
++item-7 review receipt; these tests exercise the live SymbolSubSpace methods.
+ """
+ import os
+ import sys
+@@ -29,19 +21,11 @@
+     sys.path.insert(0, _TEST)
+ 
+ from Layers import SigmaLayer2
+-from References import symbol_code
+-from Spaces import WholeSpace
+ 
+ D = 4
+ CAP = 8
+ 
+ 
+-def _knob(value):
+-    from util import TheXMLConfig
+-    if value is None:
+-        TheXMLConfig._data.get("architecture", {}).pop("meronomy", None)
+-    else:
+-        TheXMLConfig.set("architecture.meronomy", value)
+ 
+ 
+ def make_ws(batch=1, dim=D, cap=CAP):
+@@ -58,29 +42,10 @@
+     return ss
+ 
+ 
+-def snapshot(ss):
+-    """(idea, constituent) state snapshot for single-writer assertions."""
+-    idea = (ss._idea_buffer.clone(), ss._idea_depth.clone())
+-    cb = getattr(ss, '_constituent_buffer', None)
+-    cons = (None if cb is None
+-            else (cb.clone(), ss._constituent_depth.clone()))
+-    return idea, cons
+ 
+ 
+-def idea_changed(before, after):
+-    (b_buf, b_dep), _ = before
+-    (a_buf, a_dep), _ = after
+-    return not (torch.equal(b_buf, a_buf) and torch.equal(b_dep, a_dep))
+ 
+ 
+-def cons_changed(before, after):
+-    _, b = before
+-    _, a = after
+-    if b is None and a is None:
+-        return False
+-    if b is None or a is None:
+-        return a is not None and bool((a[1] != 0).any())
+-    return not (torch.equal(b[0], a[0]) and torch.equal(b[1], a[1]))
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -122,129 +87,6 @@
+     assert torch.equal(ss.constituent_peek(0, 1), right)
+ 
+ 
+-# ---------------------------------------------------------------------------
+-# The shift: semantic referents cross; forms only under mention.
+-# ---------------------------------------------------------------------------
+-
+-def _bound_ss(rows):
+-    ws = WholeSpace.__new__(WholeSpace)
+-    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1
+-    return ws
+-
+-
+-def test_shift_pushes_the_semantic_referent():
+-    rows = torch.rand(3, D)
+-    ss = make_ws()
+-    _knob("on")
+-    try:
+-        ws = _bound_ss(rows)
+-        d = ws.shift_word(ss, 0, 7, rows)
+-        assert d['action'] == 'use'
+-        assert torch.equal(ss._idea_buffer[0, 0], rows[1]), (
+-            "the dereferenced SEMANTIC row crosses -- the word is part "
+-            "of the sentence; the referent is not")
+-        assert int(ss._idea_depth[0].item()) == 1
+-    finally:
+-        _knob(None)
+-
+-
+-def test_unknown_word_shifts_ignorance_placeholder():
+-    rows = torch.rand(3, D)
+-    ss = make_ws()
+-    _knob("on")
+-    try:
+-        ws = WholeSpace.__new__(WholeSpace)
+-        d = ws.shift_word(ss, 0, 99, rows, licensed=False)
+-        assert d['action'] == 'placeholder'
+-        assert (ss._idea_buffer[0, 0] == 0).all(), "a = 0 placeholder"
+-        assert int(ss._idea_depth[0].item()) == 1, (
+-            "the placeholder still occupies the word's position")
+-    finally:
+-        _knob(None)
+-
+-
+-def test_marker_word_binds_router_and_shifts_nothing():
+-    rows = torch.rand(3, D)
+-    ss = make_ws()
+-    _knob("on")
+-    try:
+-        ws = WholeSpace.__new__(WholeSpace)
+-        before = snapshot(ss)
+-        d = ws.shift_word(ss, 0, 5, rows, marker=True)
+-        after = snapshot(ss)
+-        assert d['action'] == 'marker-bind'
+-        assert not idea_changed(before, after), "nothing shifts"
+-        assert not cons_changed(before, after)
+-        assert ws.gate_log[-1]['action'] == 'marker-bind', "logged"
+-    finally:
+-        _knob(None)
+-
+-
+-def test_mention_shifts_the_word_code_verbatim():
+-    rows = torch.rand(3, D)
+-    ss = make_ws()
+-    _knob("on")
+-    try:
+-        ws = WholeSpace.__new__(WholeSpace)
+-        # A zero-banded word code (the signature that marks form
+-        # content): what-part then zeroed where/when.
+-        code = symbol_code(7, n_what=2, n_where=1, n_when=1)
+-        d = ws.shift_word(ss, 0, 7, rows, mention=True, word_vec=code)
+-        assert d['action'] == 'mention-shift'
+-        assert torch.equal(ss._idea_buffer[0, 0], code), (
+-            "quotation: the form itself crosses, no deref")
+-        with pytest.raises(ValueError):
+-            ws.shift_word(ss, 0, 7, rows, mention=True)   # needs the code
+-    finally:
+-        _knob(None)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Single-writer mutex: each move writes exactly one workspace.
+-# ---------------------------------------------------------------------------
+-
+-def test_one_move_one_workspace_write():
+-    rows = torch.rand(3, D)
+-    ss = make_ws()
+-    _knob("on")
+-    try:
+-        ws = _bound_ss(rows)
+-        # SPLIT writes the constituent stack only.
+-        ss.constituent_push(0, torch.rand(D))
+-        before = snapshot(ss)
+-        ss.constituent_split(0, torch.rand(D), torch.rand(D))
+-        after = snapshot(ss)
+-        assert cons_changed(before, after) and not idea_changed(before, after)
+-        # SHIFT writes the idea stack only.
+-        before = snapshot(ss)
+-        ws.shift_word(ss, 0, 7, rows)
+-        after = snapshot(ss)
+-        assert idea_changed(before, after) and not cons_changed(before, after)
+-    finally:
+-        _knob(None)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Deref/decode round-trip; reduce-chain vs parallel extent; parallel
+-# mode leaves the serial stacks untouched.
+-# ---------------------------------------------------------------------------
+-
+-def test_deref_round_trip_preserves_extent():
+-    rows = torch.rand(3, D)
+-    ss = make_ws()
+-    _knob("on")
+-    try:
+-        ws = WholeSpace.__new__(WholeSpace)
+-        ext = torch.rand(D) * 0.5 + 0.2
+-        ws.interpret_word(7, licensed=True, object_id=1, extent=ext)
+-        ws.shift_word(ss, 0, 7, rows)
+-        assert torch.equal(ss._idea_buffer[0, 0], rows[1]), (
+-            "deref → decode lands the bound row exactly")
+-        assert torch.equal(ws.reference_table.extent_of(7), ext)
+-    finally:
+-        _knob(None)
+-
+-
+ def test_serial_reduce_chain_matches_parallel_sigma_extent():
+     # §10.11: for associative content the serial reduce chain's extent
+     # matches the parallel σ extent to tolerance. At near-identity init
+--- a/test/test_basicmodel.py
++++ b/test/test_basicmodel.py
+@@ -3061,77 +3061,6 @@
+             ws.normalize("bogus", target="what", normalize=True)
+ 
+ 
+-class TestSymbolObjective(unittest.TestCase):
+-    """WholeSpace uses residual-first objective terms."""
+-
+-    def test_symbol_objective_residual_primary_l1_secondary(self):
+-        _populate_test_config(conceptDim=3, symbolDim=3,
+-                              nConcepts=2, nSymbols=2,
+-                              perceptHasAttention=False)
+-        sym = Models.WholeSpace(
+-            inputShape=[2, 3],
+-            spaceShape=[2, 3],
+-            outputShape=[2, 3],
+-        )
+-        sym.symbol_residual_scale = 2.0
+-        sym.l1_lambda = 0.1
+-        sym.decorrelation_weight = 0.0
+-        sym.spectral_flatness_weight = 0.0
+-
+-        predicted = torch.tensor(
+-            [[[1.0, -2.0, 3.0], [0.5, -0.5, 1.5]]],
+-            requires_grad=True,
+-        )
+-        target = torch.zeros_like(predicted)
+-        terms = sym._compute_symbol_terms(predicted, target=target)
+-
+-        self.assertIn("symbol_residual", terms)
+-        self.assertIn("symbol_l1", terms)
+-        self.assertTrue(torch.allclose(
+-            terms["symbol_residual"],
+-            2.0 * torch.nn.functional.mse_loss(predicted, target),
+-        ))
+-        self.assertTrue(torch.allclose(
+-            terms["symbol_l1"],
+-            0.1 * predicted.abs().mean(),
+-        ))
+-
+-        loss = sum(terms.values())
+-        loss.backward()
+-        self.assertIsNotNone(predicted.grad)
+-        self.assertGreater(predicted.grad.abs().sum().item(), 0.0)
+-
+-    def test_symbol_objective_uses_nearest_codebook_target(self):
+-        _populate_test_config(conceptDim=3, symbolDim=3,
+-                              nConcepts=2, nSymbols=2,
+-                              perceptHasAttention=False)
+-        sym = Models.WholeSpace(
+-            inputShape=[2, 3],
+-            spaceShape=[2, 3],
+-            outputShape=[2, 3],
+-        )
+-        sym.symbol_residual_scale = 1.0
+-        sym.l1_lambda = 0.0
+-        # Stage 4: prototype mutation goes through ``replace_W`` to
+-        # preserve Parameter identity (the legacy ``setW(2D_plain)``
+-        # would trip nn.Module's Parameter check on a registered slot).
+-        sym.subspace.what.replace_W(torch.tensor([
+-            [0.0, 0.0, 0.0],
+-            [1.0, 1.0, 1.0],
+-        ]))
+-
+-        predicted = torch.tensor(
+-            [[[0.9, 1.1, 1.0], [0.1, -0.1, 0.0]]],
+-            requires_grad=True,
+-        )
+-        terms = sym._compute_symbol_terms(predicted, use_codebook_target=True)
+-
+-        target = torch.tensor([[[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]]])
+-        self.assertIn("symbol_residual", terms)
+-        self.assertTrue(torch.allclose(
+-            terms["symbol_residual"],
+-            torch.nn.functional.mse_loss(predicted, target),
+-        ))
+ 
+ 
+ class TestDataScaling(unittest.TestCase):
+--- a/test/test_operator_codebook_shaping.py
++++ /dev/null
+@@ -1,93 +0,0 @@
+-"""Live operator-codebook shaping from truth/consequence (Phase R4-sem 1).
+-
+-User steering (2026-06-03): grammatical categories are distinguished by the
+-SEMANTIC EFFECT of their associated operators, where the semantic effect is
+-the operator's vector in the WholeSpace operator codebook
+-(``_operation_vectors``). Those vectors are shaped LIVE by the soft operator
+-superposition under truth/consequence supervision -- all operators
+-participate in a soft superposition per slot until one is chosen, so even a
+-small amount of correct-answer signal shapes the choice. This generalizes R5
+-(a standalone {conjunction, disjunction} fit) to the live codebook: after
+-shaping, the superposition selects the operator whose consequence matches.
+-"""
+-
+-import os
+-import sys
+-
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-
+-_BIN = os.path.join(
+-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-import torch
+-
+-
+-def _ws_with_ops(*op_names, nDim=8):
+-    from Spaces import WholeSpace
+-    ws = WholeSpace.__new__(WholeSpace)
+-    ws.nDim = nDim
+-    ws._operation_positions = {}
+-    ws._operation_vectors = {}
+-    for name in op_names:
+-        ws._operation_positions[name] = len(ws._operation_positions) + 1
+-        ws._operation_vectors[name] = ws._seed_operator_vector(name)
+-    return ws
+-
+-
+-def _truth_table():
+-    a = torch.tensor([[1.0], [1.0], [0.0], [0.0]])
+-    b = torch.tensor([[1.0], [0.0], [1.0], [0.0]])
+-    return a, b, torch.minimum(a, b), torch.maximum(a, b)
+-
+-
+-def test_shape_operators_selects_correct_op_per_context():
+-    """Consequence supervision through the soft superposition shapes the
+-    operator codebook so an AND-context query selects conjunction and an
+-    OR-context query selects disjunction."""
+-    ws = _ws_with_ops("conjunction", "disjunction")
+-    a, b, y_and, y_or = _truth_table()
+-    q_and = torch.zeros(8); q_and[0] = 1.0
+-    q_or = torch.zeros(8); q_or[1] = 1.0
+-    examples = [(q_and, a, b, y_and), (q_or, a, b, y_or)]
+-    ws.shape_operators(examples, ["conjunction", "disjunction"])
+-    d_and = ws.operator_superposition(q_and)
+-    d_or = ws.operator_superposition(q_or)
+-    assert d_and["conjunction"] > d_and["disjunction"], d_and
+-    assert d_or["disjunction"] > d_or["conjunction"], d_or
+-
+-
+-def test_shape_operators_writes_back_to_codebook():
+-    """Shaping updates the live ``_operation_vectors`` (not a throwaway
+-    copy), so the live superposition reflects the learned semantic effect."""
+-    ws = _ws_with_ops("conjunction", "disjunction")
+-    before = ws._operation_vectors["conjunction"].clone()
+-    a, b, y_and, _ = _truth_table()
+-    q = torch.zeros(8); q[0] = 1.0
+-    ws.shape_operators([(q, a, b, y_and)], ["conjunction", "disjunction"])
+-    after = ws._operation_vectors["conjunction"]
+-    assert not torch.allclose(before, after), "codebook vector was not shaped"
+-
+-
+-def test_shape_operators_weak_signal_still_shapes():
+-    """Because the superposition is soft, even a SINGLE supervised example
+-    is enough to bias the choice toward the matching operator."""
+-    ws = _ws_with_ops("conjunction", "disjunction")
+-    a, b, y_and, _ = _truth_table()
+-    q = torch.zeros(8); q[0] = 1.0
+-    ws.shape_operators([(q, a, b, y_and)], ["conjunction", "disjunction"],
+-                       steps=200)
+-    d = ws.operator_superposition(q)
+-    assert d["conjunction"] > d["disjunction"], d
+-
+-
+-def test_shape_operators_handles_unary_and_binary_ops():
+-    """The live operator-codebook shaper may see the whole grammar's op set;
+-    unary operators must not be called with a binary signature."""
+-    ws = _ws_with_ops("exist", "conjunction")
+-    a, b, y_and, _ = _truth_table()
+-    q = torch.zeros(8); q[0] = 1.0
+-    shaped = ws.shape_operators([(q, a, b, y_and)], steps=5)
+-    assert {"exist", "conjunction"} <= set(shaped)
+--- a/test/test_topk_priming_codebook_growth.py
++++ /dev/null
+@@ -1,114 +0,0 @@
+-"""Regression: `WholeSpace._topk_priming_mask` must conform the cached
+-intent boosts to the CURRENT codebook size.
+-
+-The WS codebook grows at runtime (words added) AFTER the §5 intent boosts
+-are cached (set at the §6c sentence-protocol prelude). The top-k
+-subsymbolic-attention gate (op 2 of the three cognitive operations) then
+-scored ``sim`` (shape ``[B, N, V_new]``) against ``boosts[:V_new]`` -- but a
+-stale ``boosts`` shorter than ``V_new`` stayed short, so the elementwise
+-``sim * bv`` raised "The size of tensor a (V_new) must match the size of
+-tensor b (len(boosts))". Reproduced independently on data/MM_grammar.xml
+-(serial -> sentenceProtocol ON) at the small space widths it uses; the LTM
+-serial fixture had to disable sentenceProtocol to dodge it.
+-
+-Fix: pad new rows with the NEUTRAL weight 1.0 (intent_priming_weights'
+-multiplicative identity) and truncate a stale longer cache -- mirroring the
+-VQ selection's ``install_intent_priming._boosts``. Off-path (no intent) is
+-byte-identical (returns None).
+-"""
+-
+-from __future__ import annotations
+-
+-import os
+-import sys
+-import warnings
+-
+-import torch
+-
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-os.environ.setdefault("MODEL_COMPILE", "eager")
+-
+-_HERE = os.path.dirname(os.path.abspath(__file__))
+-_PROJECT = os.path.dirname(_HERE)
+-_BIN = os.path.join(_PROJECT, "bin")
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-_DATA = os.path.join(_PROJECT, "data")
+-
+-
+-def _ws():
+-    from util import init_config
+-    import Language
+-    import Models
+-    init_config(path=os.path.join(_DATA, "MM_grammar.xml"),
+-                defaults_path=os.path.join(_DATA, "model.xml"))
+-    Language.TheGrammar._configured = False
+-    with warnings.catch_warnings():
+-        warnings.filterwarnings("ignore")
+-        m, _ = Models.BasicModel.from_config(os.path.join(_DATA, "MM_grammar.xml"))
+-    return m.wholeSpace
+-
+-
+-def _grow(ss, v):
+-    cb = ss.subspace.what
+-    assert int(cb.getW().shape[0]) >= v
+-    return int(cb.getW().shape[0])
+-
+-
+-def test_stale_short_boosts_after_codebook_growth_no_crash():
+-    # Codebook grew to V after boosts were cached at a SMALLER size -> the
+-    # pre-fix crash; the gate must now conform + return a valid [B,N,1] mask.
+-    ss = _ws()
+-    V = _grow(ss, 8)
+-    ss._intent_boosts = torch.ones(2)                     # stale, shorter than V
+-    act = torch.randn(1, 4, int(ss.subspace.what.getW().shape[1]))
+-    mask = ss._topk_priming_mask(act)
+-    assert mask is not None
+-    assert tuple(mask.shape) == (1, 4, 1)
+-    # top-k keeps k = N // 2 = 2 positions (0/1 mask).
+-    assert float(mask.sum().item()) == 2.0
+-    assert set(mask.reshape(-1).tolist()) <= {0.0, 1.0}
+-    assert V == 8
+-
+-
+-def test_stale_long_boosts_truncated_no_crash():
+-    ss = _ws()
+-    _grow(ss, 8)
+-    ss._intent_boosts = torch.ones(20)                   # stale, longer than V
+-    act = torch.randn(2, 4, int(ss.subspace.what.getW().shape[1]))
+-    mask = ss._topk_priming_mask(act)
+-    assert mask is not None
+-    assert tuple(mask.shape) == (2, 4, 1)
+-
+-
+-def test_no_intent_is_byte_identical_noop():
+-    ss = _ws()
+-    ss._intent_boosts = None
+-    act = torch.randn(1, 4, int(ss.subspace.what.getW().shape[1]))
+-    assert ss._topk_priming_mask(act) is None
+-
+-
+-def test_exact_length_boosts_unchanged():
+-    ss = _ws()
+-    V = _grow(ss, 8)
+-    ss._intent_boosts = torch.ones(V)
+-    act = torch.randn(1, 4, int(ss.subspace.what.getW().shape[1]))
+-    mask = ss._topk_priming_mask(act)
+-    assert mask is not None and tuple(mask.shape) == (1, 4, 1)
+-
+-
+-def test_n_equals_one_returns_none():
+-    # N == 1 -> k >= N -> no-op (the per-word serial step), regardless of
+-    # boosts/codebook sizing.
+-    ss = _ws()
+-    _grow(ss, 8)
+-    ss._intent_boosts = torch.ones(2)
+-    act = torch.randn(4, 1, int(ss.subspace.what.getW().shape[1]))
+-    assert ss._topk_priming_mask(act) is None
+-
+-
+-if __name__ == "__main__":
+-    import pytest
+-    raise SystemExit(pytest.main([__file__, "-q"]))
+--- a/test/test_ps_ss_binding.py
++++ /dev/null
+@@ -1,96 +0,0 @@
+-"""PS-to-SS binding hook (Phase 7).
+-
+-doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md ("PS to SS
+-Binding"): a new perceptual terminal emits NULL_SEM before a binding
+-exists; repeated stable exposure promotes it into an SS codebook row.
+-"""
+-
+-import copy
+-import os
+-import sys
+-import warnings
+-
+-import pytest
+-import torch
+-
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-
+-_HERE = os.path.dirname(os.path.abspath(__file__))
+-_PROJECT = os.path.dirname(_HERE)
+-_BIN = os.path.join(_PROJECT, "bin")
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-_DATA_DIR = os.path.join(_PROJECT, "data")
+-_CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
+-_DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
+-
+-
+-@pytest.fixture(autouse=True)
+-def _restore_global_singletons():
+-    import Language
+-    from util import TheXMLConfig
+-    snap = {
+-        "data": copy.deepcopy(TheXMLConfig._data),
+-        "sources": list(TheXMLConfig._sources),
+-        "requirements": list(TheXMLConfig._requirements),
+-        "grammar": copy.deepcopy(Language.TheGrammar.__dict__),
+-    }
+-    try:
+-        yield
+-    finally:
+-        TheXMLConfig._data = copy.deepcopy(snap["data"])
+-        TheXMLConfig._sources = list(snap["sources"])
+-        TheXMLConfig._requirements = list(snap["requirements"])
+-        Language.TheGrammar.__dict__.clear()
+-        Language.TheGrammar.__dict__.update(copy.deepcopy(snap["grammar"]))
+-        Language.TheGrammar._configured = False
+-
+-
+-def _make_model():
+-    import Models
+-    import Language
+-    from util import init_config
+-    init_config(path=_CONFIG, defaults_path=_DEFAULTS)
+-    Language.TheGrammar._configured = False
+-    with warnings.catch_warnings():
+-        warnings.filterwarnings("ignore")
+-        m, _ = Models.BasicModel.from_config(_CONFIG)
+-    m.eval()
+-    return m
+-
+-
+-def test_ps_to_ws_null_before_binding():
+-    """A first-seen PS terminal emits NULL_SEM (zeros), ungrounded."""
+-    ws = _make_model().wholeSpace
+-    vec, pos, grounded = ws.resolve_ps_terminal(4242, promote_threshold=2)
+-    assert grounded is False
+-    assert pos == -1
+-    assert torch.allclose(vec, torch.zeros_like(vec))
+-
+-
+-def test_ps_to_ws_binding_after_repetition():
+-    """Repeated stable exposure promotes the PS terminal to an SS row."""
+-    ws = _make_model().wholeSpace
+-    pid = 4242
+-    _, _, g1 = ws.resolve_ps_terminal(pid, promote_threshold=2)
+-    assert g1 is False
+-    vec2, pos2, g2 = ws.resolve_ps_terminal(pid, promote_threshold=2)
+-    assert g2 is True and pos2 > 0
+-    assert float(torch.linalg.vector_norm(vec2)) > 0  # a real SS row
+-    # Now bound: same position, still grounded.
+-    vec3, pos3, g3 = ws.resolve_ps_terminal(pid, promote_threshold=2)
+-    assert g3 is True and pos3 == pos2
+-    # A different PS terminal is independent (still ungrounded on first sight).
+-    _, _, g_other = ws.resolve_ps_terminal(9999, promote_threshold=2)
+-    assert g_other is False
+-
+-
+-def test_byte_fallback_terminal_is_never_grounded():
+-    """An unidentified terminal (ps_id < 0) is never bound."""
+-    ws = _make_model().wholeSpace
+-    for _ in range(5):
+-        vec, pos, grounded = ws.resolve_ps_terminal(-1, promote_threshold=2)
+-        assert grounded is False and pos == -1
+-        assert torch.allclose(vec, torch.zeros_like(vec))
+--- a/test/test_analysis_attention_gate.py
++++ /dev/null
+@@ -1,88 +0,0 @@
+-"""Analysis-side top-k attention gate (Architecture.md "three cognitive
+-operations", op 2).
+-
+-Pi analysis over-produces codes; when an intent is set, WholeSpace keeps
+-the top-k analysed positions by the priming over the codes (best affinity
+-to the intent-boosted codebook), masking the rest to zero. Dark by default:
+-no intent => the gate is a no-op (byte-identical). Tested here as a unit on
+-the helper, bound to a lightweight stub (no full model build needed).
+-"""
+-
+-import os
+-import sys
+-import types
+-
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-
+-_BIN = os.path.join(
+-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-import torch
+-import torch.nn as nn
+-
+-from Spaces import WholeSpace, Codebook
+-
+-
+-def _stub(boosts, V=8, D=4):
+-    cb = Codebook()
+-    cb.W = nn.Parameter(torch.randn(V, D))
+-    s = types.SimpleNamespace()
+-    s.subspace = types.SimpleNamespace(what=cb)
+-    s.intent_boosts = (lambda: boosts)
+-    s._topk_priming_mask = types.MethodType(
+-        WholeSpace._topk_priming_mask, s)
+-    return s
+-
+-
+-def test_no_intent_is_a_noop():
+-    s = _stub(boosts=None)
+-    act = torch.randn(1, 6, 4)
+-    assert s._topk_priming_mask(act) is None
+-
+-
+-def test_mask_keeps_top_half_and_is_shape_safe():
+-    torch.manual_seed(0)
+-    boosts = torch.ones(8)
+-    s = _stub(boosts=boosts)
+-    act = torch.randn(2, 6, 4)
+-    mask = s._topk_priming_mask(act)
+-    assert mask.shape == (2, 6, 1)                  # shape preserved (N kept)
+-    # top-k = N//2 = 3 positions survive per row; the rest are zeroed.
+-    assert torch.allclose(mask.sum(dim=1).squeeze(-1), torch.tensor([3.0, 3.0]))
+-    assert set(mask.unique().tolist()) <= {0.0, 1.0}
+-
+-
+-def test_priming_selects_the_aligned_positions():
+-    # Boost exactly one codebook row; the analysed positions most aligned
+-    # with that row must be the ones kept.
+-    torch.manual_seed(1)
+-    V, D = 8, 4
+-    cb = Codebook()
+-    cb.W = nn.Parameter(torch.randn(V, D))
+-    boosts = torch.ones(V)
+-    boosts[3] = 50.0                                 # strongly prime row 3
+-    s = types.SimpleNamespace()
+-    s.subspace = types.SimpleNamespace(what=cb)
+-    s.intent_boosts = (lambda: boosts)
+-    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)
+-
+-    row3 = cb.W[3].detach()
+-    # 6 positions: 0,1,2 aligned to row 3; 3,4,5 random/anti-aligned.
+-    act = torch.stack([
+-        row3, 1.1 * row3, 0.9 * row3,
+-        -row3, torch.randn(D), -2.0 * row3,
+-    ]).unsqueeze(0)                                  # [1, 6, 4]
+-    mask = s._topk_priming_mask(act)[0, :, 0]
+-    # The three row-3-aligned positions must survive.
+-    assert mask[0] == 1 and mask[1] == 1 and mask[2] == 1
+-
+-
+-def test_no_codebook_is_a_noop():
+-    s = types.SimpleNamespace()
+-    s.subspace = types.SimpleNamespace(what=None)
+-    s.intent_boosts = (lambda: torch.ones(8))
+-    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)
+-    assert s._topk_priming_mask(torch.randn(1, 6, 4)) is None
+--- a/test/test_ss_codebook_operations.py
++++ /dev/null
+@@ -1,149 +0,0 @@
+-"""Insert grammar OPERATIONS into the SS codebook (Phase 2, amended).
+-
+-doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md + user
+-steering (2026-06-02): operators are kept in the codebook so the
+-soft-superposition over the operator-prefixed parse tree can resolve them,
+-but they are removed from the STM idea space -- the operator defines HOW
+-meanings combine and contributes no meaning of its own, so it is a distinct
+-codebook kind ('op'), not a meaning-bearing symbol ('ws') and not an STM
+-idea vector.
+-"""
+-
+-import copy
+-import os
+-import sys
+-import warnings
+-
+-import pytest
+-
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-
+-_HERE = os.path.dirname(os.path.abspath(__file__))
+-_PROJECT = os.path.dirname(_HERE)
+-_BIN = os.path.join(_PROJECT, "bin")
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-_DATA_DIR = os.path.join(_PROJECT, "data")
+-_CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
+-_DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
+-
+-
+-@pytest.fixture(autouse=True)
+-def _restore_global_singletons():
+-    """Snapshot + restore the process-global config / grammar singletons.
+-
+-    ``_make_model`` calls ``init_config(MM_xor_fixture.xml)`` which mutates
+-    ``TheXMLConfig._data`` and reconfigures ``TheGrammar`` -- without restore
+-    that leaks into any later test in the same process (the conftest autouse
+-    reset clears ``_configured`` but not ``_data``). Mirrors the
+-    snapshot/restore in test_xor_grammar.py.
+-    """
+-    import Language
+-    from util import TheXMLConfig
+-    snap = {
+-        "data": copy.deepcopy(TheXMLConfig._data),
+-        "sources": list(TheXMLConfig._sources),
+-        "requirements": list(TheXMLConfig._requirements),
+-        "grammar": copy.deepcopy(Language.TheGrammar.__dict__),
+-    }
+-    try:
+-        yield
+-    finally:
+-        TheXMLConfig._data = copy.deepcopy(snap["data"])
+-        TheXMLConfig._sources = list(snap["sources"])
+-        TheXMLConfig._requirements = list(snap["requirements"])
+-        Language.TheGrammar.__dict__.clear()
+-        Language.TheGrammar.__dict__.update(copy.deepcopy(snap["grammar"]))
+-        Language.TheGrammar._configured = False
+-
+-
+-def _make_model():
+-    import Models
+-    import Language
+-    from util import init_config
+-    init_config(path=_CONFIG, defaults_path=_DEFAULTS)
+-    Language.TheGrammar._configured = False
+-    with warnings.catch_warnings():
+-        warnings.filterwarnings("ignore")
+-        m, _ = Models.BasicModel.from_config(_CONFIG)
+-    m.eval()
+-    return m
+-
+-
+-def test_operations_inserted_into_ws_codebook():
+-    """Every grammar operation gets its own SS codebook row, distinct and
+-    resolvable, tagged as an operation rather than a meaning symbol."""
+-    import Language
+-    m = _make_model()
+-    ws = m.wholeSpace
+-    g = Language.TheGrammar
+-
+-    ops = {r.method_name for r in g.rules if r.method_name}
+-    assert ops, "expected the configured grammar to declare operations"
+-
+-    pos_map = ws.insert_operations(g)
+-    assert set(pos_map) == ops, (set(pos_map), ops)
+-
+-    positions = list(pos_map.values())
+-    # Distinct, positive op-codebook positions.
+-    assert len(set(positions)) == len(positions), positions
+-    for p in positions:
+-        assert isinstance(p, int) and p > 0, p
+-    # Each operator has a resolvable identity vector in the dedicated
+-    # operator codebook (separate from the symbol codebook).
+-    for name in ops:
+-        v = ws.operation_vector(name)
+-        assert v is not None and int(v.numel()) == int(ws.nDim), (name, v)
+-    # Resolvable for operator dispatch / soft-superposition.
+-    for name, p in pos_map.items():
+-        assert ws.operation_position(name) == p
+-    assert ws.operation_position("definitely_not_an_op") is None
+-    assert ws.operation_vector("definitely_not_an_op") is None
+-
+-
+-def test_build_auto_inserts_operations():
+-    """Building a model auto-inserts the grammar operations into the SS
+-    codebook (wired in SymbolSubSpace.__init__) -- the operator-prefixed
+-    tree's operation nodes are codebook-resolvable without a manual call."""
+-    import Language
+-    m = _make_model()
+-    ws = m.wholeSpace
+-    g = Language.TheGrammar
+-    ops = {r.method_name for r in g.rules if r.method_name}
+-    assert ops
+-    for op in ops:
+-        assert ws.operation_position(op) is not None, (
+-            f"build did not insert operation {op!r} into the SS codebook")
+-
+-
+-def test_insert_operations_is_idempotent():
+-    """Re-inserting keeps each operation's existing codebook position."""
+-    import Language
+-    m = _make_model()
+-    ws = m.wholeSpace
+-    g = Language.TheGrammar
+-    first = ws.insert_operations(g)
+-    second = ws.insert_operations(g)
+-    assert first == second
+-
+-
+-def test_operations_are_distinct_from_meaning_symbols():
+-    """An operation row is tagged 'op', a freshly inserted meaning symbol
+-    is tagged 'ws' -- the STM idea space (meanings) and the operator
+-    codebook entries are different kinds."""
+-    import Language
+-    m = _make_model()
+-    ws = m.wholeSpace
+-    g = Language.TheGrammar
+-    pos_map = ws.insert_operations(g)
+-    op_name = next(iter(pos_map))
+-    # Operators live in their OWN codebook (operation_vector), not the
+-    # symbol codebook: inserting them creates no "op"-tagged positions in
+-    # the symbol position namespace.
+-    assert ws.operation_vector(op_name) is not None
+-    assert "op" not in set(ws._pos_kind.values())
+-    # The symbol codebook still allocates meaning-bearing "ws" rows.
+-    sym_pos = ws.insert_whole()
+-    assert ws._pos_kind.get(sym_pos) == "ws"
+--- a/test/test_merge_structural_not_operator.py
++++ /dev/null
+@@ -1,71 +0,0 @@
+-"""``merge`` stays a structural action, not a learned operator (spec §9).
+-
+-doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
+-§9 "Carry-forward concerns": ``merge`` (bare-sequence concatenation) should
+-remain a structural action completed by the trie / role matcher. It must
+-NOT be inserted as a learned operator in the operator trie or the
+-operator-superposition table unless a concrete semantic layer is added for
+-it. ``insert_operations`` therefore registers only method names that have a
+-concrete ``GrammarLayer`` (a semantic operator), excluding structural
+-actions like ``merge``.
+-"""
+-
+-import os
+-import sys
+-
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-
+-_BIN = os.path.join(
+-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-
+-# The bare-sequence merge rules live in the archived transitional grammar
+-# (GrammarOpsPass §1: data/complete.grammar is now role-collapsed and
+-# carries no structural-merge rules; the loader property under test is
+-# unchanged and is exercised on the archived content).
+-_TRANSITIONAL_GRAMMAR = os.path.join(
+-    os.path.dirname(os.path.abspath(__file__)), "fixtures",
+-    "transitional_pos.grammar")
+-
+-
+-def _ws_and_grammar(grammar_file=_TRANSITIONAL_GRAMMAR):
+-    from Spaces import WholeSpace
+-    from Language import Grammar
+-    ws = WholeSpace.__new__(WholeSpace)   # bypass full-model build
+-    ws.nDim = 8
+-    g = Grammar()
+-    g.load_from_grammar_file(grammar_file)
+-    return ws, g
+-
+-
+-def test_merge_not_inserted_as_operator():
+-    """The transitional grammar declares structural ``merge`` rules, but
+-    merge is not registered in the operator codebook / superposition
+-    table."""
+-    ws, g = _ws_and_grammar()
+-    assert any(r.method_name == "merge" for r in g.rules), (
+-        "fixture sanity: the transitional grammar should contain "
+-        "bare-sequence 'merge' rules")
+-    pos = ws.insert_operations(g)
+-    assert "merge" not in pos
+-    assert ws.operation_position("merge") is None
+-    assert ws.operation_vector("merge") is None
+-
+-
+-def test_semantic_operators_still_inserted():
+-    """Real semantic operators (those with a GrammarLayer) ARE registered."""
+-    ws, g = _ws_and_grammar()
+-    ws.insert_operations(g)
+-    for op in ("conjunction", "disjunction", "equal", "lift", "exist"):
+-        assert ws.operation_position(op) is not None, op
+-
+-
+-def test_only_semantic_operators_in_codebook():
+-    """Every inserted operator has a concrete GrammarLayer."""
+-    from Language import GRAMMAR_LAYER_CLASSES
+-    ws, g = _ws_and_grammar()
+-    pos = ws.insert_operations(g)
+-    assert set(pos) <= set(GRAMMAR_LAYER_CLASSES), set(pos) - set(GRAMMAR_LAYER_CLASSES)
+--- a/test/test_search_then_mint.py
++++ /dev/null
+@@ -1,175 +0,0 @@
+-"""Stage 7 of doc/plans/MeronomyPlan.md: the interpret-as-word gate.
+-
+-MeronomySpec §6 (rev 2026-06-11), §10.8 gate half: naming is
+-SEARCH-THEN-MINT on licensed miss — a first-class, loggable decision;
+-never first sight. Folds never create table rows (the cordon is
+-structural: a fold result is a fresh vector, not a binding). The gate
+-exists only with <architecture><meronomy>on (dark landing).
+-"""
+-import os
+-import sys
+-
+-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+-
+-import pytest
+-import torch
+-
+-_BIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bin')
+-if _BIN not in sys.path:
+-    sys.path.insert(0, _BIN)
+-
+-from Layers import PiLayer2, SigmaLayer2
+-from Spaces import WholeSpace, ConceptualSpace
+-
+-D = 4
+-
+-
+-def _knob(value):
+-    from util import TheXMLConfig
+-    if value is None:
+-        TheXMLConfig._data.get("architecture", {}).pop("meronomy", None)
+-    else:
+-        TheXMLConfig.set("architecture.meronomy", value)
+-
+-
+-def bare_ss():
+-    """A WholeSpace stub: the gate touches only its own table state."""
+-    return WholeSpace.__new__(WholeSpace)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Dark landing: no knob, no gate.
+-# ---------------------------------------------------------------------------
+-
+-def test_gate_requires_the_knob():
+-    ws = bare_ss()
+-    _knob(None)
+-    with pytest.raises(RuntimeError):
+-        ws.interpret_word(3)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Search, then mint on licensed miss; every decision logged.
+-# ---------------------------------------------------------------------------
+-
+-def test_unlicensed_miss_is_a_placeholder_never_a_row():
+-    ws = bare_ss()
+-    _knob("on")
+-    try:
+-        d = ws.interpret_word(7, licensed=False)
+-        assert d['action'] == 'placeholder' and d['a'] == 0.0
+-        assert len(ws.reference_table) == 0, (
+-            "naming never happens on first sight")
+-        assert ws.gate_log[-1] is d, "first-class loggable decision"
+-    finally:
+-        _knob(None)
+-
+-
+-def test_licensed_miss_mints_then_hits():
+-    ws = bare_ss()
+-    _knob("on")
+-    try:
+-        d1 = ws.interpret_word(7, licensed=True, object_id=2)
+-        assert d1['action'] == 'mint' and d1['object'] == 2
+-        assert ws.reference_table.deref(7) == 2
+-        d2 = ws.interpret_word(7)            # now a hit: use, no re-mint
+-        assert d2['action'] == 'use' and d2['object'] == 2
+-        assert len(ws.reference_table) == 1
+-        assert [e['action'] for e in ws.gate_log] == ['mint', 'use']
+-    finally:
+-        _knob(None)
+-
+-
+-def test_licensed_miss_without_object_stays_placeholder():
+-    # The license alone cannot mint: a binding needs both sides (full
+-    # rows only) — reuse-evidence without a referent is still ignorance.
+-    ws = bare_ss()
+-    _knob("on")
+-    try:
+-        d = ws.interpret_word(9, licensed=True, object_id=None)
+-        assert d['action'] == 'placeholder'
+-        assert len(ws.reference_table) == 0
+-    finally:
+-        _knob(None)
+-
+-
+-def test_mint_gauge_orients_object_row():
+-    ws = bare_ss()
+-    _knob("on")
+-    try:
+-        ref = torch.rand(D)
+-        u = -(ref / ref.norm())
+-        d = ws.interpret_word(5, licensed=True, object_id=0,
+-                              object_row=u, referent=ref,
+-                              extent=torch.rand(D) * 0.5 + 0.2)
+-        assert ws.reference_table.extent_of(5) is not None
+-        # Review fix 2026-06-11: the gauge-oriented row must ride the
+-        # decision (the table stores ids only; the caller owns the
+-        # codebook write-back) -- previously it was dropped.
+-        oriented = d.get('oriented_row')
+-        assert oriented is not None
+-        assert torch.allclose(oriented, -u), "the flip, oriented +u"
+-        assert (oriented * ref).sum() >= 0
+-    finally:
+-        _knob(None)
+-
+-
+-def test_mint_shift_pushes_the_oriented_row():
+-    # The immediate shift path must carry the gauge-fixed row, not the
+-    # un-oriented codebook representative (review fix 2026-06-11).
+-    import torch.nn as nn
+-    from Language import SymbolSubSpace
+-    ss = object.__new__(SymbolSubSpace)
+-    nn.Module.__init__(ss)
+-    ss._stm_payload_dim = D
+-    ss._idea_capacity = 8
+-    ss._idea_max_depth_host = 0
+-    ss._idea_buffer = torch.zeros(1, 8, D)
+-    ss._idea_depth = torch.zeros(1, dtype=torch.long)
+-
+-    rows = torch.rand(3, D)
+-    ref = torch.rand(D)
+-    u = -(ref / ref.norm())
+-    rows[1] = u                              # un-oriented representative
+-    ws = bare_ss()
+-    _knob("on")
+-    try:
+-        d = ws.shift_word(ss, 0, 9, rows, licensed=True, object_id=1,
+-                          object_row=u, referent=ref)
+-        assert d['action'] == 'mint'
+-        pushed = ss._idea_buffer[0, 0]
+-        assert torch.allclose(pushed, -u), (
+-            "the mint-shift crosses the ORIENTED row")
+-        assert (pushed * ref).sum() >= 0
+-    finally:
+-        _knob(None)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Cordon: folds never create rows (structural, tested not guarded).
+-# ---------------------------------------------------------------------------
+-
+-def test_folds_never_create_rows():
+-    ws = bare_ss()
+-    _knob("on")
+-    try:
+-        ws.interpret_word(1, licensed=True, object_id=0)
+-        n_before = len(ws.reference_table)
+-        torch.manual_seed(1)
+-        pi = PiLayer2(2 * D, D, blocks=2)
+-        sig = SigmaLayer2(2 * D, D, blocks=2)
+-        A = torch.rand(3, D) * 0.6 + 0.2
+-        B = torch.rand(3, D) * 0.6 + 0.2
+-        pi.compose(A, B)
+-        sig.compose(A, B)
+-        pi.forward(torch.cat([A, B], dim=-1))
+-        ConceptualSpace.factor_percept(torch.rand(3, D),
+-                                       torch.rand(2, D))
+-        assert len(ws.reference_table) == n_before, (
+-            "a fold result is a fresh vector, not a binding — you "
+-            "cannot compute your way to a name")
+-        # Semantic use of an unbound code fails naturally: deref misses.
+-        assert ws.reference_table.deref(999) is None
+-    finally:
+-        _knob(None)

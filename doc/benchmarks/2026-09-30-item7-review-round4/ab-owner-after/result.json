@@ -1,0 +1,30 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_structural_checkpoint.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

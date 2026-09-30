@@ -52,7 +52,6 @@ def _small_property_model(
     _set_text(root, "architecture/training/autoload", False)
     _set_text(root, "ConceptualSpace/nVectors", 16)
     _set_text(root, "WholeSpace/nVectors", 8)
-    _set_text(root, "WholeSpace/propertyBasis", True)
     if native_event is not None or concept_event is not None:
         assert native_event is not None and concept_event is not None
         _set_text(root, "architecture/serialObjectMeta", True)
@@ -91,7 +90,7 @@ def test_basicmodel_config_separates_concepts_properties_and_live_width():
     cs_rows = int(root.findtext("ConceptualSpace/nVectors"))
     ws_rows = int(root.findtext("WholeSpace/nVectors"))
 
-    assert root.findtext("WholeSpace/propertyBasis") == "true"
+    assert root.find("WholeSpace/propertyBasis") is None
     assert cs_rows == 65536
     assert int(root.findtext("ConceptualSpace/activeVectors")) == 32768
     assert int(root.findtext("PartSpace/nVectors")) == 32768
@@ -205,7 +204,7 @@ def test_property_model_stm_grammar_resolves_from_symbolspace(tmp_path):
 
     assert not hasattr(ws, "syntacticLayer")
     assert not hasattr(ws, "languageLayer")
-    assert hasattr(symbols, "syntacticLayer")
+    assert symbols.languageLayer.operation_layer is model.languageSpace._tree_layer(2)
     assert hasattr(symbols, "languageLayer")
 
     reducer = model._stm_reducer()
@@ -238,11 +237,13 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
     # content slice. No conceptual coordinate may be truncated here.
     assert ss.languageLayer.feature_dim == cs.subspace.muxedSize
     assert ss.truth_layer.nDim == cs.subspace.muxedSize      # ideas are concept codes
-    assert ss.relative_store.nDim == cs.subspace.muxedSize
+    assert ss.ltm_store.nDim == cs.subspace.muxedSize
     assert ss._stm_payload_dim == cs.subspace.muxedSize
     assert ss.what.nDim == ss.nWhat
 
-    lift = ss.syntacticLayer._by_name["lift"]
+    lift = next(op for rule, op in zip(model.languageSpace._compose_binary_rules,
+                                      model.languageSpace._tree_layer(2).ops)
+                if rule.method_name == 'lift').gl
     assert lift.nInput == cs.subspace.muxedSize          # opaque concept event (2026-09-13)
     assert lift.nOutput == cs.subspace.muxedSize
     assert lift.nInput != ws.subspace.nWhat
@@ -281,20 +282,20 @@ def test_property_model_category_vq_and_parser_context_are_cs_owned(tmp_path):
 
     assert getattr(cs, "_category_codebook_requested", False) is True
     assert not cs.category_codebook_enabled()
-    assert not ws.category_codebook_enabled()
+    assert not hasattr(ws, "category_codebook_enabled")
 
     # The grammar is configured by SymbolSpace construction.  Even an empty
     # first autobind call reaches lazy category allocation before validating
     # the (not-yet-present) percept slab.
-    cs._maybe_autobind_meta(None, None)
+    cs._maybe_autobind_words(None, None)
     assert cs.category_codebook_enabled()
-    assert not ws.category_codebook_enabled()
+    assert not hasattr(ws, "category_codebook_enabled")
     assert router._category_owner(model.symbolSpace) is cs
     assert not any("category" in key for key in ws.state_dict())
 
     # A property-mode terminal resolves pid -> word-concept directly in CS,
     # rather than trying the retired WS pid -> taxonomy-META lookup.
-    word_concept, _object, _meta = cs.interpret_word(
+    word_concept, _object = cs.interpret_word(
         [7], [0], key="cat")
     cs._category_last_pid = [[7, -1]]
     cs._category_assign[word_concept] = 0
@@ -320,8 +321,8 @@ def test_property_sidecar_cannot_recreate_lbg_or_downstream_state(tmp_path):
     # Property-mode LBG compatibility methods are explicit no-ops and do not
     # lazily recreate the retired concept/META splitting inventory.
     sample = ws.subspace.what.getW()[0].detach().clone()
-    assert ws.record_lbg_pull(1, sample) is None
-    assert ws.maybe_split_lbg(1) is None
+    assert not hasattr(ws, "record_lbg_pull")
+    assert not hasattr(ws, "maybe_split_lbg")
     assert not hasattr(ws, "_lbg_count")
 
     snapshot = model._collect_structural_extras()
@@ -355,7 +356,7 @@ def test_property_sidecar_cannot_recreate_lbg_or_downstream_state(tmp_path):
         assert not hasattr(ws, name), name
 
 
-def test_legacy_ws_concept_state_is_quarantined_not_loaded_as_properties():
+def test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties():
     from checkpoint_migrations import migrate_wholespace_checkpoint
 
     live_state = {
@@ -408,13 +409,10 @@ def test_legacy_ws_concept_state_is_quarantined_not_loaded_as_properties():
         legacy_registered_cs_alias,
     )
 
-    quarantine = result.checkpoint["legacy_whole_structure"]
-    assert quarantine["version"] == 1
-    assert quarantine["vocab_extras"]["well_known_atoms"] == {"everything": 7}
-    assert quarantine["vocab_extras"]["ws_taxonomy_extras"] == {
-        "taxonomy": {9: [2, 7]}}
-    assert quarantine["structural_whole_spaces"] == {
-        "0": {"attributes": {"_word_whole_ss": {"cat": 7}}}}
+    assert 'legacy_whole_structure' not in result.checkpoint
+    assert 'well_known_atoms' not in result.checkpoint['vocab_extras']
+    assert 'ws_taxonomy_extras' not in result.checkpoint['vocab_extras']
+    assert 'whole_spaces' not in result.checkpoint['structural_extras']
 
     # Migration is functional: callers may retain or retry the source bundle.
     assert checkpoint.keys() == before.keys()

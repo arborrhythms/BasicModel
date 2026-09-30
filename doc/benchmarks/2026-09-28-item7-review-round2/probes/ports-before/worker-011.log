@@ -1,0 +1,20 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______________________ test_phase2_end_to_end_round_trip _______________________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:99: in test_phase2_end_to_end_round_trip
+    assert isinstance(ws.references, nn.Parameter)
+                      ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?
+_________________ test_phase2_end_to_end_reattach_after_extend _________________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:213: in test_phase2_end_to_end_reattach_after_extend
+    refs_param_id_1 = id(ws.references)
+                         ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?
+=========================== short test summary info ============================
+FAILED test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip - At...
+FAILED test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend
+2 failed in 2.22s

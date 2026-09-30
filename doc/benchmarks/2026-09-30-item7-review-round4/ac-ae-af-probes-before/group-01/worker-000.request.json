@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/worker-000.recycle.json"
+}

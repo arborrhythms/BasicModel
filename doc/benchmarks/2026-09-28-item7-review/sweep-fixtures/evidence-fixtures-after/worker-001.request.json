@@ -1,0 +1,16 @@
+{
+  "selectors": [
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_meta]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[meta_trust]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_children]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_parent]",
+    "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_maybe_learn_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_route_learned_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_is_truth_obvious]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/evidence-fixtures-after/worker-001.recycle.json"
+}

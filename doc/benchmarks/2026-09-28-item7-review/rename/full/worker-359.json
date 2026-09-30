@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+    "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it"
+  ],
+  "completed": [
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+    "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008797500049695373,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004051249707117677,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028733396902680397,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025095802266150713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007743750466033816,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040437502320855856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011438417015597224,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004249160410836339,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000543333007954061,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,162 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0] _
+test/test_item7_unindexed_relations.py:28: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    row = f.store.write_clause(clause, trust=.7)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1] _
+test/test_item7_unindexed_relations.py:28: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    row = f.store.write_clause(clause, trust=.7)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2] _
+test/test_item7_unindexed_relations.py:28: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    row = f.store.write_clause(clause, trust=.7)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0] _
+test/test_item7_unindexed_relations.py:28: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    row = f.store.write_clause(clause, trust=.7)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:256: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:256: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1] _
+test/test_item7_unindexed_relations.py:28: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    row = f.store.write_clause(clause, trust=.7)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:256: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:256: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2] _
+test/test_item7_unindexed_relations.py:28: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    row = f.store.write_clause(clause, trust=.7)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:256: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:256: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+_________ test_three_slot_relation_closes_unindexed_numerical_operands _________
+test/test_item7_unindexed_relations.py:53: in test_three_slot_relation_closes_unindexed_numerical_operands
+    row = f.store.write_clause(clause, trust=.6)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+___ test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows ___
+test/test_item7_unindexed_relations.py:78: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+    result = model.forward(model.inputSpace.prepInput(inputs))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23741: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17672: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21917: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21459: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20722: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20506: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:256: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:256: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:271: in preflight
+    raise ValueError('a relation requires three resolved row references')
+E   ValueError: a relation requires three resolved row references
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+FAILED test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]
+FAILED test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]
+FAILED test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]
+FAILED test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]
+FAILED test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]
+FAILED test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands
+FAILED test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+8 failed, 1 warning in 2.87s

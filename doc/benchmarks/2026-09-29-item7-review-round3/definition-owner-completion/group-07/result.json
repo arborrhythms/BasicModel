@@ -1,0 +1,172 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+  ],
+  "completed": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-completion/group-07/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-completion/group-07/worker-000.json"
+      ],
+      "pid": 22451,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 441877824,
+      "elapsed_seconds": 3.7505825420375913,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-completion/group-07/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008847167016938329,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 9.400001727044582e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 182, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03280616598203778,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.695805445313454e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 9.150011464953423e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 8.204090408980846e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 176, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010375003330409527,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-completion/group-07",
+  "elapsed_seconds": 7.523153959074989,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 441877824,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-completion/group-07/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-completion/group-07/collect.json"
+    ],
+    "pid": 22443,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435602656,
+    "elapsed_seconds": 3.5444920000154525,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-owner-completion/group-07/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

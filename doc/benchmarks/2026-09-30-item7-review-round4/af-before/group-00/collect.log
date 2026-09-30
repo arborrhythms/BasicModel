@@ -1,0 +1,9 @@
+doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate
+
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 test collected in 2.26s

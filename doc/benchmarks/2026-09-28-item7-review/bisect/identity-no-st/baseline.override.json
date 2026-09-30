@@ -1,0 +1,15 @@
+{
+  "mode": "identity-no-st",
+  "scope": "Remove only the identity softmax straight-through derivative; hard point stays unchanged.",
+  "override_sha256": "e097c9bb4efc8440e25d9db80af1dc208993df53c824f541853d225423e5ab4e",
+  "base_revision": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "configurations": [
+    {
+      "reference_rules": [],
+      "situation_weight": 0.0,
+      "expectation_weight": 0.0,
+      "expectation_loss": 0.0,
+      "sentence_expectation": false
+    }
+  ]
+}

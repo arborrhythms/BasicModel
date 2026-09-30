@@ -1,0 +1,7 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.40 GiB
+[worker-000] 32 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 949.7s; peak 5.22 GiB
+[worker-001] 6 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 4.8s; peak 1.96 GiB
+{"reason": "passed", "exit_code": 0, "selected": 38, "completed": 38}

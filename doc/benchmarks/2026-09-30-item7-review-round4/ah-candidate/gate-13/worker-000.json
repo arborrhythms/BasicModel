@@ -1,0 +1,14 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+  "device": "cpu"
+}

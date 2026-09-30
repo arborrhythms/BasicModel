@@ -17,7 +17,7 @@ def compose_examples(language, program, tree, *, variables=()):
     A leaf is its zero-based ordinal; a node is [declared_form, children...].
     Every word must occur exactly once in order. The annotation schedule
     supplies binary and unary teacher states after each word, followed by
-    sentence seals; each target is scored by the live joint selector.
+    sentence endings; each target is scored by the live joint selector.
     Targets stay on this scoring side of the completed forward boundary.
     """
     leaves = program.leaves.detach()
@@ -60,16 +60,16 @@ def compose_examples(language, program, tree, *, variables=()):
         raise ValueError("grammar lesson must retain every forward word exactly once, in order")
     stack, binary, unary = [], [], []
 
-    def reduce(seal=False):
+    def reduce(closing=False):
         if len(stack) < 2:
             return
         left, right = stack[-2:]
         parent = parents.get((left[0], right[0]))
         window = torch.stack((left[1], right[1]))
         target = -1 if parent is None else rules[2][parent[0]]
-        if seal and target < 0:
+        if closing and target < 0:
             raise ValueError("grammar lesson tree cannot be scheduled by the bounded parser")
-        binary.append((window.detach(), target, bool(seal), len(stack)))
+        binary.append((window.detach(), target, bool(closing), len(stack)))
         if target >= 0:
             op = language._tree_layer(2).ops[target]
             with torch.no_grad():
@@ -88,9 +88,9 @@ def compose_examples(language, program, tree, *, variables=()):
                 value = language._tree_layer(1).unary_ops[target](value)
             stack[-1] = (parent, value)
     while len(stack) > 1:
-        reduce(seal=True)
+        reduce(closing=True)
     if stack[0][0] != root:
-        raise ValueError("grammar lesson needs an unavailable post-seal unary step")
+        raise ValueError("grammar lesson needs an unavailable post-closing unary step")
     return binary, unary
 
 
@@ -104,6 +104,9 @@ def compose_loss(language, programs, lessons):
     if len(programs) != len(lessons):
         raise ValueError("one optional grammar lesson is required per forward row")
     layer = language._tree_layer(2)
+    # A supplied syntax tree has no question context. Each teacher state is
+    # scored alone, independently of the last reading's context or batch size.
+    context_width = getattr(layer.chooser, 'WHAT_CONTEXT_DIM', 0)
     costs = []
     for program, lesson in zip(programs, lessons):
         if lesson is None:
@@ -112,13 +115,15 @@ def compose_loss(language, programs, lessons):
             raise ValueError("grammar supervision requires an actual captured forward program")
         binary, unary = compose_examples(language, program, lesson["tree"],
                                          variables=lesson.get("variables", ()))
-        for window, target, _seal, _depth in binary:
+        for window, target, _closing, _depth in binary:
             if target >= 0:
-                _, _, route = layer(window.detach()[None], slots=1)
+                _, _, route = layer(window.detach()[None], slots=1,
+                    what_ctx=window.new_zeros(1, context_width))
                 costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
         for value, target in unary:
             if target >= 0:
-                _, _, route = layer(value.detach()[None, None], slots=1)
+                _, _, route = layer(value.detach()[None, None], slots=1,
+                    what_ctx=value.new_zeros(1, context_width))
                 costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
     return torch.stack(costs).mean() if costs else None
 

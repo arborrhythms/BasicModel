@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_perceptual_chunking.py::test_synthesis_mode_lexicon_splits_on_spaces",
+    "test/test_perceptual_chunking.py::test_synthesis_mode_bpe_returns_learned_segments",
+    "test/test_perceptual_chunking.py::test_chunking_invalid_mode_raises",
+    "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+    "test/test_perceptual_chunking.py::test_embedding_token_stream_honors_bpe_fallback_mode"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-501.recycle.json"
+}

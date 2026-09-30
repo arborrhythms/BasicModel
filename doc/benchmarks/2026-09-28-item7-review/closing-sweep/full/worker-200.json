@@ -1,0 +1,57 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+    "test/test_compile_static_loop.py::test_word_at_returns_padded_shape_past_valid_len",
+    "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+    "test/test_compile_static_loop.py::test_per_word_body_does_not_recompile_on_accumulator_length"
+  ],
+  "completed": [
+    "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+    "test/test_compile_static_loop.py::test_word_at_returns_padded_shape_past_valid_len",
+    "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+    "test/test_compile_static_loop.py::test_per_word_body_does_not_recompile_on_accumulator_length"
+  ],
+  "slow_selected": [
+    "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+    "test/test_compile_static_loop.py::test_word_at_returns_padded_shape_past_valid_len",
+    "test/test_compile_static_loop.py::test_per_word_body_does_not_recompile_on_accumulator_length"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.91250853985548e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compile_static_loop.py', 37, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_word_at_returns_padded_shape_past_valid_len",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.758405990898609e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compile_static_loop.py', 62, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.15561066602822393,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_body_does_not_recompile_on_accumulator_length",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011058303061872721,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compile_static_loop.py', 178, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

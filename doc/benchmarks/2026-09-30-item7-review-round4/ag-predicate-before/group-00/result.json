@@ -1,0 +1,155 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00/worker-000.json"
+      ],
+      "pid": 75783,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 441746656,
+      "elapsed_seconds": 4.71188012487255,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.05057833297178149,
+          "message": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py:47: in test_compact_predicates_preserve_spans_and_global_columns\n    assert torch.equal(columns, present), (columns, present)\nE   AssertionError: (tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\nE              14,  15,  16,  17,  18,  19,  ...251,\nE             252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10c1e53a0>(tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\\n         14,  15,  16,  17,  18,  19,  2... 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,\\n        252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))\nE    +    where <built-in method equal of type object at 0x10c1e53a0> = torch.equal",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.03805354214273393,
+          "message": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py:47: in test_compact_predicates_preserve_spans_and_global_columns\n    assert torch.equal(columns, present), (columns, present)\nE   AssertionError: (tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\nE              14,  15,  16,  17,  18,  19,  ...251,\nE             252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10c1e53a0>(tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\\n         14,  15,  16,  17,  18,  19,  2... 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,\\n        252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))\nE    +    where <built-in method equal of type object at 0x10c1e53a0> = torch.equal",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0399877498857677,
+          "message": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py:47: in test_compact_predicates_preserve_spans_and_global_columns\n    assert torch.equal(columns, present), (columns, present)\nE   AssertionError: (tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\nE              14,  15,  16,  17,  18,  19,  ...251,\nE             252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10c1e53a0>(tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\\n         14,  15,  16,  17,  18,  19,  2... 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,\\n        252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))\nE    +    where <built-in method equal of type object at 0x10c1e53a0> = torch.equal",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04275841685011983,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04310433310456574,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.043033374939113855,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00",
+  "elapsed_seconds": 10.489479999989271,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 506742032,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00/collect.json"
+    ],
+    "pid": 75712,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 506742032,
+    "elapsed_seconds": 5.563258999958634,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-06/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-06/worker-000.json"
+      ],
+      "pid": 75297,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 652232216,
+      "elapsed_seconds": 11.349095040932298,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-06/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.813016708008945,
+          "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/xor_observer_round4.py:41: in observed_grammar\n    model = grammar(*args, **kwargs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25513: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25620: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3933: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11395: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16785: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16050: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store.",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nDevice: cpu\r\nPeer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture\r\n\n\n==== BasicModel ====\r\n\nTrial [1/1]\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/400]\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-06",
+  "elapsed_seconds": 13.34845570800826,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 652232216,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-06/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-06/collect.json"
+    ],
+    "pid": 75291,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 48169560,
+    "elapsed_seconds": 1.6538833749946207,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-06/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

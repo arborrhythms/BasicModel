@@ -1,0 +1,220 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+  ],
+  "completed": [
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-13/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-13/worker-000.json"
+      ],
+      "pid": 82127,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 649184792,
+      "elapsed_seconds": 8.343390041030943,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-13/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0032070421148091555,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0021132079418748617,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002853957936167717,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004045041976496577,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5156555830035359,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0013068749103695154,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0013373747933655977,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0019672089256346226,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005050830077379942,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004482582909986377,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.2238481668755412,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-13",
+  "elapsed_seconds": 14.954552208073437,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 649184792,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-13/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-13/collect.json"
+    ],
+    "pid": 82102,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 425723080,
+    "elapsed_seconds": 6.129160374868661,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-13/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

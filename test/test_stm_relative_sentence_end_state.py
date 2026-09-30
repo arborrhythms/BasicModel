@@ -52,10 +52,12 @@ def _build_model():
     model, _cfg = Models.BasicModel.from_config(
         os.path.join(_DATA_DIR, 'MentalModel.xml'))
     layer = model.symbolSpace.languageLayer.operation_layer
+    absolute = next(i for i, rule in enumerate(model.languageSpace._compose_binary_rules)
+                    if rule.method_name == 'lift')
     def binary(x, candidate, *_a, **_k):
         scores = x.new_full(candidate.shape[:-1], -1e6)
         if scores.shape[-1]:
-            scores[..., 0] = 0.
+            scores[..., absolute] = 0.
         return x.new_full((*x.shape[:2], 1), 1e6), scores
     def unary(x, candidate, *_a, **_k):
         return x.new_full((*x.shape[:2], 1), 1e6), x.new_full(candidate.shape[:-1], -1e6)
@@ -130,6 +132,14 @@ def _set_current_rules(model, rule_id, B, per_row=True):
     else:
         s_rules = [[rule_id]]
     model.symbolSpace.current_rules = {'SS': s_rules}
+    stm = model.conceptualSpace.stm
+    if bool(stm._depth.any()):
+        # A hand-set completed relative constituent now owns its clause flag.
+        from ClauseScope import ClauseScope
+        state = ClauseScope.empty(stm._buffer)
+        if Language.TheGrammar.is_relative_rule(rule_id):
+            state[:, 0, 0] = ClauseScope.RELATIVE | ClauseScope.SENTENCE
+        stm._clause_state = state
 
 
 # --------------------------------------------------------------------------
@@ -239,7 +249,7 @@ def test_relative_mask_sees_cs_role_rules():
         'SS': [[abs_id]] * B, 'CS': [[rel_id], [abs_id], [rel_id]]}
 
     # No anchor state at all -> CS scan contributes False (conservatism).
-    ws = model.symbolSpace.wholeSpace
+    ws = model.symbolSpace.conceptualSpace
     saved = (getattr(ws, '_anchored_pids', None),
              getattr(ws, '_category_last_pid', None))
     object.__setattr__(ws, '_anchored_pids', None)
@@ -396,8 +406,8 @@ def test_actual_operation_trace_supplies_relative_capacity_without_a_reparse():
     model = _build_model()
     model.symbolSpace.current_rules = {}
     relative = _forward_relative_rule_id()
-    model.wholeSpace._anchored_pids = {123: 'equal'}
-    model.wholeSpace._category_last_pid = [[123]]
+    model.symbolSpace.conceptualSpace._anchored_pids = {123: 'equal'}
+    model.symbolSpace.conceptualSpace._category_last_pid = [[123]]
     model.inputSpace._word_active_mask = torch.ones(1, 4, dtype=torch.bool)
     model.inputSpace._packed_sentence_ids = torch.tensor([[0, 0, 1, 1]])
     model._prepare_reconstruction_choices(1, 4, torch.device('cpu'))
@@ -411,7 +421,7 @@ def test_actual_operation_trace_supplies_relative_capacity_without_a_reparse():
     trace._choice_mask[0, 9] = True
     assert model._sentence_relative_mask(1).tolist() == [True]
     assert Language.sentence_relative_mask(model.symbolSpace, 1).tolist() == [True]
-    model.wholeSpace._anchored_pids = {}
+    model.symbolSpace.conceptualSpace._anchored_pids = {}
     assert model._sentence_relative_mask(1).tolist() == [False]
 
 

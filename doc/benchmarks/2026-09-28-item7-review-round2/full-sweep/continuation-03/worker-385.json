@@ -1,0 +1,100 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_cs_to_ss_forward.py::test_build_symbol_leg_is_retired",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_no_cross_space_reach",
+    "test/test_cs_to_ss_forward.py::test_symbol_tower_parallel_forward_smoke",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_returns_row_aligned_leg",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_survives_repeated_sync_backward",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_fallback_without_activations_stays_detached"
+  ],
+  "completed": [
+    "test/test_cs_to_ss_forward.py::test_build_symbol_leg_is_retired",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_no_cross_space_reach",
+    "test/test_cs_to_ss_forward.py::test_symbol_tower_parallel_forward_smoke",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_returns_row_aligned_leg",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_survives_repeated_sync_backward",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_fallback_without_activations_stays_detached"
+  ],
+  "slow_selected": [
+    "test/test_cs_to_ss_forward.py::test_symbol_tower_parallel_forward_smoke",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_returns_row_aligned_leg",
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_survives_repeated_sync_backward",
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_fallback_without_activations_stays_detached"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_build_symbol_leg_is_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011366698890924454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_no_cross_space_reach",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016070420388132334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_symbol_tower_parallel_forward_smoke",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010433304123580456,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_cs_to_ss_forward.py', 64, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_returns_row_aligned_leg",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.37500735744834e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_cs_to_ss_forward.py', 82, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.862500544637442e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_cs_to_ss_forward.py', 106, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.866703137755394e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_cs_to_ss_forward.py', 116, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_symbol_leg_survives_repeated_sync_backward",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.554104715585709e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_cs_to_ss_forward.py', 146, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_symbol_leg_fallback_without_activations_stays_detached",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.31669894978404e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_cs_to_ss_forward.py', 177, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

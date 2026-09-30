@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_tied_vectors_compile.py::test_untied_vectors_compiles_fullgraph",
+    "test/test_tied_vectors_compile.py::test_tie_api_is_retired"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-262.recycle.json"
+}

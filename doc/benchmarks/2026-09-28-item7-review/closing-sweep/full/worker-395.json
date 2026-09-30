@@ -1,0 +1,63 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_admissibility_uses_loaded_signatures",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_mask_logits_concentrates_on_admissible",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_extend_then_load",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend"
+  ],
+  "completed": [
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_admissibility_uses_loaded_signatures",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_mask_logits_concentrates_on_admissible",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_extend_then_load",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002613208955153823,
+      "message": "test/test_phase2_end_to_end.py:99: in test_phase2_end_to_end_round_trip\n    assert isinstance(ws.references, nn.Parameter)\n                      ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_admissibility_uses_loaded_signatures",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017297080485150218,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_mask_logits_concentrates_on_admissible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015186669770628214,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_extend_then_load",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002535708947107196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00133200001437217,
+      "message": "test/test_phase2_end_to_end.py:213: in test_phase2_end_to_end_reattach_after_extend\n    refs_param_id_1 = id(ws.references)\n                         ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

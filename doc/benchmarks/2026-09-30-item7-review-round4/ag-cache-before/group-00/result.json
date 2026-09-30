@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-cache-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-cache-before/group-00/worker-000.json"
+      ],
+      "pid": 73938,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 435471608,
+      "elapsed_seconds": 6.309226332930848,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-cache-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.08156870794482529,
+          "message": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py:12: in test_property_diagnostic_releases_its_graph_at_tick_end\n    assert owner._stage0_property_membership.grad_fn is None\nE   assert <DivBackward0 object at 0x12a7bf5b0> is None\nE    +  where <DivBackward0 object at 0x12a7bf5b0> = tensor([[[1., 0., 0., 0., 0., 0., 0., 0.],\\n         [1., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<DivBackward0>).grad_fn\nE    +    where tensor([[[1., 0., 0., 0., 0., 0., 0., 0.],\\n         [1., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<DivBackward0>) = WholeSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Codebook(\\n      (...): EventEncoding()\\n    (whatEncoding): WhatEncoding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (layers): ModuleList()\\n)._stage0_property_membership",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-cache-before/group-00",
+  "elapsed_seconds": 13.569683458190411,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435471608,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-cache-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-cache-before/group-00/collect.json"
+    ],
+    "pid": 73928,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430081248,
+    "elapsed_seconds": 6.978737750090659,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-cache-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

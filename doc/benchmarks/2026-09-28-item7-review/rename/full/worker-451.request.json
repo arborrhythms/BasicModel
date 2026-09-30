@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_grammar_sections.py::test_complete_grammar_canonical_sections",
+    "test/test_grammar_sections.py::test_all_shipped_grammars_load_with_rules",
+    "test/test_grammar_sections.py::test_thought_ops_derive_from_structural_families",
+    "test/test_grammar_sections.py::test_symbolic_is_the_canonical_section_name",
+    "test/test_grammar_sections.py::test_old_wholespace_section_no_longer_loads_symbolic_rules",
+    "test/test_grammar_sections.py::test_normalization_layer_removed",
+    "test/test_grammar_sections.py::test_legacy_flat_form_still_works"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-451.recycle.json"
+}

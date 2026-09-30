@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/evidence-callers/worker-001.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/evidence-callers/worker-001.json"
+  ],
+  "pid": 56753,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 425411856,
+  "elapsed_seconds": 3.6244497919688,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/evidence-callers/worker-001.log"
+}

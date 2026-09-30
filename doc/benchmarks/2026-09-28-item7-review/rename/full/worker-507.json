@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "completed": [
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005163749447092414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001069169957190752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_router_kind_is_signal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.049999061971903e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.825010783970356e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010379205923527479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010016700252890587,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017158302944153547,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010845798533409834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001039580674842,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

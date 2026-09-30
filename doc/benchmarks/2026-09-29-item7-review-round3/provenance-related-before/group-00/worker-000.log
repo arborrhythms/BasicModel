@@ -1,0 +1,48 @@
+...F.FF.F.......................                                         [100%]
+=================================== FAILURES ===================================
+____ TestProvisioning.test_provision_idempotent_count_via_runepoch_trigger _____
+test/test_ltm_consolidation.py:172: in test_provision_idempotent_count_via_runepoch_trigger
+    self.assertAlmostEqual(store.row(0)["trust"], 0.9, places=5)
+E   AssertionError: 0.0 != 0.9 within 5 places (0.9 difference)
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+__________ TestProvisioning.test_provisioned_rows_are_real_encodings ___________
+test/test_ltm_consolidation.py:155: in test_provisioned_rows_are_real_encodings
+    self.assertGreater(float(store.row(i)["np1"].norm()), 0.0)
+E   AssertionError: 0.0 not greater than 0.0
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_______ TestProvisioning.test_provisioned_trust_and_earliest_timestamps ________
+test/test_ltm_consolidation.py:139: in test_provisioned_trust_and_earliest_timestamps
+    self.assertAlmostEqual(store.row(0)["trust"], 0.9, places=5)
+E   AssertionError: 0.0 != 0.9 within 5 places (0.9 difference)
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+__________ TestProvisioning.test_truthset_rows_land_via_real_forward ___________
+test/test_ltm_consolidation.py:131: in test_truthset_rows_land_via_real_forward
+    self.assertEqual(len(store), 3)
+E   AssertionError: 9 != 3
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13589: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provision_idempotent_count_via_runepoch_trigger
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+4 failed, 28 passed, 4 warnings in 4.14s

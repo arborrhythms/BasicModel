@@ -1,0 +1,21 @@
+{
+  "selectors": [
+    "test/test_activation_priming_multiply.py::test_apply_priming_multiplies_activation",
+    "test/test_activation_priming_multiply.py::test_apply_priming_identity_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_activation_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+    "test/test_activation_priming_multiply.py::test_taxonomy_default_config",
+    "test/test_activation_priming_multiply.py::test_configure_priming_overrides_defaults",
+    "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+    "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+    "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+    "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+    "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+    "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+    "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-458.recycle.json"
+}

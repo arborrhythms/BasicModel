@@ -1,0 +1,129 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+    "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+    "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+    "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode"
+  ],
+  "completed": [
+    "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+    "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+    "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+    "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05/worker-000.json"
+      ],
+      "pid": 11877,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434079064,
+      "elapsed_seconds": 4.54772137501277,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+        "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+        "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+        "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode"
+      ],
+      "completed": [
+        "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+        "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+        "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+        "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007009166060015559,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0038692501839250326,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0034093339927494526,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004218833986669779,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05",
+  "elapsed_seconds": 9.304231541929767,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 434079064,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05/collect.json"
+    ],
+    "pid": 11866,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431867080,
+    "elapsed_seconds": 4.445559082785621,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+        "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+        "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+        "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

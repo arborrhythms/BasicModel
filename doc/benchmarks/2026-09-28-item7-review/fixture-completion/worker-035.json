@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.058919165981933,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

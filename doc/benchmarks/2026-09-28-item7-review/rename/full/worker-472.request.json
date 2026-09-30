@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+    "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+    "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+    "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-472.recycle.json"
+}

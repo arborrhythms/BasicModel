@@ -1,0 +1,17 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_stale_header_retry_is_once_and_preserves_real_failures[teardown] _____
+test/test_compile_cache_recovery.py:46: in test_stale_header_retry_is_once_and_preserves_real_failures
+    assert sorted(result["completed"]) == sorted(result["selected"])
+E   AssertionError: assert [] == ['test_cache....::test_other']
+E     
+E     Right contains 2 more items, first extra item: 'test_cache.py::test_compile'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 2 selectors; limit 60s, 0.5 GiB
+[worker-000] exit 1; 0.0s; peak 0.04 GiB
+=========================== short test summary info ============================
+FAILED test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]
+1 failed, 1 passed in 4.92s

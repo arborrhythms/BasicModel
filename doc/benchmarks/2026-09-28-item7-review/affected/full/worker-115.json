@@ -1,0 +1,253 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+    "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+    "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
+    "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
+    "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
+    "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
+    "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches",
+    "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+    "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
+    "test/test_accessible_mind.py::test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm",
+    "test/test_accessible_mind.py::test_higher_order_missing_edge_is_symbolic_zero_not_a_residual",
+    "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+    "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+    "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
+    "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
+    "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+    "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+    "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+    "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+    "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams",
+    "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+    "test/test_accessible_mind.py::test_nested_writes_inherit_stream_isolation",
+    "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+    "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates"
+  ],
+  "completed": [
+    "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+    "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+    "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
+    "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
+    "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
+    "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
+    "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches",
+    "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+    "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
+    "test/test_accessible_mind.py::test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm",
+    "test/test_accessible_mind.py::test_higher_order_missing_edge_is_symbolic_zero_not_a_residual",
+    "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+    "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+    "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
+    "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
+    "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+    "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+    "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+    "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+    "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams",
+    "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+    "test/test_accessible_mind.py::test_nested_writes_inherit_stream_isolation",
+    "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+    "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005410125013440847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.039459166931919754,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.021042458014562726,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023696250282227993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005012080073356628,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003594666952267289,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019441669574007392,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032058299984782934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0039019170217216015,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008223416982218623,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_higher_order_missing_edge_is_symbolic_zero_not_a_residual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023762909695506096,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015375916031189263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026869159191846848,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008174125105142593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004945458029396832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000679458025842905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013532832963392138,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004967832937836647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001955667044967413,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006818167050369084,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004607249982655048,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_nested_writes_inherit_stream_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010824160417541862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020494170021265745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003636250039562583,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

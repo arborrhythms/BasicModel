@@ -1,0 +1,151 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+    "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+    "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates"
+  ],
+  "completed": [
+    "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+    "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+    "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/worker-000.json"
+      ],
+      "pid": 75676,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 501286280,
+      "elapsed_seconds": 3.9525995410513133,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "completed": [
+        "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.13211833301465958,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/worker-001.json"
+      ],
+      "pid": 75687,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429802816,
+      "elapsed_seconds": 3.7966539999470115,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+        "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+        "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates"
+      ],
+      "completed": [
+        "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+        "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+        "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01255408301949501,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008188749197870493,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00141670904122293,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after",
+  "elapsed_seconds": 9.811370500014164,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 501286280,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/collect.json"
+    ],
+    "pid": 75666,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180601672,
+    "elapsed_seconds": 1.8409475419903174,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/output-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+        "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+        "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+        "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

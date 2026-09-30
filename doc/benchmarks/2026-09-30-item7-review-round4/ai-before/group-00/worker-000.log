@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_tiny_canonical_detached_reverse_stops_at_root ______________
+test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root
+    assert root is not None and root.grad_fn is not None
+E   assert (tensor([[ 0.1500,  0.0630,  0.0812,  0.0649, -0.1622,  0.2487, -0.0637,  0.2479,\n         -0.1690,  0.0056,  0.0246, -...  0.0015, -0.0007, -0.0149,  0.0344,\n         -0.0046, -0.1289,  0.0207, -0.0956, -0.0709, -0.0047,  0.0095,  0.0498]]) is not None and None is not None)
+E    +  where None = tensor([[ 0.1500,  0.0630,  0.0812,  0.0649, -0.1622,  0.2487, -0.0637,  0.2479,\n         -0.1690,  0.0056,  0.0246, -...  0.0015, -0.0007, -0.0149,  0.0344,\n         -0.0046, -0.1289,  0.0207, -0.0956, -0.0709, -0.0047,  0.0095,  0.0498]]).grad_fn
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root
+1 failed in 5.22s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-10/worker-000.recycle.json"
+}

@@ -1,0 +1,15 @@
+{
+  "mode": "context-head",
+  "scope": "Use the pre-item-7 context update with no situation/expectation extension; configured weights stay zero.",
+  "override_sha256": "def85dbb927746c86bcad89b5b1f78ac6b4ce38dca4a86d43aac0180fb44d5da",
+  "base_revision": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "configurations": [
+    {
+      "reference_rules": [],
+      "situation_weight": 0.0,
+      "expectation_weight": 0.0,
+      "expectation_loss": 0.0,
+      "sentence_expectation": false
+    }
+  ]
+}

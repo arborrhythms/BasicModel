@@ -1,0 +1,16 @@
+{
+  "head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "source_files": 694,
+  "source_digest": "64a48544242ffcf014f819e6ddcc5927f11c5f6edc9d8f3422c29a7659c73bc3",
+  "protected_source_matches_prior_audit": true,
+  "protected_contracts": "protected-contracts.json",
+  "deferred_operator_classes_AST_identical_to_HEAD": {
+    "NonLayer": true,
+    "ConjunctionLayer": true
+  },
+  "supporting_inputs": {
+    "test/fixtures/transitional_pos.grammar": "43bf934bf153a293851c96e851e26f8b302d70f2fa8bef48843c117795a7cfa9",
+    "test/fixtures/where_tiling_corpus.jsonl": "f5c959f65ee59a7b0a62c9cb273551025a25d90ee554f52649003049c09f61d0"
+  },
+  "measurement_comparison": "closing-measurements/review-source-equivalence.json"
+}

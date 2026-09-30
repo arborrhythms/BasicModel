@@ -1,0 +1,63 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none"
+  ],
+  "completed": [
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.04824475001078099,
+      "message": "test/test_topk_priming_codebook_growth.py:67: in test_stale_short_boosts_after_codebook_growth_no_crash\n    mask = ss._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02299358299933374,
+      "message": "test/test_topk_priming_codebook_growth.py:81: in test_stale_long_boosts_truncated_no_crash\n    mask = ss._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02285845798905939,
+      "message": "test/test_topk_priming_codebook_growth.py:90: in test_no_intent_is_byte_identical_noop\n    assert ss._topk_priming_mask(act) is None\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.022848083055578172,
+      "message": "test/test_topk_priming_codebook_growth.py:98: in test_exact_length_boosts_unchanged\n    mask = ss._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.022903540986590087,
+      "message": "test/test_topk_priming_codebook_growth.py:109: in test_n_equals_one_returns_none\n    assert ss._topk_priming_mask(act) is None\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

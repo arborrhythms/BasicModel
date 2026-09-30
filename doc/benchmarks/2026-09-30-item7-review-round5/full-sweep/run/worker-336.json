@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately"
+  ],
+  "completed": [
+    "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032837502658367157,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

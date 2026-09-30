@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_absent_resolves_to_off",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_architecture_fallback",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_modes_on_each_space",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_primer_resolves",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_local_overrides_architecture",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_flatten_accepted",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_ninputdim_accepted",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_bogus_not_in_valid_modes",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_invalid_mode_raises_value_error"
+  ],
+  "completed": [
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_absent_resolves_to_off",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_architecture_fallback",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_modes_on_each_space",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_primer_resolves",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_local_overrides_architecture",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_flatten_accepted",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_ninputdim_accepted",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_bogus_not_in_valid_modes",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_invalid_mode_raises_value_error"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_absent_resolves_to_off",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013658299576491117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_architecture_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010608299635350704,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_modes_on_each_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010187504813075066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_primer_resolves",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.616604074835777e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_local_overrides_architecture",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.92499990388751e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_flatten_accepted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013745797332376242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_ninputdim_accepted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011374999303370714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeValidation::test_bogus_not_in_valid_modes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.820889681577682e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeValidation::test_invalid_mode_raises_value_error",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011937494855374098,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

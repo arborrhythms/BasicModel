@@ -1,0 +1,19 @@
+.......F                                                                 [100%]
+=================================== FAILURES ===================================
+___ test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows ___
+test/test_item7_unindexed_relations.py:88: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+    assert model._word_symbol_concept_ids() is None
+E   assert tensor([[-1, -1, -1, -1, -1, -1, -1, -1],\n        [-1, -1, -1, -1, -1, -1, -1, -1],\n        [-1, -1, -1, -1, -1, -1, -1, -1],\n        [-1, -1, -1, -1, -1, -1, -1, -1]]) is None
+E    +  where tensor([[-1, -1, -1, -1, -1, -1, -1, -1],\n        [-1, -1, -1, -1, -1, -1, -1, -1],\n        [-1, -1, -1, -1, -1, -1, -1, -1],\n        [-1, -1, -1, -1, -1, -1, -1, -1]]) = _word_symbol_concept_ids()
+E    +    where _word_symbol_concept_ids = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-2): 3 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n)._word_symbol_concept_ids
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+1 failed, 7 passed, 1 warning in 5.48s

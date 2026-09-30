@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_idea_subspace.py::test_push_keeps_parallel_buffers_in_sync",
+    "test/test_idea_subspace.py::test_marker_route_metadata_round_trips",
+    "test/test_idea_subspace.py::test_update_one_field_does_not_desync_others",
+    "test/test_idea_subspace.py::test_pop_clears_slot_and_decrements_depth",
+    "test/test_idea_subspace.py::test_overflow_raises",
+    "test/test_idea_subspace.py::test_live_mask_reflects_depth",
+    "test/test_idea_subspace.py::test_ensure_batch_preserves_state"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-479.recycle.json"
+}

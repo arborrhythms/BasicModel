@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-005.recycle.json"
+}

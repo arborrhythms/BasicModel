@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_query_work_budget.py",
+    "test/test_replacement_kernel_contracts.py",
+    "test/test_taxonomy_policy.py",
+    "test/test_truth_ideas_routing.py",
+    "test/test_two_truth_stores.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

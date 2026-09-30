@@ -1,0 +1,13 @@
+{
+  "reason": "gate_failures",
+  "selected": 8,
+  "completed": 7,
+  "pytest_outcomes": {
+    "passed": 4,
+    "failed": 2,
+    "skipped": 1
+  },
+  "resource_limited_cases": [
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ]
+}

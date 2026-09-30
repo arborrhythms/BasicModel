@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_partition_symbolicspace_state.py::test_chunk_static_modes_smoke"
+  ],
+  "completed": [
+    "test/test_partition_symbolicspace_state.py::test_chunk_static_modes_smoke"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_partition_symbolicspace_state.py::test_chunk_static_modes_smoke",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001260419376194477,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

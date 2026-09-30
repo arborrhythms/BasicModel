@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00/worker-000.recycle.json"
+}

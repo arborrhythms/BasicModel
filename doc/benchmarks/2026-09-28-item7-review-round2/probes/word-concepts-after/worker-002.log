@@ -1,0 +1,60 @@
+..............F....F......                                               [100%]
+=================================== FAILURES ===================================
+______ test_perceptual_context_reaches_output_only_through_named_bindings ______
+/Users/arogers/github/WikiOracle/basicmodel/test/test_output_synthesis.py:420: in test_perceptual_context_reaches_output_only_through_named_bindings
+    assert not torch.equal(realized_with(changed_bound), base)
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10c8913a0>(tensor([[[0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1....., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.]]]), tensor([[[0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1....., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.]]]))
+E    +    where <built-in method equal of type object at 0x10c8913a0> = torch.equal
+E    +    and   tensor([[[0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1....., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.],\n         [0., 0., 0., 0., 0., 1., 0., 1.]]]) = <function test_perceptual_context_reaches_output_only_through_named_bindings.<locals>.realized_with at 0x14638f560>(tensor([[[0.0000e+00, 0.0000e+00, 0.0000e+00, 5.2106e-02, 6.1355e-03,\n          3.3955e-03, 0.0000e+00, 0.0000e+00, 0.....0364e-03, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,\n          0.0000e+00, 1.0000e+00, 0.0000e+00, 1.0000e+00]]]))
+________ test_synthesized_answer_checkpoint_reloads_into_a_fresh_model _________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_output_synthesis.py:507: in test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+    assert fresh.load_weights(str(path), require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5687: in load_weights
+    self._restore_structural_extras(
+bin/Models.py:4911: in _restore_structural_extras
+    layer = owner_space._concept_allocator.layer(0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.014s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8203/test_synthesized_answer_checkp0/synth.ckpt
+=============================== warnings summary ===============================
+test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Models.py:7631: RuntimeWarning: answer_surface [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8203/cfg1/MM_xor_synth_discourse.xml]: answer surface unavailable: shape '[2, -1, 14]' is invalid for input of size 128
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Models.py:7631: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8203/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_what_report_separates_families_and_thinking
+test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Models.py:7631: RuntimeWarning: answer_surface [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8203/cfg0/MM_xor_synth.xml]: answer surface unavailable: shape '[2, -1, 14]' is invalid for input of size 128
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_model_trains_with_teacher_detached
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_output_synthesis.py::test_model_trains_with_teacher_detached
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 6 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings
+FAILED test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+2 failed, 24 passed, 8 warnings in 4.35s

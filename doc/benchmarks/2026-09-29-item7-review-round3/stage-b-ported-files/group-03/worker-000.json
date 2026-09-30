@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_iterated_symbolic_wave.py::test_depth_d_sigma_path_completes_in_one_pass",
+    "test/test_iterated_symbolic_wave.py::test_no_self_edge_via_populate",
+    "test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge"
+  ],
+  "completed": [
+    "test/test_iterated_symbolic_wave.py::test_depth_d_sigma_path_completes_in_one_pass",
+    "test/test_iterated_symbolic_wave.py::test_no_self_edge_via_populate",
+    "test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_iterated_symbolic_wave.py::test_depth_d_sigma_path_completes_in_one_pass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006153915892355144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_iterated_symbolic_wave.py::test_no_self_edge_via_populate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017802499933168292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0015327919973060489,
+      "message": "test/test_iterated_symbolic_wave.py:74: in test_relate_x_x_merges_to_one_edge\n    A, _b = cs.interpret_word([1], 2, key=\"w\")\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19231: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:38: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19602: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

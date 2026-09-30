@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 6/6 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.008649833966046572</pre></td><td><pre>test/test_item7_predicate_identity.py:23: in test_closing_and_registry_share_predicate
+    assert stored.role_refs[1] == reference == (&#x27;sym&#x27;, predicate_identity(relation))
+E   AssertionError: assert (&#x27;sym&#x27;, 4010033338316264258) == (&#x27;sym&#x27;, 1)
+E     
+E     At index 1 diff: 4010033338316264258 != 1
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.007591166999191046</pre></td><td><pre>test/test_item7_predicate_identity.py:23: in test_closing_and_registry_share_predicate
+    assert stored.role_refs[1] == reference == (&#x27;sym&#x27;, predicate_identity(relation))
+E   AssertionError: assert (&#x27;sym&#x27;, 2837868419566309091) == (&#x27;sym&#x27;, 9)
+E     
+E     At index 1 diff: 2837868419566309091 != 9
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00577250006608665</pre></td><td><pre>test/test_item7_predicate_identity.py:25: in test_closing_and_registry_share_predicate
+    assert torch.equal(stored.roles[1], f.registry._payload(reference))
+E   AssertionError: assert False
+E    +  where False = &lt;built-in method equal of type object at 0x10ea013a0&gt;(tensor([-0.6386,  0.4060, -0.5675,  0.1066,  0.1928, -0.1667, -0.1569,  0.0658]), tensor([-0.0101, -0.1213,  0.0437, -0.7624,  0.5270, -0.0225, -0.2698, -0.2258],\n       grad_fn=&lt;CloneBackward0&gt;))
+E    +    where &lt;built-in method equal of type object at 0x10ea013a0&gt; = torch.equal
+E    +    and   tensor([-0.0101, -0.1213,  0.0437, -0.7624,  0.5270, -0.0225, -0.2698, -0.2258],\n       grad_fn=&lt;CloneBackward0&gt;) = _payload((&#x27;sym&#x27;, 1))
+E    +      where _payload = &lt;Queries.GrammaticalThoughtRegistry object at 0x12a234320&gt;._payload
+E    +        where &lt;Queries.GrammaticalThoughtRegistry object at 0x12a234320&gt; = &lt;test_item7_acceptance.SentenceFixture object at 0x12a283ce0&gt;.registry</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0074446669314056635</pre></td><td><pre>test/test_item7_predicate_identity.py:25: in test_closing_and_registry_share_predicate
+    assert torch.equal(stored.roles[1], f.registry._payload(reference))
+E   AssertionError: assert False
+E    +  where False = &lt;built-in method equal of type object at 0x10ea013a0&gt;(tensor([-0.0785,  0.6429,  0.1616, -0.2293, -0.0219,  0.4321,  0.1761,  0.5326]), tensor([-0.0714, -0.3026,  0.5261,  0.3561,  0.2685,  0.1762, -0.2427, -0.5812],\n       grad_fn=&lt;CloneBackward0&gt;))
+E    +    where &lt;built-in method equal of type object at 0x10ea013a0&gt; = torch.equal
+E    +    and   tensor([-0.0714, -0.3026,  0.5261,  0.3561,  0.2685,  0.1762, -0.2427, -0.5812],\n       grad_fn=&lt;CloneBackward0&gt;) = _payload((&#x27;sym&#x27;, 9))
+E    +      where _payload = &lt;Queries.GrammaticalThoughtRegistry object at 0x12a2838c0&gt;._payload
+E    +        where &lt;Queries.GrammaticalThoughtRegistry object at 0x12a2838c0&gt; = &lt;test_item7_acceptance.SentenceFixture object at 0x12a283230&gt;.registry</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0032859579659998417</pre></td><td><pre>test/test_item7_predicate_identity.py:37: in test_registry_allocates_no_inventory_rows_for_part_or_implies
+    assert f.cs._csw_row_of(reference[1]) is None
+E   assert 0 is None
+E    +  where 0 = _csw_row_of(1)
+E    +    where _csw_row_of = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ... (concept_source_readout): SigmaConceptsFromPercepts(\n    (sigma): SigmaLayer(\n      (layer): LinearLayer()\n    )\n  )\n)._csw_row_of
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ... (concept_source_readout): SigmaConceptsFromPercepts(\n    (sigma): SigmaLayer(\n      (layer): LinearLayer()\n    )\n  )\n) = &lt;test_item7_acceptance.SentenceFixture object at 0x12a26ae70&gt;.cs</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00284145912155509</pre></td><td><pre>test/test_item7_predicate_identity.py:60: in test_full_inventory_still_installs_and_forms_part_question
+    question = registry.form(&#x27;part&#x27;, *operands[:2])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:2022: in form
+    raise RuntimeError(
+E   RuntimeError: thought operation &#x27;part&#x27; is unavailable: ConceptualSpace concept inventory exhausted while allocating 8 id(s) for grammatical thought VPs: snap block has 32 occupied rows and capacity 32. No concept was minted.</pre></td><td><pre></pre></td></tr></table></body></html>

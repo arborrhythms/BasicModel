@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word"
+  ],
+  "completed": [
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03306474979035556,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

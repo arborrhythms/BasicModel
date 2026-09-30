@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-019.recycle.json"
+}

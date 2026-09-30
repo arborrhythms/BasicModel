@@ -1,0 +1,42 @@
+.FF...........                                                           [100%]
+=================================== FAILURES ===================================
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+
+mode = 'both'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+        probe = _run_forward_spying_fold(model)
+        assert probe['compose'] == 0  # no second independently selected parse
+        assert probe['sweep'] == 1
+>       assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the closing
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 16 > (2 * 8)
+
+test/test_router_fires_per_word.py:202: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+
+mode = 'per-word'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+        probe = _run_forward_spying_fold(model)
+        assert probe['compose'] == 0  # no second independently selected parse
+        assert probe['sweep'] == 1
+>       assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the closing
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 16 > (2 * 8)
+
+test/test_router_fires_per_word.py:202: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=========================== short test summary info ============================
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+2 failed, 12 passed in 4.70s

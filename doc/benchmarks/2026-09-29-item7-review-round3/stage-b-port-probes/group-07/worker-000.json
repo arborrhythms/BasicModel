@@ -1,0 +1,333 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_cs_symbol_table.py::test_new_symbol_starts_empty",
+    "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+    "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
+    "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+    "test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole",
+    "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
+    "test/test_cs_symbol_table.py::test_retire_transient_symbol",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting",
+    "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+    "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+    "test/test_cs_symbol_table.py::test_interpret_word_structure",
+    "test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution",
+    "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+    "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+    "test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection",
+    "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+    "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+    "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+    "test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object",
+    "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+    "test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok",
+    "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
+    "test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol",
+    "test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything",
+    "test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only",
+    "test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round",
+    "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+    "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
+    "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+    "test/test_cs_symbol_table.py::test_pole_rename_aliases_hold"
+  ],
+  "completed": [
+    "test/test_cs_symbol_table.py::test_new_symbol_starts_empty",
+    "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+    "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
+    "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+    "test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole",
+    "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
+    "test/test_cs_symbol_table.py::test_retire_transient_symbol",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting",
+    "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+    "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+    "test/test_cs_symbol_table.py::test_interpret_word_structure",
+    "test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution",
+    "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+    "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+    "test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection",
+    "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+    "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+    "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+    "test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object",
+    "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+    "test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok",
+    "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
+    "test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol",
+    "test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything",
+    "test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only",
+    "test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round",
+    "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+    "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
+    "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+    "test/test_cs_symbol_table.py::test_pole_rename_aliases_hold"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_new_symbol_starts_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023281669709831476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016981670632958412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016064579831436276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015488750068470836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015511249657720327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001962333917617798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_retire_transient_symbol",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015149590326473117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015882080188021064,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001499249949119985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015458340058103204,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_structure",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0014092499623075128,
+      "message": "test/test_cs_symbol_table.py:157: in test_interpret_word_structure\n    A, B, C = cs.interpret_word([65, 66, 67], WORD)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0017741660121828318,
+      "message": "test/test_cs_symbol_table.py:171: in test_meta_membership_persists_identity_resolution\n    A, B, C = cs.interpret_word([65, 66], WORD)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002013208926655352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0015605839435011148,
+      "message": "test/test_cs_symbol_table.py:198: in test_singleton_populates_one_untyped_edge\n    A, _B, _C = cs.interpret_word([1], 2, key=\"w\")   # order-0 sym\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018030420178547502,
+      "message": "test/test_cs_symbol_table.py:210: in test_meta_word_object_recovers_by_intersection\n    A, B, C = cs.interpret_word([65, 66], WORD, key=\"w\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.001912666019052267,
+      "message": "test/test_cs_symbol_table.py:217: in test_interpret_word_idempotent_per_key\n    A1, B1, C1 = cs.interpret_word([65, 66], WORD, key=\"ab\")\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.001831499976105988,
+      "message": "test/test_cs_symbol_table.py:230: in test_interpret_word_accumulates_word_parts\n    A, _, _ = cs.interpret_word([65], WORD, key=\"grows\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018371669575572014,
+      "message": "test/test_cs_symbol_table.py:239: in test_object_symbol_is_refinable_not_yet_identity\n    _, B, _ = cs.interpret_word([65, 66, 67], WORD)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018678749911487103,
+      "message": "test/test_cs_symbol_table.py:249: in test_resolve_identities_does_not_collapse_unspecified_object\n    A, B, C = cs.interpret_word([65, 66, 67], WORD)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023862080415710807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016655829967930913,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015967910876497626,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015629999106749892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014997500693425536,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015560000902041793,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0019164170371368527,
+      "message": "test/test_cs_symbol_table.py:350: in test_prune_removes_bias_edge_of_dropped_everything\n    A, _B, _C = cs.interpret_word([1], 2, key=\"w\")   # A: order-0 sym\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021754580084234476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016301249852403998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.001456458936445415,
+      "message": "test/test_cs_symbol_table.py:395: in test_assert_relation_replaces_poles_and_enters_embedding\n    A, B, C = cs.interpret_word([1], 2, key=\"cat\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020025420235469937,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0015316249337047338,
+      "message": "test/test_cs_symbol_table.py:426: in test_assert_relation_sym_weight_lands_on_edge\n    A, _B, _C = cs.interpret_word([1], 2, key=\"w\")   # order-0 sym\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_pole_rename_aliases_hold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.525008499622345e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_thought_legacy_boundaries.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation"
+  ],
+  "completed": [
+    "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-02/worker-000.json"
+      ],
+      "pid": 11080,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1005750048,
+      "elapsed_seconds": 5.4693140420131385,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation"
+      ],
+      "completed": [
+        "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.8528420829679817,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-02",
+  "elapsed_seconds": 9.206620458047837,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1005750048,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-02/collect.json"
+    ],
+    "pid": 11071,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 422036704,
+    "elapsed_seconds": 3.5054753749864176,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

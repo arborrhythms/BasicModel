@@ -1,0 +1,102 @@
+FFFFFFFFFFF                                                              [100%]
+=================================== FAILURES ===================================
+________________ test_enable_allocates_codebook_and_role_table _________________
+test/test_category_codebook.py:64: in test_enable_allocates_codebook_and_role_table
+    assert not ss.category_codebook_enabled()      # off until enabled
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'category_codebook_enabled'
+________________________ test_enable_noop_without_roles ________________________
+test/test_category_codebook.py:78: in test_enable_noop_without_roles
+    assert ss.enable_category_codebook(_G([])) is False
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+__________________ test_assign_returns_valid_centroid_indices __________________
+test/test_category_codebook.py:84: in test_assign_returns_valid_centroid_indices
+    ss.enable_category_codebook(_grammar())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+___________________ test_role_vector_ema_moves_toward_target ___________________
+test/test_category_codebook.py:94: in test_role_vector_ema_moves_toward_target
+    ss.enable_category_codebook(_grammar())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+_________________ test_category_role_of_zeroes_negative_index __________________
+test/test_category_codebook.py:110: in test_category_role_of_zeroes_negative_index
+    ss.enable_category_codebook(_grammar())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+_____________________ test_disabled_methods_are_safe_noops _____________________
+test/test_category_codebook.py:120: in test_disabled_methods_are_safe_noops
+    assert ss.assign_category(torch.randn(3, ss.nDim)) is None
+           ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'assign_category'
+_____________ test_pending_meta_symbol_commits_to_single_category ______________
+test/test_category_codebook.py:130: in test_pending_meta_symbol_commits_to_single_category
+    ss.enable_category_codebook(_grammar())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+____________________ test_category_vq_assign_is_pure_lookup ____________________
+test/test_category_codebook.py:160: in test_category_vq_assign_is_pure_lookup
+    ss.enable_category_codebook(_grammar())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+_______ test_checkpoint_prewarm_materializes_requested_category_codebook _______
+test/test_category_codebook.py:195: in test_checkpoint_prewarm_materializes_requested_category_codebook
+    assert ws._category_codebook_requested is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_category_codebook_requested'
+_____ test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe _____
+test/test_category_codebook.py:218: in test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe
+    source.enable_category_codebook(_grammar())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+______ test_category_learning_loads_legacy_vocab_extras_without_new_keys _______
+test/test_category_codebook.py:290: in test_category_learning_loads_legacy_vocab_extras_without_new_keys
+    restored.enable_category_codebook(_grammar())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+=============================== warnings summary ===============================
+test/test_category_codebook.py: 10 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table
+FAILED test/test_category_codebook.py::test_enable_noop_without_roles - Attri...
+FAILED test/test_category_codebook.py::test_assign_returns_valid_centroid_indices
+FAILED test/test_category_codebook.py::test_role_vector_ema_moves_toward_target
+FAILED test/test_category_codebook.py::test_category_role_of_zeroes_negative_index
+FAILED test/test_category_codebook.py::test_disabled_methods_are_safe_noops
+FAILED test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category
+FAILED test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup
+FAILED test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook
+FAILED test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe
+FAILED test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys
+11 failed, 11 warnings in 2.70s

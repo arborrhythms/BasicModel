@@ -1,0 +1,4 @@
+{
+  "reason": "Final candidate validation exposed the unaligned native-identity API regression. Preserve all completed/partial outcomes, restore the None contract without porting the protected assertion, and measure the corrected source.",
+  "failing_probe": "explicit-final2/group-35/result.json"
+}

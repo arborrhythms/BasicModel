@@ -1,0 +1,34 @@
+F......F..F                                                              [100%]
+=================================== FAILURES ===================================
+______ test_part_testimony_symbols_the_parent_one_order_above_the_object _______
+test/test_item7_taxonomy.py:26: in test_part_testimony_symbols_the_parent_one_order_above_the_object
+    assert parent in cs.word_concepts('animal')
+E   AssertionError: assert 5 in (3, 4)
+E    +  where (3, 4) = word_concepts('animal')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+_ test_closing_binds_subject_form_to_particular_without_widening_compose_access _
+test/test_item7_taxonomy.py:132: in test_closing_binds_subject_form_to_particular_without_widening_compose_access
+    assert cid in f.cs.word_concepts('cat')
+E   AssertionError: assert 16 in (12, 13)
+E    +  where (12, 13) = word_concepts('cat')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_item7_acceptance.SentenceFixture object at 0x11e9c0bc0>.cs
+__________ test_selected_anaphor_form_binds_to_its_own_end_particular __________
+test/test_item7_taxonomy.py:175: in test_selected_anaphor_form_binds_to_its_own_end_particular
+    assert int(f.store.row_ids[row]) in f.cs.word_concepts('he')
+E   AssertionError: assert 19 in (15, 16)
+E    +  where 19 = int(tensor(19))
+E    +  and   (15, 16) = word_concepts('he')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_item7_acceptance.SentenceFixture object at 0x11eac2a20>.cs
+=============================== warnings summary ===============================
+test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+FAILED test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access
+FAILED test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular
+3 failed, 8 passed, 1 warning in 2.05s

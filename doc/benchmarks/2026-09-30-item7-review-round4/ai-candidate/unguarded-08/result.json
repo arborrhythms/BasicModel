@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 15545692088,
+  "elapsed_seconds": 12.239992040907964
+}

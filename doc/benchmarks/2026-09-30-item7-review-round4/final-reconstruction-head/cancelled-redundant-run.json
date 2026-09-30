@@ -1,0 +1,37 @@
+{
+  "reason": "Reused the already completed, exact-source-matched HEAD baseline; cancelled only the redundant rerun and its queued retries. Partial attempts and timeouts remain separate.",
+  "stopped_owned_processes": [
+    73469,
+    73480,
+    73482,
+    73483,
+    75229,
+    75230,
+    75231,
+    75448,
+    75449,
+    75451,
+    76943
+  ],
+  "baseline": "doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction",
+  "measurement_driver_sha256": "c5f74a7af3dc3201563391ad05f78b6ec3888f6cdb3dad56fe49df15080b36d4",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "all_guarded_completions": true,
+  "max_peak_memory_bytes": 7473126144,
+  "orphaned_pool_workers_stopped": [
+    73480,
+    73482,
+    77491,
+    77492,
+    73483
+  ]
+}

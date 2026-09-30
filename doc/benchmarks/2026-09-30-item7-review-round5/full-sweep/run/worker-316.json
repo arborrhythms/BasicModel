@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim"
+  ],
+  "completed": [
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001568750012665987,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

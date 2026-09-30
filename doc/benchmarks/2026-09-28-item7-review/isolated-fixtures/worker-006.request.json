@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off"
+  ],
+  "collect": false,
+  "recycle_file": "/private/tmp/item7-isolated-fixtures/worker-006.recycle.json"
+}

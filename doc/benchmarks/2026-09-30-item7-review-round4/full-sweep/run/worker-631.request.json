@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_stm_residual_no_sync.py::test_no_comprehension_prediction_api"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-631.recycle.json"
+}

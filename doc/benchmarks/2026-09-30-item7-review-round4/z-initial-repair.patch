@@ -1,0 +1,614 @@
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -8,7 +8,7 @@
+ 
+ import torch
+ 
+-from ClauseRow import Clause, ClauseConcept
++from ClauseRow import Clause, ClausePredicate, predicate_identity
+ from Meaning import ConceptualMeaning
+ 
+ 
+@@ -151,21 +151,17 @@
+         selected = head(node)
+         if selected['ref'] > 0:
+             return selected['ref']
+-        members = tuple(dict.fromkeys(int(refs[i]) for i in node['leaves'] if int(refs[i]) > 0))
+-        if not members:
+-            return -1
+-        point = value(node)
+-        key = ('clause-phrase', members, tuple(point.detach().cpu().tolist()))
+-        return ClauseConcept(point, key, members)
+-
+-    def operation_concept(node):
+-        """The selected structural verb's atom, admitted only by the host closing."""
+-        import hashlib
++        # A composite phrase has no concept-inventory identity. When a
++        # relative row needs its address, operand() writes its ended point.
++        return -1
++
++    def operation_concept(node, relation=None):
++        """The selected grammar predicate lives only in its row occurrences."""
+         from References import symbol_code
+-        identity = getattr(node['rule'], 'canonical', name(node))
+-        code = int.from_bytes(hashlib.sha256(identity.encode()).digest()[:4], 'big')
++        identity = relation if relation is not None else name(node)
++        code = predicate_identity(identity)
+         point = symbol_code(code, program.leaves.shape[-1], n_where=0, n_when=0).to(program.leaves)
+-        return ClauseConcept(point, ('grammar-predicate', identity), ())
++        return ClausePredicate(point, identity)
+ 
+     def is_clause(node):
+         node = head(node)
+@@ -217,12 +213,9 @@
+             right, right_ref = None, -1
+             predicate = None
+             predicate_ref = -1
+-            if relation is not None and registry is not None:
+-                try:
+-                    native = registry.clause_reference(relation)
+-                    predicate, predicate_ref = registry._payload(native), int(native[1])
+-                except (ValueError, KeyError):
+-                    pass
++            if relation is not None:
++                predicate_ref = operation_concept(node, relation)
++                predicate = predicate_ref.point
+             if predicate is None:
+                 vp = head(operands[1])
+                 if len(vp['children']) == 2 and (name(vp) == 'verb'
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -1,4 +1,4 @@
+-"""Host-side clause admission into the shared concept/idea row index."""
++"""Host-side clause admission and references to LTM occurrences."""
+ from dataclasses import dataclass, field, replace
+ from contextlib import contextmanager
+ from typing import Any
+@@ -8,20 +8,41 @@
+ from Meaning import ConceptualMeaning
+ 
+ 
++def predicate_identity(name):
++    """A stable slot address for a grammar operation, never an inventory row.
++
++    Only occurrences in the store give this address content. Its grammar name
++    ties those occurrences together without looking at their vector values.
++    The tag is disjoint from concept IDs and occurrence-addressed LTM rows.
++    """
++    import hashlib
++    name = 'part' if name in ('whole', 'equal', 'generic') else str(name)
++    return (1 << 61) | (int.from_bytes(hashlib.sha256(name.encode()).digest()[:8], 'big') & ((1 << 61) - 1))
++
++
++def predicate_relation(reference):
++    for name in ('part', 'implies'):
++        if reference == predicate_identity(name):
++            return name
++    return 'operator'
++
++
+ @dataclass(frozen=True, eq=False)
+-class ClauseConcept:
+-    """A selected phrase to admit in the existing native concept inventory."""
++class ClausePredicate:
++    """An open reading's predicate value and identity, awaiting its row slot."""
+     point: Any = field(repr=False)
+-    key: tuple
+-    members: tuple
++    name: str
+ 
+     def __post_init__(self):
+         if (not torch.is_tensor(self.point) or self.point.ndim != 1
+                 or not bool(torch.isfinite(self.point).all())):
+-            raise ValueError('a phrase concept requires one finite grammar value')
+-        if ((not self.members and self.key[0] != 'grammar-predicate')
+-                or any(type(cid) is not int or cid <= 0 for cid in self.members)):
+-            raise ValueError('phrase concepts require resolved native constituents')
++            raise ValueError('a clause predicate requires one finite grammar value')
++        if not isinstance(self.name, str) or not self.name:
++            raise ValueError('a clause predicate requires its grammar operation name')
++
++    @property
++    def identity(self):
++        return predicate_identity(self.name)
+ 
+ 
+ @dataclass(frozen=True, eq=False)
+@@ -77,7 +98,7 @@
+         if self.factored_refs is not None and len(self.factored_refs) != 3:
+             raise ValueError('a factored clause has three reference slots')
+         for reference in (*self.refs, *(self.factored_refs or ())):
+-            if isinstance(reference, ClauseConcept):
++            if isinstance(reference, ClausePredicate):
+                 continue
+             if isinstance(reference, tuple):
+                 if (len(reference) != 2 or reference[0] != 'clause'
+@@ -96,8 +117,7 @@
+ 
+ 
+ def attach_clause_index(model, store, space):
+-    """Bind the existing allocator and codebook at the host setup boundary."""
+-    from Spaces import _concept_alloc_of
++    """Bind the LTM occurrence owner and the existing concept codebook."""
+     from Queries import _basis, _existing_row
+     import weakref
+     space_ref = weakref.ref(space)
+@@ -106,18 +126,13 @@
+     except TypeError:
+         model_ref = lambda: model
+ 
++    store_ref = weakref.ref(store)
++    object.__setattr__(space, '_clause_store_ref', store_ref)
++
+     def allocate(point):
+-        owner = space_ref()
+-        cid = owner.new_concept()
+-        allocator = _concept_alloc_of(owner)
+-        allocator.set_role(cid, 'ended', ['idea' if point is not None else 'relation'])
+-        if point is not None:
+-            allocator.reference_orders[cid] = 1
+-            allocator.singletons.add(cid)
+-            # The point's owner is the ended LTM row. The shared allocator
+-            # supplies its identity; a second dictionary copy would both
+-            # consume a concept-definition slot and mutate pending gradients.
+-        return cid
++        # As for DEF, the durable address is the occurrence about to be
++        # written. A closed S is not an extra concept-inventory record.
++        return (1 << 62) + int(store_ref()._next_occurrence)
+ 
+     def concept_point(cid):
+         owner = space_ref()
+@@ -127,19 +142,22 @@
+             return None
+ 
+     def predicate_kind(reference):
++        kind = predicate_relation(reference)
++        if kind != 'operator':
++            return kind
++        # Existing explicitly supplied thought predicates can still name a
++        # part relation. Reading their identity does not request an executor.
+         current = model_ref()
+         registry = getattr(current, 'grammatical_thoughts', None)
++        names = getattr(space_ref(), '_frozen_named', {})
+         if registry is not None:
+-            for kind in ('part', 'implies'):
+-                try:
+-                    if registry.clause_reference(kind)[1] == reference:
+-                        return kind
+-                except (KeyError, ValueError):
+-                    pass
++            for domain, operation in registry._declared_identities:
++                if operation == 'part' and names.get(registry._name((domain, operation))) == reference:
++                    return 'part'
+         return 'operator'
+ 
+     store.configure_clause_index(allocate=allocate, concept_point=concept_point,
+-        predicate_kind=predicate_kind, preflight=lambda count: space_ref()._preflight_concept_allocation(count, context='clause endings'))
++        predicate_kind=predicate_kind, preflight=lambda count: space_ref()._preflight_concept_allocation(count, context='clause taxonomy'))
+     from ConceptIndex import ClauseTaxonomyPlan
+     object.__setattr__(store, '_clause_index_plan',
+         lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))
+@@ -163,6 +181,8 @@
+             raise ValueError('a completed row occupies one or three slots')
+         resolve = getattr(self, '_predicate_kind', None)
+         reference = field.refs[1]
++        if isinstance(reference, ClausePredicate):
++            return predicate_relation(reference.identity)
+         result = resolve(reference) if resolve is not None and type(reference) is int else 'operator'
+         if result not in ('part', 'implies', 'operator'):
+             raise ValueError('the REL identity has an unknown grammatical kind')
+@@ -179,15 +199,36 @@
+         finally:
+             object.__setattr__(self, '_clause_assertion', previous)
+ 
++    def _native_reference_indexes(self):
++        """Derived identity-to-occurrence caches, invalidated by row edits."""
++        count = len(self)
++        token = (count, id(self.row_ids), self.row_ids._version,
++                 id(self.refs), self.refs._version, self.rel_type._version)
++        if self.__dict__.get('_native_reference_token') != token:
++            rows, predicates = {}, {}
++            for row, identity in enumerate(self.row_ids[:count].tolist()):
++                if identity > 0:
++                    rows.setdefault(identity, row)
++            for row, references in enumerate(self.refs[:count].tolist()):
++                for slot, identity in enumerate(references):
++                    if (1 << 61) <= identity < (1 << 62):
++                        predicates.setdefault(identity, (row, slot))
++            object.__setattr__(self, '_native_row_index', rows)
++            object.__setattr__(self, '_native_predicate_index', predicates)
++            object.__setattr__(self, '_native_reference_token', token)
++        return self._native_row_index, self._native_predicate_index
++
+     def index_of_row(self, reference):
+-        matches = (self.row_ids[:len(self)] == int(reference)).nonzero().flatten()
+-        return None if not matches.numel() else int(matches[0])
++        return self._native_reference_indexes()[0].get(int(reference))
+ 
+     def point_of_row(self, reference):
+         """Read a concept/idea point; a relation explicitly has no point."""
+         index = self.index_of_row(reference)
+         if index is not None:
+             return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
++        occurrence = self._native_reference_indexes()[1].get(int(reference))
++        if occurrence is not None:
++            return self.slots[occurrence]
+         resolve = getattr(self, '_concept_point', None)
+         if resolve is None:
+             raise ValueError('shared concept index is not attached')
+@@ -224,7 +265,7 @@
+             raise ValueError('clause evidence requires two finite poles in [0, 1]')
+         allocate = getattr(self, '_allocate_clause_row', None)
+         if allocate is None:
+-            raise ValueError('clause admission requires the shared concept allocator')
++            raise ValueError('clause admission requires its reference index')
+         if kind not in self.KINDS or (kind == 'fact' and clause.meaning.mode != 'assertive'):
+             raise ValueError('invalid clause evidence kind or grammatical mode')
+         if type(stream) is not int or stream < -1:
+@@ -239,10 +280,10 @@
+             clause = index_plan.clause
+         keys = {(int(self.rel_type[i]), *self.refs[i].tolist()): int(self.row_ids[i])
+                 for i in self.relations().tolist() if int(self.row_ids[i]) > 0}
+-        planned, visiting, eternal_ids, required, identities = {}, set(), set(), 0, 0
++        planned, visiting, eternal_ids, required = {}, set(), set(), 0
+ 
+         def preflight(value):
+-            nonlocal required, identities
++            nonlocal required
+             if id(value) in visiting:
+                 raise ValueError('completed clause references contain a cycle')
+             if id(value) in planned:
+@@ -254,8 +295,8 @@
+             self._validate_local_references(replace(value.meaning,
+                 role_refs=(None, None, None), constituents=()))
+             child_ids = tuple(preflight(child) for child in value.children)
+-            if any(isinstance(ref, ClauseConcept) for ref in value.refs):
+-                raise ValueError('phrase admission requires the native concept index')
++            if any(isinstance(ref, ClausePredicate) for ref in value.refs):
++                raise ValueError('predicate identity requires the clause index')
+             refs = tuple(child_ids[r[1]] if isinstance(r, tuple) else r for r in value.refs)
+             for slot, ref in enumerate(value.refs):
+                 if isinstance(ref, tuple):
+@@ -275,7 +316,7 @@
+                     if not isinstance(ref, tuple) and self.index_of_row(ref) is None:
+                         raise ValueError('implication operands must be truth rows')
+             def reserve(addresses):
+-                nonlocal required, identities
++                nonlocal required
+                 key = tags[relation], *addresses
+                 if value.eternal and self.index_of_row(value.refs[0]) is not None:
+                     return value.refs[0]
+@@ -284,7 +325,6 @@
+                 if relation is not None and key in keys:
+                     return keys[key]
+                 required += 1
+-                identities += int(not value.eternal)
+                 result = value.refs[0] if value.eternal else -required - 1
+                 if value.eternal:
+                     eternal_ids.add(result)
+@@ -302,8 +342,8 @@
+         if self.capacity - len(self) < required:
+             return -1
+         check = getattr(self, '_preflight_clause_rows', None)
+-        if check is not None:
+-            check(identities + (0 if index_plan is None else index_plan.count))
++        if check is not None and index_plan is not None and index_plan.count:
++            check(index_plan.count)
+         prediction = None if expectation is None else getattr(expectation, 'estimate', None)
+         sources = () if expectation is None else tuple(getattr(expectation, 'source_occurrences', ()))
+         surprise = -1.
+--- a/bin/ConceptIndex.py
++++ b/bin/ConceptIndex.py
+@@ -98,7 +98,6 @@
+         self.cs, self.store = cs, store
+         self.alloc = _concept_alloc_of(cs)
+         self.definitions, self.edges, self.keys, self.forms = {}, set(), {}, []
+-        self.terms = {}
+         self.points = {}
+         self._prepared = {}
+         visiting = set()
+@@ -111,10 +110,10 @@
+             visiting.add(id(value))
+             children = tuple(prepare(child) for child in value.children)
+             companions = tuple(prepare(child) for child in value.companions)
+-            from ClauseRow import ClauseConcept
+-            refs = tuple(self.term(ref) if isinstance(ref, ClauseConcept) else ref for ref in value.refs)
++            from ClauseRow import ClausePredicate
++            refs = tuple(self.term(ref) if isinstance(ref, ClausePredicate) else ref for ref in value.refs)
+             factored = (None if value.factored_refs is None else tuple(
+-                self.term(ref) if isinstance(ref, ClauseConcept) else ref for ref in value.factored_refs))
++                self.term(ref) if isinstance(ref, ClausePredicate) else ref for ref in value.factored_refs))
+             relation = store.clause_relation(value)
+             if (relation == 'part' and all(type(refs[i]) is int and refs[i] > 0
+                                            for i in (0, 2))
+@@ -144,7 +143,12 @@
+             visiting.remove(id(value))
+             return result
+         self.clause = prepare(clause)
+-        self.validate_rows()
++        if not self.validate_rows():
++            # Optional symbolization is all-or-nothing. The completed field
++            # still writes its actual references and the reading goes on.
++            self.definitions, self.edges, self.keys, self.forms = {}, set(), {}, []
++            self.points = {cid: point for cid, point in self.points.items()
++                           if (1 << 61) <= cid < (1 << 62)}
+ 
+     def validate_rows(self):
+         """Reject invalid phrase widths and full order blocks before allocation."""
+@@ -153,6 +157,10 @@
+         width = cs.similarity_codebook.getW().shape[-1]
+         if any(point is None or point.shape != (width,) for point in self.points.values()):
+             raise ValueError('phrase point must fit its native conceptual row')
++        if self.definitions:
++            _, end, capacity = cs._concept_capacity_window(len(self.definitions))
++            if capacity is not None and end > capacity:
++                return False
+         layer = alloc.layer(0)
+         trial = SimpleNamespace(nOutput=layer.nOutput,
+             _tensor_rows=dict(layer._tensor_rows),
+@@ -172,7 +180,8 @@
+                 order = min(order, len(caps) - 1)
+                 key, base, capacity = (f'o{order}', cid), sum(caps[:order]), caps[order]
+             if type(layer).assign_row(trial, key, capacity=capacity, base=base) is None:
+-                raise RuntimeError('native conceptual row capacity exhausted before clause admission')
++                return False
++        return True
+ 
+     def bind_particular(self, clause, row_id):
+         """Associate the subject's form with its ended, order-one occurrence."""
+@@ -188,18 +197,9 @@
+         return self.definitions[cid][1] if cid in self.definitions else self.cs._concept_source_order(cid)
+ 
+     def term(self, term):
+-        """Own a grammatical phrase once; its sigma definition has native inputs."""
+-        existing = self.keys.get(term.key, self.alloc.relate_idx.get(term.key))
+-        if existing is not None:
+-            return existing
+-        members = _available(self.cs, term.members)
+-        order = max((self.order(cid) for cid in members), default=-1) + 1
+-        parts = tuple(self.symbol_at(cid, order - 1) for cid in members)
+-        cid = self.alloc.next_id + len(self.definitions)
+-        self.definitions[cid] = parts, order
+-        self.terms[cid] = term
++        """Retain a predicate's live slot value until its occurrence is written."""
++        cid = term.identity
+         self.points[cid] = term.point
+-        self.keys[term.key] = cid
+         return cid
+ 
+     def symbol_at(self, source, order):
+@@ -236,7 +236,7 @@
+             alloc.reference_orders[cid] = order
+             alloc.singletons.add(cid)
+             alloc.raised.add(cid)
+-            for member in (source if cid in self.terms else (source,)):
++            for member in (source,):
+                 alloc.add(cid, 'part', ('sym', member))
+         alloc.relate_idx.update(self.keys)
+         for parent, part in sorted(self.edges):
+@@ -256,5 +256,3 @@
+                 if row is None or self.points[cid].shape != basis[row].shape:
+                     raise ValueError('phrase point must fit its native conceptual row')
+                 basis[row].copy_(self.points[cid].to(basis))
+-                if cid in self.terms and self.terms[cid].key[0] == 'grammar-predicate':
+-                    cs.__dict__.setdefault('_frozen_concepts', set()).add(cid)
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -18079,7 +18079,15 @@
+         PS/WS codes; otherwise ``1 + max`` order of its sub-symbol constituents,
+         capped at the configured symbolic order. (Symbols ARE concepts of the
+         previous order -- this is the ramsified recursion.) Cycle-guarded."""
+-        return _concept_alloc_of(self).order_of(concept_id, _seen)
++        alloc = _concept_alloc_of(self)
++        if int(concept_id) not in alloc.placement:
++            store = self._closed_clause_store()
++            row = None if store is None else store.index_of_row(concept_id)
++            if row is not None:
++                # Preserve the particular-reference order; the row's own
++                # abstraction stamp separately governs decoding its point.
++                return int(int(store.rel_type[row]) == store.REL_NONE)
++        return alloc.order_of(concept_id, _seen)
+ 
+     @property
+     def _csw_rows(self):
+@@ -19377,7 +19385,10 @@
+         word = None if index is None else index.word(form=form)
+         if word is not None:
+             values.update((word, *index.objects(word)))
+-        return tuple(sorted(cid for cid in values if cid in alloc.placement and cid not in alloc.retired))
++        store = self._closed_clause_store()
++        return tuple(sorted(cid for cid in values if cid not in alloc.retired and
++                            (cid in alloc.placement or
++                             (store is not None and store.index_of_row(cid) is not None))))
+ 
+     def resolve_word_concept(self, form, *, order, previous=None):
+         """Select a grammar-requested order; ambiguity remains unresolved.
+@@ -19553,6 +19564,15 @@
+     def taxonomy_parents(self, pos):
+         from ConceptIndex import taxonomy_parents
+         return taxonomy_parents(self, int(pos))
++
++    def _closed_clause_store(self):
++        model = getattr(self, '_model', None)
++        symbol = getattr(model, 'symbolSpace', None) or getattr(self, 'symbolSpace', None)
++        store = getattr(symbol, 'ltm_store', None)
++        if store is not None:
++            return store
++        reference = self.__dict__.get('_clause_store_ref')
++        return None if reference is None else reference()
+ 
+     def _definition_index(self):
+         model = getattr(self, '_model', None)
+--- a/test/test_item7_closing_identities.py
++++ b/test/test_item7_closing_identities.py
+@@ -0,0 +1,119 @@
++"""Round-4 Z / first AG probes: forced readings, no selected seed."""
++import copy
++from types import SimpleNamespace
++import pytest
++import torch
++
++from reading_fixtures import finish_reading
++from Spaces import _concept_alloc_of
++from test_item7_acceptance import SentenceFixture
++
++
++def inventory(cs):
++    alloc = _concept_alloc_of(cs)
++    return dict(next_id=alloc.next_id, placement=copy.deepcopy(alloc.placement),
++                rows=copy.deepcopy(cs._csw_rows),
++                keys=copy.deepcopy(alloc.relate_idx))
++
++
++def test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record(monkeypatch):
++    f = SentenceFixture(monkeypatch)
++    clause = f.clause(('lift', 'cat', 'runs'))
++    before = inventory(f.cs)
++    row = f.store.write_clause(clause)
++    assert row >= 0
++    assert inventory(f.cs) == before
++    assert int(f.store.row_ids[row]) not in _concept_alloc_of(f.cs).placement
++    torch.testing.assert_close(f.store.point_of_row(int(f.store.row_ids[row])), clause.point)
++
++
++def test_referenced_phrase_is_read_from_ltm_without_an_inventory_row(monkeypatch):
++    f = SentenceFixture(monkeypatch)
++    clause = f.clause(('part', 'cat', ('verb', 'chases', 'mouse')))
++    before = inventory(f.cs)
++    row = f.store.write_clause(clause)
++    assert row >= 0
++    assert inventory(f.cs) == before
++    reference = int(f.store.refs[row, 2])
++    phrase = f.store.index_of_row(reference)
++    assert phrase is not None and phrase != row
++    assert f.store.rel_type[phrase] == f.store.REL_NONE
++    torch.testing.assert_close(f.store.point_of_row(reference), f.store.slots[phrase, 0])
++
++
++def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
++    f = SentenceFixture(monkeypatch)
++    entry = f.program(('implies', ('part', 'cat', 'animal'), ('lift', 'cat', 'runs')))
++    def unavailable(*args, **kwargs):
++        raise AssertionError('closing asked the thought registry for its relation identity')
++    monkeypatch.setattr(f.registry, 'clause_reference', unavailable)
++    before = dict(f.cs._csw_rows)
++    clause = finish_reading(f.language, entry, registry=f.registry)
++    row = f.store.write_clause(clause)
++    assert f.store.rel_type[row] == f.store.REL_IMPLIES
++    assert f.store.relations(f.store.REL_PARTOF).numel() == 1
++    # A testified taxonomy may symbolize a parent when room exists; the
++    # predicates themselves must not occupy a newly allocated native row.
++    for index in f.store.relations().tolist():
++        assert f.cs._csw_row_of(int(f.store.refs[index, 1])) is None
++
++
++def test_mm_grammar_part_under_disjunction_closes_at_full_inventory(monkeypatch):
++    import Language
++    from test_mm_xor import _fresh_model, _PROJECT
++    from pathlib import Path
++    model, _, _ = _fresh_model(str(Path(_PROJECT) / 'data/MM_grammar.xml'))
++    f = object.__new__(SentenceFixture)
++    f.cs, f.grammar, f.registry = model._concept_owner(), Language.TheGrammar, model.grammatical_thoughts
++    f.language = model.languageSpace
++    f.binary, f.unary = f.language._compose_binary_rules, f.language._compose_unary_rules
++    f.words, f.ops = {}, {}
++    width = int(f.cs.outputShape[-1])
++    def operation(rule):
++        name = rule.method_name
++        if name not in f.ops:
++            cls = Language.GRAMMAR_LAYER_CLASSES[name]
++            f.ops[name] = cls(width, width) if name in ('lift', 'verb', 'lower', 'surface', 'sum', 'implies') else cls()
++        return f.ops[name]
++    f.operation = operation
++    f.store = model.symbolSpace.ltm_store
++    from ClauseRow import attach_clause_index
++    attach_clause_index(model, f.store, f.cs)
++    try:
++        entry = f.program(('disjunction', ('part', 'cat', 'animal'), 'sleeps'))
++        layer = _concept_alloc_of(f.cs).layer(0)
++        caps = f.cs._order_caps()
++        # Occupy the remaining physical seats in the mechanism fixture;
++        # configuration capacities are unchanged.
++        for base, capacity in [(0, caps[0]), (sum(caps), f.cs.nVectors - sum(caps))] + [(sum(caps[:i]), caps[i]) for i in range(1, len(caps))]:
++            layer._row_next[base] = capacity
++        before = inventory(f.cs)
++        clause = finish_reading(f.language, entry, registry=f.registry)
++        row = f.store.write_clause(clause)
++        assert row >= 0 and f.store.rel_type[row] == f.store.REL_OPERATOR
++        assert inventory(f.cs) == before
++        assert (f.store.refs[row] > 0).all()
++        predicate = int(f.store.refs[row, 1])
++        assert f.cs._csw_row_of(predicate) is None
++        assert predicate not in _concept_alloc_of(f.cs).placement
++        second = f.store.write_clause(clause)
++        assert second == row
++        assert inventory(f.cs) == before
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++
++
++def test_full_inventory_refuses_symbolization_and_still_writes_the_part_row(monkeypatch):
++    f = SentenceFixture(monkeypatch)
++    clause = f.clause(('part', 'cat', 'animal'))
++    alloc = _concept_alloc_of(f.cs)
++    caps = f.cs._order_caps()
++    for rung in range(len(caps)):
++        alloc.layer(0)._row_next[sum(caps[:rung])] = caps[rung]
++    alloc.layer(0)._row_next[sum(caps)] = f.cs.nVectors - sum(caps)
++    before = inventory(f.cs)
++    row = f.store.write_clause(clause)
++    assert row >= 0 and f.store.rel_type[row] == f.store.REL_PARTOF
++    assert inventory(f.cs) == before
++    assert tuple(f.store.refs[row, [0, 2]].tolist()) == (f.noun('cat'), f.noun('animal'))
+--- a/test/test_item7_taxonomy.py
++++ b/test/test_item7_taxonomy.py
+@@ -7,7 +7,6 @@
+ 
+ from Spaces import _concept_alloc_of
+ from test_item9b_interpret import _operator
+-from ClauseRow import ClauseConcept
+ from reading_fixtures import finish_reading
+ from test_item7_acceptance import SentenceFixture
+ 
+@@ -140,22 +139,30 @@
+ 
+ 
+ @pytest.mark.parametrize('invalid', ['width', 'capacity'])
+-def test_native_phrase_admission_is_atomic(monkeypatch, invalid):
++def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
++    from ClauseRow import attach_clause_index
++    from Layers import TernaryTruthStore
++    from Meaning import ConceptualMeaning
+     f = SentenceFixture(monkeypatch)
+     clause = f.clause(('part', 'cat', ('verb', 'chases', 'mouse')))
+-    assert isinstance(clause.refs[2], ClauseConcept)
++    assert clause.refs[2] == ('clause', 0)
+     if invalid == 'width':
+-        clause = replace(clause, refs=(*clause.refs[:2],
+-            replace(clause.refs[2], point=torch.zeros(9))))
++        child = clause.children[0]
++        child = replace(child, point=torch.zeros(9),
++                        meaning=ConceptualMeaning.from_description(torch.zeros(9)))
++        clause = replace(clause, children=(child,))
+     else:
+-        caps = f.cs._order_caps()
+-        order = max(f.cs._concept_source_order(cid) for cid in clause.refs[2].members) + 1
+-        base = sum(caps[:order])
+-        _concept_alloc_of(f.cs).layer(0)._row_next[base] = caps[order]
++        # A phrase needs its own LTM occurrence, not an inventory seat.
++        # With only one store row the whole two-row transaction is refused.
++        f.store = TernaryTruthStore(f.store.nDim, capacity=1)
++        attach_clause_index(f.model, f.store, f.cs)
+     alloc = _concept_alloc_of(f.cs)
+     before = alloc.next_id, copy.deepcopy(alloc.placement), copy.deepcopy(alloc.relate_idx)
+-    with pytest.raises((ValueError, RuntimeError)):
+-        f.store.write_clause(clause)
++    if invalid == 'width':
++        with pytest.raises(ValueError):
++            f.store.write_clause(clause)
++    else:
++        assert f.store.write_clause(clause) == -1
+     assert before == (alloc.next_id, alloc.placement, alloc.relate_idx)
+     assert len(f.store) == 0
+ 

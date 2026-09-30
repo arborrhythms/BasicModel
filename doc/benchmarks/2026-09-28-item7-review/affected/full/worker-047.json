@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "completed": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 165.7741874579806,
+      "message": "test/test_output_path_supervised.py:459: in test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer\n    query = m._referent_representation(\nbin/Models.py:9430: in _referent_representation\n    cid = owner.resolve_word_concept(word)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: ConceptualSpace.resolve_word_concept() missing 1 required keyword-only argument: 'order'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

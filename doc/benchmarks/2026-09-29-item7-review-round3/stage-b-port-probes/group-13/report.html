@@ -1,0 +1,49 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 10/10 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.002524374984204769</pre></td><td><pre>test/test_item9b_interpret.py:16: in test_interpret_reuses_provisional_testimony_and_reverses_by_identity
+    word = interpret.lookup_word([7], [1], form=&#x27;wug&#x27;)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018792079063132405</pre></td><td><pre>test/test_item9b_interpret.py:36: in test_grammar_resolution_distinguishes_particular_and_kind
+    word = interpret.lookup_word([7], [1], form=&#x27;cat&#x27;)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0020976660307496786</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>9.183294605463743e-05</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018707909621298313</pre></td><td><pre>test/test_item9b_interpret.py:67: in test_ordered_word_lookup_keeps_anagrams_distinct
+    ab = interpret.lookup_word([1, 2], [], form=&#x27;ab&#x27;)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018331250175833702</pre></td><td><pre>test/test_item9b_interpret.py:75: in test_unused_one_off_testimony_is_forgotten_at_the_boundary
+    word = interpret.lookup_word([7], [], form=&#x27;wugg&#x27;)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>245.00363337493036</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.07151129096746445</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.008226833073422313</pre></td><td><pre>test/test_item9b_interpret.py:151: in test_selected_generic_grammar_ends_the_interpreted_kinds
+    words = [cs.interpret.lookup_word([part], [], form=form)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00202262494713068</pre></td><td><pre>test/test_item9b_interpret.py:192: in test_testimony_and_its_later_definition_are_read_by_the_parallel_field
+    word = interpret.lookup_word([7], [], form=&#x27;wug&#x27;)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr></table></body></html>

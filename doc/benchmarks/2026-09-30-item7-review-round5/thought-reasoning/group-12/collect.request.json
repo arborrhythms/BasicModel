@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_query_native_ids.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

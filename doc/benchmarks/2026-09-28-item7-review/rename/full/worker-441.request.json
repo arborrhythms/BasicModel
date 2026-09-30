@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_ps_analyzer.py::test_boundary_matches_word_lexer",
+    "test/test_ps_analyzer.py::test_ps_analyzer_byte_fallback",
+    "test/test_ps_analyzer.py::test_ps_analyzer_prefers_known_word",
+    "test/test_ps_analyzer.py::test_terminal_stream_fixed_capacity",
+    "test/test_ps_analyzer.py::test_terminal_stream_where_is_endpoint_sum"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-441.recycle.json"
+}

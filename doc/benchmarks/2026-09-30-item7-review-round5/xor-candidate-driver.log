@@ -1,0 +1,145 @@
+GATE 0: test/test_grounded_xor.py
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.1s; peak 0.40 GiB
+[worker-000] 6 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 29.6s; peak 0.43 GiB
+GATE 1: test/test_concept_output.py
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.0s; peak 0.40 GiB
+[worker-000] 10 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 56.3s; peak 1.05 GiB
+GATE 2: test/test_mm_xor.py
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.1s; peak 0.41 GiB
+[worker-000] 7 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 15.7s; peak 0.58 GiB
+GATE 3: test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.4s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 39.1s; peak 1.10 GiB
+GATE 4: test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 38.7s; peak 1.10 GiB
+GATE 5: test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.4s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 77.6s; peak 0.61 GiB
+GATE 6: test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.4s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 97.4s; peak 0.62 GiB
+GATE 7: test/test_basicmodel.py::TestSPNN::test_xor_training
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.2s; peak 0.41 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 14.3s; peak 0.41 GiB
+GATE 8: test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 11.4s; peak 4.55 GiB
+GATE 9: test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 11.3s; peak 4.54 GiB
+GATE 10: test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.9s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 11.3s; peak 4.53 GiB
+GATE 11: test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 10.7s; peak 4.23 GiB
+GATE 12: test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 12.5s; peak 4.51 GiB
+GATE 13: test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 12.4s; peak 4.65 GiB
+GATE 14: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 105.2s; peak 4.59 GiB
+GATE 15: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 104.1s; peak 4.60 GiB
+GATE 16: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.8s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 104.4s; peak 4.51 GiB
+GATE 17: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 104.6s; peak 4.57 GiB
+GATE 18: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 105.8s; peak 4.43 GiB
+GATE 19: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 107.3s; peak 4.64 GiB
+GATE 20: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 107.4s; peak 4.63 GiB
+GATE 21: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.2s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 126.3s; peak 4.66 GiB
+GATE 22: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.0s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 125.2s; peak 4.54 GiB
+GATE 23: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.3s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 125.2s; peak 4.49 GiB
+GATE 24: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.2s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 126.6s; peak 4.59 GiB
+GATE 25: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.2s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 125.9s; peak 4.45 GiB
+GATE 26: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.2s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 124.9s; peak 4.50 GiB
+GATE 27: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.9s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 126.8s; peak 4.61 GiB
+GATE 28: test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.2s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 109.1s; peak 4.65 GiB

@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_search_then_mint.py::test_gate_requires_the_knob",
+    "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+    "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+    "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+    "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+    "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+    "test/test_search_then_mint.py::test_folds_never_create_rows"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-009.recycle.json"
+}

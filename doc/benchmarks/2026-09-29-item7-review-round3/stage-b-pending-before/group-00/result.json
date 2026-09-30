@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-pending-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-pending-before/group-00/worker-000.json"
+      ],
+      "pid": 9923,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 429671600,
+      "elapsed_seconds": 3.5833812500350177,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-pending-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.5116116660647094,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py:35: in test_pending_field_word_reservation_survives_checkpoint\n    assert target.interpret._pending == cs.interpret._pending\nE   AssertionError: assert {} == {1: {'forms':...holes': (1,)}}\nE     \nE     Right contains 1 more item:\nE     {1: {'forms': ('00',), 'parts': ((48, 48),), 'wholes': (1,)}}\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-pending-before/group-00",
+  "elapsed_seconds": 5.533747999928892,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 429671600,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-pending-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-pending-before/group-00/collect.json"
+    ],
+    "pid": 9915,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179749704,
+    "elapsed_seconds": 1.7241606670431793,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-pending-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

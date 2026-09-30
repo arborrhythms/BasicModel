@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ps_meronymic_router.py::test_route_once_selects_exactly_one_best_merge",
+    "test/test_ps_meronymic_router.py::test_route_once_returns_soft_marginals",
+    "test/test_ps_meronymic_router.py::test_depth_penalty_monotonically_reduces_merges",
+    "test/test_ps_meronymic_router.py::test_known_word_merges_unknown_stays_bytes",
+    "test/test_ps_meronymic_router.py::test_single_atom_and_empty_are_total"
+  ],
+  "completed": [
+    "test/test_ps_meronymic_router.py::test_route_once_selects_exactly_one_best_merge",
+    "test/test_ps_meronymic_router.py::test_route_once_returns_soft_marginals",
+    "test/test_ps_meronymic_router.py::test_depth_penalty_monotonically_reduces_merges",
+    "test/test_ps_meronymic_router.py::test_known_word_merges_unknown_stays_bytes",
+    "test/test_ps_meronymic_router.py::test_single_atom_and_empty_are_total"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_meronymic_router.py::test_route_once_selects_exactly_one_best_merge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007214999059215188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_meronymic_router.py::test_route_once_returns_soft_marginals",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015479105059057474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_meronymic_router.py::test_depth_penalty_monotonically_reduces_merges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015879160491749644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_meronymic_router.py::test_known_word_merges_unknown_stays_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033020798582583666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_meronymic_router.py::test_single_atom_and_empty_are_total",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014895806089043617,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

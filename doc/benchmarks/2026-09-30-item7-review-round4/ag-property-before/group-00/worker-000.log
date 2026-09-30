@@ -1,0 +1,10 @@
+....F.                                                                   [100%]
+=================================== FAILURES ===================================
+______ test_property_read_does_not_save_event_property_primitive_product _______
+/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py:42: in test_property_read_does_not_save_event_property_primitive_product
+    assert (2, 3, 513, 256) not in saved, saved
+E   AssertionError: [(513, 256), (2, 3, 1, 256), (2, 3, 513, 256), (2, 3, 513), (2, 3, 1)]
+E   assert (2, 3, 513, 256) not in [(513, 256), (2, 3, 1, 256), (2, 3, 513, 256), (2, 3, 513), (2, 3, 1)]
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product
+1 failed, 5 passed in 1.14s

@@ -1,0 +1,601 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers",
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+    "test/test_init_scale.py::test_whole_space_init_scale_wiring",
+    "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+    "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge",
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place"
+  ],
+  "completed": [
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers",
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+    "test/test_init_scale.py::test_whole_space_init_scale_wiring",
+    "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+    "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge",
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-000.json"
+      ],
+      "pid": 75746,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 502089096,
+      "elapsed_seconds": 4.637442291015759,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths"
+      ],
+      "completed": [
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5358851660275832,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_runtime_split_ingestion.py:103: in test_store_truths_idempotent_clear_then_record\n    self.assertGreater(int(tl.count.item()), 0)\nE   AssertionError: 0 not greater than 0",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.08526904205791652,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_runtime_split_ingestion.py:94: in test_store_truths_records_truths\n    self.assertGreater(int(tl.count.item()), 0)\nE   AssertionError: 0 not greater than 0",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-001.json"
+      ],
+      "pid": 75755,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 554501536,
+      "elapsed_seconds": 4.576909750001505,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once"
+      ],
+      "completed": [
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5662518329918385,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_compose_pair_driver.py:91: in test_pair_trains_twice_and_commits_once\n    torch.testing.assert_close(m._reconstruction_stack()._choice_actions, chosen)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 32 / 608 (5.3%)\nE   Greatest absolute difference: 5 at index (0, 1)\nE   Greatest relative difference: 2.0 at index (0, 3)",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-002.json"
+      ],
+      "pid": 75766,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1890650488,
+      "elapsed_seconds": 4.154169999994338,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers"
+      ],
+      "completed": [
+        "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.13498991704545915,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_mental_model.py:57: in test_grammar_has_syntactic_layers\n    self.assertIsNotNone(getattr(space, 'syntacticLayer', None),\nE   AssertionError: unexpectedly None : Whole percepts missing per-space SyntacticLayer",
+          "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-003.json"
+      ],
+      "pid": 75775,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 438371672,
+      "elapsed_seconds": 4.0243107080459595,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+        "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer"
+      ],
+      "completed": [
+        "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+        "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00046845804899930954,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:291: in test_symbolic_lexicon_methods_exist\n    self.assertTrue(hasattr(sym, name),\nE   AssertionError: False is not true : WholeSpace must expose 'train_embeddings' after the lexicon-API migration.",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00020279199816286564,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:312: in test_s_has_syntactic_layer\n    self.assertIsNotNone(\nE   AssertionError: unexpectedly None : WholeSpace must retain its SyntacticLayer (the grammar's canonical dispatch host); missing on WholeSpace(\nE     (subspace): SubSpace()\nE     (_owned_bases): ModuleDict(\nE       (event): Tensor()\nE       (what): Codebook(\nE         (primitive_properties): PrimitiveProperties()\nE       )\nE       (where): Tensor()\nE       (when): Tensor()\nE       (activation): Tensor()\nE     )\nE     (_owned_encoders): ModuleDict(\nE       (activeEncoding): ActiveEncoding()\nE       (objectEncoding): EventEncoding()\nE       (whatEncoding): WhatEncoding()\nE       (wordEncoding): WordEncoding()\nE     )\nE     (layers): ModuleList()\nE   )",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-004.json"
+      ],
+      "pid": 75784,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 438322496,
+      "elapsed_seconds": 3.9778530409093946,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_init_scale.py::test_whole_space_init_scale_wiring"
+      ],
+      "completed": [
+        "test/test_init_scale.py::test_whole_space_init_scale_wiring"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_init_scale.py::test_whole_space_init_scale_wiring",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.05247016705106944,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_init_scale.py:131: in test_whole_space_init_scale_wiring\n    assert ws.analysis_store.init_scale == pytest.approx(0.02)\n           ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-005.json"
+      ],
+      "pid": 75793,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435291480,
+      "elapsed_seconds": 3.9423680000472814,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack"
+      ],
+      "completed": [
+        "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001443166984245181,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-006.json"
+      ],
+      "pid": 75802,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 441337176,
+      "elapsed_seconds": 3.9829649169696495,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space"
+      ],
+      "completed": [
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.028386916033923626,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_shamatha_inline_grammar.py:64: in test_dnf_stack_wired_into_conceptual_space\n    m.wholeSpace.propositional_negation, Layers.NotLayer)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'propositional_negation'",
+          "stdout": "Starting with dynamic 8-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-007.json"
+      ],
+      "pid": 75812,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 444695944,
+      "elapsed_seconds": 4.063516833935864,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.025079207960516214,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:134: in test_forward_keeps_continuous_symbols\n    self.assertGreater(symbols.std().item(), 1e-6,\nE   AssertionError: 0.0 not greater than 1e-06 : Symbolic activation collapsed to a single VQ prototype after the per-stage forward.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-008.json"
+      ],
+      "pid": 75821,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 440436032,
+      "elapsed_seconds": 4.036705332924612,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace"
+      ],
+      "completed": [
+        "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004964499967172742,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_subspace_context.py:245: in test_pipeline_spaces_carry_symbolSpace\n    assert model.wholeSpace.symbolSpace is model.symbolSpace\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'symbolSpace'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-009.json"
+      ],
+      "pid": 75830,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 442189168,
+      "elapsed_seconds": 3.94879837508779,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge"
+      ],
+      "completed": [
+        "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.006548665929585695,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_bivector_retirement_state.py:88: in test_symbolic_references_parameter_attached_via_knowledge\n    assert hasattr(sym, 'references')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Codebook(\\n      (...ing()\\n    (whenEncoding): WhenStartDurationEncoding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (layers): ModuleList()\\n), 'references')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-010.json"
+      ],
+      "pid": 75840,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 427738432,
+      "elapsed_seconds": 3.887057999963872,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer"
+      ],
+      "completed": [
+        "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00019683304708451033,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_sparsity_regularizer.py:43: in test_symbolic_space_uses_sparsity_regularizer\n    assert hasattr(WholeSpace, \"_build_sparsity_regularizer\"), \\\nE   AssertionError: WholeSpace should expose a factory for its regularizer\nE   assert False\nE    +  where False = hasattr(<class 'Spaces.WholeSpace'>, '_build_sparsity_regularizer')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-011.json"
+      ],
+      "pid": 75851,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 431064384,
+      "elapsed_seconds": 3.9616026249714196,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+        "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend"
+      ],
+      "completed": [
+        "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+        "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0037821249570697546,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:99: in test_phase2_end_to_end_round_trip\n    assert isinstance(ws.references, nn.Parameter)\n                      ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0014742499915882945,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:213: in test_phase2_end_to_end_reattach_after_extend\n    refs_param_id_1 = id(ws.references)\n                         ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-012.json"
+      ],
+      "pid": 75859,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 432358720,
+      "elapsed_seconds": 3.8989679170772433,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place"
+      ],
+      "completed": [
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0005379999056458473,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:131: in test_symbolic_space_attach_creates_references_parameter\n    assert hasattr(ws, 'references')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'references')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00034166593104600906,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:151: in test_symbolic_space_attach_creates_order_buffer\n    assert hasattr(ws, 'order')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'order')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00031933304853737354,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:165: in test_symbolic_space_references_in_named_parameters\n    assert 'references' in names\nE   AssertionError: assert 'references' in []",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00029929110314697027,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:175: in test_symbolic_space_order_in_named_buffers\n    assert 'order' in names\nE   AssertionError: assert 'order' in []",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00028662499971687794,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:186: in test_symbolic_space_reattach_updates_in_place\n    refs_id_before = id(ws.references)\n                        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before",
+  "elapsed_seconds": 57.65716520906426,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1890650488,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/collect.json"
+    ],
+    "pid": 75738,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 438420728,
+    "elapsed_seconds": 3.9026792920194566,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers",
+        "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+        "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+        "test/test_init_scale.py::test_whole_space_init_scale_wiring",
+        "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+        "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+        "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge",
+        "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+        "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+        "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+        "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

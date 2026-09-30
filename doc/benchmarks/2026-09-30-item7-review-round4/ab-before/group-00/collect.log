@@ -1,0 +1,3 @@
+test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+
+1 test collected in 0.59s

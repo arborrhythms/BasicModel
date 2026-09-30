@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

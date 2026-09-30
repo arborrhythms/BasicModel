@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-before/group-00/worker-000.recycle.json"
+}

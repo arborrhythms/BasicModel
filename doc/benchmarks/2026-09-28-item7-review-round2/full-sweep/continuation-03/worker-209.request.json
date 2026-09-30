@@ -1,0 +1,26 @@
+{
+  "selectors": [
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+    "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+    "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors",
+    "test/test_xor_spaces.py::TestLoadInline::test_single_input_element_not_list",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_model_has_input_space",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+    "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+    "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-209.recycle.json"
+}

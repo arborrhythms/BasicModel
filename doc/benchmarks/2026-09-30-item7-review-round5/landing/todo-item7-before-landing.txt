@@ -1,0 +1,221 @@
+- **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
+   incomplete candidate for review (Codex, 2026-09-27;
+   [review receipt](doc/benchmarks/2026-09-27-item7/README.md)): full sweep
+   84 failed / 4,611 passed, with reconstruction and strict parity still red.
+   The [review corrections](doc/benchmarks/2026-09-28-item7-review/README.md)
+   have a source-matched full receipt: 4,675 passed, 30 failed, 322 skipped
+   and one expected failure. The candidate remains unaccepted and uncommitted,
+   stopped for Claude's review with the remaining failures recorded.
+   **Review round 2 is not accepted** (spec §13–§14). The ordered §14
+   corrections have [failing probes and measurements](doc/benchmarks/2026-09-28-item7-review-round2/README.md);
+   the source-matched sweep accounts for 5,026 cases: 4,678 passed, 22 failed,
+   322 skipped, one expected failure, and three stopped by the unchanged memory
+   guard. All 134 item 7 cases pass. Sixteen previously passing cases now fail
+   and three more hit the guard; all are recorded. Unaccepted and uncommitted,
+   stopped for Claude's review.
+   **Historical round-2 temporary reading forcing:** every native
+   word passes through interpret's word-admission face under both bindings;
+   the canonical aligned path already interprets its words. Removing this
+   forcing awaits reading mode's decision about when an object is interpreted.
+   `mixing` remains supported and `XOR_grammar.xml` stays byte-identical.
+   The admission-only step is superseded by the full `interpret` decision
+   and definitions below; the current candidate runs that unary in every reading.
+   **Review round 3, 2026-09-29: not accepted** (spec §15–§16). The forcing's
+   scope regressed nine proofs of XOR that pass at HEAD (grounded XOR and the
+   XOR_exact curriculum), and XOR_exact from the command line has crashed at
+   every revision since the item 9b landing without a receipt measuring it.
+   Two changes, shown by probe, repair both: the forcing stands down under
+   the aligned binding, and a word read again is recognised by its parts.
+   The forcing admits the word and does not interpret it: no object and no
+   link is made, and the word symbols it gives the `mixing` configurations
+   are the same for every sentence (§15.2 V, X).
+   **Decided (Alec, 2026-09-29):** the forced step is to be the whole of
+   `interpret`, as the two-step it replaced: the word fused first, a word
+   read again recognised, its object minted when it has none (spec §15.5;
+   shown by probe to restore every proof of XOR but XOR_grammar). Nothing
+   stands down. Every proof of XOR runs in every receipt. XOR_grammar is not a condition of accepting item 7
+   and is the gate of the grammatical operators update, below.
+   **Definitions are folded into item 7 (Alec, 2026-09-29)**, "even though
+   it is a big change, since it gets XOR working": a word is a concept,
+   with its parts and its wholes; `interpret` is a unary that replaces it by
+   its object, so no configuration is given more rows; the link between
+   them is a row, `word DEF object`, of a fourth relation kind, written by
+   `interpret`; a lookup table over those rows answers in both directions;
+   and the META and its fold are retired in every reading. A definition is
+   a row like any other, with its `.when`, in recency, and open to
+   forgetting (spec §17, tests 22 to 34). The object takes the word's row
+   in the concept inventory, and the word concept is kept as the first slot
+   of its definition; both slots of a definition are symbols, so that "if
+   the content is being learned, the definition does not involve
+   content-addressing". The work is in two stages, XOR measured at the end
+   of each (spec §18): restore XOR, then definitions. Every question of
+   §17.9 is answered.
+   **Round-3 implementation measurements** ([receipt](doc/benchmarks/2026-09-29-item7-review-round3/README.md)):
+   Stage A restores the required XOR proofs; Stage B stores indexed `word DEF
+   object` rows and retires live META. The final explicit selection accounts
+   for 199 cases: 195 passed, two XOR_grammar failures, one missing-checkpoint
+   skip and one graph-release memory stop. All 170 item 7 cases pass. Eight
+   predeclared reconstruction seeds were attempted on each tree; the candidate's
+   seed-2 guard stop and its one diagnostic are recorded separately. Ten
+   unseeded MM_grammar attempts per tree complete 10/10 at HEAD and 8/10 in
+   the candidate, with two clause-capacity failures. The native predictor
+   observation exposes an unresolved LTM-reference reader failure. The one
+   source-matched full sweep completes all 5,050 cases: 4,714 passed, 13 failed,
+   322 skipped and one expected failure. Six failures passed in round 2;
+   fourteen of its sixteen regressions now pass, with checkpoint restoration
+   and attended-field identity still red. Nothing is re-baselined or committed;
+   this incomplete candidate is stopped for Claude's review.
+   **Review round 4 (Claude, 2026-09-29): not accepted**
+   ([spec §19](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#19-review-round-4-claude-2026-09-29-on-the-candidate-after-16-to-18)).
+   Stage A and Stage B are in, and the fourteen XOR proofs that are item 7's
+   conditions pass. Against it: a relation made by a grammar operation takes
+   an inventory row for its predicate, which crashes 2 of 10 MM_grammar runs
+   and makes tests 29 and 31 fail now and then (Z); checkpoint restoration,
+   the order of a new object, rows counted as sentences, the attended field,
+   a nested relation, and an ended clause read through the inventory (AB to
+   AH); the memory of the graph-release gate (AG). Not item 7's: the slow
+   MM_20M_xor exact round trip fails now and then on both trees, 3 of 15 on
+   the candidate and 1 of 15 at HEAD, and was in no XOR table (AA). Twelve
+   of the sweep's thirteen failures pass at HEAD. **Answered by Alec
+   (2026-09-30):** an identity is its occurrences in LTM, tied by references
+   in the slots, "There is nothing other to it", with a cache "if
+   expedient", so a closing takes no inventory row for what it refers to;
+   and "Let's fix everything". **Hand-off:**
+   [spec §20](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#20-hand-off-to-codex-claude-2026-09-30-what-to-change-after-review-round-4).
+   **Round-4 measurements complete, sweep red (Codex, 2026-09-30):**
+   [failing probes, patches and measurements](doc/benchmarks/2026-09-30-item7-review-round4/README.md).
+   Z, AB–AF, AH and AI pass their focused checks. AG's graph-release gate now
+   passes at 7.45 GiB under the unchanged 8 GiB guard. All 192 item 7 cases
+   pass; the final explicit selection records 251 passes, three item 6.9
+   failures and one missing-checkpoint skip. Both trees complete ten full
+   MM_grammar runs. All eight reconstruction seeds complete under the guard
+   on both trees; the candidate peaks at 5.73 GiB. All historical XOR tables
+   are complete. The one source-matched full sweep completes all 5,100 cases:
+   4,774 passed, three failed, 322 skipped and one expected failure, with no
+   resource stops. All thirteen round-3 failures pass. Three new failures
+   share a predicate-address mismatch between stored relations and the
+   registry-based meaning path ([findings](doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md)).
+   The assertions are unchanged; the candidate remains red for Claude's
+   review. Nothing is committed or accepted.
+   **Review round 5 (Claude, 2026-09-30): not accepted, on one finding**
+   ([spec §21](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#21-review-round-5-claude-2026-09-30-on-the-candidate-after-20)).
+   Every step of §20 is in and does what it asked; Claude's XOR table on the
+   candidate matches Codex's, and tests 29 and 31 pass 35 of 35 in Claude's
+   fresh processes. AK: the closing writes a grammar predicate's new
+   identity, while the thought registry still forms `part` with a frozen
+   concept it mints in the inventory, so a stored relation and the same
+   relation formed for a question never agree in their predicate; the
+   sweep's three failures are this. **Hand-off:**
+   [spec §22](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#22-hand-off-to-codex-claude-2026-09-30-what-to-change-after-review-round-5):
+   one identity for each predicate, then the receipt and a stop for review.
+   **Round-5 AK repair; complete red receipt for review (Codex, 2026-09-30):**
+   [receipt](doc/benchmarks/2026-09-30-item7-review-round5/README.md).
+   Closing and registry now share part/implies identities and points, with
+   no inventory row for either predicate and one predicate-kind path. All
+   three original failing assertions pass unchanged; six added mechanism
+   probes and the two ported files pass in the 54-case focused rerun. Three
+   ports retain their complete before/after bodies. Source is frozen for
+   §22's XOR table, ten MM_grammar runs, all item 7 and thought/reasoning
+   cases, graph release and one source-matched full sweep. The 8 GiB guard
+   and configurations are unchanged. Nothing is committed or accepted.
+   The initial item-7 selection records
+   197 passes and one further AK edge: a three-slot closing read its first
+   predicate occurrence from the inventory. After four saved failing probes,
+   that repair passes 66 focused checks and all 202 item-7 cases. The final
+   source is frozen separately. The initial XOR table has 47 passes, two XOR_grammar failures
+   and 15/15 exact round trips; all ten MM_grammar runs complete. Every
+   attempt is retained. Alec rejected the 3–4 hour test workflow: the old
+   coordinator was stopped, and [scheduling now uses measured memory and time](doc/benchmarks/2026-09-30-item7-review-round5/validation-runtime.md)
+   to admit up to ten workers under the same 8 GiB worker / 24 GiB aggregate
+   limits. No test is omitted or weakened; the full sweep measured 89.6 minutes
+   against 154.7 minutes previously (86 minutes was the estimate). Final affected files complete with
+   315 passes and five existing skips; graph release passes at 7.631 GiB.
+   The final XOR table records 44 passes and five failures: both XOR_grammar
+   gates and three of fifteen exact round trips (.75, .75, .25). All ten
+   final MM_grammar runs complete, median ending MSE .1066178977. The one
+   full sweep completed all 5,122 cases: **4,793 passed, 6 failed, 322 skipped,
+   one expected failure**, with no resource stops. All three round-4 and all
+   thirteen round-3 failures now pass. Six new failures passed in round 4:
+   five test setups still require an inventory row for `part`; one renaming
+   test requires the predicate identity to change with the operands.
+   Their [causes and unchanged bodies are recorded](doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/findings.md).
+   No repair or test port was applied after the sweep. Stopped for Claude's
+   review with the red receipt; nothing is committed or accepted.
+   **Review round 7 (Claude, 2026-09-30): accepted once three test ports
+   are applied**
+   ([spec §24](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#24-review-round-7-claude-2026-09-30-on-the-swept-candidate)).
+   The three-slot repair is right. The six failures are test code that
+   assumes every relation reference has an inventory row; ported in a
+   scratch copy, all six pass with their own assertions, and their six
+   files pass 59 of 59. **Hand-off:**
+   [spec §25](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#25-hand-off-to-codex-claude-2026-09-30-what-to-change-after-review-round-7):
+   the ports and their checks, no new sweep; then commit and push with the
+   WikiOracle bump, and begin item 6.9.
+   **Reviewed 2026-09-28** (spec §10, §11): not accepted. Decided (Alec): a row
+   holds structure, never a derivation — one slot for `S`, three for
+   `S REL S`, and generation proceeds from that start state. The retired
+   sentence-boundary vocabulary leaves the codebase (§11.3). WholeSpace exists
+   only as the property basis (§11.4); given truths are plain English with a
+   trust value and no declared kind, and provisioning waits for training
+   (§11.5). Spec §12 was the first rework's nine-step list and §14 the
+   second; §18's two stages and §16 steps 1 and 6–9 were the third.
+   **§22 is the current work list**, ending in one source-matched sweep and
+   a stop for review.
+   One S = one LTM row: an absolute S fuses to one point and
+   writes an idea row with its end state and `refs`; a relative S (generic
+   subject, or any S referencing a relation) stays three slots and writes a
+   relation row of kind part / implies / operator over row references.
+   Clause-level closing as grammar (`NP → S`, `NP → REF(S)`), one relation writer
+   at the closing, `REL_OTHER` and the reducible/ineffable routing deleted, the
+   WholeSpace META taxonomy retired for a concept-level index, luminosity
+   restricted to idea rows, the sentence never setting its own trust; do not
+   assume one word per META (§3.4). **Object permanence by reference** (§3.5):
+   translating a word to its object may tie it to an earlier noun or sentence
+   in the recency buffer; identity is imputed and carried by the predictor.
+   **The taxonomy grows by language over those identities** (Alec,
+   2026-09-22): "cats are animals" writes its part row between the *object*
+   concepts the words resolve to, type or token as §3.5 decides, never
+   between words — into the concept store's own hierarchy of higher-order
+   concepts, which is the taxonomy (§3.4 as amended; item 11), trust on the
+   LTM row.
+   The closing must store `(c⁺, c⁻)` and preserve both separately from
+   neither (§1.1), and §3.1's row schema is amended in the same landing,
+   gaining the ended field's `.where` and `.when` (item 9b; the row's address
+   is its `.when`, its `.where` is what it was looking at).
+   **Corrected (Alec, 2026-09-28) — this line previously said the scalar
+   `_collapse_trust` is *replaced* by the pair.** It is not: the pair is the
+   ended clause's **evidence**, and **trust is univalent and is not
+   evidence** ([accessible mind §2.7.1](doc/specs/2026-09-20-accessible-mind-subsystems.md)).
+   Evidence says how well the input identified what it identified; trust says
+   whether the event the row refers to is veridical, is supplied rather than
+   presented, and applies to the event as a whole, so it stays a **single
+   value** in its own column beside the pair, and nothing collapses the pair
+   to obtain it. The row also **gains its order** in this same amendment: a
+   stored vector may be abstract, and decoding it means running the sigma
+   inverses down the ladder, which the row cannot do without the stamp. Item 11's
+   paired conceptual field and checkpoint do not implement this LTM closing.
+   *Compatibility with 11c (Claude, 2026-09-25):* (a) the taxonomy is the
+   concept store's sigma rows, and order is taxonomic depth: "cats are
+   animals" is a sigma edge from the *animal* row to the *cat* symbol one
+   order below, so the closing places a kind one order above what it
+   subsumes and symbolizes when no row exists there; it never writes a
+   conjunctive edge above order 0 or a same-order part row. *(On 2026-09-28
+   this note was withdrawn and then restored the same day: the withdrawal
+   rested on a conflation of order with part of speech; spec §3.4.)*
+   (b) Testimony
+   writes directly; the refine-before-raise gate governs only discovery
+   from context. (c) 11c entry 11 lands here: a word form addresses a set
+   of concept ids across orders (event, particular, kind); the particular
+   is order-1 symbolization and *is* object permanence, and the closing binds
+   the form to it — today production binds only the order-0 word and its
+   object. (d) A pronoun ties to an order-1 particular, never a kind.
+   Then the distributional context widens from the sentence to the
+   **situation** the predictor anchors, under three `model.xml` variables
+   (plan §8.4 point 2: situation weight, anchor bound, expectation weight);
+   the frames that anticipatory `what`s already hand the predictor are its
+   start. With the closing chaining rows, `conceptualize_chain`, `chain_idx` and
+   the JOINT / sentence concept are deleted (item 11: sequences come from LTM
+   references, not the concept store). Exit: the twenty-one §7 tests, the §8
+   docs, the reconstruction baseline of `d4dc385`
+   unchanged, and the `true` operator over the ended clause declared in
+   `<thought>` and executable.

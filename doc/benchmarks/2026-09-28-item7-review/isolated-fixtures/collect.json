@@ -1,0 +1,31 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,132 @@
+{
+  "baseline": {
+    "HEAD": "baseline-head",
+    "candidate": "baseline-candidate",
+    "head_outcomes": {
+      "passed": 45,
+      "failed": 4
+    },
+    "candidate_outcomes": {
+      "passed": 26,
+      "failed": 2
+    },
+    "head_exact": {
+      "passed": 15
+    },
+    "candidate_exact": {
+      "memory": 15
+    }
+  },
+  "Z": {
+    "HEAD": "z-head",
+    "candidate": "z-candidate",
+    "head_outcomes": {
+      "passed": 45,
+      "failed": 4
+    },
+    "candidate_outcomes": {
+      "passed": 26,
+      "failed": 2
+    },
+    "head_exact": {
+      "passed": 15
+    },
+    "candidate_exact": {
+      "memory": 15
+    }
+  },
+  "AE": {
+    "HEAD": "ae-head",
+    "candidate": "ae-candidate",
+    "head_outcomes": {
+      "passed": 44,
+      "failed": 5
+    },
+    "candidate_outcomes": {
+      "passed": 26,
+      "failed": 2
+    },
+    "head_exact": {
+      "passed": 14,
+      "test_failure": 1
+    },
+    "candidate_exact": {
+      "memory": 15
+    }
+  },
+  "AF": {
+    "HEAD": "af-head",
+    "candidate": "af-candidate",
+    "head_outcomes": {
+      "passed": 44,
+      "failed": 5
+    },
+    "candidate_outcomes": {
+      "passed": 26,
+      "failed": 2
+    },
+    "head_exact": {
+      "passed": 14,
+      "test_failure": 1
+    },
+    "candidate_exact": {
+      "memory": 15
+    }
+  },
+  "AH": {
+    "HEAD": "ah-head",
+    "candidate": "ah-candidate",
+    "head_outcomes": {
+      "passed": 45,
+      "failed": 4
+    },
+    "candidate_outcomes": {
+      "passed": 26,
+      "failed": 2
+    },
+    "head_exact": {
+      "passed": 15
+    },
+    "candidate_exact": {
+      "memory": 15
+    }
+  },
+  "AI": {
+    "HEAD": "ai-head",
+    "candidate": "ai-candidate",
+    "head_outcomes": {
+      "passed": 45,
+      "failed": 4
+    },
+    "candidate_outcomes": {
+      "passed": 26,
+      "failed": 2
+    },
+    "head_exact": {
+      "passed": 15
+    },
+    "candidate_exact": {
+      "memory": 15
+    }
+  },
+  "final": {
+    "HEAD": "final-xor-head",
+    "candidate": "final3-xor-candidate",
+    "head_outcomes": {
+      "passed": 44,
+      "failed": 5
+    },
+    "candidate_outcomes": {
+      "passed": 46,
+      "failed": 3
+    },
+    "head_exact": {
+      "passed": 14,
+      "test_failure": 1
+    },
+    "candidate_exact": {
+      "passed": 14,
+      "test_failure": 1
+    }
+  }
+}

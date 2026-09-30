@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.33183108316734433,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

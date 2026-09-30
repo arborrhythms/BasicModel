@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.08156870794482529,
+      "message": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_property_cache_release.py:12: in test_property_diagnostic_releases_its_graph_at_tick_end\n    assert owner._stage0_property_membership.grad_fn is None\nE   assert <DivBackward0 object at 0x12a7bf5b0> is None\nE    +  where <DivBackward0 object at 0x12a7bf5b0> = tensor([[[1., 0., 0., 0., 0., 0., 0., 0.],\\n         [1., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<DivBackward0>).grad_fn\nE    +    where tensor([[[1., 0., 0., 0., 0., 0., 0., 0.],\\n         [1., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<DivBackward0>) = WholeSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Codebook(\\n      (...): EventEncoding()\\n    (whatEncoding): WhatEncoding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (layers): ModuleList()\\n)._stage0_property_membership",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

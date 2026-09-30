@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_symbolization.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-symbolization-before/group-00/worker-000.recycle.json"
+}

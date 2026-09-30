@@ -58,55 +58,6 @@ def _bare_space(cls):
     return inst
 
 
-def test_phase2_end_to_end_round_trip(tmp_path):
-    """Full pipeline: write artifact, load, attach to 3 Spaces, verify
-    each Space sees the expected fields."""
-    from embed import (save_artifact, build_knowledge_section,
-                       load_knowledge_view, KnowledgeView)
-    from Language import SymbolSubSpace
-    from Spaces import PartSpace, WholeSpace
-    import torch
-    import torch.nn as nn
-
-    # 1+2: Build + save
-    wv = _FakeWV(["the", "cat", "ran"])
-    grammar = _grammar_with_lift_lower_and_ordinary()
-    ks = build_knowledge_section(grammar, wv=wv)
-    path = str(tmp_path / "e2e.kv")
-    save_artifact(path, knowledge=ks)
-
-    # 3: Load
-    view = load_knowledge_view(path)
-    # root + base categories {S, NP, VP, DET} + explicit ordered refs
-    # {S4, NP3, VP1, NP4, S3}
-    assert view.n_refs_live == 10
-
-    # 4: Attach to three Spaces (all bare instances)
-    ss = object.__new__(SymbolSubSpace); nn.Module.__init__(ss)
-    ps = _bare_space(PartSpace)
-    ws = _bare_space(WholeSpace)
-    ps.wv = wv
-
-    ss.attach_knowledge(view)
-    ps.attach_knowledge(view)
-    ws.attach_knowledge(view)
-
-    # 5a: SymbolSubSpace exposes the view
-    assert ss.knowledge is view
-    assert ss.knowledge.ref_id_for('NP') is not None
-
-    # 5b: WholeSpace has trainable references Parameter + order buffer
-    assert isinstance(ws.references, nn.Parameter)
-    assert ws.references.dim() == 1
-    assert ws.references.shape[0] >= 256
-    assert 'references' in [n for n, _ in ws.named_parameters()]
-    assert ws.order.dtype == torch.long
-    assert 'order' in [n for n, _ in ws.named_buffers()]
-
-    # 5c: PartSpace.wv.ref_ids stamped (Phase-1 bootstrap → all -1)
-    assert hasattr(ps.wv, 'ref_ids')
-    assert ps.wv.ref_ids.shape[0] == 3
-    assert all(int(ps.wv.ref_ids[i].item()) == -1 for i in range(3))
 
 
 def test_phase2_end_to_end_admissibility_uses_loaded_signatures(tmp_path):
@@ -193,35 +144,3 @@ def test_phase2_end_to_end_extend_then_load(tmp_path):
     # And in refs_by_category['S'] (subtree includes the new ref)
     refs_s = view_after.refs_by_category('S')
     assert n_before in refs_s.tolist()
-
-
-def test_phase2_end_to_end_reattach_after_extend(tmp_path):
-    """WholeSpace.attach_knowledge handles an extended artifact:
-    capacity-slack pattern preserves Parameter identity when capacity
-    didn't change."""
-    from embed import (save_artifact, build_knowledge_section,
-                       extend_artifact, load_knowledge_view, NewRef)
-    from Spaces import WholeSpace
-    import torch.nn as nn
-    grammar = _grammar_with_lift_lower_and_ordinary()
-    path = str(tmp_path / "growable.kv")
-    save_artifact(path, knowledge=build_knowledge_section(grammar))
-
-    ws = _bare_space(WholeSpace)
-    view1 = load_knowledge_view(path)
-    ws.attach_knowledge(view1)
-    refs_param_id_1 = id(ws.references)
-
-    # Extend without exceeding capacity (256 slack absorbs +1).
-    s_rid = view1.ref_id_for('S')
-    extend_artifact(path, [
-        NewRef(scalar=0.99, order=4, parent_ref_id=s_rid, category='S'),
-    ])
-    view2 = load_knowledge_view(path)
-    ws.attach_knowledge(view2)
-    # Same Parameter object (no realloc needed since capacity unchanged)
-    assert id(ws.references) == refs_param_id_1
-    # The appended ref's scalar landed at the right slot (float32).
-    import pytest
-    n_before = view1.n_refs_live
-    assert float(ws.references[n_before].item()) == pytest.approx(0.99)

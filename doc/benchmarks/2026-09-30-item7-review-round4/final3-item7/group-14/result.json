@@ -1,0 +1,155 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+  ],
+  "completed": [
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-14/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-14/worker-000.json"
+      ],
+      "pid": 85503,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438928752,
+      "elapsed_seconds": 5.072320375125855,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-14/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+      ],
+      "completed": [
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.051292499992996454,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04073687503114343,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.043792666867375374,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0474818330258131,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04492595908232033,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.043032833840698004,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-14",
+  "elapsed_seconds": 9.939851249800995,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 438928752,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-14/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-14/collect.json"
+    ],
+    "pid": 85494,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430081248,
+    "elapsed_seconds": 4.584525000071153,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-14/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+        "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

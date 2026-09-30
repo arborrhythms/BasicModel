@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting"
+  ],
+  "completed": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02230237517505884,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

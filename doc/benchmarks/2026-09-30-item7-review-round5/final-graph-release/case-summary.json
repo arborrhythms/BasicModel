@@ -1,0 +1,10 @@
+{
+  "reason": "passed",
+  "attempts": 1,
+  "pytest_outcomes": {
+    "passed": 1
+  },
+  "missing": [],
+  "failures": [],
+  "diagnostic_only": []
+}

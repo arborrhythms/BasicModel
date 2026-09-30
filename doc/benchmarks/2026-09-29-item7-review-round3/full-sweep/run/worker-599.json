@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_is_truth_obvious]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_resolves_contradiction]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_maybe_learn_relation]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_route_learned_relation]"
+  ],
+  "completed": [
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_is_truth_obvious]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_resolves_contradiction]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_maybe_learn_relation]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_route_learned_relation]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_children_in_codebook]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001324580516666174,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_is_truth_obvious]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.429221972823143e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_resolves_contradiction]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.12907999008894e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_maybe_learn_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.858297951519489e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_route_learned_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.995900861918926e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

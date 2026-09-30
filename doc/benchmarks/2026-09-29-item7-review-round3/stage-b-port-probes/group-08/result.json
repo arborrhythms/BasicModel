@@ -1,0 +1,155 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+  ],
+  "completed": [
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-08/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-08/worker-000.json"
+      ],
+      "pid": 7897,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 441304384,
+      "elapsed_seconds": 3.7542536250548437,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-08/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+      ],
+      "completed": [
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0001865419326350093,
+          "message": "test/test_autobind_from_cs.py:81: in test_conceptualspace_defines_autobind\n    self.assertTrue(\nE   AssertionError: False is not true : ConceptualSpace must define _maybe_autobind_meta after Task G.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.045664082979783416,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.716697968542576e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.022757000057026744,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02246716700028628,
+          "message": "test/test_autobind_from_cs.py:137: in test_autobind_creates_meta_taxonomy_entry\n    cs._maybe_autobind_meta(pid_grid, vec_event,\n    ^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02319508302025497,
+          "message": "test/test_autobind_from_cs.py:160: in test_autobind_skips_negative_pids\n    cs._maybe_autobind_meta(pid_grid, vec_event)\n    ^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-08",
+  "elapsed_seconds": 5.7685777499573305,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 441304384,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-08/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-08/collect.json"
+    ],
+    "pid": 7893,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180732720,
+    "elapsed_seconds": 1.7883494580164552,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-08/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+        "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

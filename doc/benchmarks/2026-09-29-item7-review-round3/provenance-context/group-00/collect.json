@@ -1,0 +1,18 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

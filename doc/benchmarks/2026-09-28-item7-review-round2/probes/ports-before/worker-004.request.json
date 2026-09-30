@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_init_scale.py::test_whole_space_init_scale_wiring"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-004.recycle.json"
+}

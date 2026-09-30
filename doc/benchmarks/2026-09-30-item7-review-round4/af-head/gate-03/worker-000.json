@@ -1,0 +1,25 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+  ],
+  "slow_selected": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 142.2114243749529,
+      "message": "test/test_explicit_dimensions.py:221: in test_output_mse_is_crisp\n    self.assertEqual(rc, 0, f\"CLI failed: stderr={stderr[-1000:]}\")\nE   AssertionError: 1 != 0 : CLI failed: stderr=g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 16700, in _autobind_property_concepts\nE       formed = (self.interpret.lookup_word(parts, prop_rows, form=key), None, None)\nE                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Interpret.py\", line 53, in lookup_word\nE       cs._populate_concept_weights(word, witness=(parts, wholes))\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 18668, in _populate_concept_weights\nE       self.add_concept_edge(c_row, target, 1.)\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 17748, in add_concept_edge\nE       source0 = self._order0_inventory_row(int(col))\nE                                            ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -74,11 +74,15 @@ def read_percepts(percepts, brackets, keys, *, part_reader, native=None,
     ws = [i for i, key in enumerate(keys) if key[0] == 'ws']
     if ws and primitive is not None:
         counts = counts_in_spans(raw, spans, observed=raw != 0)
-        pair = primitive.evidence_on_counts(counts)
-        complete = counts.sum(-1) == spans[..., 1] - spans[..., 0]
-        pair = pair * complete[..., None, None]
         ids = torch.tensor([keys[i][1] for i in ws], device=raw.device)
-        pair = pair.index_select(2, ids).permute(2, 0, 1, 3)
+        inside = contained.any(1)
+        selected = counts[inside]
+        pair = primitive.evidence_on_counts(selected, rows=ids)
+        complete = selected.sum(-1) == (spans[..., 1] - spans[..., 0])[inside]
+        pair = pair * complete[..., None, None]
+        placed = pair.new_zeros(B, P, len(ws), 2)
+        placed[inside] = pair
+        pair = placed.permute(2, 0, 1, 3)
         events = events.index_copy(0, torch.tensor(ws, device=raw.device),
             pair[:, :, None].expand(-1, -1, E, -1, -1).to(events))
     events = events * contained[None, ..., None]

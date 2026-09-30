@@ -1,0 +1,5 @@
+{
+  "reason": "A placeholder-prefix bug altered historical links in live prose; corrected before restarting.",
+  "runtime_source_unchanged": true,
+  "aborted_before_any_design_changes": true
+}

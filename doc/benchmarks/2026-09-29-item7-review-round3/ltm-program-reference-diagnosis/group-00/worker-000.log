@@ -1,0 +1,33 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_ltm_clause_reference_reaches_inventory_only_program_reader ________
+doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py:27: in test_ltm_clause_reference_reaches_inventory_only_program_reader
+    row = store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:227: in write_clause
+    raise ValueError('clause admission requires the shared concept allocator')
+E   ValueError: clause admission requires the shared concept allocator
+=============================== warnings summary ===============================
+test/test_mm_xor.py:171
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test/test_mm_xor.py:176
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test/test_mm_xor.py:182
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader
+1 failed, 4 warnings in 2.60s

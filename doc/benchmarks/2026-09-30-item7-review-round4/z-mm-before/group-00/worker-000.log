@@ -1,0 +1,47 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_mm_grammar_part_under_disjunction_closes_at_full_inventory ________
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py:92: in test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+    row = f.store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:237: in write_clause
+    index_plan = None if make_index_plan is None else make_index_plan(clause)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:145: in <lambda>
+    lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ConceptIndex.py:147: in __init__
+    self.validate_rows()
+bin/ConceptIndex.py:175: in validate_rows
+    raise RuntimeError('native conceptual row capacity exhausted before clause admission')
+E   RuntimeError: native conceptual row capacity exhausted before clause admission
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+1 failed, 5 warnings in 3.91s

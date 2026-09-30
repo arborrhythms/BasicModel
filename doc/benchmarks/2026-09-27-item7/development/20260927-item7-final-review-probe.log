@@ -1,0 +1,95 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_seal_binds_subject_form_to_particular_without_widening_compose_access __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1274fb1a0>
+
+    def test_seal_binds_subject_form_to_particular_without_widening_compose_access(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('lift', ('lower', 'the', 'cat'), 'runs'))
+        row = f.store.seal_clause(clause)
+        cid = int(f.store.row_ids[row])
+>       assert cid in f.cs.word_concepts('cat')
+E       AssertionError: assert 19 in (13, 14)
+E        +  where (13, 14) = word_concepts('cat')
+E        +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E        +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_item7_acceptance.SentenceFixture object at 0x1273f2300>.cs
+
+tmp/item7_final_review_probe.py:15: AssertionError
+________________ test_native_phrase_admission_is_atomic[width] _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127a8e7e0>
+invalid = 'width'
+
+    @pytest.mark.parametrize('invalid', ['width', 'capacity'])
+    def test_native_phrase_admission_is_atomic(monkeypatch, invalid):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('lift', 'cat', ('verb', 'chases', 'mouse')))
+        assert isinstance(clause.refs[1], ClauseConcept)
+        if invalid == 'width':
+            clause = replace(clause, refs=(clause.refs[0],
+                replace(clause.refs[1], point=torch.zeros(9)), -1))
+        else:
+            caps = f.cs._order_caps()
+            order = max(f.cs._concept_source_order(cid) for cid in clause.refs[1].members) + 1
+            base = sum(caps[:order])
+            _concept_alloc_of(f.cs).layer(0)._row_next[base] = caps[order]
+        alloc = _concept_alloc_of(f.cs)
+        before = alloc.next_id, copy.deepcopy(alloc.placement), copy.deepcopy(alloc.relate_idx)
+        with pytest.raises((ValueError, RuntimeError)):
+            f.store.seal_clause(clause)
+>       assert before == (alloc.next_id, alloc.placement, alloc.relate_idx)
+E       AssertionError: assert (19, {1: 0, 2...: 0, ...}, {}) == (20, {1: 0, 2...', 17))): 19})
+E         
+E         At index 0 diff: 19 != 20
+E         Use -v to get more diff
+
+tmp/item7_final_review_probe.py:42: AssertionError
+_______________ test_native_phrase_admission_is_atomic[capacity] _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127abf9b0>
+invalid = 'capacity'
+
+    @pytest.mark.parametrize('invalid', ['width', 'capacity'])
+    def test_native_phrase_admission_is_atomic(monkeypatch, invalid):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('lift', 'cat', ('verb', 'chases', 'mouse')))
+        assert isinstance(clause.refs[1], ClauseConcept)
+        if invalid == 'width':
+            clause = replace(clause, refs=(clause.refs[0],
+                replace(clause.refs[1], point=torch.zeros(9)), -1))
+        else:
+            caps = f.cs._order_caps()
+            order = max(f.cs._concept_source_order(cid) for cid in clause.refs[1].members) + 1
+            base = sum(caps[:order])
+            _concept_alloc_of(f.cs).layer(0)._row_next[base] = caps[order]
+        alloc = _concept_alloc_of(f.cs)
+        before = alloc.next_id, copy.deepcopy(alloc.placement), copy.deepcopy(alloc.relate_idx)
+        with pytest.raises((ValueError, RuntimeError)):
+            f.store.seal_clause(clause)
+>       assert before == (alloc.next_id, alloc.placement, alloc.relate_idx)
+E       AssertionError: assert (19, {1: 0, 2...: 0, ...}, {}) == (20, {1: 0, 2...', 17))): 19})
+E         
+E         At index 0 diff: 19 != 20
+E         Use -v to get more diff
+
+tmp/item7_final_review_probe.py:42: AssertionError
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+tmp/item7_final_review_probe.py::test_seal_binds_subject_form_to_particular_without_widening_compose_access
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+tmp/item7_final_review_probe.py::test_native_phrase_admission_is_atomic[capacity]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS order-2 block exhausted (64 rows): concept 19 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tmp/item7_final_review_probe.py::test_seal_binds_subject_form_to_particular_without_widening_compose_access
+FAILED tmp/item7_final_review_probe.py::test_native_phrase_admission_is_atomic[width]
+FAILED tmp/item7_final_review_probe.py::test_native_phrase_admission_is_atomic[capacity]
+3 failed, 3 warnings in 2.10s

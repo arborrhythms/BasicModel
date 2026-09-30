@@ -1,0 +1,49 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s _
+
+    def test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s():
+>       policy, binary, _ = scope()
+                            ^^^^^^^
+
+test/test_item7_clause_state.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def scope():
+>       from ClauseScope import ClauseScope
+E       ModuleNotFoundError: No module named 'ClauseScope'
+
+test/test_item7_clause_state.py:10: ModuleNotFoundError
+_________ test_absolute_embedding_pushes_its_point_without_a_reference _________
+
+    def test_absolute_embedding_pushes_its_point_without_a_reference():
+>       policy, binary, _ = scope()
+                            ^^^^^^^
+
+test/test_item7_clause_state.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def scope():
+>       from ClauseScope import ClauseScope
+E       ModuleNotFoundError: No module named 'ClauseScope'
+
+test/test_item7_clause_state.py:10: ModuleNotFoundError
+__________ test_clause_scope_is_fullgraph_and_keeps_other_batch_rows ___________
+
+    def test_clause_scope_is_fullgraph_and_keeps_other_batch_rows():
+>       policy, binary, _ = scope()
+                            ^^^^^^^
+
+test/test_item7_clause_state.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def scope():
+>       from ClauseScope import ClauseScope
+E       ModuleNotFoundError: No module named 'ClauseScope'
+
+test/test_item7_clause_state.py:10: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s
+FAILED test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference
+FAILED test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows
+3 failed in 2.13s

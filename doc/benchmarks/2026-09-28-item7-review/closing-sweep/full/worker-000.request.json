@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-000.recycle.json"
+}

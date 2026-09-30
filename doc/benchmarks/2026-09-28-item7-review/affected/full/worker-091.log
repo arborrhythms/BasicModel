@@ -1,0 +1,64 @@
+...........F                                                             [100%]
+=================================== FAILURES ===================================
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:182: in test_native_progress_and_trained_artifact_evaluation_path
+    report = read_validation(loaded, sentences=4, gain=0.)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_fineweb_learning.py:100: in read_validation
+    model.runBatch(train=False, split='validation', batchSize=1,
+bin/Models.py:13921: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14092: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14459: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9257: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10732: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8956: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23649: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13484: in _lex_embed_stem
+    self._stage_serial_concept_rows()
+bin/Models.py:11598: in _stage_serial_concept_rows
+    triple = owner.interpret_word(
+bin/Spaces.py:19172: in interpret_word
+    obj = self.interpret.forward(word, occurrence=occurrence)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:112: in forward
+    raise ValueError('ambiguous word association requires a resolving grammar order')
+E   ValueError: ambiguous word association requires a resolving grammar order
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.048s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7986/test_native_progress_and_train0/small-native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7986/test_native_progress_and_train0/small-native.ckpt
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+1 failed, 11 passed, 1 warning in 4.69s

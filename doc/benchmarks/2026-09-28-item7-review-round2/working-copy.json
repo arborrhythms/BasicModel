@@ -1,0 +1,4 @@
+{
+  "root": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "purpose": "Isolated source for sequential review edits while step-2 native compiler checks use the frozen main tree. data cloned by APFS copy-on-write; no changes to configs are planned."
+}

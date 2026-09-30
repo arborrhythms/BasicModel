@@ -1,0 +1,211 @@
+.............................................                            [100%]
+=============================== warnings summary ===============================
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:13590: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 25 gets records only, no weighted reading (overflow #26)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 27 gets records only, no weighted reading (overflow #28)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 26 gets records only, no weighted reading (overflow #29)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 28 gets records only, no weighted reading (overflow #31)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 30 gets records only, no weighted reading (overflow #33)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 29 gets records only, no weighted reading (overflow #34)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+45 passed, 138 warnings in 5.64s

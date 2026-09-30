@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[cpu]",
+    "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[mps]",
+    "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[cpu]",
+    "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[mps]",
+    "test/test_contextual_concept_codebook.py::test_context_owned_dictionary_is_excluded_from_optimizer_groups",
+    "test/test_contextual_concept_codebook.py::test_contextual_buffer_preserves_frozen_capacity_and_state_dict_storage"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-307.recycle.json"
+}

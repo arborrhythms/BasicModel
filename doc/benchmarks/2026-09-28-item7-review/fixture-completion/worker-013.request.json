@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-013.recycle.json"
+}

@@ -1,0 +1,48 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_grammar_order_resolution_survives_the_numerical_journal _________
+
+    def test_grammar_order_resolution_survives_the_numerical_journal():
+        from dataclasses import replace
+        from ClauseJournal import finish_clause
+        from reading_fixtures import record_reading
+        from test_item7_references import language_and_program
+        language, entry = language_and_program()
+        language._compose_binary_rules[0].reference_orders = (('I1', 2),)
+        language._compose_binary_rules[0].reference_kinds = (('I1', 'generic'),)
+        entry = record_reading(language, entry)
+        entry = replace(entry, reference_ids=torch.tensor([7, 3]),
+                        reference_orders=torch.tensor([2, -1]))
+        field = finish_clause(language, entry)
+>       assert field.refs[0] == 7
+E       assert 1 == 7
+
+test/test_live_references.py:17: AssertionError
+___________ test_existing_kind_point_is_resolved_before_the_operator ___________
+
+    def test_existing_kind_point_is_resolved_before_the_operator():
+        from types import SimpleNamespace
+        from ReferenceContext import prepare_operands
+        value = torch.tensor([[[1., 0., 0., 0.]]])
+        kind = torch.tensor([.2, .3, .4, .5])
+        types = SimpleNamespace(sources=torch.tensor([[1]]),
+            orders=torch.tensor([2]), identities=torch.tensor([[[7]]]),
+            values=kind.reshape(1, 1, 1, 4))
+        bank = SimpleNamespace(types=types)
+        rule = SimpleNamespace(reference_orders=(('I1', 2),),
+                               reference_kinds=(('I1', 'generic'),))
+        result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
+            torch.tensor([[0]]), rules=(), unary_rules=(rule,), bank=bank, live=None,
+            active=torch.tensor([[True]]))
+>       torch.testing.assert_close(result['unary'][0, 0, 0], kind, rtol=0, atol=0)
+E       AssertionError: Tensor-likes are not equal!
+E       
+E       Mismatched elements: 4 / 4 (100.0%)
+E       Greatest absolute difference: 0.800000011920929 at index (0,)
+E       Greatest relative difference: 4.0 at index (0,)
+
+test/test_live_references.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal
+FAILED test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator
+2 failed in 3.01s

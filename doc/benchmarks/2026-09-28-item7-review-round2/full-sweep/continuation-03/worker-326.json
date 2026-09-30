@@ -1,0 +1,173 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_all_rows",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_single_row",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_custom_capacity",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_default_capacity_is_8",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_ensure_batch_resizes",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_independent_rows",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_is_full_at_capacity",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_peek_does_not_remove",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_pop_round_trip",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_when_full_raises",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_size_and_is_empty",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_conceptualSpace_has_stm_attribute",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_initial_state_is_empty",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_is_buffer_not_parameter",
+    "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_hard_reset_clears_stm",
+    "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_soft_reset_clears_only_selected_stm_row"
+  ],
+  "completed": [
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_all_rows",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_single_row",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_custom_capacity",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_default_capacity_is_8",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_ensure_batch_resizes",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_independent_rows",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_is_full_at_capacity",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_peek_does_not_remove",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_pop_round_trip",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_when_full_raises",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_size_and_is_empty",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_conceptualSpace_has_stm_attribute",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_initial_state_is_empty",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_is_buffer_not_parameter",
+    "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_hard_reset_clears_stm",
+    "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_soft_reset_clears_only_selected_stm_row"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_all_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008069579489529133,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_single_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037041702307760715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_custom_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012833403889089823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_default_capacity_is_8",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001267079496756196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_ensure_batch_resizes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018087495118379593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_independent_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006664169486612082,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_is_full_at_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032170896884053946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_peek_does_not_remove",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004141660174354911,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_pop_round_trip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004383339546620846,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_when_full_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002637500874698162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_size_and_is_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017929100431501865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_conceptualSpace_has_stm_attribute",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007906249957159162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_initial_state_is_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003450000658631325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_is_buffer_not_parameter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.90839907899499e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_hard_reset_clears_stm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040804105810821056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_soft_reset_clears_only_selected_stm_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003436249680817127,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

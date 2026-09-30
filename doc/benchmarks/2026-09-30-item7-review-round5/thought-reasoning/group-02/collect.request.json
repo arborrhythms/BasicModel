@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_ispart_query_dispatch.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

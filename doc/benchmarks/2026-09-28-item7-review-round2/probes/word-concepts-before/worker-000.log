@@ -1,0 +1,31 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_every_read_word_has_a_concept_and_symbol[MM_xor.xml] ___________
+test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol
+    assert all(owner.word_concepts(word) for word in words), {
+E   AssertionError: {'hello': (), 'loving': (), 'there': (), 'world': ()}
+E   assert False
+E    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x11f6bcf20>)
+________ test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml] ________
+test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol
+    assert all(owner.word_concepts(word) for word in words), {
+E   AssertionError: {'hello': (), 'loving': (), 'there': (), 'world': ()}
+E   assert False
+E    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x11f81d7e0>)
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+FAILED test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+2 failed, 1 passed, 2 warnings in 2.74s

@@ -1,0 +1,15 @@
+{
+  "kind": "historical scheduling simulation, not a measured speedup",
+  "history": {
+    "doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/result.json": "0e9e6007d8898e5bbdad47490cf94c33b952d543dde1e6eb7c09ebb20797349a"
+  },
+  "prior_wall_seconds": 9282.19544204208,
+  "predicted_seconds": 5149.162370994221,
+  "workers": 10,
+  "aggregate_gib": 24,
+  "worker_gib": 8,
+  "old_batches": 644,
+  "new_batches": 304,
+  "cases": 5100,
+  "coverage_exact": true
+}

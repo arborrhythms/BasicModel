@@ -1,0 +1,333 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_cs_symbol_table.py::test_new_symbol_starts_empty",
+    "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+    "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
+    "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+    "test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole",
+    "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
+    "test/test_cs_symbol_table.py::test_retire_transient_symbol",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting",
+    "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+    "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+    "test/test_cs_symbol_table.py::test_interpret_word_structure",
+    "test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution",
+    "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+    "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+    "test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection",
+    "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+    "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+    "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+    "test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object",
+    "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+    "test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok",
+    "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
+    "test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol",
+    "test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything",
+    "test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only",
+    "test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round",
+    "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+    "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
+    "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+    "test/test_cs_symbol_table.py::test_pole_rename_aliases_hold"
+  ],
+  "completed": [
+    "test/test_cs_symbol_table.py::test_new_symbol_starts_empty",
+    "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+    "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
+    "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+    "test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole",
+    "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
+    "test/test_cs_symbol_table.py::test_retire_transient_symbol",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting",
+    "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+    "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+    "test/test_cs_symbol_table.py::test_interpret_word_structure",
+    "test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution",
+    "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+    "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+    "test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection",
+    "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+    "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+    "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+    "test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object",
+    "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+    "test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+    "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok",
+    "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
+    "test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol",
+    "test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything",
+    "test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only",
+    "test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round",
+    "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+    "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
+    "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+    "test/test_cs_symbol_table.py::test_pole_rename_aliases_hold"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_new_symbol_starts_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0035549169406294823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002142916084267199,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001976792002096772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001812624977901578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001612541964277625,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015907089691609144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_retire_transient_symbol",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020277498988434672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00237370899412781,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019472920102998614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019340839935466647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_structure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024646250531077385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020697079598903656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002752375090494752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002363665960729122,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019426669459789991,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002125374972820282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019314170349389315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019087090622633696,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023112919880077243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016445409273728728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014938749372959137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018251669825986028,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002150292042642832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019840829772874713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026506249560043216,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00243537500500679,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001985333045013249,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018304589902982116,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023616659455001354,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018761670216917992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028517500031739473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_pole_rename_aliases_hold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.233399759978056e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

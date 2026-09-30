@@ -1,0 +1,25 @@
+.............................................................s.......... [ 42%]
+........................................................................ [ 84%]
+..........................s                                              [100%]
+=============================== warnings summary ===============================
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_subspace_context.py::test_wordspace_last_svo_default_invalid
+test/test_subspace_context.py::test_wordspace_reset_clears_last_svo
+test/test_subspace_context.py::test_last_svo_lives_on_wordspace_not_conceptualspace
+test/test_subspace_context.py::test_codebook_reference_is_immutable
+test/test_subspace_context.py::test_input_space_has_symbolSpace_after_set
+test/test_subspace_context.py::test_output_space_carries_symbolSpace
+test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace
+test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+169 passed, 2 skipped, 10 warnings in 7.24s

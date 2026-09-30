@@ -1,0 +1,31 @@
+........................................................................ [ 37%]
+..................ssssss............sss................................. [ 74%]
+..................................................                       [100%]
+=============================== warnings summary ===============================
+test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13593: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers
+test/test_mental_model.py::TestBasicModelForwardReverse::test_subspace_words_clearable
+test/test_mental_model.py::TestBasicModelGrammarConfiguration::test_configured_grammar_matches_xml
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/test/../data/MentalModel.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+185 passed, 9 skipped, 13 warnings in 13.96s

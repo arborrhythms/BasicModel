@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/affected/full/worker-033.recycle.json"
+}

@@ -1,0 +1,52 @@
+{
+  "serial-baseline": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/profile_baseline.py",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/serial-baseline.json"
+    ],
+    "pid": 91865,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 6605429144,
+    "elapsed_seconds": 759.8900633329758,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/serial-baseline.log"
+  },
+  "packed": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+      "--config",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+      "--parity",
+      "packed",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/packed.json"
+    ],
+    "pid": 92397,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 5313795400,
+    "elapsed_seconds": 293.7923590419814,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/packed.log"
+  },
+  "single": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+      "--config",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+      "--parity",
+      "single",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/single.json"
+    ],
+    "pid": 92524,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 5321266504,
+    "elapsed_seconds": 482.1310765000526,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/single.log"
+  }
+}

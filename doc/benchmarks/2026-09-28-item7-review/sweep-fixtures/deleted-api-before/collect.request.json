@@ -1,0 +1,21 @@
+{
+  "selectors": [
+    "test/test_operator_codebook_shaping.py",
+    "test/test_topk_priming_codebook_growth.py",
+    "test/test_ps_ss_binding.py",
+    "test/test_active_codebook_reads.py",
+    "test/test_analysis_attention_gate.py",
+    "test/test_semantic_categories_pipeline.py",
+    "test/test_operator_superposition.py",
+    "test/test_ss_codebook_operations.py",
+    "test/test_merge_structural_not_operator.py",
+    "test/test_search_then_mint.py",
+    "test/test_serial_stm_split.py",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

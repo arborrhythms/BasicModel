@@ -1,0 +1,194 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+    "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+    "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+  ],
+  "completed": [
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+    "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+    "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/worker-000.json"
+      ],
+      "pid": 10571,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 545309968,
+      "elapsed_seconds": 3.8167564580217004,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "completed": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.003516791039146483,
+          "message": "test/test_lexical_reference_orders.py:42: in test_selected_grammar_context_selects_order\n    assert orders.tolist() == [-1, order]\nE   assert [-1, -1] == [-1, 0]\nE     \nE     At index 1 diff: -1 != 0\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.002142332959920168,
+          "message": "test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order\n    assert got.tolist() == [-1, ids[order]]\nE   assert [-1, 1] == [-1, 2]\nE     \nE     At index 1 diff: 1 != 2\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0018940001027658582,
+          "message": "test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order\n    assert got.tolist() == [-1, ids[order]]\nE   assert [-1, 1] == [-1, 2]\nE     \nE     At index 1 diff: 1 != 2\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0018515000119805336,
+          "message": "test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order\n    assert got.tolist() == [-1, ids[order]]\nE   assert [-1, 1] == [-1, 2]\nE     \nE     At index 1 diff: 1 != 2\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0022652919869869947,
+          "message": "test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order\n    assert got.tolist() == [-1, ids[order]]\nE   assert [-1, 1] == [-1, 3]\nE     \nE     At index 1 diff: 1 != 3\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0020357919856905937,
+          "message": "test/test_lexical_reference_orders.py:55: in test_capture_owns_grammar_resolution_without_changing_reconstruction\n    entry, = BasicModel._program_entries(host,\nbin/Models.py:13244: in _program_entries\n    word_ids=(None if not torch.is_tensor(getattr(self.inputSpace, '_ar_word_concept_ids', None)) else\n                                                  ^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'inputSpace'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00440383399836719,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0077483749482780695,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018861250719055533,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00",
+  "elapsed_seconds": 7.571696000057273,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 545309968,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/collect.json"
+    ],
+    "pid": 10541,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 429229304,
+    "elapsed_seconds": 3.5213827079860494,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

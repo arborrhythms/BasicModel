@@ -1,0 +1,10 @@
+{
+  "exact_source_match": true,
+  "differences": {},
+  "runtime_executable_unchanged": true,
+  "runtime_evidence": "Every validated source file is byte-identical to the reissued measurement source, including the unindexed-operand closing repair.",
+  "data_configuration_and_build_files_exact": true,
+  "fixture_disposition": "../sweep-fixtures/integration.json",
+  "retired_cases": "../sweep-fixtures/retired-cases.json",
+  "closing_repair": "../mm-admission/repair.json"
+}

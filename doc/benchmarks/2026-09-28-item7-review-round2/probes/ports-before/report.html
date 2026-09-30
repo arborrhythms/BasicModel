@@ -1,0 +1,94 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 20/20 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5358851660275832</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_runtime_split_ingestion.py:103: in test_store_truths_idempotent_clear_then_record
+    self.assertGreater(int(tl.count.item()), 0)
+E   AssertionError: 0 not greater than 0</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr><tr><td><pre>test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.08526904205791652</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_runtime_split_ingestion.py:94: in test_store_truths_records_truths
+    self.assertGreater(int(tl.count.item()), 0)
+E   AssertionError: 0 not greater than 0</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5662518329918385</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_compose_pair_driver.py:91: in test_pair_trains_twice_and_commits_once
+    torch.testing.assert_close(m._reconstruction_stack()._choice_actions, chosen)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 32 / 608 (5.3%)
+E   Greatest absolute difference: 5 at index (0, 1)
+E   Greatest relative difference: 2.0 at index (0, 3)</pre></td><td><pre>Starting with dynamic 4-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.13498991704545915</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_mental_model.py:57: in test_grammar_has_syntactic_layers
+    self.assertIsNotNone(getattr(space, &#x27;syntacticLayer&#x27;, None),
+E   AssertionError: unexpectedly None : Whole percepts missing per-space SyntacticLayer</pre></td><td><pre>Starting with dynamic 96-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00046845804899930954</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:291: in test_symbolic_lexicon_methods_exist
+    self.assertTrue(hasattr(sym, name),
+E   AssertionError: False is not true : WholeSpace must expose &#x27;train_embeddings&#x27; after the lexicon-API migration.</pre></td><td><pre>Starting with dynamic 4-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00020279199816286564</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:312: in test_s_has_syntactic_layer
+    self.assertIsNotNone(
+E   AssertionError: unexpectedly None : WholeSpace must retain its SyntacticLayer (the grammar&#x27;s canonical dispatch host); missing on WholeSpace(
+E     (subspace): SubSpace()
+E     (_owned_bases): ModuleDict(
+E       (event): Tensor()
+E       (what): Codebook(
+E         (primitive_properties): PrimitiveProperties()
+E       )
+E       (where): Tensor()
+E       (when): Tensor()
+E       (activation): Tensor()
+E     )
+E     (_owned_encoders): ModuleDict(
+E       (activeEncoding): ActiveEncoding()
+E       (objectEncoding): EventEncoding()
+E       (whatEncoding): WhatEncoding()
+E       (wordEncoding): WordEncoding()
+E     )
+E     (layers): ModuleList()
+E   )</pre></td><td><pre>Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>test/test_init_scale.py::test_whole_space_init_scale_wiring</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.05247016705106944</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_init_scale.py:131: in test_whole_space_init_scale_wiring
+    assert ws.analysis_store.init_scale == pytest.approx(0.02)
+           ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;analysis_store&#x27;. Did you mean: &#x27;analysis_mode&#x27;?</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.001443166984245181</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.028386916033923626</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_shamatha_inline_grammar.py:64: in test_dnf_stack_wired_into_conceptual_space
+    m.wholeSpace.propositional_negation, Layers.NotLayer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;propositional_negation&#x27;</pre></td><td><pre>Starting with dynamic 8-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.025079207960516214</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:134: in test_forward_keeps_continuous_symbols
+    self.assertGreater(symbols.std().item(), 1e-6,
+E   AssertionError: 0.0 not greater than 1e-06 : Symbolic activation collapsed to a single VQ prototype after the per-stage forward.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004964499967172742</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_subspace_context.py:245: in test_pipeline_spaces_carry_symbolSpace
+    assert model.wholeSpace.symbolSpace is model.symbolSpace
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;symbolSpace&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.006548665929585695</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_bivector_retirement_state.py:88: in test_symbolic_references_parameter_attached_via_knowledge
+    assert hasattr(sym, &#x27;references&#x27;)
+E   AssertionError: assert False
+E    +  where False = hasattr(WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...ing()\n    (whenEncoding): WhenStartDurationEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n), &#x27;references&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00019683304708451033</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_sparsity_regularizer.py:43: in test_symbolic_space_uses_sparsity_regularizer
+    assert hasattr(WholeSpace, &quot;_build_sparsity_regularizer&quot;), \
+E   AssertionError: WholeSpace should expose a factory for its regularizer
+E   assert False
+E    +  where False = hasattr(&lt;class &#x27;Spaces.WholeSpace&#x27;&gt;, &#x27;_build_sparsity_regularizer&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0037821249570697546</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:99: in test_phase2_end_to_end_round_trip
+    assert isinstance(ws.references, nn.Parameter)
+                      ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;references&#x27;. Did you mean: &#x27;dereference&#x27;?</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0014742499915882945</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:213: in test_phase2_end_to_end_reattach_after_extend
+    refs_param_id_1 = id(ws.references)
+                         ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;references&#x27;. Did you mean: &#x27;dereference&#x27;?</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0005379999056458473</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:131: in test_symbolic_space_attach_creates_references_parameter
+    assert hasattr(ws, &#x27;references&#x27;)
+E   AssertionError: assert False
+E    +  where False = hasattr(WholeSpace(), &#x27;references&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00034166593104600906</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:151: in test_symbolic_space_attach_creates_order_buffer
+    assert hasattr(ws, &#x27;order&#x27;)
+E   AssertionError: assert False
+E    +  where False = hasattr(WholeSpace(), &#x27;order&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00031933304853737354</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:165: in test_symbolic_space_references_in_named_parameters
+    assert &#x27;references&#x27; in names
+E   AssertionError: assert &#x27;references&#x27; in []</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00029929110314697027</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:175: in test_symbolic_space_order_in_named_buffers
+    assert &#x27;order&#x27; in names
+E   AssertionError: assert &#x27;order&#x27; in []</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00028662499971687794</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:186: in test_symbolic_space_reattach_updates_in_place
+    refs_id_before = id(ws.references)
+                        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;references&#x27;. Did you mean: &#x27;dereference&#x27;?</pre></td><td><pre></pre></td></tr></table></body></html>

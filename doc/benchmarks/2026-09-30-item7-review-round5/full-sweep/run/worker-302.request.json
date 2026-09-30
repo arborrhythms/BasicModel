@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-302.recycle.json"
+}

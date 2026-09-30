@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind ________
+
+    def test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind():
+        from ReferenceContext import ReferenceTypes, resolve_order
+        value = torch.tensor([[[1., 0., 0., 0.]]])
+        types = ReferenceTypes(torch.tensor([[1]]), torch.tensor([1, 2]),
+            torch.tensor([[[-1, 7]]]), torch.zeros(1, 1, 2, 4))
+        point, identity = resolve_order(value, torch.tensor([[-1]]), 2, types)
+>       torch.testing.assert_close(point, value, rtol=0, atol=0)
+E       AssertionError: Tensor-likes are not equal!
+E       
+E       Mismatched elements: 1 / 4 (25.0%)
+E       Greatest absolute difference: 1.0 at index (0, 0, 0)
+E       Greatest relative difference: 1.0 at index (0, 0, 0)
+
+test/test_live_references.py:44: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind
+1 failed in 2.53s

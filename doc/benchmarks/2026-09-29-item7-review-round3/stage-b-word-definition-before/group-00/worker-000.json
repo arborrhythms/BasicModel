@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.4648250420577824,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:47: in test_word_definition_survives_identity_resolution_and_pruning\n    assert (cs.concept_parts(word),cs.concept_wholes(word))==before\nE   assert ([], []) == ([7], [1])\nE     \nE     At index 0 diff: [] != [7]\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

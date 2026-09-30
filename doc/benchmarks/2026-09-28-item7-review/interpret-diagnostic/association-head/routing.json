@@ -1,0 +1,662 @@
+{
+  "before_training": {
+    "corpus": "b5ecc9b6e92150fa4612202921e4e7a44d4df370ed713447a83156715db1afa6",
+    "stage": "before_training",
+    "catalog": {
+      "1": [
+        {
+          "name": "part",
+          "structural": true
+        },
+        {
+          "name": "whole",
+          "structural": true
+        },
+        {
+          "name": "equal",
+          "structural": true
+        },
+        {
+          "name": "intersection",
+          "structural": true
+        },
+        {
+          "name": "union",
+          "structural": true
+        },
+        {
+          "name": "sum",
+          "structural": true
+        },
+        {
+          "name": "product",
+          "structural": true
+        },
+        {
+          "name": "chunk",
+          "structural": true
+        },
+        {
+          "name": "lift",
+          "structural": true
+        },
+        {
+          "name": "verb",
+          "structural": true
+        },
+        {
+          "name": "adverb",
+          "structural": true
+        },
+        {
+          "name": "lower",
+          "structural": true
+        },
+        {
+          "name": "preposition",
+          "structural": true
+        },
+        {
+          "name": "bind",
+          "structural": true
+        },
+        {
+          "name": "conjunction",
+          "structural": true
+        },
+        {
+          "name": "disjunction",
+          "structural": true
+        }
+      ],
+      "2": [
+        {
+          "name": "not",
+          "structural": true
+        },
+        {
+          "name": "non",
+          "structural": true
+        },
+        {
+          "name": "null",
+          "structural": true
+        },
+        {
+          "name": "tense",
+          "structural": true
+        },
+        {
+          "name": "morphology",
+          "structural": true
+        },
+        {
+          "name": "exist",
+          "structural": true
+        }
+      ]
+    },
+    "catalog_sha256": "005594a1428a5c6bd9aaed6018acefd42576ca619d5d130f32323770fe9e62bf",
+    "sentences": 8,
+    "operations": 254,
+    "opaque_operations": 0,
+    "opaque_sentences": 0,
+    "no_operation_sentences": 0,
+    "sentence_opaque_share": 0.0,
+    "operation_opaque_share": 0.0,
+    "rows": [
+      {
+        "sentence_id": "0:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 26,
+          "conjunction": 1,
+          "not": 1,
+          "lift": 2,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "0:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "not": 1,
+          "tense": 26,
+          "intersection": 1,
+          "union": 2,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "1:0:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 29,
+          "union": 2,
+          "bind": 2,
+          "lift": 1
+        }
+      },
+      {
+        "sentence_id": "1:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "not": 1,
+          "tense": 26,
+          "intersection": 1,
+          "union": 2,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "2:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "bind": 2,
+          "union": 1,
+          "lift": 1
+        }
+      },
+      {
+        "sentence_id": "2:1:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 29,
+          "union": 1,
+          "bind": 2,
+          "lift": 2
+        }
+      },
+      {
+        "sentence_id": "3:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "bind": 2,
+          "lift": 1,
+          "union": 1
+        }
+      },
+      {
+        "sentence_id": "3:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "intersection": 1,
+          "union": 1,
+          "bind": 1,
+          "lift": 1
+        }
+      }
+    ],
+    "learned_utility": "unproven"
+  },
+  "training": {
+    "corpus": "b5ecc9b6e92150fa4612202921e4e7a44d4df370ed713447a83156715db1afa6",
+    "stage": "training",
+    "catalog": {
+      "1": [
+        {
+          "name": "part",
+          "structural": true
+        },
+        {
+          "name": "whole",
+          "structural": true
+        },
+        {
+          "name": "equal",
+          "structural": true
+        },
+        {
+          "name": "intersection",
+          "structural": true
+        },
+        {
+          "name": "union",
+          "structural": true
+        },
+        {
+          "name": "sum",
+          "structural": true
+        },
+        {
+          "name": "product",
+          "structural": true
+        },
+        {
+          "name": "chunk",
+          "structural": true
+        },
+        {
+          "name": "lift",
+          "structural": true
+        },
+        {
+          "name": "verb",
+          "structural": true
+        },
+        {
+          "name": "adverb",
+          "structural": true
+        },
+        {
+          "name": "lower",
+          "structural": true
+        },
+        {
+          "name": "preposition",
+          "structural": true
+        },
+        {
+          "name": "bind",
+          "structural": true
+        },
+        {
+          "name": "conjunction",
+          "structural": true
+        },
+        {
+          "name": "disjunction",
+          "structural": true
+        }
+      ],
+      "2": [
+        {
+          "name": "not",
+          "structural": true
+        },
+        {
+          "name": "non",
+          "structural": true
+        },
+        {
+          "name": "null",
+          "structural": true
+        },
+        {
+          "name": "tense",
+          "structural": true
+        },
+        {
+          "name": "morphology",
+          "structural": true
+        },
+        {
+          "name": "exist",
+          "structural": true
+        }
+      ]
+    },
+    "catalog_sha256": "005594a1428a5c6bd9aaed6018acefd42576ca619d5d130f32323770fe9e62bf",
+    "sentences": 14,
+    "operations": 441,
+    "opaque_operations": 0,
+    "opaque_sentences": 0,
+    "no_operation_sentences": 0,
+    "sentence_opaque_share": 0.0,
+    "operation_opaque_share": 0.0,
+    "rows": [
+      {
+        "sentence_id": "4:0:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 28,
+          "lift": 3,
+          "bind": 2,
+          "not": 1
+        }
+      },
+      {
+        "sentence_id": "4:1:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 29,
+          "union": 1,
+          "adverb": 1,
+          "lift": 2,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "5:0:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 29,
+          "lift": 1,
+          "bind": 2,
+          "union": 1,
+          "conjunction": 1
+        }
+      },
+      {
+        "sentence_id": "5:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "bind": 2,
+          "lift": 2
+        }
+      },
+      {
+        "sentence_id": "6:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "not": 1,
+          "morphology": 26,
+          "bind": 2,
+          "lift": 2
+        }
+      },
+      {
+        "sentence_id": "6:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "conjunction": 1,
+          "lift": 2,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "7:0:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "morphology": 28,
+          "not": 1,
+          "union": 1,
+          "bind": 3,
+          "chunk": 1
+        }
+      },
+      {
+        "sentence_id": "7:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "conjunction": 1,
+          "lift": 2,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "8:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "morphology": 27,
+          "conjunction": 2,
+          "union": 2
+        }
+      },
+      {
+        "sentence_id": "8:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "bind": 3,
+          "lift": 1
+        }
+      },
+      {
+        "sentence_id": "9:0:0",
+        "operations": 28,
+        "opaque_operations": 0,
+        "rules": {
+          "conjunction": 3,
+          "morphology": 24,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "9:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "conjunction": 3,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "10:0:0",
+        "operations": 26,
+        "opaque_operations": 0,
+        "rules": {
+          "bind": 2,
+          "union": 2,
+          "morphology": 22
+        }
+      },
+      {
+        "sentence_id": "10:1:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 29,
+          "lift": 1,
+          "conjunction": 1,
+          "bind": 1,
+          "intersection": 1,
+          "union": 1
+        }
+      }
+    ],
+    "learned_utility": "unproven"
+  },
+  "after_training": {
+    "corpus": "b5ecc9b6e92150fa4612202921e4e7a44d4df370ed713447a83156715db1afa6",
+    "stage": "after_training",
+    "catalog": {
+      "1": [
+        {
+          "name": "part",
+          "structural": true
+        },
+        {
+          "name": "whole",
+          "structural": true
+        },
+        {
+          "name": "equal",
+          "structural": true
+        },
+        {
+          "name": "intersection",
+          "structural": true
+        },
+        {
+          "name": "union",
+          "structural": true
+        },
+        {
+          "name": "sum",
+          "structural": true
+        },
+        {
+          "name": "product",
+          "structural": true
+        },
+        {
+          "name": "chunk",
+          "structural": true
+        },
+        {
+          "name": "lift",
+          "structural": true
+        },
+        {
+          "name": "verb",
+          "structural": true
+        },
+        {
+          "name": "adverb",
+          "structural": true
+        },
+        {
+          "name": "lower",
+          "structural": true
+        },
+        {
+          "name": "preposition",
+          "structural": true
+        },
+        {
+          "name": "bind",
+          "structural": true
+        },
+        {
+          "name": "conjunction",
+          "structural": true
+        },
+        {
+          "name": "disjunction",
+          "structural": true
+        }
+      ],
+      "2": [
+        {
+          "name": "not",
+          "structural": true
+        },
+        {
+          "name": "non",
+          "structural": true
+        },
+        {
+          "name": "null",
+          "structural": true
+        },
+        {
+          "name": "tense",
+          "structural": true
+        },
+        {
+          "name": "morphology",
+          "structural": true
+        },
+        {
+          "name": "exist",
+          "structural": true
+        }
+      ]
+    },
+    "catalog_sha256": "005594a1428a5c6bd9aaed6018acefd42576ca619d5d130f32323770fe9e62bf",
+    "sentences": 8,
+    "operations": 254,
+    "opaque_operations": 0,
+    "opaque_sentences": 0,
+    "no_operation_sentences": 0,
+    "sentence_opaque_share": 0.0,
+    "operation_opaque_share": 0.0,
+    "rows": [
+      {
+        "sentence_id": "11:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "morphology": 27,
+          "conjunction": 3,
+          "bind": 1
+        }
+      },
+      {
+        "sentence_id": "11:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "product": 1,
+          "intersection": 1,
+          "bind": 1,
+          "union": 1
+        }
+      },
+      {
+        "sentence_id": "12:0:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "morphology": 29,
+          "conjunction": 3,
+          "bind": 1,
+          "lift": 1
+        }
+      },
+      {
+        "sentence_id": "12:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "product": 1,
+          "intersection": 1,
+          "bind": 1,
+          "union": 1
+        }
+      },
+      {
+        "sentence_id": "13:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "morphology": 27,
+          "bind": 3,
+          "lift": 1
+        }
+      },
+      {
+        "sentence_id": "13:1:0",
+        "operations": 34,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 29,
+          "union": 1,
+          "bind": 3,
+          "lift": 1
+        }
+      },
+      {
+        "sentence_id": "14:0:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "morphology": 27,
+          "bind": 3,
+          "union": 1
+        }
+      },
+      {
+        "sentence_id": "14:1:0",
+        "operations": 31,
+        "opaque_operations": 0,
+        "rules": {
+          "tense": 27,
+          "equal": 1,
+          "intersection": 1,
+          "bind": 1,
+          "lift": 1
+        }
+      }
+    ],
+    "learned_utility": "unproven"
+  }
+}

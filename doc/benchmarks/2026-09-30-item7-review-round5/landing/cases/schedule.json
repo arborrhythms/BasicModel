@@ -1,0 +1,22 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 8589934592,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 6,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+        "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+        "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+        "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+        "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers"
+      ],
+      "estimated_seconds": 0.03148445812985301,
+      "reserved_bytes": 1848519915.2
+    }
+  ]
+}

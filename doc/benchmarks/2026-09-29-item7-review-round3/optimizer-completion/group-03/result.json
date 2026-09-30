@@ -1,0 +1,298 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+    "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+    "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+    "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+    "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+    "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+    "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+    "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+    "test/test_sparse_layer.py::test_spmm_kernel_parity",
+    "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+    "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+    "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+    "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+    "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+    "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+    "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+    "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian"
+  ],
+  "completed": [
+    "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+    "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+    "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+    "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+    "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+    "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+    "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+    "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+    "test/test_sparse_layer.py::test_spmm_kernel_parity",
+    "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+    "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+    "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+    "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+    "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+    "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+    "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+    "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-completion/group-03/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-completion/group-03/worker-000.json"
+      ],
+      "pid": 12180,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 427050304,
+      "elapsed_seconds": 3.6203036670340225,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-completion/group-03/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+        "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+        "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+        "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+        "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+        "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+        "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+        "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+        "test/test_sparse_layer.py::test_spmm_kernel_parity",
+        "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+        "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+        "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+        "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+        "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+        "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+        "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+        "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian"
+      ],
+      "completed": [
+        "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+        "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+        "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+        "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+        "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+        "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+        "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+        "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+        "test/test_sparse_layer.py::test_spmm_kernel_parity",
+        "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+        "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+        "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+        "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+        "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+        "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+        "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+        "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00035254203248769045,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0014329580590128899,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00016099994536489248,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012983300257474184,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001585830468684435,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010218625073321164,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006123339990153909,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00026595802046358585,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_spmm_kernel_parity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001733417040668428,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00018691702280193567,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010595901403576136,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00021070800721645355,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006642090156674385,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00020666606724262238,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.683298412710428e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00017562496941536665,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00019504199735820293,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-completion/group-03",
+  "elapsed_seconds": 6.100484124966897,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 427050304,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-completion/group-03/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-completion/group-03/collect.json"
+    ],
+    "pid": 12172,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 260113272,
+    "elapsed_seconds": 2.249573874985799,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-completion/group-03/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+        "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+        "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+        "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+        "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+        "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+        "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+        "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+        "test/test_sparse_layer.py::test_spmm_kernel_parity",
+        "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+        "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+        "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+        "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+        "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+        "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+        "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+        "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

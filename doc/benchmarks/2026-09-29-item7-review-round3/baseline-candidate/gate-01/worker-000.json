@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+  ],
+  "completed": [
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.5106750420527533,
+      "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.4596545830136165,
+      "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.4623842919245362,
+      "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

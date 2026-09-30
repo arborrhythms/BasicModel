@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ps_reverse_e2e.py::test_meronymic_reverse_replays_surface",
+    "test/test_ps_reverse_e2e.py::test_meronymic_synthesis_can_emit_spaces",
+    "test/test_ps_reverse_e2e.py::test_grammar_has_no_and_token",
+    "test/test_ps_reverse_e2e.py::test_e2e_round_trip_with_learned_marker"
+  ],
+  "completed": [
+    "test/test_ps_reverse_e2e.py::test_meronymic_reverse_replays_surface",
+    "test/test_ps_reverse_e2e.py::test_meronymic_synthesis_can_emit_spaces",
+    "test/test_ps_reverse_e2e.py::test_grammar_has_no_and_token",
+    "test/test_ps_reverse_e2e.py::test_e2e_round_trip_with_learned_marker"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_reverse_e2e.py::test_meronymic_reverse_replays_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013028751127421856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_reverse_e2e.py::test_meronymic_synthesis_can_emit_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003478329163044691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_reverse_e2e.py::test_grammar_has_no_and_token",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002271084114909172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_reverse_e2e.py::test_e2e_round_trip_with_learned_marker",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00099762505851686,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

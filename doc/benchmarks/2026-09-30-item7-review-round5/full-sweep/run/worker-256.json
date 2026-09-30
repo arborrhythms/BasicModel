@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013308750931173563,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

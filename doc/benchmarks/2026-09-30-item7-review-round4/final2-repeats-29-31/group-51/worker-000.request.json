@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final2-repeats-29-31/group-51/worker-000.recycle.json"
+}

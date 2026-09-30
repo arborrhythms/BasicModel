@@ -1,0 +1,168 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+    "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+    "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+    "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+    "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+    "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+    "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition"
+  ],
+  "completed": [
+    "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+    "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+    "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+    "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+    "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+    "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+    "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/worker-000.json"
+      ],
+      "pid": 13787,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429753664,
+      "elapsed_seconds": 4.2107486249879,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+        "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+        "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+        "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition"
+      ],
+      "completed": [
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+        "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+        "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+        "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007407090160995722,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010641687549650669,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004013748839497566,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00015187496319413185,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00018945802003145218,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002460838295519352,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004846251104027033,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29",
+  "elapsed_seconds": 7.055636999895796,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 429753664,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/collect.json"
+    ],
+    "pid": 13778,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263193512,
+    "elapsed_seconds": 2.530367541825399,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+        "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+        "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+        "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

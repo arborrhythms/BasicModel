@@ -1,0 +1,200 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+    "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+    "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+    "test/test_relevance_bases.py::test_symbol_history_projection"
+  ],
+  "completed": [
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+    "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+    "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+    "test/test_relevance_bases.py::test_symbol_history_projection"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-06/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-06/worker-000.json"
+      ],
+      "pid": 10288,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431392040,
+      "elapsed_seconds": 3.618312165956013,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-06/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope",
+        "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+        "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+        "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+        "test/test_relevance_bases.py::test_symbol_history_projection"
+      ],
+      "completed": [
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope",
+        "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+        "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+        "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+        "test/test_relevance_bases.py::test_symbol_history_projection"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00010295899119228125,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 31, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_seen_bump_and_decay",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 8.208304643630981e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 48, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_desire_signed_floor",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00013562501408159733,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 62, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 7.28340819478035e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 76, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_primed_reading_scope",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 7.29589955881238e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 102, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004556083003990352,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0029858748894184828,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0027845840668305755,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_symbol_history_projection",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0033631250262260437,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-06",
+  "elapsed_seconds": 7.392266209004447,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 431392040,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-06/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-06/collect.json"
+    ],
+    "pid": 10280,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428623024,
+    "elapsed_seconds": 3.5468183750053868,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-06/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope",
+        "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+        "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+        "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+        "test/test_relevance_bases.py::test_symbol_history_projection"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

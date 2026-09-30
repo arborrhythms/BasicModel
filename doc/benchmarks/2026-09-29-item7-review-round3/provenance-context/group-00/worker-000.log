@@ -1,0 +1,34 @@
+F...F..                                                                  [100%]
+=================================== FAILURES ===================================
+________ TestRuntimeUserIngestion.test_resubmit_replaces_user_rows_only ________
+test/test_ltm_consolidation.py:693: in test_resubmit_replaces_user_rows_only
+    self.assertEqual(len(user_rows), 1, "resubmit replaces, not appends")
+E   AssertionError: 3 != 1 : resubmit replaces, not appends
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+______ TestRuntimeUserIngestion.test_user_rows_land_alongside_provisioned ______
+test/test_ltm_consolidation.py:643: in test_user_rows_land_alongside_provisioned
+    self.assertEqual(
+E   AssertionError: Lists differ: [1, 5, 8] != [0, 1, 2]
+E   
+E   First differing element 0:
+E   1
+E   0
+E   
+E   - [1, 5, 8]
+E   + [0, 1, 2]
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13589: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned
+2 failed, 5 passed, 2 warnings in 4.14s

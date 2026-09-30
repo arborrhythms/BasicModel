@@ -1,0 +1,155 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_table.py::test_nary_bindings_keep_each_selected_extent",
+    "test/test_reference_table.py::test_full_rows_only",
+    "test/test_reference_table.py::test_append_only",
+    "test/test_reference_table.py::test_gate_license_required",
+    "test/test_reference_table.py::test_unknown_word_is_a_query_outcome",
+    "test/test_reference_table.py::test_no_reverse_index_anywhere",
+    "test/test_reference_table.py::test_search_is_object_side_scan_by_dominance",
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+    "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+    "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert",
+    "test/test_reference_table.py::test_minted_whole_is_searchable_by_its_parts",
+    "test/test_reference_table.py::test_bind_gauge_orients_object_row",
+    "test/test_reference_table.py::test_bottom_extent_cached_definable_but_empty",
+    "test/test_reference_table.py::test_top_saturation_detected"
+  ],
+  "completed": [
+    "test/test_reference_table.py::test_nary_bindings_keep_each_selected_extent",
+    "test/test_reference_table.py::test_full_rows_only",
+    "test/test_reference_table.py::test_append_only",
+    "test/test_reference_table.py::test_gate_license_required",
+    "test/test_reference_table.py::test_unknown_word_is_a_query_outcome",
+    "test/test_reference_table.py::test_no_reverse_index_anywhere",
+    "test/test_reference_table.py::test_search_is_object_side_scan_by_dominance",
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+    "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+    "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert",
+    "test/test_reference_table.py::test_minted_whole_is_searchable_by_its_parts",
+    "test/test_reference_table.py::test_bind_gauge_orients_object_row",
+    "test/test_reference_table.py::test_bottom_extent_cached_definable_but_empty",
+    "test/test_reference_table.py::test_top_saturation_detected"
+  ],
+  "slow_selected": [
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_reference_table.py::test_nary_bindings_keep_each_selected_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003973750863224268,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_full_rows_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001235420349985361,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_append_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012758304364979267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_gate_license_required",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.429198689758778e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_unknown_word_is_a_query_outcome",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.254203177988529e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_no_reverse_index_anywhere",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.616708848625422e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_search_is_object_side_scan_by_dominance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003049159422516823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010429194662719965,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_table.py', 123, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036100007127970457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009154159342870116,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_minted_whole_is_searchable_by_its_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018712090095505118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_bind_gauge_orients_object_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005179160507395864,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_bottom_extent_cached_definable_but_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012958399020135403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_table.py::test_top_saturation_detected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014016602654010057,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

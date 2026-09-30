@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge"
+  ],
+  "completed": [
+    "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.006548665929585695,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_bivector_retirement_state.py:88: in test_symbolic_references_parameter_attached_via_knowledge\n    assert hasattr(sym, 'references')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Codebook(\\n      (...ing()\\n    (whenEncoding): WhenStartDurationEncoding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (layers): ModuleList()\\n), 'references')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

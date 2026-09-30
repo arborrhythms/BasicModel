@@ -1,0 +1,48 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_____________ test_shape_operators_selects_correct_op_per_context ______________
+test/test_operator_codebook_shaping.py:50: in test_shape_operators_selects_correct_op_per_context
+    ws = _ws_with_ops("conjunction", "disjunction")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'
+_________________ test_shape_operators_writes_back_to_codebook _________________
+test/test_operator_codebook_shaping.py:65: in test_shape_operators_writes_back_to_codebook
+    ws = _ws_with_ops("conjunction", "disjunction")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'
+________________ test_shape_operators_weak_signal_still_shapes _________________
+test/test_operator_codebook_shaping.py:77: in test_shape_operators_weak_signal_still_shapes
+    ws = _ws_with_ops("conjunction", "disjunction")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'
+______________ test_shape_operators_handles_unary_and_binary_ops _______________
+test/test_operator_codebook_shaping.py:89: in test_shape_operators_handles_unary_and_binary_ops
+    ws = _ws_with_ops("exist", "conjunction")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'
+=========================== short test summary info ============================
+FAILED test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context
+FAILED test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook
+FAILED test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes
+FAILED test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops
+4 failed in 2.02s

@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

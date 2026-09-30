@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_reasoning_cde_model.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

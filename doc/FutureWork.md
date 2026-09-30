@@ -19,7 +19,7 @@ human-like behaviour for every item that
 | Item | `optimal` | `human` |
 |---|---|---|
 | Default belief | Cartesian: comprehension registers at trust `0`; provenance asserts | Spinozan: comprehension asserts at provenance trust; unbelieving is a later revision |
-| Verbatim retention | derivations kept losslessly | derivations decay; fused points persist |
+| Verbatim retention | generation from stored structure | generation from stored structure |
 | Forgetting | capacity wall, recency only | forgetting model (§2) |
 
 The profile is a switch over documented behaviours, never a hidden
@@ -43,27 +43,18 @@ isolated row can score high on all three terms.
 
 ## 3. Lossy reconstruction trace; inversion as learning
 
-**Decision (Alec, 2026-09-16).** Parts of the reconstruction trace will be
-dropped over time, so inversion is a learned approximation from a lossy
-trace, not an exact replay. With a complete trace reconstruction teaches
-nothing; the loss is what gives the reconstruction objective its role in
-learning.
+**Decision revised (Alec, 2026-09-28).** A completed row stores its one-slot
+or three-slot end state, never a derivation, under
+[two truths §11.1](specs/2026-09-16-two-truths-ideas-and-relations.md#111-a-row-holds-structure-never-a-derivation-decided).
+The operation record serves reconstruction and exploration only while the
+sentence is open, then is discarded. There is no durable trace to decay
+under either profile. Reading back is generation from the stored structure;
+item 6 measures its current weak recovery without assuming exact wording.
 
-To specify: which parts of a derivation are dropped first (leaf identities
-before structure, or the reverse), on what schedule (age, use, profile),
-what the reverse chain must recover from the fused point alone when the
-trace is gone, and how the reconstruction loss is weighted between a full
-trace and none. This is the verbatim/gist asymmetry (Sachs 1967; Reyna &
-Brainerd 1995) made dynamic, and it shares its schedule with §2.
-
-**Scheduled (Alec, 2026-09-20).** Dropping detail is the precursor stage of
-forgetting and is gradual: see
-[forgetting spec §4a](specs/2026-09-16-forgetting.md#4a-detail-before-rows-alec-2026-09-20).
-What the reverse chain must recover from the fused point alone is
-*generativity*
-([accessible-mind spec §2.0](specs/2026-09-20-accessible-mind-subsystems.md)),
-measured by that spec's test 12. What remains here is the weighting of the
-reconstruction loss between a full trace and none.
+The earlier proposal to drop derivation detail gradually is superseded.
+Experiments that make reconstruction harder while a sentence is open would
+need a separate learning specification. Source-text retention and subordinate
+row coarsening remain in [the forgetting spec](specs/2026-09-16-forgetting.md#4a-detail-before-rows-alec-2026-09-20).
 
 ## 4. Context across documents
 
@@ -76,18 +67,24 @@ genuine topic change, and whether the boundary becomes a learned soft
 signal rather than a cursor fact. The current per-row document key and
 clause-scoped reset in the integrated plan §8.3 and §11 are the base.
 
-## 5. N-ary META and interpretation-time discrimination
+<a id="5-n-ary-meta-and-interpretation-time-discrimination"></a>
 
-**Decision (Alec, 2026-09-16).** META concepts generalise over more than
-two concepts: several words and several objects (synonymy and polysemy),
-and the discrimination among them happens at interpretation time, from
-context, not at binding time. The two-truths spec §3.4 records the
-decision; the one-row-per-word law of the binding table is replaced by the
-n-ary META. To specify: the META row's member set and its allocation,
-what `deref(word)` returns when a word belongs to a META with several
-objects (the member set, ranked by context), where in the seal the choice
-is made (the chooser that already selects readings), and how a wrong
-choice is credited by expectation and reconstruction.
+## 5. Definition rows and interpretation-time discrimination
+
+**Amended (Alec, 2026-09-29).** The earlier n-ary META proposal is replaced
+by `word DEF object` rows in
+[two truths §17](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
+Several definitions express synonymy and polysemy. One derived index returns
+the objects of a word and the words of an object; learning their codes does
+not change these identity links. `interpret` writes the definition and
+replaces the word by its object in the existing inventory row. The grammar
+selects among defined objects from context at interpretation time.
+
+The remaining learning question is how the chooser ranks those objects in
+context and credits a wrong selection through expectation and reconstruction.
+Sentences that state a definition, and `Equals` versus `Def`, belong to the
+grammatical operators update. Definitions' participation in forgetting is
+ordinary row participation; any bias by truth kind belongs to item 5.
 
 ## 6. English arithmetic Q/A curriculum
 
@@ -161,10 +158,26 @@ dictionary and costs a few numbers per row beside three idea vectors. With
 the row's where / when / source binding it is an episodic trace: a stored
 state, bound to its occasion.
 
+**Sharpened (Alec, 2026-09-28): what the single stored vector structurally
+cannot hold.** "The fact that we are storing a single point in conceptual
+space in LTM is the equivalent of a story, or semantic memory. An episodic
+memory would be able to store the activations of all symbols (but that would
+require a massive bandwidth, so we might approximate that with a top-K over
+symbolic indices)." So the top-K is not an approximation of the *vector*; it
+recovers a coordinate the vector cannot carry. Each concept's evidence is a
+pair, which splits exactly into `d = c⁺ − c⁻`, the signed evidence, and
+`m = min(c⁺, c⁻)`, the dissonance
+([accessible mind §2.0](specs/2026-09-20-accessible-mind-subsystems.md)). A
+stored resultant carries `d` and is blind to `m` — *both* and *neither* land
+on the same point, and the origin is uncertainty. Semantic memory is the
+`d` of what was composed; episodic memory is the surviving `m`, and the
+activations that were never composed at all. That is the bandwidth the top-K
+is buying, and it says what the selection rule must preserve.
+
 To specify: how many (a handful); which tables (perceptual rows from the two
 towers, conceptual rows of order 0 and above, or both); the selection rule
-(top activation at the seal, excluding the codes the sentence itself
-contributed, since the derivation already holds those); whether retrieval
+(top activation at the closing, excluding the codes the sentence itself
+contributed; the row itself stores no word list or activation snapshot); whether retrieval
 **reinstates** them into parallel knowing, bounded and decayed, so that
 remembering differs from knowing; their use as retrieval cues and as the
 evidence for discriminating a word's senses at interpretation time (§5);
@@ -403,7 +416,7 @@ therefore pure redundancy (Alec, 2026-09-26): it costs band width on every
 element and, if scored per element, distorts reconstruction objectives, as
 the item 9b bisection showed. Candidate simplification: carry `.when` once
 per field beside the field's bracket, stamp it on elements only when they
-leave the field (a sealed row, a captured program, a symbol occurrence
+leave the field (a ended row, a captured program, a symbol occurrence
 that thought produces), and keep the exact clock side-band as now. This is
 future work: the current grammar still transports the temporal band on every
 element, with that shared band excluded from per-word reconstruction. Any
@@ -434,3 +447,321 @@ baseline: it pays for itself only if glossing known units saves more than
 the open read costs, which on FineWeb should hold once the recurring units
 are admitted, and it depends on the field's *both* being reliable, which
 the logged categorical-discrimination index and both-rate monitor.
+
+## Modality as the third index (noted 2026-09-28)
+
+Words narrow the domain of discourse along three indices — which thing,
+which stretch of time, which alternative — and individuate along each by
+determiner, tense and modal
+([accessible-mind spec §2.0.1](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
+The first two have machinery: `lower` and the recency buffer for things,
+the symbolic layer's `.when` and the row's address for times. The third has
+none. A modal ranges over alternative courses of events: "might" picks
+some, "must" takes all, and a conditional narrows which alternatives are in
+play. The reading of 2026-09-28 was that a modal bundle is a sigma over
+alternative processes, so that modality is order and not a fifth dimension
+of conceptual space. **Alec withdrew it on 2026-09-29:** "To square, now:
+modality is not order, it is dimension; I think these are different."
+Concepts stay opaque: the dimension is a learned subspace, not a band of a
+concept's code.
+
+*Added (Alec, 2026-09-29).* With the verb phrase as a projection beside
+the noun phrase, modality is "a subsequent projection (so from a 3d NP to a
+4D NP + VP to a 5D NP+VP+MP), where the MP is a modal phrase"
+([operator catalogue §4.4](specs/2026-09-29-operator-catalogue.md#44-the-noun-phrase-and-the-verb-phrase-two-implementations-and-the-candidate)).
+The 5D counts phrases, each in a learned subspace of its own, so a
+concept's code stays opaque. Open with it: which modal sentences are a
+modal phrase within the point and which an operator row over another row,
+as two truths has "it is certain that P".
+
+To specify when it is taken up: what supplies the alternatives (the explore
+derivation and the predictor's estimate are the two sources of unrealised
+continuations the model already has); how a modal row differs from an
+asserted one without borrowing trust, which is univalent and is not
+evidence; and whether "every", "always" and "must" share one mechanism,
+since each takes all along its index and writes a relation instead of
+lowering.
+
+Smaller items from the same discussion, none of them scheduled:
+
+* **The verb's band is hard-coded.** `τ = 0.1` and the clamp `±8` fix what a
+  verb can mean: an effect below the threshold is exactly the identity, and
+  one above the clamp is unreachable. By the live-wiring rule they are
+  `model.xml` parameters.
+* **Verb sparsity as a measurement.** On the complement of `w`'s support the
+  noun passes through exactly, so `‖w_v‖₀` bounds what can be recovered
+  without the derivation (item 6). Log its distribution over the learned
+  verbs, and whether the touched dimensions cluster, as a single-domain
+  constraint on verbs would predict (item 4).
+* **Asymmetry of modification.** `lower` and `lift` add their operands
+  before one shared map, so they are symmetric by construction and "gun
+  oil" cannot be told from "oil gun", though one is a kind of oil and the
+  other a kind of gun. Decided by Alec, 2026-09-29: "Compounds are
+  subtyping, which explains their order effects." So the asymmetry wanted
+  is sub-typing's, and the adjective is symmetric with its noun. The Ground is the head's own shape, its cases at
+  every order, so no new parameters are needed, and the result keeps the
+  head's order (Alec, 2026-09-28); what is missing is the wiring by which a
+  modifier selects among the head's cases before they are folded back
+  (accessible mind §2.0.1). `lexical_gate`, which would give a
+  word's code a slice of the operator, has no callers.
+* **What order measures.** The determiner lowers order and modification
+  leaves it alone (Alec, 2026-09-28: "order only drops when the determiner
+  is applied"). Order is "determined by sigma or pi fold over a class" and
+  is not part of speech, with which it "only sometimes" corresponds: two
+  count nouns may differ in order. A set of discrete concepts is one order
+  above its members; a part of one concept's extension keeps its order
+  ("the set vs part difference"). Open: whether parts made by combining
+  what is not symbolic are always contiguous, which Alec put as "perhaps";
+  and what happens to a part, "blue cats", when it is named and becomes a
+  discrete concept that can be a member of a set.
+* **Election or accumulation.** Decided by Alec, 2026-09-29: the noun
+  phrase combines by election, and idempotently, "a red red bird is no
+  more red than a red bird", "so perhaps a form of intersection". The
+  adverb is the other kind: "a very, very, fast runner is faster than a
+  fast runner"
+  ([operator catalogue §4](specs/2026-09-29-operator-catalogue.md#4-noun-adjective-verb-and-adverb)).
+* **Generic against universal.** "Cats sleep" tolerates exceptions and
+  "every cat sleeps" does not; both write a relation row, and nothing yet
+  distinguishes their force. *Since 2026-09-30 both lower, "cats" by an
+  implicit "all" and "every" like "all" in the other number
+  ([5.5 spec §6](specs/2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers));
+  where their force differs is still open.*
+* **Privatives.** "Destroy", "kill" and "cancel" remove a property, which a
+  positive gain cannot do. Like "fake" and "former", they belong to `non`
+  or to a shift of the domain, not to displacement.
+
+## Operator names (future work, Alec, 2026-09-29)
+
+"The operator rename can also be future work." What each operator is to do
+is decided in [the operator catalogue](specs/2026-09-29-operator-catalogue.md)
+and stands; the names wait here.
+
+| today | the new name | decided about it |
+|---|---|---|
+| `chunk` | `synthesize`, with `analyze` its reverse | it "pairs better with analyze" (catalogue §3.1) |
+| `what`, `lookup` | `query` | one operator, which returns conceptual content (§3.6) |
+| `quantize` | `symbolize`, with `conceptualize` its reverse | lower-level operators, perhaps of thought only (§3.4) |
+| `arma` | `expect`, or none | open (§3.5) |
+| `verb`, `adverb`, `preposition`, `tense`, `aspect`, `morphology` | names by what is computed; candidates in §3.9 | the code reads declared properties of a rule and never its name (decided; that part is not deferred) |
+
+A rename is made in one pass, in grammar files, code, tests and documents,
+with the old name kept nowhere.
+
+## Lift and lower as dimensions; surface form and tense (future work, Alec, 2026-09-29)
+
+"Lift/lower and surface/tense can all move to future work, or at least
+after item 6."
+
+* **`lift` and `lower`.** They were intended to raise and lower the order;
+  "perhaps they are better suited to dimensional lifting/lowering". On
+  that reading `lift` puts a phrase beside the description in dimensions of
+  its own, NP → NP + VP → NP + VP + MP, and `lower` is its reverse face,
+  the projection that takes the phrase back out, while the order is raised
+  by the fold and lowered by its inverse, the determiner
+  ([operator catalogue §5.4](specs/2026-09-29-operator-catalogue.md#54-lift-a-phrase-beside-a-phrase)).
+  Today the two compute one symmetric sum, and neither undoes the other.
+* **`surface`, with tense, morphology and aspect.** `surface` is "a surface
+  transformation of the words, like tense and aspect", so that one lexeme
+  and its forms, and a language's freedoms of word order, are one structure
+  and not separate words and syntaxes (catalogue §7). Tense, morphology and
+  aspect "need more work before they are included in any grammar". None of
+  the four changes a value today (catalogue §9). *Taken up (Alec,
+  2026-09-30)* as todo item 5.5, with the preposition and the meaning of
+  `.where` and `.when`
+  ([5.5 spec](specs/2026-09-30-occurrence-tense-aspect.md)); `lift` and
+  `lower` stay here.
+
+## Credit to the chooser from a supplied answer (noted 2026-09-29)
+
+In item 6.9's configuration the answer's error trains only the map that
+reads the concluded idea. The state is cut at the concluded idea (decided
+2026-09-20), and the chooser is trained by what the sentence's two trials
+cost, which is reconstruction and expectation and not the answer
+([6.9 plan §3.4](plans/2026-09-29-item-6-9-xor-grammar.md#34-what-the-answers-error-trains)).
+Measured in isolation, XOR is learned without it. A sentence that comes
+with an answer could count the answer's error in the comparison of its two
+trials: credit by choice, which the cut allows, since no gradient passes
+through the idea. Whether the grammar's choices should answer to a teacher
+at all, or only to reconstruction and expectation, is Alec's to decide when
+it is taken up.
+
+## A snapshot where a sentence's two trials branch (future work, Alec, 2026-09-30)
+
+Item 6.9 costs a sentence's two derivations under the same parameters
+before the optimizer steps on either ([6.9 plan §4 step 5](plans/2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
+The explore derivation repeats the exploit derivation up to the round
+where it is made to differ, so its prefix is computed twice. Alec, of the
+equal comparison: "let's opt for making this efficient; maybe even a
+snapshot at where they branch, if that helps significantly (the snapshot
+overhead may be high, in which case don't). Let's add this optimization as
+future work." When it is taken up: measure the time and memory of the
+prefix recomputed against a snapshot of the reading's state at the
+branching round, and keep the snapshot only if it saves significantly.
+
+## Stages of learning as gates (proposed, 2026-09-28)
+
+Proposed by Alec, not decided: "We have to wait until a model is trained
+before we can express truth in that model, before LTM is meaningful in a
+consistent way. This suggests stages of learning, and perhaps they can act
+like gates. Object permanence has to be learned before objects. Words have
+to be learned as concepts before we can interpret them as references."
+
+Three dependencies were named on 2026-09-28:
+
+| what waits | for what |
+|---|---|
+| objects | object permanence |
+| words interpreted as references | words learned as concepts |
+| truth expressed in the model, and a meaningful LTM | a trained model |
+
+On 2026-09-29 Alec gave an order: "words must be learned before symbols are
+minted for the objects that they represent. And that must happen before
+identity/object permanence." That is words, then the symbols of their
+objects, then identity, and it puts object permanence *after* the objects'
+symbols, where the first row above puts it before objects. Asked which
+holds, he settled it the same day: "I was just stating what I take to be a
+practical necessity: Words must be stable. Then they can represent
+something. Then they can represent the same thing (this is object
+permanence)." So the order is three steps, and object permanence is the
+third:
+
+| step | what | what it needs |
+|---|---|---|
+| 1 | words are stable | a form that recurs is kept |
+| 2 | they represent something | a stable word, which `interpret` replaces by its object |
+| 3 | they represent the same thing: object permanence | an object to be the same as |
+
+The first row of the table above, objects waiting for object permanence,
+is superseded by it.
+
+It came up because a truth given to an untrained model is stored with its
+trust and with no evidence of identification, so the truth view is empty
+([two truths §13 G](specs/2026-09-16-two-truths-ideas-and-relations.md#13-review-round-2-claude-2026-09-28-on-the-candidate-after-12)).
+That is correct, and a gate would say so in advance instead of leaving an
+inert row.
+
+**The progression** *(Alec, 2026-09-29)*: "we need progressive learning:
+learn words, learn the objects they represent, then learn small sentences.
+Then learn more complex sentences, just like children learn."
+
+**Corpora that exist** *(checked 2026-09-29; licences not checked)*. None is
+staged in that way. Each covers a part:
+
+| corpus | what it is | stage it could serve | ordered |
+|---|---|---|---|
+| Wordbank | which words children know at which ages, from parent reports | words | by age |
+| AO-CHILDES | about 5M words of American English speech to children | small sentences, growing | by the child's age |
+| TinyStories | 2.7M synthetic stories on about 1,500 words, at the level of a child of three or four | small sentences | no |
+| BabyLM | 10M and 100M words: speech to children, dialogue, children's books, subtitles, Simple English Wikipedia | small to complex sentences | no |
+| Leaner-Pretrain | 71M words with vocabulary and structure simplified | simple sentences | no |
+
+The stages are an order on what the model may mint, not a pairing supplied
+by a corpus: "I don't mean pairing words to objects in the way that you
+suggest: merely that words must be learned before symbols are minted for
+the objects that they represent" (Alec, 2026-09-29). So one text can serve
+every stage, the gates deciding what is learned from it. BabyLM is the
+candidate he named: plain text, one file for each of its domains, so that
+it can be read in an order of the domains, speech to children first.
+Ordering the data by difficulty was tried widely for ordinary language
+models in the BabyLM challenge and was largely unsuccessful; that tested
+the order of examples, not gates on what the model may do, so it does not
+settle this proposal, and it does say that order alone should not be
+expected to help (Huebner et al. 2021; Eldan & Li 2023; Warstadt et al.
+2023; Frank et al. 2017; Yang et al. 2025).
+
+**If another modality is ever added** *(Alec, 2026-09-29)*: "at some point,
+LLMs learn objects through multi-modal training, so Fei-Fei Li's dataset
+would be relevant". Two come from her group, and both are keyed to WordNet,
+so their labels arrive already arranged as a taxonomy of nouns. ImageNet
+fills WordNet's noun sets with images. Visual Genome annotates about 108,000
+images with their objects, attributes and the relations between pairs of
+objects, and with descriptions of regions, which is nearer to a sentence
+about a scene (Deng et al. 2009; Krishna et al. 2017). Neither is wanted
+while the model reads text alone.
+
+To specify when it is taken up: what is measured to open each gate, and
+whether it can close again; what a gated capability does while it waits,
+refuse or defer or store inertly; how these gates relate to the ones that
+exist, item 9's exposure count, the recurrence gate of 9b and the patience
+of 11c; and whether the same gates order the curriculum. The order in
+which the text would be read, and the correspondence of the gates with
+Piaget's stages, are in
+[gradual training](#gradual-training-an-age-ordered-corpus-read-in-stages-proposed-2026-09-29).
+
+## Gradual training: an age-ordered corpus, read in stages (proposed, 2026-09-29)
+
+Proposed by Claude on 2026-09-29 in answer to Alec's "we need progressive
+learning: learn words, learn the objects they represent, then learn small
+sentences. Then learn more complex sentences, just like children learn",
+and written down at his request the same day. Nothing here is decided or
+built. It has two halves, which are separate: the order in which the text is
+read, and the stages that say what the model may do with it
+([stages of learning as gates](#stages-of-learning-as-gates-proposed-2026-09-28)).
+
+**The order of the text.** One corpus is ordered by age. AO-CHILDES is the
+speech addressed to children in the American English transcripts of CHILDES,
+for children from birth to six years, with the children's own utterances
+removed, in the order of the age of the child spoken to: 2,000,352
+sentences, 27,723 different words and 4,960,141 words in all (Huebner &
+Willits 2021; Huebner et al. 2021). Read in bands of age, youngest first,
+it is the nearest thing there is to "just like children learn". The
+assembly proposed:
+
+| step | what is learned | from |
+|---|---|---|
+| 1 | words | Wordbank's early vocabulary, in the order in which children acquire it |
+| 2 | the objects the words represent | no corpus: `interpret` over the words of step 1 ([two truths §17](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29)) |
+| 3 | small sentences | AO-CHILDES, the youngest bands first |
+| 4 | complex sentences | AO-CHILDES at the older bands, then the written parts of BabyLM, then FineWeb |
+
+The repository's own lesson sets, such as `data/grammar_wording.json`, are
+lessons and not a corpus, and could seed steps 1 and 3.
+
+**The stages.** Alec's name for them is Piagetian. Piaget's four stages, and
+what in this model answers to each:
+
+| Piaget's stage | age | what the child comes to have | what answers to it here |
+|---|---|---|---|
+| sensorimotor | birth to 2 | object permanence | percepts, their parts and wholes; a unit that recurs is kept; identity carried by prediction ([item 6.5](specs/2026-09-26-independent-components.md)) |
+| preoperational | 2 to 7 (the symbolic function from 2 to 4) | symbols and language | a word is a concept, and `interpret` replaces it by its object |
+| concrete operational | 7 to 11 | conservation, reversibility, class inclusion | operators that have inverses; a set one order above its members, and the part rows between them |
+| formal operational | 12 and after | reasoning from hypotheses | relations between truths (implies, operator rows), modality as [the third index](#modality-as-the-third-index-noted-2026-09-28), the thought grammar |
+
+Three cautions belong with the table.
+
+* *It is an order for gates, not a claim about development.* What is
+  borrowed is that each stage needs the one before it. The ages are
+  Piaget's and are disputed: infants of three and a half to four and a half
+  months already look longer at an event in which a hidden object has
+  ceased to exist (Baillargeon 1987), far earlier than the eight to twelve
+  months he gave. A gate opens on a measurement and never on a band of age.
+* *The two halves can come apart.* The order of the text is what the
+  BabyLM challenge tried and found largely unsuccessful for ordinary
+  language models; the stages are gates on what the model may mint, which
+  that result does not test. So the order of the text is the weaker half,
+  and the comparison to run is the same text with and without the gates,
+  and with its bands in order and shuffled.
+* *The order of the gates is Alec's, and it is not Piaget's.* "Words must
+  be stable. Then they can represent something. Then they can represent
+  the same thing (this is object permanence)" (2026-09-29, "a practical
+  necessity"). Piaget has object permanence before the symbolic function,
+  because the child's first objects are things seen and handled. A reader
+  of text has no objects but those its words stand for, so for it the
+  permanence of an object can only follow the word that represents it.
+  The table above is a correspondence of kinds of achievement, and the
+  order in which the model reaches them is the three steps of
+  [the section above](#stages-of-learning-as-gates-proposed-2026-09-28).
+
+To specify when it is taken up: the bands of age and how many sentences
+each holds; the measurement that opens each gate; whether a gate, once
+open, is open for good; and the two comparisons above, with no seed chosen
+for either.
+
+References: Piaget (1954), *The Construction of Reality in the Child*;
+Inhelder & Piaget (1958), *The Growth of Logical Thinking from Childhood to
+Adolescence*; Inhelder & Piaget (1964), *The Early Growth of Logic in the
+Child: Classification and Seriation*; Baillargeon (1987), "Object
+permanence in 3½- and 4½-month-old infants", *Developmental Psychology*
+23(5), 655–664; Huebner & Willits (2021) and Huebner, Sulem, Fisher & Roth
+(2021) for AO-CHILDES. The stages' ages and contents were checked against
+secondary sources on 2026-09-29; page numbers were not.

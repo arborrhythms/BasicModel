@@ -1,0 +1,62 @@
+{
+  "observed_at": "2026-09-30T20:55:19.787680+00:00",
+  "sweep_still_running": true,
+  "failures": [
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+      "prior_round4": "passed",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+      "prior_round4": "passed",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+      "prior_round4": "passed",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+      "prior_round4": "passed",
+      "phase": "call",
+      "message": "test/test_taxonomy_policy.py:33: in test_unrelated_true_episode_cannot_establish_the_next_parent_relation\n    order = terminal_model_index(model, fact.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-068.log"
+    }
+  ],
+  "cause": "terminal_model_index assumes every non-None role reference names an inventory row, including the now row-free canonical part predicate. All four failures occur there before their evidence assertions.",
+  "repair_applied": false,
+  "protected_assertions_unchanged": true,
+  "source_bodies": {
+    "test/index_fixtures.py": {
+      "sha256": "9f96367e979b6a7436b9b8405c860f65804fc24b80c435540576c70c4b5f43c7",
+      "bodies": {
+        "terminal_model_index": "def terminal_model_index(model, references):\n    \"\"\"Force terminal generation over primed native codes for reader mechanisms.\n\n    The production index still unfolds numeric values and descends sigma using\n    each row's stamp. This fixture asserts no learned parsing or word recovery.\n    \"\"\"\n    from MemoryIndex import configure_model_index\n    from Queries import _existing_row\n    model.languageSpace = SimpleNamespace(\n        _generate_binary_ops=(), _generate_unary_ops=(),\n        reverse_inverses=lambda _ops: (),\n        generate_policy_logits=lambda values: values.new_zeros(len(values), 1))\n    space = model.conceptualSpace\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         if reference is not None])\n    space.prime_seen(rows)\n    configure_model_index(model, model.symbolSpace.ltm_store)\n    return max((space._row_order(int(row)) for row in rows), default=0)"
+      }
+    },
+    "test/test_replacement_kernel_contracts.py": {
+      "sha256": "bd14e66b81a224526b1bf8b1d5272a41d7d0a5fe26556721f58c3786f07e7b83",
+      "bodies": {
+        "test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees": "def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):\n    from index_fixtures import terminal_model_index\n    model, registry, store, (a, b, _c, _d) = _world()\n    meaning = registry.form('part', a, b, mode='assertive')\n    order = terminal_model_index(model, meaning.role_refs)\n    for trust in (positive, -negative):\n        if trust:\n            store.append_meaning(meaning, kind='fact', trust=trust, order=order)\n    occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)\n    with model._query_boundary_scope((0,)):\n        from QueryWork import QueryWorkBudget\n        query = registry.form('exist', store.row(occurrence)['occurrence'],\n                              context=model._thought_grammar_context(meaning,\n                                  row=0, work=QueryWorkBudget(32), continuation=None))\n    before = len(store)\n    result = model.reason_about(query)\n    assert result.posture == posture\n    assert result.support_true == pytest.approx(positive)\n    assert result.support_false == pytest.approx(negative)\n    assert len(store) == before"
+      }
+    },
+    "test/test_taxonomy_policy.py": {
+      "sha256": "2469da52bddbb34534cf9bedfe4f59213bfd73ba2b345d476ff60941eb891667",
+      "bodies": {
+        "test_unrelated_true_episode_cannot_establish_the_next_parent_relation": "def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():\n    from index_fixtures import terminal_model_index\n    cs, (a, b, _), store, model = _setup()\n    fact = model.grammatical_thoughts.form('part', a, b, mode='assertive')\n    order = terminal_model_index(model, fact.role_refs)\n    store.append_meaning(fact, trust=1, order=order)\n    assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1\n    result = model.reason_about(QuerySpec.from_surface('part', a, b))\n    assert result.support_true == 0"
+      }
+    }
+  },
+  "prior_round4_failures_current": {
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]": "pending",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]": "pending",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds": "pending"
+  }
+}

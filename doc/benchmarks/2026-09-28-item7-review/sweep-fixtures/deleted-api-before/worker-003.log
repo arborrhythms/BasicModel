@@ -1,0 +1,42 @@
+..FF.FF                                                                  [100%]
+=================================== FAILURES ===================================
+___ test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match ___
+test/test_active_codebook_reads.py:85: in test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match
+    row, _distance = ws.nearest_ws_row(query)
+                     ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'nearest_ws_row'
+____ test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation ____
+test/test_active_codebook_reads.py:106: in test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation
+    ws.ensure_ws_position(3)
+    ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'ensure_ws_position'
+__________________ test_topk_priming_scores_only_active_rows ___________________
+test/test_active_codebook_reads.py:136: in test_topk_priming_scores_only_active_rows
+    mask = ws._topk_priming_mask(act)
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'
+___________ test_semantic_arrangement_is_invariant_to_inactive_tail ____________
+test/test_active_codebook_reads.py:149: in test_semantic_arrangement_is_invariant_to_inactive_tail
+    first = ws.semantic_arrangement_loss(torch.tensor([0]))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'semantic_arrangement_loss'. Did you mean: 'semantic_arrangement_weight'?
+=============================== warnings summary ===============================
+test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match
+FAILED test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation
+FAILED test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows
+FAILED test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail
+4 failed, 3 passed, 1 warning in 2.09s

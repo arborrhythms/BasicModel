@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_drops_fully_retired_optimizer_leaf",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows"
+  ],
+  "completed": [
+    "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_drops_fully_retired_optimizer_leaf",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013688500039279461,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Expanded aligned codebook checkpoint rows [4] -> 8 across 10 state keys (5 physical tensors); learned prefixes copied in place and initialized tails preserved\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022910829866304994,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Expanded aligned codebook checkpoint rows [4] -> 8 across 30 state keys (5 physical tensors); learned prefixes copied in place and initialized tails preserved\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013258308172225952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_drops_fully_retired_optimizer_leaf",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013245793525129557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016202080296352506,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011202791007235646,
+      "message": "",
+      "stdout": "[AdamCapacityTest] Zero-padded 2 optimizer moment tensor(s) for larger configured inventories\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001088000019080937,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Activated aligned codebook prefix 2 -> 4 rows (physical capacity 8; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009203749941661954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007801670581102371,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Activated aligned codebook prefix 2 -> 8 rows (physical capacity 8; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003042499301955104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017324998043477535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006655000615864992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002258330350741744,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

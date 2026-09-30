@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_item7_storage.py::test_sealed_row_has_shared_references_and_field_coordinates",
+    "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/tests/20260927-item7-initial-probe/worker-000.recycle.json"
+}

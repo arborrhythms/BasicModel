@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_packed_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar_wording.xml]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_packed_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar_wording.xml]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_packed_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar_wording.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5235602910397574,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probe_packed_definition_context.py:44: in test_definition_share_of_native_predictor_reads\n    m.runBatch(train=False,batchNum=0,batchSize=1,split='validation',\nbin/Models.py:14029: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14201: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14568: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9263: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10741: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8962: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8774: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23823: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13583: in _lex_embed_stem\n    self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)\nbin/Spaces.py:10586: in finalize_stem\n    return self._finalize_serial_word_stem(sub, ps)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:10484: in _finalize_serial_word_stem\n    self._finalize_sentence_word_layout(active)\nbin/Spaces.py:10524: in _finalize_sentence_word_layout\n    raise RuntimeError(\nE   RuntimeError: packed surface word layout differs from the staged sentence boundaries; refusing to train misaligned roots",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

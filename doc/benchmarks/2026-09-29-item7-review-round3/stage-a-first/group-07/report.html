@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 3/3 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.05952445906586945</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.03324887505732477</pre></td><td><pre>test/test_category_em_smoke.py:133: in test_codebook_enables_and_em_populates_on_real_model
+    fired = _run_forwards(model)
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_category_em_smoke.py:112: in _run_forwards
+    model.forward(ipt)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23815: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13584: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11502: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:83: in lookup_word
+    cs._preflight_concept_row(0)
+bin/Spaces.py:16910: in _preflight_concept_row
+    raise RuntimeError(&#x27;concept row capacity exhausted before word admission; no identity was minted&#x27;)
+E   RuntimeError: concept row capacity exhausted before word admission; no identity was minted</pre></td><td><pre>Starting with dynamic 12-dim embedding (words added at runtime)
+  Building span table: 0/16 docs
+</pre></td></tr><tr><td><pre>test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.030777332955040038</pre></td><td><pre>test/test_category_em_smoke.py:172: in test_mlp_chooser_sized_and_context_built
+    _run_forwards(model)
+test/test_category_em_smoke.py:112: in _run_forwards
+    model.forward(ipt)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23815: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13584: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11502: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:83: in lookup_word
+    cs._preflight_concept_row(0)
+bin/Spaces.py:16910: in _preflight_concept_row
+    raise RuntimeError(&#x27;concept row capacity exhausted before word admission; no identity was minted&#x27;)
+E   RuntimeError: concept row capacity exhausted before word admission; no identity was minted</pre></td><td><pre>Starting with dynamic 12-dim embedding (words added at runtime)
+  Building span table: 0/16 docs
+</pre></td></tr></table></body></html>

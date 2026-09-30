@@ -19,7 +19,8 @@ def _cs(nS=64, order=3, serial=False):
     cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", serial)
-    return cs
+    from definition_fixtures import with_definitions
+    return with_definitions(cs)
 
 
 def _layer(cs):
@@ -71,7 +72,7 @@ def test_no_self_edge_via_populate():
 
 def test_relate_x_x_merges_to_one_edge():
     cs = _cs(nS=16, order=2)
-    A, _b, _c = cs.interpret_word([1], 2, key="w")
+    _word, A = cs.interpret_word([1], 2, key="w")
     sx = cs.singleton_concept(A)                     # the unit set {A}
     C = cs.reify_concept(sx, sx)                     # part- AND whole-leg on sx
     cs._populate_concept_weights(C)                  # relate() records only

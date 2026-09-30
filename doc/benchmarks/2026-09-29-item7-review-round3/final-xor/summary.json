@@ -1,0 +1,335 @@
+[
+  {
+    "gate": "test/test_grounded_xor.py",
+    "outcome": "passed",
+    "measurements": [],
+    "reports": [
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 2.703691208967939,
+        "message": "",
+        "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 4.5366043341346085,
+        "message": "",
+        "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 2.7112909161951393,
+        "message": "",
+        "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 4.484808416804299,
+        "message": "",
+        "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 2.694917832966894,
+        "message": "",
+        "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 4.557674374897033,
+        "message": "",
+        "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse",
+    "outcome": "passed",
+    "measurements": [],
+    "reports": [
+      {
+        "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 3.709793415851891,
+        "message": "",
+        "stdout": "{'trial': 0, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+      },
+      {
+        "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 3.6723822499625385,
+        "message": "",
+        "stdout": "{'trial': 1, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+      },
+      {
+        "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 3.685987750068307,
+        "message": "",
+        "stdout": "{'trial': 2, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "outcome": "passed",
+    "measurements": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+        "kind": "cli",
+        "config": "data/XOR_exact.xml",
+        "returncode": 0,
+        "mse": [
+          0.0,
+          4
+        ],
+        "reconstructed": [
+          4,
+          4
+        ],
+        "predictions": [
+          [
+            "0.0000",
+            "0.0000"
+          ],
+          [
+            "1.0000",
+            "1.0000"
+          ],
+          [
+            "1.0000",
+            "1.0000"
+          ],
+          [
+            "0.0000",
+            "0.0000"
+          ]
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 30.141616167034954,
+        "message": "",
+        "stdout": ""
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "outcome": "passed",
+    "measurements": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+        "kind": "cli",
+        "config": "data/XOR_exact.xml",
+        "returncode": 0,
+        "mse": [
+          0.0,
+          4
+        ],
+        "reconstructed": [
+          4,
+          4
+        ],
+        "predictions": [
+          [
+            "0.0000",
+            "0.0000"
+          ],
+          [
+            "1.0000",
+            "1.0000"
+          ],
+          [
+            "1.0000",
+            "1.0000"
+          ],
+          [
+            "0.0000",
+            "0.0000"
+          ]
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 30.10721083311364,
+        "message": "",
+        "stdout": "XOR_exact reconstruction count: 4/4\n\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "outcome": "passed",
+    "measurements": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "kind": "mm",
+        "calls": 21,
+        "best": 0.1874910444021225,
+        "last": 0.1874910444021225,
+        "predictions": [
+          0.43089187145233154,
+          0.5631417036056519,
+          0.569686770439148,
+          0.4339144229888916
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0.14527629199437797,
+        "message": "",
+        "stdout": ""
+      }
+    ]
+  },
+  {
+    "gate": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "outcome": "passed",
+    "measurements": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "kind": "mm",
+        "calls": 1,
+        "best": 0.25000518560409546,
+        "last": 0.25000518560409546,
+        "predictions": [
+          0.4981912076473236,
+          0.49820664525032043,
+          0.4981482923030853,
+          0.4981711506843567
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0.04774724994786084,
+        "message": "",
+        "stdout": ""
+      }
+    ]
+  },
+  {
+    "gate": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "outcome": "test_failure",
+    "measurements": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "kind": "mm",
+        "calls": 900,
+        "best": 0.20906077325344086,
+        "last": 0.24089603126049042,
+        "predictions": [
+          0.49078333377838135,
+          0.5091785788536072,
+          0.5091695785522461,
+          0.49081119894981384
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 123.93741937493905,
+        "message": "test/test_mm_xor.py:179: in test_mm_grammar_learns_xor_signal\n    self._fit_xor(os.path.join(_PROJECT, \"data\", \"MM_grammar.xml\"),\ntest/test_mm_xor.py:165: in _fit_xor\n    self.assertLess(best_loss, threshold,\nE   AssertionError: 0.20906077325344086 not less than 0.2 : XOR loss 0.209061 after at most 900 epochs",
+        "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "outcome": "test_failure",
+    "measurements": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "kind": "grammar",
+        "accuracy": [
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 78.91479095886461,
+        "message": "test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+        "stdout": "\r\nbatch = 0 (\u0394=0.207s, 100.00%)\r\nTrain Loss: output=0.1740, reconstruction=0.3878\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.206s, 100.00%)\r\nTrain Loss: output=0.1754, reconstruction=0.3959\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.206s, 100.00%)\r\nTrain Loss: output=0.1749, reconstruction=0.3697\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.207s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3152\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.207s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.2904\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.208s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3730\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.205s, 100.00%)\r\nTrain Loss: output=0.1753, reconstruction=0.3707\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3724\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.176s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.2350\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.177s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3213\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.3269\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.4150\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.4028\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3208\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3732\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1754, reconstruction=0.3170\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.3207\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.4104\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.141s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.2432\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3326\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1754, reconstruction=0.3206\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.3891\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3257\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3845\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3993\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1753, reconstruction=0.3110\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4113\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3308\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3235\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3024\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.3146\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3842\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.143s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3198\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3172\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3841\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.142s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.3468\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.232s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.5031 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5031 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5055 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5039 MISMATCH\r\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+    "outcome": "test_failure",
+    "measurements": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "kind": "grammar",
+        "accuracy": [
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 68.55103941704147,
+        "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', '  there'), ('hello there', '  there')]",
+        "stdout": "\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.4312\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1749, reconstruction=0.4681\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.4150\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.4442\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.4560\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.4491\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.4246\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.4317\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.4249\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.4319\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.4255\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.149s, 100.00%)\r\nTrain Loss: output=0.1740, reconstruction=0.4430\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1739, reconstruction=0.4310\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.4343\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.4478\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3134\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4453\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4524\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4539\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4640\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4606\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4706\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4714\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4699\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4636\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4842\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4741\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4687\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.149s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4844\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.217s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4800\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4703\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4718\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4795\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.165s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4769\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4844\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4812\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.5021 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5022 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5005 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5006 MISMATCH\r\n"
+      }
+    ]
+  }
+]

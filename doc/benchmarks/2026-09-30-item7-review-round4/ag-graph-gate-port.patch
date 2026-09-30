@@ -1,0 +1,48 @@
+--- before/test/test_word_store.py
++++ after/test/test_word_store.py
+@@ -864,7 +864,7 @@
+ 
+ 
+ @pytest.mark.slow
+-def test_two_epoch_training_severs_cross_batch_graph():
++def test_two_epoch_training_severs_cross_batch_graph(monkeypatch):
+     """Cross-epoch training pin (the ladder5 relaunch crash, 2026-07-13):
+     epoch 1 on the wordstore config broke the pending backward
+     ("[1016] at version 1") — the serial arcs' persistent carriers
+@@ -888,6 +888,19 @@
+         "data/matrix/MM_20M_grammar_wordstore.xml")
+     m, dev, lr, batch_size = recon_bench._build_model(cfg)
+     opt = m.getOptimizer(lr=lr)
++    from types import SimpleNamespace
++    observed = None
++    observation = m._sentence_observation
++    def observe(*args, **kwargs):
++        nonlocal observed
++        result = observation(*args, **kwargs)
++        if kwargs.get('admit'):
++            trace = m._reconstruction_stack()
++            observed = SimpleNamespace(
++                _choice_actions=trace._choice_actions.detach().clone(),
++                _choice_attempted=trace._choice_attempted.detach().clone())
++        return result
++    monkeypatch.setattr(m, '_sentence_observation', observe)
+     for _ in range(2):                     # epoch 1 crashed pre-fix
+         m.runEpoch(optimizer=opt, batchSize=batch_size, split="train")
+ 
+@@ -898,8 +911,15 @@
+     # graph-free checks vacuous) ...
+     stm_buf = m.conceptualSpace.stm._buffer
+     root = getattr(m, "_stm_single_S", None)
+-    trace = m._reconstruction_stack()
++    # The action record exists during the chosen reading and is discarded
++    # at its closing. Observe its non-vacuity before that boundary.
++    assert observed is not None
++    trace = observed
+     actions = trace._choice_actions
++    closed_trace = m._reconstruction_stack()
++    assert torch.is_tensor(closed_trace._choice_actions)
++    assert not bool((closed_trace._choice_actions >= 0).any())
++    assert not bool(closed_trace._choice_attempted.any())
+     assert torch.is_tensor(stm_buf) and stm_buf.numel() > 0
+     assert torch.is_tensor(root) and root.numel() > 0
+     assert torch.is_tensor(actions) and bool((actions >= 0).any())

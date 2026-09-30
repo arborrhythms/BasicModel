@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+  ],
+  "completed": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+  ],
+  "slow_selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04673191602341831,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

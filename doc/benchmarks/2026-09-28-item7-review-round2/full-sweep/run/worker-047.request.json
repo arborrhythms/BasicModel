@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-047.recycle.json"
+}

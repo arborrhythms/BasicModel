@@ -1,41 +1,9 @@
-"""Per-word router firing on the serial forward path.
+"""Serial words use the shared operation layer and one sentence boundary.
 
-ORIGINAL TASK (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4): the
-serial per-word loop (``BasicModel._forward_body_per_word``) fired
-``symbolSpace.compose`` over the STM snapshot ONCE PER WORD, so the in-STM
-predictor's conditioning context was repopulated mid-sentence.
-
-SUPERSEDED by the space_role-free bounded-STM grammar fold
-(doc/plans/2026-06-05-space_role-free-bounded-stm-fold.md, Phase 1 / Task 3):
-
-  * **Task 3 DELETED the per-word ``symbolSpace.compose(_snap)`` fire** in
-    ``_forward_body_per_word`` (the $\\approx 89\\%$-cost full re-parse).
-    The grammar fold no longer happens per word. The per-word loop now only
-    ingests each word (PS->CS->SS + ``stm.push_step_masked``) and folds via
-    two surviving primitives:
-      - capacity back-pressure: ``_stm_operation_step`` fires inside
-        ``_per_word_body_step`` whenever the STM hits ``capacity``,
-      - the sentence-end sweep: ``_stm_reduce_to_single_S`` collapses the
-        accumulated STM to a single root idea S at the NULL seal.
-  * **There is no grammar space_role anymore.** The old S/C/P-space_role compose loop
-    is gone. ``<routerWireSerial>`` is consequently a **no-op for any
-    per-word ``compose`` fire on the serial forward** — ``compose`` fires
-    ZERO times per serial forward in EVERY mode (``both``, ``per-word``,
-    ``off``, ``boundary``). ``compose`` now has only the *boundary*
-    ``_chart_compose_at_C`` call site, which is NOT on the serial forward
-    path (its forward caller is the parallel ``_forward_per_stage``); the
-    serial boundary runs ``_stm_reduce_to_single_S`` instead.
-
-This file remains the targeted gate. The two per-word tests below assert the
-NEW contract: ``compose`` is not fired per word in serial mode, and the
-bounded-STM fold (back-pressure + end sweep) still forms the root within
-capacity. The remaining tests pin ``<routerWireSerial>`` gating where it is
-still live — the *reverse-path* boundary fire (``_chart_generate_from_stm``
--> ``symbolSpace.generate``), which still gates on ``{both, boundary}`` vs
-``{off, per-word}`` (``test_boundary_generate_gated_by_router_wire_serial``).
-
-Harness mirrors ``test/test_two_mode_dispatch.py`` (the
-``MM_xor_loopback.xml`` serial grammar config; cheap PS/CS/SS boot).
+The forward never invokes a separate ``symbolSpace.compose`` pass. Words
+and closing rounds use the same chooser; the reverse boundary dispatch
+still follows ``routerWireSerial``. The online-round fixture explicitly
+forces an absolute reading, so it tests routing rather than learned parsing.
 """
 
 import os
@@ -66,7 +34,7 @@ _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
 def _write_config_with_overrides(base_config_path, symbolic_order=1,
-                                 router_wire_serial=None):
+                                 router_wire_serial=None, word_capacity=None):
     """Materialize a temp XML overlaying ``<symbolicOrder>`` and
     (optionally) ``<routerWireSerial>`` inside ``<architecture>``.
 
@@ -84,6 +52,17 @@ def _write_config_with_overrides(base_config_path, symbolic_order=1,
     if router_wire_serial is not None:
         inject += (
             f"\n    <routerWireSerial>{router_wire_serial}</routerWireSerial>")
+    if word_capacity is not None:
+        # Use word-major perception so the traversal capacity is independent
+        # of this fixture's eight-slot conceptual workspace.
+        inject += (f"\n    <serialObjectMeta>true</serialObjectMeta>"
+                   f"\n    <serialWordCapacity>{word_capacity}</serialWordCapacity>")
+        text = text.replace("<PartSpace>", "<PartSpace><synthesis>meronomy</synthesis>", 1)
+        for section, element in (("InputSpace", "nOutput"), ("PartSpace", "nInput")):
+            text = re.sub(
+                rf"(<{section}>.*?<{element}>)\d+(</{element}>)",
+                lambda match: match[1] + str(word_capacity * 8) + match[2],
+                text, count=1, flags=re.S)
     if "<architecture>" in text:
         text = text.replace(
             "<architecture>", f"<architecture>\n    {inject}", 1)
@@ -100,13 +79,13 @@ def _write_config_with_overrides(base_config_path, symbolic_order=1,
     return tmp.name
 
 
-def _make_serial_model(router_wire_serial=None):
+def _make_serial_model(router_wire_serial=None, word_capacity=None):
     """Build a serial-mode grammar model, optionally overriding
     ``<routerWireSerial>``."""
     init_device("cpu")
     cfg = _write_config_with_overrides(
         _GRAMMAR_CONFIG, symbolic_order=1,
-        router_wire_serial=router_wire_serial)
+        router_wire_serial=router_wire_serial, word_capacity=word_capacity)
     try:
         init_config(path=cfg, defaults_path=_DEFAULTS)
         Language.TheGrammar._configured = False
@@ -155,25 +134,20 @@ def _count_compose_calls(model):
 
 
 def _run_forward_spying_fold(model):
-    """Run one serial forward while spying on the bounded-STM fold
-    primitives. Returns a dict with:
-
-      * ``compose``       — ``symbolSpace.compose`` call count,
-      * ``sweep``         — ``_stm_reduce_to_single_S`` (sentence-end)
-                            call count,
-      * ``reduce``        — ``_stm_operation_step`` (back-pressure +
-                            sweep micro-step) call count,
-      * ``capacity``      — the STM capacity (int),
-      * ``post_depth_max``— max STM depth after the forward (host int),
-      * ``single_S``      — the collapsed root idea tensor (or ``None``),
-      * ``post_sweep_depth_max`` — max ``_stm_post_depth`` (or ``None``).
-    """
+    """Count online/closing chooser calls and the single row-writing boundary."""
+    from reading_fixtures import force_absolute_reading
+    from unittest.mock import patch
+    force_absolute_reading(model)
+    def eager_while(condition, body, values):
+        while bool(condition(*values)):
+            values = body(*values)
+        return values
     ss = model.symbolSpace
     stm = model.conceptualSpace.stm
     counts = {"compose": 0, "sweep": 0, "reduce": 0}
     orig_compose = ss.compose
-    orig_sweep = model._stm_reduce_to_single_S
-    orig_reduce = model._stm_operation_step
+    orig_sweep = model._commit_sentence
+    orig_reduce = model.languageSpace.choose_operation
 
     def _compose_spy(*a, **k):
         counts["compose"] += 1
@@ -188,18 +162,20 @@ def _run_forward_spying_fold(model):
         return orig_reduce(*a, **k)
 
     ss.compose = _compose_spy
-    model._stm_reduce_to_single_S = _sweep_spy
-    model._stm_operation_step = _reduce_spy
+    model._commit_sentence = _sweep_spy
+    model.languageSpace.choose_operation = _reduce_spy
     try:
-        x = _one_input(model)
+        # Sixteen words traverse an eight-slot workspace. This tests online
+        # operation rounds as well as the fixed closing budget.
+        x = model.inputSpace.prepInput([" ".join(["hello", "world"] * 8)])
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            with torch.no_grad():
+            with torch.no_grad(), patch("torch.while_loop", eager_while):
                 model.forward(x)
     finally:
         ss.compose = orig_compose
-        model._stm_reduce_to_single_S = orig_sweep
-        model._stm_operation_step = orig_reduce
+        model._commit_sentence = orig_sweep
+        model.languageSpace.choose_operation = orig_reduce
 
     post_depth = stm._depth
     single_S = getattr(model, "_stm_single_S", None)
@@ -227,11 +203,11 @@ def test_default_router_wire_serial_is_both():
 
 @pytest.mark.parametrize('mode', ['both', 'per-word'])
 def test_serial_words_use_the_shared_operation_layer(mode):
-    model = _make_serial_model(router_wire_serial=mode)
+    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
     probe = _run_forward_spying_fold(model)
     assert probe['compose'] == 0  # no second independently selected parse
     assert probe['sweep'] == 1
-    assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the seal
+    assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the closing
     assert probe['post_depth_max'] <= probe['capacity']
     depth = probe['post_sweep_depth_max']
     assert depth == 1 or depth < 0  # incomplete is explicit, never a claimed root
@@ -239,21 +215,7 @@ def test_serial_words_use_the_shared_operation_layer(mode):
 
 
 def test_router_wire_serial_boundary_no_serial_forward_compose():
-    """``routerWireSerial='boundary'`` fires ``compose`` ZERO times on a
-    serial forward.
-
-    NOTE on the serial forward path: the forward sentence-boundary
-    ``compose`` (``_chart_compose_at_C``) is NOT on the serial per-word
-    forward path — its only forward caller is ``_forward_per_stage``
-    (the *parallel* per-stage body); the serial forward boundary instead
-    runs ``_stm_reduce_to_single_S``. The per-word ``compose`` fire that
-    used to live on the serial forward was DELETED in Task 3 (no grammar
-    space_role / no per-word re-parse anymore). So under ``boundary`` a serial
-    forward fires ``compose`` ZERO times: there is no per-word leg, and the
-    boundary leg has no serial-forward call site. (The boundary ``compose``
-    / ``generate`` fires live on the parallel forward and the reverse path,
-    e.g. ``_chart_generate_from_stm`` from ``reverse``.)
-    """
+    """Boundary routing does not add a second serial forward compose pass."""
     model = _make_serial_model(router_wire_serial="boundary")
     n_calls, _ = _count_compose_calls(model)
     assert n_calls == 0, (
@@ -277,7 +239,7 @@ def test_router_wire_serial_off_no_serial_forward_compose():
 
 def test_boundary_generate_gated_by_router_wire_serial():
     """The reverse-path boundary fire (``_chart_generate_from_stm`` ->
-    ``symbolSpace.generate``) is gated by ``<routerWireSerial>``:
+    ``symbolSpace.reverse``) is gated by ``<routerWireSerial>``:
 
       * ``both`` / ``boundary`` -> the boundary generate fires,
       * ``off`` / ``per-word``  -> the boundary generate is suppressed.
@@ -295,17 +257,17 @@ def test_boundary_generate_gated_by_router_wire_serial():
             with torch.no_grad():
                 model.forward(x)
         state = {"n": 0}
-        orig = ss.generate
+        orig = ss.reverse
 
         def _spy(*a, **k):
             state["n"] += 1
             return orig(*a, **k)
 
-        ss.generate = _spy
+        ss.reverse = _spy
         try:
             model._chart_generate_from_stm()
         finally:
-            ss.generate = orig
+            ss.reverse = orig
         return state["n"]
 
     assert _generate_fires("both") >= 1, (

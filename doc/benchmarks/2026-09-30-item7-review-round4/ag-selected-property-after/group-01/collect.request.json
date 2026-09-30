@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_property_tiling.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

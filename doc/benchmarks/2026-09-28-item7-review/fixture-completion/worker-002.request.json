@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-002.recycle.json"
+}

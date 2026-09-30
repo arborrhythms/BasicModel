@@ -1,0 +1,133 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+    "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+    "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+    "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+    "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+    "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+    "test/test_grammatical_query_vps.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence",
+    "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation",
+    "test/test_ispart_query_dispatch.py::test_part_layer_registered",
+    "test/test_ispart_query_dispatch.py::test_part_structural_forward_passes_parent",
+    "test/test_ispart_query_dispatch.py::test_part_dispatches_its_declared_pure_structural_face",
+    "test/test_ispart_query_dispatch.py::test_retired_rule_query_attribute_fails_loudly"
+  ],
+  "completed": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+    "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+    "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+    "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+    "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+    "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+    "test/test_grammatical_query_vps.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence",
+    "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation",
+    "test/test_ispart_query_dispatch.py::test_part_layer_registered",
+    "test/test_ispart_query_dispatch.py::test_part_structural_forward_passes_parent",
+    "test/test_ispart_query_dispatch.py::test_part_dispatches_its_declared_pure_structural_face",
+    "test/test_ispart_query_dispatch.py::test_retired_rule_query_attribute_fails_loudly"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.16695900005288422,
+      "message": "",
+      "stdout": "# Mathematical thinking evaluation\n\nConfig `/Users/arogers/github/WikiOracle/basicmodel/data/MM_math.xml`; weights `fresh (untrained)`; seeds [1]; split `train`.\n\n## thinking\n\n| budget | depth | n | accuracy | forced | iterations | latency_s |\n|---|---|---:|---:|---:|---:|---:|\n| 1 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.012 |\n| 1 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.010 |\n| 1 | all | 4 | 0.000 | 0.000 | 1.000 | 0.010 |\n| 4 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.007 |\n| 4 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.007 |\n| 4 | all | 4 | 0.000 | 0.000 | 1.000 | 0.007 |\n\n## memory ablation\n\n| budget | depth | n | accuracy | forced | iterations | latency_s |\n|---|---|---:|---:|---:|---:|---:|\n| 1 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.007 |\n| 1 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.007 |\n| 1 | all | 4 | 0.000 | 0.000 | 1.000 | 0.007 |\n| 4 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.003 |\n| 4 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.003 |\n| 4 | all | 4 | 0.000 | 0.000 | 1.000 | 0.003 |\n\n\n"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005524415988475084,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004308000206947327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003593000117689371,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004202499985694885,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00337033299729228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005920167081058025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003294499823823571,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_part_layer_registered",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010029086843132973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_part_structural_forward_passes_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018612504936754704,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_part_dispatches_its_declared_pure_structural_face",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003160419873893261,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_retired_rule_query_attribute_fails_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030499999411404133,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

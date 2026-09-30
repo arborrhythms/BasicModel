@@ -1,0 +1,12 @@
+................................                                         [100%]
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+32 passed, 2 warnings in 2.17s

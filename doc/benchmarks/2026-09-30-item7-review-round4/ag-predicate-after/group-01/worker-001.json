@@ -1,0 +1,14 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+  "device": "cpu"
+}

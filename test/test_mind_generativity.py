@@ -23,6 +23,7 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
         op = language._generate_binary_ops[op_index]
         from Queries import _basis
         basis = _basis(model.conceptualSpace).detach().clone()
+        model._concept_owner().prime_seen(torch.arange(5))
         leaves = basis[:5]
         assert len(leaves) == 5 and bool((torch.pdist(leaves) > 0).all())
         records = []
@@ -33,8 +34,7 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
                 value = op.compose(leaves[code:code + 1], value)
                 operations = (('binary', op_index), ('code', code), *operations)
             store = TernaryTruthStore(leaves.shape[-1], capacity=1)
-            row = store.append_meaning(ConceptualMeaning.from_description(value[0]),
-                                      leaf_codes=(tuple(range(length)), (), ()))
+            row = store.append_meaning(ConceptualMeaning.from_description(value[0]))
             records.append((length, store, row, operations))
         parameters = tuple(language.generate_policy.parameters()) + tuple(op.parameters())
         optimizer = torch.optim.Adam(parameters, lr=.001)
@@ -42,8 +42,9 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
         for update in range(9):
             if update in (0, 1, 8):
                 for length, store, row, expected in records:
-                    recovered = unfold_idea(language, basis, store.slots[row, 0], 32)
-                    exact_codes = recovered['codes'] == store.leaf_terms(row, 0)
+                    recovered = unfold_idea(language, basis, store.slots[row, 0], 32,
+                        activation=model._concept_owner().priming_weights)
+                    exact_codes = recovered['codes'] == tuple(range(length))
                     reports.append(dict(depth=length - 1, chain_length=length, updates=update,
                         code_recovery=float(exact_codes and recovered['complete']),
                         derivation_recovery=float(recovered['complete'] and recovered['operations'] == expected),

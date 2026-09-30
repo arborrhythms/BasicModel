@@ -1,0 +1,190 @@
+--- before/bin/Queries.py
++++ after/bin/Queries.py
+@@ -1763,7 +1763,8 @@
+     This registry owns neither an alias menu nor a second structural catalogue.
+     A descriptor without a selected thought form is absent; a structural
+     family omitted from `<thought>` remains pure grammar. Native VP identities
+-    stay checkpointed named concepts on the existing conceptual-space owner.
++    for part and implies are the closing's row-free predicate identities;
++    other VPs stay checkpointed named concepts on the conceptual-space owner.
+     """
+ 
+     _NAME_PREFIX = 'grammatical-vp:'
+@@ -1829,8 +1830,9 @@
+ 
+         A small structural model may have fewer concept rows than the grammar's
+         executable thought faces.  It must still construct and compose its
+-        grammar.  Preflight every *missing* VP as one group; if that group does
+-        not fit, retain only already checkpointed bindings and mark the other
++        grammar. Part needs no inventory row. Preflight every missing inventory
++        VP as one group; if that group does not fit, retain part and already
++        checkpointed bindings and mark the other
+         structural families unavailable for thought.  This is a setup-time
+         capability decision, never a lazy allocation or an arbitrary
+         declaration-order prefix.
+@@ -1839,7 +1841,9 @@
+         bound, missing = [], []
+         names = getattr(space, '_frozen_named', {})
+         for identity in registry._declared_identities:
+-            if registry._name(identity) in names:
++            if identity[1] == 'part':
++                bound.append(identity)
++            elif registry._name(identity) in names:
+                 # A checkpointed binding is authoritative but still must name
+                 # an active aligned native row before it becomes executable.
+                 registry._reference(identity)
+@@ -1860,25 +1864,15 @@
+                 registry._reference(identity)
+             bound.extend(missing)
+         registry._limit_to_bound_identities(bound)
+-        # A relation predicate need not be executable thought. Implication's
+-        # structural atom has one setup-time native binding; adding it does
+-        # not grant an undeclared executor or mint anything during compose.
+-        if any(getattr(rule, 'clause_form', None) == 'implies'
+-               for rule in grammar.rules_upward):
+-            name = 'clause:implies'
+-            if name not in getattr(space, '_frozen_named', {}):
+-                registry._preflight_missing_vps(1)
+-                space.mint_frozen_concept(name)
+         return registry
+ 
+     def clause_reference(self, relation):
+         """Canonical ended predicate, independent of thought authorization."""
+-        if relation == 'implies':
+-            cid = getattr(self.space, '_frozen_named', {}).get('clause:implies')
+-            if cid is None:
+-                raise ValueError('grammar has no native implication predicate')
+-            return ('sym', int(cid))
+-        operation = self.operation_spec('part' if relation in ('whole', 'equal', 'generic') else relation)
++        from ClauseRow import predicate_identity
++        relation = 'part' if relation in ('whole', 'equal', 'generic') else relation
++        if relation in ('part', 'implies'):
++            return ('sym', predicate_identity(relation))
++        operation = self.operation_spec(relation)
+         return self._reference((self.descriptors[operation.semantic_id].domain, operation.semantic_id))
+ 
+     def _preflight_missing_vps(self, count):
+@@ -1931,16 +1925,23 @@
+     def _name(cls, identity):
+         return cls._NAME_PREFIX + ':'.join(identity)
+ 
++    def _identifier(self, identity):
++        if identity[1] == 'part':
++            from ClauseRow import predicate_identity
++            return predicate_identity('part')
++        return getattr(self.space, '_frozen_named', {}).get(self._name(identity))
++
+     def _reference(self, identity, *, work=None):
+         if identity not in self.identities:
+             raise ValueError('grammatical thought operation is not registered')
+-        identifier = getattr(self.space, '_frozen_named', {}).get(self._name(identity))
++        identifier = self._identifier(identity)
+         if type(identifier) is not int or identifier < 1:
+             raise ValueError('grammatical thought VP binding is unavailable')
+         reference = ('sym', identifier)
+         if work is not None:
+             work.require('reference')
+-        _existing_row(self.space, reference)
++        if identity[1] != 'part':
++            _existing_row(self.space, reference)
+         return reference
+ 
+     def _operation_form(self, structural_id):
+@@ -1987,8 +1988,12 @@
+         return operation
+ 
+     def _payload(self, reference, *, work=None):
++        from ClauseRow import predicate_point, predicate_relation
+         if work is not None:
+             work.require('payload')
++        relation = predicate_relation(concept_reference(reference)[1])
++        if relation in ('part', 'implies'):
++            return predicate_point(relation, _basis(self.space))
+         row = _existing_row(self.space, reference)
+         basis = _basis(self.space)
+         if not 0 <= row < len(basis):
+@@ -2284,8 +2289,7 @@
+             raise ValueError('thought meaning has no grammatical VP')
+         reference = concept_reference(meaning.role_refs[1])
+         identity = next((identity for identity in self.identities
+-                         if getattr(self.space, '_frozen_named', {}).get(
+-                             self._name(identity)) == reference[1]), None)
++                         if self._identifier(identity) == reference[1]), None)
+         if identity is None:
+             raise ValueError('thought VP is not a registered grammatical operation')
+         if verify_reference:
+--- before/bin/ClauseRow.py
++++ after/bin/ClauseRow.py
+@@ -25,6 +25,13 @@
+         if reference == predicate_identity(name):
+             return name
+     return 'operator'
++
++
++def predicate_point(name, like):
++    """The same identity code for a predicate in a closing or a question."""
++    from References import symbol_code
++    return symbol_code(predicate_identity(name), like.shape[-1],
++                       n_where=0, n_when=0).to(like)
+ 
+ 
+ @dataclass(frozen=True, eq=False)
+@@ -121,10 +128,6 @@
+     from Queries import _basis, _existing_row
+     import weakref
+     space_ref = weakref.ref(space)
+-    try:
+-        model_ref = weakref.ref(model)
+-    except TypeError:
+-        model_ref = lambda: model
+ 
+     store_ref = weakref.ref(store)
+     object.__setattr__(space, '_clause_store_ref', store_ref)
+@@ -141,23 +144,8 @@
+         except ValueError:
+             return None
+ 
+-    def predicate_kind(reference):
+-        kind = predicate_relation(reference)
+-        if kind != 'operator':
+-            return kind
+-        # Existing explicitly supplied thought predicates can still name a
+-        # part relation. Reading their identity does not request an executor.
+-        current = model_ref()
+-        registry = getattr(current, 'grammatical_thoughts', None)
+-        names = getattr(space_ref(), '_frozen_named', {})
+-        if registry is not None:
+-            for domain, operation in registry._declared_identities:
+-                if operation == 'part' and names.get(registry._name((domain, operation))) == reference:
+-                    return 'part'
+-        return 'operator'
+-
+     store.configure_clause_index(allocate=allocate, concept_point=concept_point,
+-        predicate_kind=predicate_kind, preflight=lambda count: space_ref()._preflight_concept_allocation(count, context='clause taxonomy'))
++        predicate_kind=predicate_relation, preflight=lambda count: space_ref()._preflight_concept_allocation(count, context='clause taxonomy'))
+     from ConceptIndex import ClauseTaxonomyPlan
+     object.__setattr__(store, '_clause_index_plan',
+         lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))
+--- before/bin/ClauseJournal.py
++++ after/bin/ClauseJournal.py
+@@ -8,7 +8,7 @@
+ 
+ import torch
+ 
+-from ClauseRow import Clause, ClausePredicate, predicate_identity
++from ClauseRow import Clause, ClausePredicate, predicate_point
+ from Meaning import ConceptualMeaning
+ 
+ 
+@@ -157,10 +157,8 @@
+ 
+     def operation_concept(node, relation=None):
+         """The selected grammar predicate lives only in its row occurrences."""
+-        from References import symbol_code
+         identity = relation if relation is not None else name(node)
+-        code = predicate_identity(identity)
+-        point = symbol_code(code, program.leaves.shape[-1], n_where=0, n_when=0).to(program.leaves)
++        point = predicate_point(identity, program.leaves)
+         return ClausePredicate(point, identity)
+ 
+     def is_clause(node):

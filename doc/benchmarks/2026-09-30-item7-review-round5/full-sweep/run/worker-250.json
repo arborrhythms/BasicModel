@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association"
+  ],
+  "completed": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02273554098792374,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

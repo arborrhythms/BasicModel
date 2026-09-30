@@ -1,0 +1,30 @@
+...F..                                                                   [100%]
+=================================== FAILURES ===================================
+_____ test_witnesses_write_alternatives_without_conjoining_their_literals ______
+test/test_order0_percept_definitions.py:78: in test_witnesses_write_alternatives_without_conjoining_their_literals
+    _model_with(restored, SimpleNamespace())._restore_structural_extras(saved)
+bin/Models.py:4887: in _restore_structural_extras
+    self._restore_allocator_extras(cs, alloc_blob)
+bin/Models.py:4859: in _restore_allocator_extras
+    restore_word_index(cs)
+bin/ConceptIndex.py:55: in restore_word_index
+    words, objects = meta_members(cs, meta)
+                     ^^^^^^^^^^^^^^^^^^^^^^
+bin/ConceptIndex.py:16: in meta_members
+    if int(cid) in alloc.retired:
+       ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+=============================== warnings summary ===============================
+test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+1 failed, 5 passed, 2 warnings in 2.33s

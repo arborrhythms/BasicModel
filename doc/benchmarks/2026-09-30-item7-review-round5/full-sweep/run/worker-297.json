@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters"
+  ],
+  "completed": [
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036433315835893154,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

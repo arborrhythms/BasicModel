@@ -1,0 +1,20 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+____ test_unrelated_true_episode_cannot_establish_the_next_parent_relation _____
+test/test_taxonomy_policy.py:33: in test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+    assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1
+E   AssertionError: assert 0.0 == 1
+E    +  where 0.0 = SelectedThoughtResult(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', '0d888f2e1e104... thinking', 'evidence_kind': 'fact', 'semantic_id': 'exist', 'domain': 'ltm-facts', 'resolution_records_scanned': 1}))).support_true
+E    +    where SelectedThoughtResult(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', '0d888f2e1e104... thinking', 'evidence_kind': 'fact', 'semantic_id': 'exist', 'domain': 'ltm-facts', 'resolution_records_scanned': 1}))) = reason_about(QuerySpec(predicate='isTrue', left=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 11), ('sym', ...('sym', 13)), bindings=(), scope=(), sentence_kind=None), right=None, variables=(), desired_polarity=True, domain=None))
+E    +      where reason_about = BasicModel(\n  (selected_thought_choosers): ModuleDict(\n    (8): SelectedThoughtChooser(\n      (mlp): Sequential(\n     ...       (1): GELU(approximate='none')\n        (2): Linear(in_features=16, out_features=1, bias=True)\n      )\n    )\n  )\n).reason_about
+E    +      and   QuerySpec(predicate='isTrue', left=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 11), ('sym', ...('sym', 13)), bindings=(), scope=(), sentence_kind=None), right=None, variables=(), desired_polarity=True, domain=None) = from_surface('exist', ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 11), ('sym', 1), ('sym', 13)), bindings=(), scope=(), sentence_kind=None))
+E    +        where from_surface = QuerySpec.from_surface
+=============================== warnings summary ===============================
+test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+1 failed, 2 passed, 1 warning in 2.04s

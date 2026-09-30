@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_grouping_preserves_coverage_devices_and_isolates_heavy_cases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019954191520810127,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

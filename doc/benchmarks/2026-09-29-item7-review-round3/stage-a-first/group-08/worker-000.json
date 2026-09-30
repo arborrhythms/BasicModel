@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation"
+  ],
+  "completed": [
+    "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5687460409244522,
+      "message": "test/test_nanochat_grammar_eval.py:153: in test_64_word_trace_reduces_online_in_stm8_without_part_truncation\n    trace = gate.trace_serial_grammar(model, text)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/eval_nanochat_grammar.py:578: in trace_serial_grammar\n    model.forward(model.inputSpace.prepInput([str(text)]))\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23815: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13584: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:83: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:16910: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

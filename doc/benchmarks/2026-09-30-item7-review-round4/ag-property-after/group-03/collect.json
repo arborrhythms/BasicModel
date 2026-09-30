@@ -1,0 +1,20 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item11c_membership_folds.py::test_required_parts_keep_support_and_counterevidence_separate",
+    "test/test_item11c_membership_folds.py::test_swapped_evidence_combination_is_distinct_from_a_both_pole_test",
+    "test/test_item11c_membership_folds.py::test_unknown_concept_does_not_refute_or_erase_a_known_conjunct",
+    "test/test_item11c_membership_folds.py::test_seam_never_invents_counterevidence_from_an_absent_property",
+    "test/test_item11c_membership_folds.py::test_conjunctive_edges_exist_only_within_order_zero",
+    "test/test_item11c_membership_folds.py::test_union_is_max_including_empty_and_repeated_support",
+    "test/test_item11c_membership_folds.py::test_property_pervasion_is_min_over_observed_values_not_their_counts",
+    "test/test_item11c_membership_folds.py::test_property_alternatives_use_max_min_for_graded_primitive_inputs",
+    "test/test_item11c_membership_folds.py::test_sparse_requirements_and_alternatives_are_weighted_min_and_max"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

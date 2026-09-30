@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_reference_request_follows_the_head_and_outer_particular_scope ______
+
+    def test_reference_request_follows_the_head_and_outer_particular_scope():
+        from ReferenceContext import reference_requests
+        generic = SimpleNamespace(reference_orders=(('I1', 2),),
+            reference_kinds=(('I1', 'generic'),), head_role=1)
+        lower = SimpleNamespace(reference_orders=(('I2', 1),),
+            reference_kinds=(('I2', 'particular'),), head_role=2)
+        language = SimpleNamespace(_compose_binary_rules=(lower,), _compose_unary_rules=(generic,))
+        actions = torch.tensor([[0, -1, 0], [0, -1, 1], [2, 0, -1], [1, 0, -1]])
+>       assert reference_requests(language, actions) == {1: (1, 'particular')}
+E       AssertionError: assert {1: (2, 'generic')} == {1: (1, 'particular')}
+E         
+E         Differing items:
+E         {1: (2, 'generic')} != {1: (1, 'particular')}
+E         Use -v to get more diff
+
+test/test_item7_references.py:113: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope
+1 failed, 5 deselected in 2.12s

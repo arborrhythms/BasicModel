@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py::test_definition_share_of_native_predictor_reads"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py::test_definition_share_of_native_predictor_reads"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-before/group-00/worker-000.json"
+      ],
+      "pid": 67136,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2332118400,
+      "elapsed_seconds": 392.229841375025,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py::test_definition_share_of_native_predictor_reads"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py::test_definition_share_of_native_predictor_reads"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py::test_definition_share_of_native_predictor_reads",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 374.36816899990663,
+          "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py:46: in test_definition_share_of_native_predictor_reads\n    model.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',\nbin/Models.py:14029: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14201: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14568: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9263: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10741: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8962: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8774: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23849: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17761: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22025: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21567: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20810: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20794: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20450: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20421: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:204: in _boundary_observation_view\n    meaning = form(entry, registry) if callable(form) and registry is not None else None\n              ^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:13627: in program_meaning\n    values[i] = registry._payload(('sym', int(native_ids[i]))).to(leaves)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:1992: in _payload\n    row = _existing_row(self.space, reference)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-before/group-00",
+  "elapsed_seconds": 398.8538563749753,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 2332118400,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-before/group-00/collect.json"
+    ],
+    "pid": 67119,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 436995320,
+    "elapsed_seconds": 6.279555750079453,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py::test_definition_share_of_native_predictor_reads"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

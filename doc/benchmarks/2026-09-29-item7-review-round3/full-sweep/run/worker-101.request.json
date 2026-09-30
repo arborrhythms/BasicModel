@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-101.recycle.json"
+}

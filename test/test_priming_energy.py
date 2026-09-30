@@ -129,10 +129,7 @@ def test_cs_to_ps_projection_live():
     assert torch.is_tensor(b_ps), "PS surface must exist post-projection"
     assert float(b_ps.max()) > 1.0, "word pids must carry projected heat"
     # The heated rows are exactly bridge-mapped pids (no scatter elsewhere).
-    store = cs0._relation_store()
-    mapped = {store._ps_pos_to_row[p]
-              for parts, _w in bridge.values() for p in parts
-              if store._pos_kind.get(p) == 'ps' and p in store._ps_pos_to_row}
+    mapped = {int(p) for parts, _w in bridge.values() for p in parts}
     hot = set((b_ps > 1.0).nonzero().reshape(-1).tolist())
     assert hot and hot <= mapped, (sorted(hot)[:8], sorted(mapped)[:8])
 
@@ -143,15 +140,12 @@ def test_cs_to_ws_projection_live():
     reading configs) carries projected word-whole heat."""
     m = _projected_model()
     cs0 = m.conceptualSpaces[0]
-    store = cs0._relation_store()
     bridge = cs0._priming_bridge
     b_ws = m.wholeSpaces[-1].priming_weights()
     assert torch.is_tensor(b_ws)
     V = int(b_ws.shape[0])
-    mapped = {store._ws_pos_to_row[w]
-              for _p, w in bridge.values()
-              if w is not None and store._pos_kind.get(w) in ('ws', 'meta')
-              and w in store._ws_pos_to_row}
+    mapped = {int(row) for _p, w in bridge.values() if w is not None
+              for row in (w if isinstance(w, tuple) else (w,))}
     in_range = {r for r in mapped if r < V}
     assert in_range, "at least one word-whole row must fit the WS surface"
     assert any(float(b_ws[r]) > 1.0 for r in in_range), (

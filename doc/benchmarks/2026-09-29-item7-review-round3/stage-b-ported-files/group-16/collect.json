@@ -1,0 +1,16 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+    "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+    "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

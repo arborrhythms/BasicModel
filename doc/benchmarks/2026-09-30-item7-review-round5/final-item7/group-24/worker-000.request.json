@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-24/worker-000.recycle.json"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-02/worker-000.recycle.json"
+}

@@ -1,0 +1,39 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+    "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+  ],
+  "completed": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]"
+  ],
+  "slow_selected": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 233.89733320800588,
+      "message": "test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program\n    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,\nE   AssertionError: (1, 0) root: Tensor-likes are not close!\nE   \nE   Mismatched elements: 136 / 408 (33.3%)\nE   Greatest absolute difference: 0.3198815882205963 at index (0, 75) (up to 1e-06 allowed)\nE   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=133.360s)\r\nbatch = 0 (\u0394=0.964s)\r\nbatch = 1 (\u0394=0.929s)\r\n"
+    },
+    {
+      "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 230.71461525000632,
+      "message": "test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program\n    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,\nE   AssertionError: (1, 0) root: Tensor-likes are not close!\nE   \nE   Mismatched elements: 136 / 408 (33.3%)\nE   Greatest absolute difference: 0.2525632381439209 at index (0, 113) (up to 1e-06 allowed)\nE   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=129.336s)\r\nbatch = 0 (\u0394=0.943s)\r\nbatch = 1 (\u0394=0.923s)\r\n"
+    }
+  ],
+  "recycled": true,
+  "active": null,
+  "device": "cpu"
+}

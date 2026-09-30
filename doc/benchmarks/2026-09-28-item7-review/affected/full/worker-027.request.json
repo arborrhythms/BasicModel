@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/affected/full/worker-027.recycle.json"
+}

@@ -1,0 +1,12 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+  "device": "cpu"
+}

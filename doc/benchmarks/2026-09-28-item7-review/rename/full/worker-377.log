@@ -1,0 +1,14 @@
+..F................                                                      [100%]
+=================================== FAILURES ===================================
+______________________ test_symbolicspace_owns_its_starts ______________________
+test/test_role_collapsed_grammar.py:90: in test_symbolicspace_owns_its_starts
+    assert g.ws_relative_starts == frozenset({"part_O1", "whole_O1", "equal_O1"})
+E   AssertionError: assert frozenset({'e..., 'whole_O1'}) == frozenset({'e..., 'whole_O1'})
+E     
+E     Extra items in the left set:
+E     'operator_O1'
+E     'implies_O1'
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_role_collapsed_grammar.py::test_symbolicspace_owns_its_starts
+1 failed, 18 passed in 2.36s

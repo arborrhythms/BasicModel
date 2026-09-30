@@ -1,0 +1,24 @@
+--- doc/benchmarks/2026-09-21-item10/probe.py
++++ doc/benchmarks/2026-09-28-item7-review/probe.py
+@@ -56,7 +56,7 @@
+               "seed": 42, "config": args.config, "config_sha256": hashlib.sha256(Path(args.config).read_bytes()).hexdigest(),
+               "source": source, "torch": torch.__version__, "device": "cpu", "threads": 1,
+               "batch_size": 2, "backend": "eager tensor loop", "phases": [],
+-              "thought_workload": "explicit quantize of a retained parsed leaf; no learned-query claim" if args.thought else None,
++              "thought_workload": "explicit quantize of a completed field; no learned-query claim" if args.thought else None,
+               "dictionary_rotation_rate": model.contextual_concept_learning_rate,
+               "dictionary_parameter": isinstance(model.conceptualSpace.similarity_codebook.W, torch.nn.Parameter)}
+     if args.parity:
+@@ -85,9 +85,9 @@
+         effects = 0
+         if args.thought:
+             registry = _boundary_registry(model)
+-            programs = model._last_understanding.answer_program
+-            for row, program in enumerate(programs):
+-                request = registry.form("quantize", program.leaves[0])
++            fields = model._last_understanding.sentence_states
++            for row, field in enumerate(fields):
++                request = registry.form("quantize", field.end_state[0])
+                 outcome = model._run_public_thought(request, row=row, work_budget=128)
+                 work += outcome.work.spent
+                 effects += sum(record.kind == "thought" and record.operation == "quantize" for record in outcome.records)

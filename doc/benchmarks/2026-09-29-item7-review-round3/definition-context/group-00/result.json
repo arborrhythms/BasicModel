@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_xor.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar.xml]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_xor.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar.xml]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-context/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-context/group-00/worker-000.json"
+      ],
+      "pid": 13449,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 550274344,
+      "elapsed_seconds": 5.310432124999352,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-context/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_xor.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar.xml]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_xor.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.536580958054401,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 25.00%)\r\nbatch = 2 (\u0394=0.013s, 50.00%)\r\nbatch = 4 (\u0394=0.012s, 75.00%)\r\nbatch = 6 (\u0394=0.013s, 100.00%)\r\nrunEpoch(validation): hit max_batches=4 cap; cursor exiting early (4 batches processed, ds.all_done=True).\r\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.3499658340588212,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up, 25.00%)\r\nbatch = 2 (\u0394=0.149s, 50.00%)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-context/group-00",
+  "elapsed_seconds": 9.858524832990952,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 550274344,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-context/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-context/group-00/collect.json"
+    ],
+    "pid": 13432,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 438650080,
+    "elapsed_seconds": 4.321249958011322,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/definition-context/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_xor.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar.xml]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

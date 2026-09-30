@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/worker-000.json"
+  ],
+  "pid": 10571,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 545309968,
+  "elapsed_seconds": 3.8167564580217004,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-lexical-before/group-00/worker-000.log"
+}

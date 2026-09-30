@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+    "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+  ],
+  "completed": [
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+    "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01935554202646017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004249791149049997,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004102625185623765,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004236459033563733,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019169999286532402,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.31567554199136794,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

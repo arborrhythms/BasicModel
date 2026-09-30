@@ -1,0 +1,103 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00/worker-000.json"
+      ],
+      "pid": 10478,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 439207136,
+      "elapsed_seconds": 3.5640397908864543,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.5233268330339342,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py:14: in test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache\n    assert m._generated_word_text(point[None, None], torch.tensor([1])) == ('hello',)\nE   AssertionError: assert (None,) == ('hello',)\nE     \nE     At index 0 diff: None != 'hello'\nE     Use -v to get more diff",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.024839082965627313,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py:30: in test_reference_update_law_uses_the_definition_index\n    assert torch.equal(vq.update_mask_fn(32, None), reference_update_mask(False, [obj], 32))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: equal(): argument 'input' (position 1) must be Tensor, not NoneType",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00",
+  "elapsed_seconds": 5.498450250015594,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 439207136,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00/collect.json"
+    ],
+    "pid": 10461,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179520328,
+    "elapsed_seconds": 1.7136839580489323,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-owners-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

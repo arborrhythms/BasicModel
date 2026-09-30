@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_selected_relation_meaning.py::test_unreduced_lexical_converse_uses_its_anchored_grammar_form"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-thought-reasoning/run/worker-062.recycle.json"
+}

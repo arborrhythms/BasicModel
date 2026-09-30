@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path"
+  ],
+  "completed": [
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.21300787501968443,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

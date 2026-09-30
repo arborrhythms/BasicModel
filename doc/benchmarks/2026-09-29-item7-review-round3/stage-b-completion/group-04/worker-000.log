@@ -1,0 +1,21 @@
+...........                                                              [100%]
+=============================== warnings summary ===============================
+test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row
+test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting
+test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index
+test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7637: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+11 passed, 7 warnings in 3.10s

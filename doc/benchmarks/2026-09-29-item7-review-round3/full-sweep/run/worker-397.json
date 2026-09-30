@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_active_payload_audit.py::test_set_event_on_codebook_snaps_through_codebook",
+    "test/test_active_payload_audit.py::test_setw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_getw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_codebook_slot_event_for_muxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_what_for_unmuxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_none_for_pure_event",
+    "test/test_active_payload_audit.py::test_subspace_lookup_replaces_getW_indexing",
+    "test/test_active_payload_audit.py::test_pure_event_lookup_raises",
+    "test/test_active_payload_audit.py::test_codebook_forward_writes_selection_for_muxed_subspace"
+  ],
+  "completed": [
+    "test/test_active_payload_audit.py::test_set_event_on_codebook_snaps_through_codebook",
+    "test/test_active_payload_audit.py::test_setw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_getw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_codebook_slot_event_for_muxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_what_for_unmuxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_none_for_pure_event",
+    "test/test_active_payload_audit.py::test_subspace_lookup_replaces_getW_indexing",
+    "test/test_active_payload_audit.py::test_pure_event_lookup_raises",
+    "test/test_active_payload_audit.py::test_codebook_forward_writes_selection_for_muxed_subspace"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_set_event_on_codebook_snaps_through_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0135494580026716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_setw_audit_after_selection_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006778331007808447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_getw_audit_after_selection_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006464580073952675,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_slot_event_for_muxed_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00051099993288517,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_slot_what_for_unmuxed_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004892910365015268,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_slot_none_for_pure_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002542920410633087,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_subspace_lookup_replaces_getW_indexing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005519159603863955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_pure_event_lookup_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034570787101984024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_forward_writes_selection_for_muxed_subspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013127499260008335,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

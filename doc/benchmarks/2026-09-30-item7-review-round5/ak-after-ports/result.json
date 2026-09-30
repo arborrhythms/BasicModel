@@ -1,0 +1,36 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_predicate_identity.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_grammatical_query_vps.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_thought_operation_catalog.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

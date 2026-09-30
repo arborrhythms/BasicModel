@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_cs_symbol_table.py::test_fresh_object_concept_reads_its_naming_word_at_order1",
+    "test/test_cs_symbol_table.py::test_assert_concrete_whole_retires_everything_bias_edge",
+    "test/test_cs_symbol_table.py::test_prune_drops_everything_when_other_whole_linked",
+    "test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence"
+  ],
+  "completed": [
+    "test/test_cs_symbol_table.py::test_fresh_object_concept_reads_its_naming_word_at_order1",
+    "test/test_cs_symbol_table.py::test_assert_concrete_whole_retires_everything_bias_edge",
+    "test/test_cs_symbol_table.py::test_prune_drops_everything_when_other_whole_linked",
+    "test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_fresh_object_concept_reads_its_naming_word_at_order1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003396500018425286,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_concrete_whole_retires_everything_bias_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025785419857129455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_prune_drops_everything_when_other_whole_linked",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021369169699028134,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002319666906259954,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

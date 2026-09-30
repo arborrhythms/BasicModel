@@ -1,0 +1,311 @@
+{
+  "observed_at": "2026-09-30T17:44:02.052467+00:00",
+  "source": "ai-native-id-source.json",
+  "runtime_frozen": true,
+  "committed": false,
+  "receipts": {
+    "final3-item7": {
+      "status": "passed",
+      "groups": 33,
+      "diagnostic_only": 0
+    },
+    "final3-core-gates": {
+      "status": "passed",
+      "groups": 11,
+      "diagnostic_only": 0
+    },
+    "final3-ac-production": {
+      "status": "passed",
+      "groups": 1,
+      "diagnostic_only": 0
+    },
+    "final3-repeats-29-31": {
+      "status": "passed",
+      "groups": 140,
+      "diagnostic_only": 0
+    },
+    "final3-xor-candidate": {
+      "status": "failed",
+      "groups": 29,
+      "diagnostic_only": 0
+    },
+    "final-xor-head": {
+      "status": "failed",
+      "groups": 29,
+      "diagnostic_only": 0
+    },
+    "explicit-final3": {
+      "status": "gate_failures",
+      "groups": 74,
+      "selected": 255,
+      "completed": 255,
+      "diagnostic_only": 0
+    },
+    "ah-candidate": {
+      "status": "failed",
+      "groups": 29,
+      "diagnostic_only": 21
+    },
+    "ai-candidate": {
+      "status": "failed",
+      "groups": 29,
+      "diagnostic_only": 21
+    },
+    "full-sweep": {
+      "status": "complete_red",
+      "runner_reason": "test_failure",
+      "selected": 5100,
+      "completed": 5100,
+      "active_workers": 0,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "receipt": "full-sweep/run/result.json",
+      "outcomes": {
+        "passed": 4774,
+        "skipped": 322,
+        "failed": 3,
+        "xfailed": 1
+      },
+      "complete_unique_coverage": true,
+      "resource_stops": [],
+      "prior_failure_outcomes": {
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]": "passed",
+        "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths": "passed",
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root": "passed",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model": "passed",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration": "passed",
+        "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence": "passed",
+        "test/test_reasoning.py::TestWriteMask::test_partition_isolation": "passed",
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream": "passed",
+        "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes": "passed",
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode": "passed",
+        "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero": "passed",
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng": "passed",
+        "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field": "passed"
+      },
+      "failure_ledger": "full-sweep/failure-ledger.json"
+    },
+    "final3-reconstruction-candidate": {
+      "attempts": {
+        "0": {
+          "reason": "timeout",
+          "exit_code": 124,
+          "elapsed_seconds": 1201.0050499578938,
+          "peak_memory_bytes": 5391783384
+        },
+        "1": {
+          "reason": "timeout",
+          "exit_code": 124,
+          "elapsed_seconds": 1201.0049541250337,
+          "peak_memory_bytes": 6074292152
+        },
+        "2": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 1123.0670297499746,
+          "peak_memory_bytes": 6152738936
+        },
+        "3": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 1130.3779789160471,
+          "peak_memory_bytes": 5743859592
+        },
+        "4": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 916.2239140830934,
+          "peak_memory_bytes": 5256058592
+        },
+        "5": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 913.4479544172063,
+          "peak_memory_bytes": 6101850184
+        },
+        "6": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 913.460969875101,
+          "peak_memory_bytes": 5633431288
+        },
+        "7": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 910.6915948328096,
+          "peak_memory_bytes": 5706258264
+        }
+      }
+    },
+    "final3-reconstruction-retries": {
+      "attempts": {
+        "0": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 992.6106070000678,
+          "peak_memory_bytes": 6065215248
+        },
+        "1": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 1048.3115688329563,
+          "peak_memory_bytes": 6136436568
+        }
+      }
+    },
+    "final3-mm-grammar-candidate": {
+      "attempts": {
+        "0": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 182.44152441597544,
+          "peak_memory_bytes": 593184208
+        },
+        "1": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 156.1630583750084,
+          "peak_memory_bytes": 623625680
+        },
+        "2": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 183.88471316709183,
+          "peak_memory_bytes": 584844776
+        },
+        "3": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 189.53905775002204,
+          "peak_memory_bytes": 613320144
+        },
+        "4": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 204.66478774999268,
+          "peak_memory_bytes": 674137648
+        },
+        "5": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 206.96284983400255,
+          "peak_memory_bytes": 689407512
+        },
+        "6": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 205.22383954189718,
+          "peak_memory_bytes": 656967168
+        },
+        "7": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 185.17245125002228,
+          "peak_memory_bytes": 608044544
+        },
+        "8": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 185.381825709017,
+          "peak_memory_bytes": 597231056
+        },
+        "9": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 139.21200199984014,
+          "peak_memory_bytes": 625346048
+        }
+      }
+    },
+    "final-mm-grammar-head": {
+      "attempts": {
+        "0": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 285.7439312080387,
+          "peak_memory_bytes": 8209881856
+        },
+        "1": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 266.8222782500088,
+          "peak_memory_bytes": 8205064984
+        },
+        "2": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 270.3762984590139,
+          "peak_memory_bytes": 8205687552
+        },
+        "3": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 290.56610024999827,
+          "peak_memory_bytes": 8204081896
+        },
+        "4": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 286.1742987919133,
+          "peak_memory_bytes": 8206015256
+        },
+        "5": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 300.1136019169353,
+          "peak_memory_bytes": 8204557056
+        },
+        "6": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 247.46809875010513,
+          "peak_memory_bytes": 8205654784
+        },
+        "7": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 216.38915833388455,
+          "peak_memory_bytes": 8204917504
+        },
+        "8": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 206.8793230841402,
+          "peak_memory_bytes": 8203967280
+        },
+        "9": {
+          "reason": "exit",
+          "exit_code": 0,
+          "elapsed_seconds": 202.06165049993433,
+          "peak_memory_bytes": 8202836760
+        }
+      }
+    },
+    "final3-reconstruction-reconciled": {
+      "all_guarded_completions": true,
+      "seeds": 8,
+      "table": "final-reconstruction-table.md",
+      "original_deadline_stops_preserved": [
+        0,
+        1
+      ]
+    },
+    "final-doc-links": {
+      "status": "passed",
+      "selected": 158,
+      "completed": 158,
+      "receipt": "final-doc-links/group-00/result.json"
+    }
+  },
+  "state": "stopped_for_Claude_review",
+  "accepted": false,
+  "follow_up_status": "PAUSED"
+}

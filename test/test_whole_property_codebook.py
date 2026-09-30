@@ -161,7 +161,6 @@ def test_canonical_ws_stage_composes_transformed_property_rows(monkeypatch):
     cb.primitive_properties.teach(0, [65], [1.])
     cb.primitive_properties.teach(1, [49], [1.])
     stage = SimpleNamespace(
-        property_basis=True,
         subspace=SimpleNamespace(what=cb, muxedSize=D),
         inputShape=(N, D),
         nWhere=0,

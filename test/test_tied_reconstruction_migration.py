@@ -40,7 +40,7 @@ def test_empty_rows_and_padding_carry_no_reconstruction_cost(tmp_path, all_empty
 
 @pytest.mark.slow
 def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
-    """A valid pre,push,seal trace must invert as unseal,pop,pre.
+    """A valid pre,push,closing trace must invert as unfold,pop,pre.
 
     The current canonical producer leaves pre slots inactive. This explicitly
     executes a valid retained three-leaf compose derivation to check the
@@ -61,7 +61,7 @@ def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
         index = list(binary.op_names).index("sum")
         rule_id = int(model.languageSpace._cs_binary_rule_ids[index])
         op = getattr(binary.ops[index], "gl", binary.ops[index])
-        # push leaf0; push leaf1; pre-fold; push leaf2; seal.
+        # push leaf0; push leaf1; pre-fold; push leaf2; closing.
         root01 = op.compose(reference[:, 0], reference[:, 1])
         root = op.compose(root01, reference[:, 2])
         width = int(active.shape[1])

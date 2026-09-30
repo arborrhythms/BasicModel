@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004572921898216009,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

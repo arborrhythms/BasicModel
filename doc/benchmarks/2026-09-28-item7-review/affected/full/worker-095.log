@@ -1,0 +1,30 @@
+.FF..F.                                                                  [100%]
+=================================== FAILURES ===================================
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+test/test_router_fires_per_word.py:233: in test_serial_words_use_the_shared_operation_layer
+    assert probe['sweep'] == 1
+E   assert 0 == 1
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+test/test_router_fires_per_word.py:233: in test_serial_words_use_the_shared_operation_layer
+    assert probe['sweep'] == 1
+E   assert 0 == 1
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+______________ test_boundary_generate_gated_by_router_wire_serial ______________
+test/test_router_fires_per_word.py:311: in test_boundary_generate_gated_by_router_wire_serial
+    assert _generate_fires("both") >= 1, (
+E   AssertionError: boundary generate must fire under routerWireSerial='both'
+E   assert 0 >= 1
+E    +  where 0 = <function test_boundary_generate_gated_by_router_wire_serial.<locals>._generate_fires at 0x140ecb880>('both')
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=========================== short test summary info ============================
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+FAILED test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial
+3 failed, 4 passed in 2.93s

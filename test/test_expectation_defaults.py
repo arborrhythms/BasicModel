@@ -230,33 +230,32 @@ def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeyp
         inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
         model.runBatch(train=False, batchSize=1, split="runtime",
                        batch_override=(inputs, torch.zeros(1, 1, 0)))
-        assert len(store) - before == 2
+        rows = [store.row(i) for i in range(before, len(store))]
+        assert sum(row['kind'] == 'observation' for row in rows) == 2
+        assert all(row['kind'] in ('observation', 'unverified') for row in rows)
+        assert all(int(store.meaning_of(i).role_mask.sum()) in (1, 3) for i in range(before, len(store)))
+        assert not hasattr(store, 'clause_derivation')
     finally:
         model.End()
         model.symbolSpace.soft_reset()
         torch._dynamo.reset()
 
 
-def test_packed_ltm_ignores_masked_slots_even_with_retained_storage():
+def test_packed_ltm_ignores_masked_slots_even_with_retained_storage(monkeypatch):
     from types import SimpleNamespace
-    from Layers import TernaryTruthStore
+    from Layers import InterSentenceLayer
     from Models import BasicModel
-    discourse = layer(consolidated=True)
-    store = discourse._ltm_store
-    host = SimpleNamespace(
-        symbolSpace=SimpleNamespace(discourse=discourse, ltm_store=store),
-        conceptualSpace=SimpleNamespace(_ltm_consolidation=True),
-        inputSpace=SimpleNamespace(
-            _packed_sentence_slot_end_positions=torch.tensor([[1, 3]]),
-            _packed_sentence_slot_mask=torch.tensor([[True, False]]),
-            _packed_sentence_counts_host=(2,)),
-        _packed_sentence_roots=torch.ones(1, 2, 4),
-        _tensor_sentence_roots_live=torch.ones(1, 2, 12),
-        _tensor_sentence_roots_depth=torch.tensor([[3, 3]]),
-        _tensor_final_end_slots=torch.full((1, 3, 4), 99.),
-        _tensor_final_end_depth=torch.tensor([3]))
-    host._expectation_documents_for_slot = lambda t, batch: ["a"]
-    BasicModel._drain_packed_stm_end_states(host)
+    from test_item7_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    entry = f.program('cat')
+    discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='structured')
+    from reading_fixtures import commit_reading
+    store = f.store
+    discourse._ltm_store = store
+    for sid, active in enumerate((True, False)):
+        commit_reading(f.language, f.registry, entry, store, discourse=discourse,
+                       sid=sid, active=active, document='a')
     assert len(store) == 1
     assert discourse.expectation_metrics()["observations"] == 1
 

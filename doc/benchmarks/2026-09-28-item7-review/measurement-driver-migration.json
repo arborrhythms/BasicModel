@@ -1,0 +1,35 @@
+{
+  "protocol": "Unchanged seed 42, CPU one thread, model/data, four before and after batches, seven training batches with first two warmup. Parity uses identical four sentences and lexical warmup. Only reading observation ownership, import paths, and removal of the retired XML flag change.",
+  "files": {
+    "profile_baseline.py": {
+      "copied_from": "doc/benchmarks/2026-09-27-item7/profile_baseline.py",
+      "original_sha256": "10bd5e99c919915c073e1f19df80ac4000cda48211af79d1a328334d127b9d89",
+      "sha256": "1f9a688b86d952db1c7ca6fbb28a08ce720fb3c642a02cc442e69a999b95b611"
+    },
+    "measure.py": {
+      "copied_from": "doc/benchmarks/2026-09-26-item8/measure.py",
+      "original_sha256": "6d22c4f7cdd6f3d94d2b67ac5bebf1919d9ed8b0995704bea78ef7c9c84c4699",
+      "sha256": "cd2a9b3022b76608a5cc3fc45bc89e70655f9b978f490a6c7ef093dc231af064"
+    },
+    "probe.py": {
+      "copied_from": "doc/benchmarks/2026-09-21-item10/probe.py",
+      "original_sha256": "5c7382e9106ecf14fc6607674d0e60906c0b03b376de8f712719e0147aad0cc2",
+      "sha256": "a7bd64aa0710453f05ee34ce3bf0f601e4096d37115634f62703672c599b1f29"
+    },
+    "parity.py": {
+      "copied_from": "doc/benchmarks/2026-09-21-item10/parity.py",
+      "original_sha256": "2d8eb7b0e70f60cc534b84e25697571be238b0f34665ec6b756ee5bcf4903222",
+      "sha256": "945e30fabb18d3e31f7de069ed680fbf3a866d58ea10406ef78595c83863b322"
+    },
+    "parity.xml": {
+      "copied_from": "doc/benchmarks/2026-09-26-item7-5/parity.xml",
+      "original_sha256": "e0834433542b6b7f1d039b0c8734ddaf95cd216d7979a880723d60656342bc9a",
+      "sha256": "016c617a94a8e876a07cb77c2df0b16bee60f61f5490b9046cfee9b1aab9bed2"
+    },
+    "run_measurements.py": {
+      "copied_from": "doc/benchmarks/2026-09-27-item7/run_measurements.py",
+      "original_sha256": "b037905e5304ac5826305d351d2f8b37905088d82d1b51320774096d958f41b0",
+      "sha256": "f352e33472de467057229394f9b022f01d7e013d64e8b7b82ef630ea372f7011"
+    }
+  }
+}

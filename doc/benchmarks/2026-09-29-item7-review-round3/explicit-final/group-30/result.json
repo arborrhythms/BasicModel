@@ -1,0 +1,181 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+  ],
+  "completed": [
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/worker-000.json"
+      ],
+      "pid": 21317,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 562300320,
+      "elapsed_seconds": 3.914460582891479,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+      ],
+      "completed": [
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008779291994869709,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005332499975338578,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0061282499227672815,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006150291999801993,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006196208065375686,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007236582925543189,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0036127499770373106,
+          "message": "test/test_item7_unindexed_relations.py:47: in test_three_slot_relation_closes_unindexed_numerical_operands\n    entry = replace(entry, leaves=leaves, rows=torch.full((3,), -1),\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace\n    return obj.__class__(**changes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:24: in __init__\n    ???\nbin/Understanding.py:87: in __post_init__\n    raise ValueError('program word IDs must be positive identities or -1, aligned to leaves')\nE   ValueError: program word IDs must be positive identities or -1, aligned to leaves",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.18845129199326038,
+          "message": "test/test_item7_unindexed_relations.py:82: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows\n    assert (store.refs[store.relations()] > 0).all()\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method all of Tensor object at 0x11f287b10>()\nE    +    where <built-in method all of Tensor object at 0x11f287b10> = tensor([[ 1, -1,  2],\\n        [ 3, -1,  4],\\n        [ 5, -1,  6],\\n        [ 7, -1,  8],\\n        [ 3,  1,  4],\\n        ... 1,  9],\\n        [10,  1, 11],\\n        [13,  1, 14],\\n        [15,  1, 16],\\n        [18,  1, 19],\\n        [20,  1, 21]]) > 0.all",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30",
+  "elapsed_seconds": 7.699076292105019,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 562300320,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/collect.json"
+    ],
+    "pid": 21309,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430736656,
+    "elapsed_seconds": 3.5494207909796387,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

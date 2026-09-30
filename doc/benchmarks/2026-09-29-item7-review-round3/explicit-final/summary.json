@@ -1,0 +1,357 @@
+{
+  "reason": "gate_failures",
+  "exit_code": 1,
+  "selected": 197,
+  "completed": 196,
+  "pytest_outcomes": {
+    "passed": 189,
+    "failed": 6,
+    "skipped": 1
+  },
+  "resource_outcomes": {
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph": {
+      "reason": "memory",
+      "peak_memory_bytes": 8829656120,
+      "elapsed_seconds": 9.03129670897033,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-release-candidate/group-00/worker-000.log"
+    }
+  },
+  "complete_unique_coverage": true,
+  "missing": [],
+  "duplicate_completed": {},
+  "failures": [
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 123.93741937493905,
+      "message": "test/test_mm_xor.py:179: in test_mm_grammar_learns_xor_signal\n    self._fit_xor(os.path.join(_PROJECT, \"data\", \"MM_grammar.xml\"),\ntest/test_mm_xor.py:165: in _fit_xor\n    self.assertLess(best_loss, threshold,\nE   AssertionError: 0.20906077325344086 not less than 0.2 : XOR loss 0.209061 after at most 900 epochs",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-06/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 78.91479095886461,
+      "message": "test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+      "stdout": "\r\nbatch = 0 (\u0394=0.207s, 100.00%)\r\nTrain Loss: output=0.1740, reconstruction=0.3878\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.206s, 100.00%)\r\nTrain Loss: output=0.1754, reconstruction=0.3959\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.206s, 100.00%)\r\nTrain Loss: output=0.1749, reconstruction=0.3697\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.207s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3152\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.207s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.2904\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.208s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3730\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.205s, 100.00%)\r\nTrain Loss: output=0.1753, reconstruction=0.3707\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3724\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.176s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.2350\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.177s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3213\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.3269\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.4150\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.4028\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3208\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3732\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1754, reconstruction=0.3170\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.3207\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.4104\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.141s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.2432\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3326\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1754, reconstruction=0.3206\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.3891\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3257\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3845\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3993\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1753, reconstruction=0.3110\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4113\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3308\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3235\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3024\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.3146\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3842\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.143s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3198\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3172\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3841\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.142s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.3468\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.232s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.5031 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5031 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5055 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5039 MISMATCH\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-07/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 68.55103941704147,
+      "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', '  there'), ('hello there', '  there')]",
+      "stdout": "\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.4312\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1749, reconstruction=0.4681\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.4150\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.4442\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.145s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.4560\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.4491\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.4246\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.4317\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.4249\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.4319\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.4255\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.149s, 100.00%)\r\nTrain Loss: output=0.1740, reconstruction=0.4430\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1739, reconstruction=0.4310\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.4343\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.4478\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3134\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4453\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4524\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4539\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.144s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4640\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4606\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4706\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.146s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4714\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4699\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4636\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4842\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.148s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4741\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4687\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.149s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4844\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.217s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4800\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4703\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4718\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.147s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4795\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.165s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4769\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4844\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.4812\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.5021 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5022 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5005 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5006 MISMATCH\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor/gate-08/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5404552498366684,
+      "message": "test/test_item7_provenance.py:11: in test_provisioning_retains_completed_fields_and_shared_row_ids\n    assert len(store) == 3\nE   assert 9 == 3\nE    +  where 9 = len(TernaryTruthStore())",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0036127499770373106,
+      "message": "test/test_item7_unindexed_relations.py:47: in test_three_slot_relation_closes_unindexed_numerical_operands\n    entry = replace(entry, leaves=leaves, rows=torch.full((3,), -1),\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace\n    return obj.__class__(**changes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:24: in __init__\n    ???\nbin/Understanding.py:87: in __post_init__\n    raise ValueError('program word IDs must be positive identities or -1, aligned to leaves')\nE   ValueError: program word IDs must be positive identities or -1, aligned to leaves",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.18845129199326038,
+      "message": "test/test_item7_unindexed_relations.py:82: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows\n    assert (store.refs[store.relations()] > 0).all()\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method all of Tensor object at 0x11f287b10>()\nE    +    where <built-in method all of Tensor object at 0x11f287b10> = tensor([[ 1, -1,  2],\\n        [ 3, -1,  4],\\n        [ 5, -1,  6],\\n        [ 7, -1,  8],\\n        [ 3,  1,  4],\\n        ... 1,  9],\\n        [10,  1, 11],\\n        [13,  1, 14],\\n        [15,  1, 16],\\n        [18,  1, 19],\\n        [20,  1, 21]]) > 0.all",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-30/worker-000.log"
+    }
+  ],
+  "diagnostic_only": [
+    {
+      "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 1,
+      "reason": "completed",
+      "peak_memory_bytes": 17997772840,
+      "elapsed_seconds": 12.220608000061475
+    }
+  ],
+  "source_matches_current": true,
+  "source_files": 704,
+  "source_digest": "86cc65d8640a5017c6e4c8c51a4902bb7928f6a79d590b5598ddafff200670fc",
+  "item7_outcomes": {
+    "passed": 165,
+    "failed": 3
+  },
+  "groups": [
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "final-xor/gate-00/result.json",
+      "reused": true
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "final-xor/gate-01/result.json",
+      "reused": true
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "final-xor/gate-02/result.json",
+      "reused": true
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "final-xor/gate-03/result.json",
+      "reused": true
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "final-xor/gate-04/result.json",
+      "reused": true
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "final-xor/gate-05/result.json",
+      "reused": true
+    },
+    {
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "final-xor/gate-06/result.json",
+      "reused": true
+    },
+    {
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "final-xor/gate-07/result.json",
+      "reused": true
+    },
+    {
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "final-xor/gate-08/result.json",
+      "reused": true
+    },
+    {
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "graph-release-candidate/group-00/result.json",
+      "reused": true
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-00/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-01/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-02/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-03/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-04/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-05/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-06/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-07/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-08/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-09/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-10/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-11/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-12/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-13/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-14/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-15/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-16/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-17/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-18/result.json",
+      "reused": false
+    },
+    {
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "explicit-final/group-19/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-20/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-21/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-22/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-23/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-24/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-25/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-26/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-27/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-28/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-29/result.json",
+      "reused": false
+    },
+    {
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "explicit-final/group-30/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-31/result.json",
+      "reused": false
+    },
+    {
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "explicit-final/group-32/result.json",
+      "reused": false
+    }
+  ],
+  "peak_worker_memory_bytes": 8829656120
+}

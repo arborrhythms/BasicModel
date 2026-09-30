@@ -1,0 +1,81 @@
+.................FFF......FFFFFF                                         [100%]
+=================================== FAILURES ===================================
+_______________ test_symbolic_space_instance_owns_rule_codebook ________________
+test/test_subspace_what_stm_contract.py:444: in test_symbolic_space_instance_owns_rule_codebook
+    assert isinstance(ws.rule_codebook, RuleCodebook)
+                      ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'rule_codebook'. Did you mean: '_codebook'?
+______________ test_v_sym_wired_into_grammar_from_symbolic_space _______________
+test/test_subspace_what_stm_contract.py:457: in test_v_sym_wired_into_grammar_from_symbolic_space
+    assert TheGrammar.symbol_vocab_size == v_sym, (
+E   AssertionError: TheGrammar.symbol_vocab_size=0 != V_sym=64
+E   assert 0 == 64
+E    +  where 0 = <Language.Grammar object at 0x12a381be0>.symbol_vocab_size
+_____________ test_rule_codebook_does_not_determine_parent_vectors _____________
+test/test_subspace_what_stm_contract.py:471: in test_rule_codebook_does_not_determine_parent_vectors
+    rc = ws.rule_codebook
+         ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'rule_codebook'. Did you mean: '_codebook'?
+____________________ test_symbolic_space_owns_signal_router ____________________
+test/test_subspace_what_stm_contract.py:750: in test_symbolic_space_owns_signal_router
+    assert isinstance(ws.languageLayer, LanguageLayer), (
+                      ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'languageLayer'
+___________________ test_use_stack_router_flag_default_false ___________________
+test/test_subspace_what_stm_contract.py:771: in test_use_stack_router_flag_default_false
+    assert ws.use_stack_router is False, (
+           ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'use_stack_router'
+____________ test_stack_route_forward_runs_and_writes_subspace_what ____________
+test/test_subspace_what_stm_contract.py:795: in test_stack_route_forward_runs_and_writes_subspace_what
+    in_sub.symbolSpace = ws.symbolSpace
+                         ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'symbolSpace'
+__________ test_stack_router_does_not_touch_word_space_current_rules ___________
+test/test_subspace_what_stm_contract.py:830: in test_stack_router_does_not_touch_word_space_current_rules
+    ss = ws.symbolSpace
+         ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'symbolSpace'
+_______________ test_stack_router_does_not_touch_conceptual_stm ________________
+test/test_subspace_what_stm_contract.py:877: in test_stack_router_does_not_touch_conceptual_stm
+    cs = ws.conceptualSpace
+         ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'conceptualSpace'
+___________ test_stack_router_dispatches_via_syntactic_layer_execute ___________
+test/test_subspace_what_stm_contract.py:920: in test_stack_router_dispatches_via_syntactic_layer_execute
+    sl = ws.syntacticLayer
+         ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'syntacticLayer'
+=============================== warnings summary ===============================
+test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_codebook
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_codebook
+FAILED test/test_subspace_what_stm_contract.py::test_v_sym_wired_into_grammar_from_symbolic_space
+FAILED test/test_subspace_what_stm_contract.py::test_rule_codebook_does_not_determine_parent_vectors
+FAILED test/test_subspace_what_stm_contract.py::test_symbolic_space_owns_signal_router
+FAILED test/test_subspace_what_stm_contract.py::test_use_stack_router_flag_default_false
+FAILED test/test_subspace_what_stm_contract.py::test_stack_route_forward_runs_and_writes_subspace_what
+FAILED test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_word_space_current_rules
+FAILED test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm
+FAILED test/test_subspace_what_stm_contract.py::test_stack_router_dispatches_via_syntactic_layer_execute
+9 failed, 23 passed, 1 warning in 2.75s

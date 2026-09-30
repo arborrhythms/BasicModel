@@ -1,0 +1,43 @@
+..........FFF                                                            [100%]
+=================================== FAILURES ===================================
+__________ test_registration_does_not_depend_on_testimony_trust[0.3] ___________
+test/test_truth_criterion_gates_learning.py:21: in test_registration_does_not_depend_on_testimony_trust
+    assert store.row(row)['evidence'] == pytest.approx((max(trust, 0.), max(-trust, 0.)))
+E   assert (0.0, 0.0) == approx((0.3 ±....0 ± 1.0e-12))
+E     
+E     comparison failed. Mismatched elements: 1 / 2:
+E     Max absolute difference: 0.3
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     0     | 0.0      | 0.3 ± 3.0e-07
+__________ test_registration_does_not_depend_on_testimony_trust[1.0] ___________
+test/test_truth_criterion_gates_learning.py:21: in test_registration_does_not_depend_on_testimony_trust
+    assert store.row(row)['evidence'] == pytest.approx((max(trust, 0.), max(-trust, 0.)))
+E   assert (0.0, 0.0) == approx((1.0 ±....0 ± 1.0e-12))
+E     
+E     comparison failed. Mismatched elements: 1 / 2:
+E     Max absolute difference: 1.0
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     0     | 0.0      | 1.0 ± 1.0e-06
+__________ test_registration_does_not_depend_on_testimony_trust[-0.7] __________
+test/test_truth_criterion_gates_learning.py:21: in test_registration_does_not_depend_on_testimony_trust
+    assert store.row(row)['evidence'] == pytest.approx((max(trust, 0.), max(-trust, 0.)))
+E   assert (0.0, 0.0) == approx((0.0 ±....7 ± 7.0e-07))
+E     
+E     comparison failed. Mismatched elements: 1 / 2:
+E     Max absolute difference: 0.7
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     1     | 0.0      | 0.7 ± 7.0e-07
+=============================== warnings summary ===============================
+test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]
+3 failed, 10 passed, 1 warning in 2.48s

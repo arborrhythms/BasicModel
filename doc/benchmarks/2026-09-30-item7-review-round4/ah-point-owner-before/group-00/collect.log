@@ -1,0 +1,9 @@
+doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows
+
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 test collected in 3.45s

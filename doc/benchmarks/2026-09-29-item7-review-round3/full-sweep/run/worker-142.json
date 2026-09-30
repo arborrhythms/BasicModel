@@ -1,0 +1,115 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+    "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+    "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+    "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+    "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+    "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+    "test/test_concept_output.py::test_property_reverse_attributes_only_written_members"
+  ],
+  "completed": [
+    "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+    "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+    "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+    "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+    "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+    "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+    "test/test_concept_output.py::test_property_reverse_attributes_only_written_members"
+  ],
+  "slow_selected": [
+    "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.023741915822029114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.045006874948740005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02924637496471405,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02851470885798335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012325006537139416,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_concept_output.py', 90, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.174040290992707,
+      "message": "",
+      "stdout": "{'trial': 0, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.270231708884239,
+      "message": "",
+      "stdout": "{'trial': 1, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.189581708051264,
+      "message": "",
+      "stdout": "{'trial': 2, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04562983405776322,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007317918352782726,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

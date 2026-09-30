@@ -1,0 +1,13 @@
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions
+
+11 tests collected in 0.43s

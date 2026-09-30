@@ -1,0 +1,1391 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+    "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+    "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+    "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+    "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+    "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+    "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs",
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "completed": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+    "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+    "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+    "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+    "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+    "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+    "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs",
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-000.json"
+      ],
+      "pid": 36534,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434783552,
+      "elapsed_seconds": 3.6655756660038605,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source"
+      ],
+      "completed": [
+        "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.057425000006332994,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-001.json"
+      ],
+      "pid": 36544,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 834176488,
+      "elapsed_seconds": 4.6650120000122115,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model"
+      ],
+      "completed": [
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.4483042500214651,
+          "message": "test/test_category_em_smoke.py:131: in test_codebook_enables_and_em_populates_on_real_model\n    fired = _run_forwards(model)\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_category_em_smoke.py:110: in _run_forwards\n    model.forward(ipt)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23732: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17667: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21908: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21450: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20713: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20525: in _commit_sentence\n    fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:9: in __init__\n    ???\nbin/Understanding.py:180: in __post_init__\n    raise ValueError('a sentence end state occupies one or three slots')\nE   ValueError: a sentence end state occupies one or three slots",
+          "stdout": "Starting with dynamic 12-dim embedding (words added at runtime)\n  Building span table: 0/16 docs\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-002.json"
+      ],
+      "pid": 36556,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 736462384,
+      "elapsed_seconds": 9.886794790974818,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+      ],
+      "completed": [
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.2439172079321,
+          "message": "",
+          "stdout": "Starting with dynamic 12-dim embedding (words added at runtime)\n  Building span table: 0/16 docs\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-003.json"
+      ],
+      "pid": 36617,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426083672,
+      "elapsed_seconds": 3.6241523750359192,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001721082953736186,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-004.json"
+      ],
+      "pid": 36662,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 425297168,
+      "elapsed_seconds": 3.5580015840241686,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016272080829367042,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-005.json"
+      ],
+      "pid": 36670,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 428950872,
+      "elapsed_seconds": 3.617735750041902,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0026329170214012265,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-006.json"
+      ],
+      "pid": 36716,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 425723152,
+      "elapsed_seconds": 3.565398458042182,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0026580829871818423,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-007.json"
+      ],
+      "pid": 36724,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 491980144,
+      "elapsed_seconds": 3.849572040955536,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.21300787501968443,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-008.json"
+      ],
+      "pid": 36732,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429278528,
+      "elapsed_seconds": 3.579037999967113,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0036411250475794077,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-009.json"
+      ],
+      "pid": 36740,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429032744,
+      "elapsed_seconds": 3.575839582947083,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011254249955527484,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-010.json"
+      ],
+      "pid": 36748,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 425641256,
+      "elapsed_seconds": 3.554584583034739,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016757919220253825,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-011.json"
+      ],
+      "pid": 36756,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429245808,
+      "elapsed_seconds": 3.57187437498942,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0025545840617269278,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-012.json"
+      ],
+      "pid": 36764,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 425542928,
+      "elapsed_seconds": 3.5739399580052122,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00324749993160367,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-013.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-013.json"
+      ],
+      "pid": 36772,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 965363392,
+      "elapsed_seconds": 4.522151208017021,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-013.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7824014589423314,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-014.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-014.json"
+      ],
+      "pid": 36809,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436651352,
+      "elapsed_seconds": 3.6716109169647098,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-014.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011216250015422702,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-015.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-015.json"
+      ],
+      "pid": 36855,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436290856,
+      "elapsed_seconds": 3.631811207975261,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-015.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011177583015523851,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-016.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-016.json"
+      ],
+      "pid": 36863,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440911240,
+      "elapsed_seconds": 3.6159486250253394,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-016.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01121145801153034,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-017.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-017.json"
+      ],
+      "pid": 36886,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436733248,
+      "elapsed_seconds": 3.639802166959271,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-017.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.016032750019803643,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-018.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-018.json"
+      ],
+      "pid": 36917,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436766016,
+      "elapsed_seconds": 3.636942166951485,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-018.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011695625027641654,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-019.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-019.json"
+      ],
+      "pid": 36925,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435897688,
+      "elapsed_seconds": 3.629890374955721,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-019.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004636832978576422,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-020.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-020.json"
+      ],
+      "pid": 36933,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436716888,
+      "elapsed_seconds": 3.632028416963294,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-020.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011558666941709816,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-021.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-021.json"
+      ],
+      "pid": 36941,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 6357997856,
+      "elapsed_seconds": 846.3268244579667,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-021.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 831.9509452501079,
+          "message": "test/test_unified_thought_controller.py:183: in test_runbatch_credits_each_controller_row_from_its_own_answer\n    assert observed == [None]  # The answer is a batch-end objective.\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert [] == [None]\nE     \nE     Right contains one more item: None\nE     Use -v to get more diff",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-022.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-022.json"
+      ],
+      "pid": 38633,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435979632,
+      "elapsed_seconds": 3.6184663330204785,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-022.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006783458054997027,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-023.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-023.json"
+      ],
+      "pid": 38644,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436471080,
+      "elapsed_seconds": 3.6575538750039414,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-023.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009686833014711738,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-024.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-024.json"
+      ],
+      "pid": 38654,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436733272,
+      "elapsed_seconds": 3.6591189169557765,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-024.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01038137509021908,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-025.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-025.json"
+      ],
+      "pid": 38662,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440730944,
+      "elapsed_seconds": 3.650320415967144,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-025.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013182624941691756,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-026.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-026.json"
+      ],
+      "pid": 38675,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436897088,
+      "elapsed_seconds": 3.6805904168868437,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-026.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01630516699515283,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-027.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-027.json"
+      ],
+      "pid": 38685,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436307264,
+      "elapsed_seconds": 3.6243072089273483,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-027.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00801087508443743,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-028.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-028.json"
+      ],
+      "pid": 38693,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440812936,
+      "elapsed_seconds": 3.633989957976155,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-028.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01094824995379895,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-029.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-029.json"
+      ],
+      "pid": 38701,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436553000,
+      "elapsed_seconds": 3.6310147090116516,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-029.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011688541038893163,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-030.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-030.json"
+      ],
+      "pid": 38709,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436733224,
+      "elapsed_seconds": 3.6235546249663457,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-030.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.014225625083781779,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-031.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-031.json"
+      ],
+      "pid": 38717,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 441320840,
+      "elapsed_seconds": 3.6722643750254065,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-031.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.018012540997006,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-032.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-032.json"
+      ],
+      "pid": 38731,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436733248,
+      "elapsed_seconds": 3.670506166992709,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-032.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.014172750059515238,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-033.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-033.json"
+      ],
+      "pid": 38739,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3063467200,
+      "elapsed_seconds": 8.155247624963522,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-033.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.514546958031133,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-034.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-034.json"
+      ],
+      "pid": 38748,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5556573128,
+      "elapsed_seconds": 11.773551082937047,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-034.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.076025999966078,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-035.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-035.json"
+      ],
+      "pid": 38803,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5561832392,
+      "elapsed_seconds": 11.793597416952252,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-035.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.058919165981933,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-036.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-036.json"
+      ],
+      "pid": 38861,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5557408736,
+      "elapsed_seconds": 11.742841709055938,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-036.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 7.917107665911317,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-037.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-037.json"
+      ],
+      "pid": 38975,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5434823528,
+      "elapsed_seconds": 8.527491791988723,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-037.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.885839625028893,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 3600,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion",
+  "elapsed_seconds": 1028.7195063749095,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 6357997856,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/collect.json"
+    ],
+    "pid": 36509,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 437896464,
+    "elapsed_seconds": 3.6844588750973344,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+        "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+        "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+        "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+        "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+        "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+        "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs",
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

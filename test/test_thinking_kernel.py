@@ -2,60 +2,46 @@
 import os
 import unittest
 import torch
+import pytest
+from fineweb_artifacts import fineweb_checkpoint, fineweb_trained_model
 
 
 
 class TestDepth3RelativeEndState(unittest.TestCase):
-    """Depth-3 routing campaign (2026-07-13): with the syntactic anchors,
-    the category conditioning (autobind pid stash on the word-whole arm),
-    the CS-role ANCHOR-GATED relative mask, the O1 prior term, and the
-    mid-read relative protection all in force, a relative truth text read
-    AFTER the anchors registered (they land at the provisioning texts'
-    boundary Resets — engagement starts from the next read) must stop its
-    reduce sweep at the depth-3 end-state instead of the depth-1 absolute
-    collapse."""
+    """Learning campaign over a mature checkpoint, never an untrained grammar.
+
+    The original depth-3 assertion remains the gate. Missing item-9 training
+    artifacts are an explicit prerequisite, not an instruction to train 1M
+    sentences as part of this test.
+    """
+
+    @pytest.fixture(autouse=True)
+    def mature_checkpoint(self, fineweb_trained_model):
+        self.m = fineweb_trained_model
 
     def test_first_trained_read_reaches_depth3_end_state(self):
-        import random
-
-        import numpy as np
-
-        import Models
-        from Models import BaseModel
-
-        random.seed(0)
-        torch.manual_seed(0)
-        np.random.seed(0)
-        _DATA = os.path.join(os.path.dirname(__file__), '..', 'data')
-        Models.TheData.load('queries')
-        m, _ = BaseModel.from_config(
-            os.path.join(_DATA, 'MM_query_reasoning.xml'))
-
+        m = self.m
         depths = []
-        orig = Models.BasicModel._stm_reduce_to_single_S
+        original = m._clause_end_state
 
-        def spy(self, *a, **k):
-            out = orig(self, *a, **k)
-            d = out[1] if isinstance(out, tuple) and len(out) > 1 else None
-            if torch.is_tensor(d):
-                depths.append(d.detach().reshape(-1).tolist())
+        def spy(state, sid, clauses, row_ids):
+            out = original(state, sid, clauses, row_ids)
+            depths.append(out[0][1].detach().reshape(-1).tolist())
             return out
 
-        Models.BasicModel._stm_reduce_to_single_S = spy
+        m._clause_end_state = spy
         try:
-            m.provision_ltm()          # anchors register at the boundaries
-            opt = m.getOptimizer(lr=0.01)
-            m.runEpoch(optimizer=opt, batchSize=6, split="train")
+            m._ltm_ingest_truth_texts(m.symbolSpace.ltm_store,
+                ['socrates is a human', 'humans are mortal'], trusts=[.9, .9],
+                origin=m.symbolSpace.ltm_store.ORIGIN_PROVISIONED)
         finally:
-            Models.BasicModel._stm_reduce_to_single_S = orig
+            del m._clause_end_state
         flat = [x for row in depths for x in row]
         self.assertIn(3, flat,
                       f"no depth-3 relative end-state in sweeps: {flat}")
-        # The mechanism behind the flip: the word-whole autobind arm must
-        # stash the per-position pid grid (the chooser conditioning's
-        # precondition -- pre-fix it returned before the category block).
+        # ConceptualSpace owns the per-position pid grid for conditioning.
         self.assertIsNotNone(
-            getattr(m.wholeSpace, '_category_last_pid', None),
+            getattr(m._concept_owner(), '_category_last_pid', None),
             "word-grain autobind must stash the per-position pid grid")
 
 

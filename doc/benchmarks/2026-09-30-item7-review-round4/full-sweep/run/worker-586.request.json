@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_thought_checkpoint_credit.py::test_checkpoint_question_prompt_is_detached_without_cutting_live_credit",
+    "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
+    "test/test_thought_checkpoint_credit.py::test_episode_end_releases_question_and_trace_credit_together"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-586.recycle.json"
+}

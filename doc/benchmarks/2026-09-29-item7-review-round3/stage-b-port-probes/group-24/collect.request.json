@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_mereology_word_binding.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

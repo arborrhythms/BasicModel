@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_is_truth_obvious]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_resolves_contradiction]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_maybe_learn_relation]",
+    "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_route_learned_relation]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-599.recycle.json"
+}

@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+    "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+    "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+  ],
+  "completed": [
+    "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+    "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+    "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-05/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-05/worker-000.json"
+      ],
+      "pid": 60975,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438388032,
+      "elapsed_seconds": 3.9316267499234527,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-05/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+        "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+        "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+      ],
+      "completed": [
+        "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+        "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+        "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010925831738859415,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010822908952832222,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003699997905641794,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-05",
+  "elapsed_seconds": 8.049862832995132,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 438388032,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-05/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-05/collect.json"
+    ],
+    "pid": 60944,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435258688,
+    "elapsed_seconds": 3.9064618749544024,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-05/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+        "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+        "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

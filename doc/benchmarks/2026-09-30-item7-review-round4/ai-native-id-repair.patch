@@ -1,0 +1,26 @@
+--- before/bin/Models.py
++++ after/bin/Models.py
+@@ -12091,6 +12091,13 @@
+         rows = getattr(isp, "_ar_word_concept_rows", None)
+         if not torch.is_tensor(rows) or rows.ndim != 2:
+             return None
++        objects = getattr(isp, "_ar_word_object_rows", None)
++        has_objects = torch.is_tensor(objects) and objects.shape == rows.shape
++        # The fixed pipeline metadata also covers unaligned numerical input.
++        # Its all-unknown row slab is not a native identity carrier.
++        if not bool((rows >= 0).any()) and not (
++                has_objects and bool((objects >= 0).any())):
++            return None
+         unknown = torch.full_like(rows, -1, dtype=torch.long)
+         def addresses(name):
+             values = getattr(isp, name, None)
+@@ -12101,8 +12108,7 @@
+             values = values.to(device=rows.device)
+             return torch.where(values > 0, values, unknown)
+         ids = torch.where(rows >= 0, addresses("_ar_word_concept_ids"), unknown)
+-        objects = getattr(isp, "_ar_word_object_rows", None)
+-        if torch.is_tensor(objects) and objects.shape == rows.shape:
++        if has_objects:
+             ids = torch.where(objects.to(rows.device) >= 0,
+                               addresses("_ar_word_object_ids"), ids)
+         return ids

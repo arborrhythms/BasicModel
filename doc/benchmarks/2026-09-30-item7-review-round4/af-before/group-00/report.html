@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.009890625020489097</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py:13: in test_nested_relation_forest_keeps_its_unindexed_predicate
+    clause = finish_reading(f.language, entry, registry=f.registry, depth=3)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:324: in finish_clause
+    operation = registry.signature_for(
+bin/Queries.py:2285: in signature_for
+    reference = concept_reference(meaning.role_refs[1])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Taxonomy.py:15: in concept_reference
+    raise TypeError(&quot;taxonomy operands require a (&#x27;sym&#x27;, positive concept id) reference&quot;)
+E   TypeError: taxonomy operands require a (&#x27;sym&#x27;, positive concept id) reference</pre></td><td><pre></pre></td></tr></table></body></html>

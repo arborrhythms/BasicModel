@@ -57,7 +57,7 @@ For the current production expectation rollout, use the
 [integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md).
 The enabled sentence predictor defaults to distinct local NP1/VP/NP2 targets
 and an occupancy objective. Empty roles have zero targets and remain in
-the MSE. Seal gain and object masks affect conceived evidence only, never the
+the MSE. Closing gain and object masks affect conceived evidence only, never the
 predictor objective; [ExpectationRetention](ExpectationRetention.md) specifies
 the subtraction, row surprise and residual query credit. The root-only predictor remains an explicit
 benchmark option. Prediction targets and durable history are detached;
@@ -227,7 +227,7 @@ embeddings.
 
 BasicModel enables `teacherReconstruction` and `reconstructInLoop`, with
 `detachedReverse=false` and `leafDistillWeight=0`
-([BasicModel.xml:176](../data/BasicModel.xml#L176)). The completed input's sealed
+([BasicModel.xml:176](../data/BasicModel.xml#L176)). The completed input's ended
 state and recorded compose derivation drive the tied traversal. Its cross
 entropy scores each word's bytes through the first NUL terminator (`0`), then
 averages over active words, completed sentences and batch rows. It uses the
@@ -255,7 +255,7 @@ supplied target only changes its optional diagnostic event score
 are fidelity diagnostics. The cosine-based byte objective does not enforce
 equality of continuous concept amplitudes.
 
-The byte loss can train the sealed representation and selected shared compose
+The byte loss can train the ended representation and selected shared compose
 transforms. Dictionary snapshots, observed targets and occurrence-specific
 operand witnesses are detached. Reverse trace indices are constants. The forward
 chooser retains its existing straight-through soft approximation, which can
@@ -662,7 +662,7 @@ Declared migration (the
 `<reconstructInLoop>` selects one bounded compiled traversal of the
 completed sentence's retained derivation with the compose path's tied
 inverse transforms (the existing `invertible=True` forward/reverse
-pairing). Slice 1 (2026-09-12) is in: after the final seal, a
+pairing). Slice 1 (2026-09-12) is in: after the final closing, a
 `torch.while_loop` replays the recorded choices backward from the root
 (`_reconstruct_sentence_traversal`; the reverse steps
 `LanguageSpace.reverse_binary_step` / `reverse_unary_step` through the
@@ -687,23 +687,24 @@ through the assignment into the recovered ideas and the tied inverses. A concept
 row is an identity code, not a fold of the word's byte atoms (concept
 rows are relational identities; the byte fold lives in the perceptual
 ladder), so the tied inverse of the concept lookup is the snap to a row
-and candidate surfaces belong to WORD rows. Admission retains each WORD's
-UTF-8 bytes in its ConceptualSpace owner's `_row_surfaces`; an OBJECT owns
-only an index back to its concept identity, then translates through the
-current `word_concept_of_object()` association to the WORD row. Changing an
-interpretation therefore does not copy or overwrite WORD bytes
+and the inventory row belongs to the object. Candidate surfaces come from
+the surviving DEF rows: the derived index resolves `object → words`, and
+the word's definition metadata supplies its UTF-8 form. Neither operand's
+learned vector is compared to find that link. `word_surface_for_row()`
+returns no surface for an unresolved lexical ambiguity
 ([Spaces.py](../bin/Spaces.py)). The brick's bounded dictionary snapshot contains
-only its staged WORD/OBJECT rows (`_ar_concept_lookup_rows`) and resolves
-their candidate bytes from this store (`_ar_bank_bytes`); input part IDs
+only its staged object rows (`_ar_concept_lookup_rows`) and resolves
+their candidate bytes through that index (`_ar_bank_bytes`); input part IDs
 provide the byte-window shape and scoring targets, never candidate bytes
 ([Models.py](../bin/Models.py)).
 
-Per-stage WORD stores and OBJECT row indices persist in `vocab_extras`
-under `concept_word_surfaces`, including stage 0 when it owns the shared
-identities ([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). The existing
-structural extras retain the current OBJECT-to-WORD association. Strict
-load also materialises a saved lazy chunk prior before the key audit,
-so no preparatory input pass is required ([Models.py](../bin/Models.py)).
+Definition metadata persists alongside the common store's tensor state.
+Load and compaction rebuild the same derived index; old META bindings
+migrate into DEF rows. The independent row-spelling caches and their
+`concept_word_surfaces` writer are retired, so forgetting a definition
+cannot leave its spelling available through a second cache. Strict load
+also materialises a saved lazy chunk prior before the key audit, so no
+preparatory input pass is required ([Models.py](../bin/Models.py)).
 
 A missing WORD surface removes that candidate. A missing snapshot never
 falls back to the presented words' bytes. A null candidate of similarity
@@ -722,27 +723,27 @@ The reconstruction runs in two bounded passes that share the forward's
 word index (`_reconstruct_sentences`): pass A, one `torch.while_loop` trip
 per sentence slot up to the row's highest sentence id (a tensor bound; a
 host sentence count specialised the graph once per distinct count, a
-recompile of about 45 s on every brick), un-seals each sentence from its
+recompile of about 45 s on every brick), un-endings each sentence from its
 end state: the top three STM slots and the depth at the sentence's end
 (a relative sentence keeps its depth-3 end state, the three LTM slots; an
 absolute one its single root), carried per sentence by the word loop for
-intermediate ends and read from the sealed buffer for the row's last
+intermediate ends and read from the ended buffer for the row's last
 sentence (the live root the loop stored at
-the sentence's intermediate end; `S` after the final seal for the row's
-last sentence) through the recorded seal binaries into its pre-seal stack;
+the sentence's intermediate end; `S` after the final closing for the row's
+last sentence) through the recorded closing binaries into its pre-closing stack;
 pass B is one `torch.while_loop` over the word index, latest word first,
-that loads a sentence's pre-seal stack at the word that ends it, undoes
+that loads a sentence's pre-closing stack at the word that ends it, undoes
 the word's recorded unary, post-binary and pre-binary folds, and pops and
 scores the word. Operand identity (contract 1): the trace records each
 binary fold's operand concept rows (left = STM slot 1, right = slot 0,
 read before the reduce moves the stack, including every intermediate
-packed sentence seal; `record_choice` on the eager path, two bank slabs
+packed sentence closing; `record_choice` on the eager path, two bank slabs
 on the compiled one), and an undo routes the
 residual reverse to the operand that is a word of the sentence, on
 whichever side the fold put it, with that word's retained reference; a
 compound operand (a composite folded earlier) takes the residual. A fold
-recorded without rows keeps the positional fallback: the seals fold
-newest-first, so the k-th seal undone, last first, returns word `lo + k`
+recorded without rows keeps the positional fallback: the endings fold
+newest-first, so the k-th closing undone, last first, returns word `lo + k`
 on the left, and a per-word fold's known operand is the pushed word on
 the right. Where the recorded op is declared lossy (the set ops,
 `part`, `whole`) or a balanced split (`lift`, `lower`), the recovered
@@ -763,34 +764,32 @@ backend), the reconstruction adds about 0.7 s to the 8.4 s forward and
 forward; `eager`) selects where the traversal runs, for the performance
 protocol.
 
-The answer-materialisation boundary (2026-09-15).
-`Understanding.answer_program` owns each row's final sentence program:
-its interpreted symbol rows, separate WORD rows, signed activations,
-compact conceptual leaves, identified compose actions, reconstruction
-targets and three-slot end state. Each `AnswerProgram` clones its tensors
-while retaining the current forward's gradients ([Understanding.py](../bin/Understanding.py)).
-The capture publishes explicit compiled outputs before reading them;
-packed sentence slots and the final per-row programs share the same records
-([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)).
+The answer-materialisation boundary (revised 2026-09-28).
+`Understanding.sentence_states` owns each row's final `SentenceEndState`;
+`sentence_fields` indexes every packed sentence. Each record holds its actual
+one-slot or three-slot meaning, references and field coordinates, cloning
+values while retaining current gradients. A selected question retains its
+typed semantic request. Completed records contain no leaves, actions or
+compose program ([Understanding.py](../bin/Understanding.py)).
 
-Resolution selects the current program for identity or a grammar-selected
-thought, or a frozen program for recall, then replays its full-width concepts
-once. A normal boundary never promotes its raw surface prompt into
-`answer_query()`; the grammar-selected route is the production thought
-interface, while older configured controller steps remain quarantined during
-their migration. Thinking transforms owned concepts through LTM attention or a
-referent's owned leaf, located by its WORD row
-([Models.py](../bin/Models.py), [Models.py](../bin/Models.py),
-[Models.py](../bin/Models.py)). The derivation owns this resolved conceptual answer
-and the question's target-free context ([Output.py](../bin/Output.py)). Discourse
-observation retains detached captured sentence products, including packed
-slots ([Models.py](../bin/Models.py)). A later staging or memory advance cannot
-replace the held answer. The What interaction's input retains all three
-captured idea slots ([Models.py](../bin/Models.py)).
+The temporary `AnswerProgram` exists only while reading. Its numerical journal
+supplies actual pre-fusion operands for prediction and cached reference fields.
+Reconstruction inverts the chosen operations there, and exploration uses the
+record to force a different choice. The sentence driver discards these records
+after scoring and committing the chosen end state. Raw forward and evaluation
+use this same driver with one exploit path and no optimizer.
+
+Resolution selects a current field, a detached recalled field, a prediction,
+or a checked thought result. It generates from that structure. Lexical
+reference questions use the native concept index; they do not search a saved
+input leaf list. `AnswerDerivation` owns the resolved conceptual answer and the
+question's target-free context ([Output.py](../bin/Output.py)). Discourse
+retains detached sentence fields including packed slots, so later staging
+cannot replace a held answer ([Models.py](../bin/Models.py)).
 
 `_materialize_answer_idea` applies one conceptual-width conditioner to the
-resolved root, once. Missing programs are explicitly unresolved; a future
-prediction without a conceptual predictor has no program
+resolved root, once. Missing fields are explicitly unresolved; a future
+prediction without a conceptual predictor has no completed field
 ([Models.py](../bin/Models.py)). Replaying the identified compose actions recovers
 the idea; output chooses its own generate derivation. Reconstruction
 targets remain metadata and never choose output actions

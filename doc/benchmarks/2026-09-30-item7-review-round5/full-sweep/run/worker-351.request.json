@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-351.recycle.json"
+}

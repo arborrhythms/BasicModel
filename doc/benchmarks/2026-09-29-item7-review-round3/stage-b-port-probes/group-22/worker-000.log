@@ -1,0 +1,15 @@
+..F......                                                                [100%]
+=================================== FAILURES ===================================
+____ test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk _____
+test/test_radix_layer_reverse.py:113: in test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk
+    word = interpret.lookup_word([1, 2], [], form='beta')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+=========================== short test summary info ============================
+FAILED test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk
+1 failed, 8 passed in 2.16s

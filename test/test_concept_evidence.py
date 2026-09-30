@@ -188,14 +188,14 @@ def test_projected_updates_keep_nonnegative_parts_and_kind_maximum():
         store.conjunctive.add_edge(row, row + store.nOutput + 1, 1.)
 
 
-def test_discovered_and_sealed_definitions_keep_learned_exponent_scale():
+def test_discovered_and_end_definitions_keep_learned_exponent_scale():
     cs = _cs()
     discovered = _mint_row(cs, 1, 101)
-    sealed = _mint_row(cs, 1, 102)
+    ended = _mint_row(cs, 1, 102)
     cs.add_concept_edge(discovered, 0, .4)
     cs.add_concept_edge(discovered, 1, 1.2)
-    cs.add_concept_edge(sealed, 0, .3)
-    cs.add_concept_edge(sealed, 1, 1.5)
+    cs.add_concept_edge(ended, 0, .3)
+    cs.add_concept_edge(ended, 1, 1.5)
     store = Spaces._concept_alloc_of(cs).layer()
     store.assigned[discovered] = True
     before = store.values.detach().clone()

@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+    "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+    "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+  ],
+  "completed": [
+    "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+    "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+    "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-18/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-18/worker-000.json"
+      ],
+      "pid": 35342,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1078150968,
+      "elapsed_seconds": 4.278096458874643,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-18/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+        "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+        "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+      ],
+      "completed": [
+        "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+        "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+        "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.3729194172192365,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004104170948266983,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.29380024992860854,
+          "message": "",
+          "stdout": "[BasicModel] checkpoint schema migration reset 12 obsolete WholeSpace dense tensor(s) (28.0 MiB); live property rows retain deterministic initialization\r\n[BasicModel] checkpoint schema migration dropped legacy WholeSpace word/META structure (\u00a711.4): vocab_extras.well_known_atoms, vocab_extras.ws_taxonomy_extras, structural_extras.whole_spaces\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8526/test_dictionary_checkpoint_war0/dictionary.ckpt\n  Keys in model but missing from file: 12 (initialized fresh)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8526/test_dictionary_checkpoint_war0/dictionary.ckpt\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-18",
+  "elapsed_seconds": 6.301432583946735,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1078150968,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-18/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-18/collect.json"
+    ],
+    "pid": 35338,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180618032,
+    "elapsed_seconds": 1.786975417053327,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-18/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+        "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+        "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

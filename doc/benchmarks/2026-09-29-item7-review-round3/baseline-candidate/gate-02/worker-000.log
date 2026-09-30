@@ -1,0 +1,9 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ TestXorExactCliReconstruction.test_output_mse_is_crisp ____________
+test/test_explicit_dimensions.py:226: in test_output_mse_is_crisp
+    self.assertLess(
+E   AssertionError: 0.24809641000000002 not less than 0.05 : XOR_exact output MSE=0.2481 over 4 rows (expected <0.05; crisp basin ~0.004). Predictions near 0.5 => the readout under-converged (regression of the OutputSpace lrScale=0.5 two-timescale fix).
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp
+1 failed in 28.28s

@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-predicate-before/group-00/worker-000.recycle.json"
+}

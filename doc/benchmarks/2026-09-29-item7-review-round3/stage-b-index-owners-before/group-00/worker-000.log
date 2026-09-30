@@ -1,0 +1,45 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache __
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py:14: in test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+    assert m._generated_word_text(point[None, None], torch.tensor([1])) == ('hello',)
+E   AssertionError: assert (None,) == ('hello',)
+E     
+E     At index 0 diff: None != 'hello'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+_____________ test_reference_update_law_uses_the_definition_index ______________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py:30: in test_reference_update_law_uses_the_definition_index
+    assert torch.equal(vq.update_mask_fn(32, None), reference_update_mask(False, [obj], 32))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: equal(): argument 'input' (position 1) must be Tensor, not NoneType
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7645: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners.py::test_reference_update_law_uses_the_definition_index
+2 failed, 5 warnings in 1.98s

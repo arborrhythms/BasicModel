@@ -1,0 +1,5 @@
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery
+
+3 tests collected in 0.43s

@@ -1,0 +1,121 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 13/13 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>790.7185127909761</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+[BasicModel] Activated aligned codebook prefix 32 -&gt; 64 rows (physical capacity 64; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>248.67835116700735</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+generation-gradient-evidence {&quot;output_loop&quot;: false, &quot;initialization&quot;: &quot;ambient RNG&quot;, &quot;output_loss&quot;: 0.046949829906225204, &quot;stepped_shared_groups&quot;: [], &quot;conclusion_gradient&quot;: 0}
+</pre></td></tr><tr><td><pre>test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>214.3737524159951</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+generation-gradient-evidence {&quot;output_loop&quot;: true, &quot;initialization&quot;: &quot;ambient RNG&quot;, &quot;output_loss&quot;: 0.057887326925992966, &quot;stepped_shared_groups&quot;: [], &quot;conclusion_gradient&quot;: 0}
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>204.11173633404542</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>212.08752487495076</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>163.62996983306948</pre></td><td><pre>test/test_unified_thought_controller.py:158: in test_runbatch_credits_each_controller_row_from_its_own_answer
+    query = registry.form(&#x27;equal&#x27;, ref, ref)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:2087: in form
+    value = self._payload(argument, work=work)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1992: in _payload
+    row = _existing_row(self.space, reference)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:490: in _existing_row
+    raise ValueError(&#x27;query concept has no allocated payload row&#x27;)
+E   ValueError: query concept has no allocated payload row</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_idea_decode_d3.py::test_idea_decode_defaults_off</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>4.585832000011578</pre></td><td><pre>test/test_idea_decode_d3.py:47: in test_idea_decode_defaults_off
+    m = _build(&quot;MM_mereology.xml&quot;)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_idea_decode_d3.py:28: in _build
+    m, _ = Models.BasicModel.from_config(p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17302: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>4.5544717910233885</pre></td><td><pre>test/test_idea_decode_d3.py:54: in test_grammar_decode_runs_from_the_completed_field
+    m = _forward(_build(&quot;MM_mereology_serial.xml&quot;))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_idea_decode_d3.py:28: in _build
+    m, _ = Models.BasicModel.from_config(p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17302: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>4.558154208003543</pre></td><td><pre>test/test_idea_decode_d3.py:68: in test_consumer_drives_seed_on_shape_match
+    m = _forward(_build(&quot;MM_mereology_serial.xml&quot;))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_idea_decode_d3.py:28: in _build
+    m, _ = Models.BasicModel.from_config(p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17302: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>4.56175270897802</pre></td><td><pre>test/test_idea_decode_d3.py:84: in test_consumer_falls_back_on_width_mismatch
+    m = _forward(_build(&quot;MM_mereology_serial.xml&quot;))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_idea_decode_d3.py:28: in _build
+    m, _ = Models.BasicModel.from_config(p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17302: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_idea_decode_d3.py::test_reverse_off_path_unchanged</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>4.546049040975049</pre></td><td><pre>test/test_idea_decode_d3.py:99: in test_reverse_off_path_unchanged
+    m = _forward(_build(&quot;MM_mereology.xml&quot;))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_idea_decode_d3.py:28: in _build
+    m, _ = Models.BasicModel.from_config(p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17302: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0008402499370276928</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>9.26250359043479e-05</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

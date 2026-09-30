@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+  ],
+  "completed": [
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002260125009343028,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012683328241109848,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002389916917309165,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002990500070154667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.26557475002482533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006982090417295694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010188340675085783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014656251296401024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042795902118086815,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00311766704544425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6893104170449078,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

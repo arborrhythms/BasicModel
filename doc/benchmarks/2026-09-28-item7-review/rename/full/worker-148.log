@@ -1,0 +1,44 @@
+......Fs                                                                 [100%]
+=================================== FAILURES ===================================
+_____________ test_checkpoint_restores_optimizer_counters_and_rng ______________
+test/test_fineweb_preflight.py:165: in test_checkpoint_restores_optimizer_counters_and_rng
+    restored.runEpoch(optimizer=opt, batchSize=2, split="train")
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16701: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15975: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16644: in _autobind_property_concepts
+    prop_rows = ws.property_rows_for_bytes(key)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23603: in property_rows_for_bytes
+    lut, discard = _analysis_property_signature(self)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22000: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7868/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7868/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] optimizer checkpoint remapped by parameter name: restored 15 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)
+batch = 0 (warm-up, 50.00%)
+=============================== warnings summary ===============================
+test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+1 failed, 6 passed, 1 skipped, 1 warning in 3.56s

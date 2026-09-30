@@ -1,0 +1,26 @@
+[
+  {
+    "file": "test/test_init_scale.py",
+    "before_sha256": "4e5b3c6818901afa2a3055fa16328af39ed47f6684e80da3543c3780b675b2db",
+    "after_sha256": "6446f52f82ac232fd6314d735c8618ee009822f5a29dc25ce06438a0bac4e8fa",
+    "ast_unchanged": true
+  },
+  {
+    "file": "test/test_phase2_end_to_end.py",
+    "before_sha256": "b048628c94fa0ca7e2f74520bf188ec6f78f612ea3bc7e96f5ba557042ae14a0",
+    "after_sha256": "2044487b8d0158208418e9cb0c43c1df4b59cbedeebf978686029cc7d61cad57",
+    "ast_unchanged": true
+  },
+  {
+    "file": "test/test_reference_table.py",
+    "before_sha256": "57956a10a30de84bee726887d5df5de94256f0dc7f8ed1e1a2c2fa6ee96d8bcf",
+    "after_sha256": "f3e827788418ca969a6fe1ecba8ea86caaebbf245c260f169001daecf4cb04c0",
+    "ast_unchanged": true
+  },
+  {
+    "file": "test/test_sparsity_regularizer.py",
+    "before_sha256": "dc4a51caf7b5baa6023be68ace264ef50c4ac03a51d35445ea71663f01e4775e",
+    "after_sha256": "7688bc6eb2c6878f7b777118ed02007fb0186923aa2b2885fb8d52aa246b0557",
+    "ast_unchanged": true
+  }
+]

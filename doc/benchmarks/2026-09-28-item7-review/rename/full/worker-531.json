@@ -1,0 +1,91 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbolic_iteration.py::test_csleg_one_symbol_apoha_emission",
+    "test/test_symbolic_iteration.py::test_csleg_virgin_fallback_stays_continuous",
+    "test/test_symbolic_iteration.py::test_csleg_adoption_writes_tags_and_is_idempotent",
+    "test/test_symbolic_iteration.py::test_csleg_recon_gather_lands_on_winner_rows",
+    "test/test_symbolic_iteration.py::test_csleg_naming_indices_thread_full_frame",
+    "test/test_symbolic_iteration.py::test_mm20m_second_order_reverse_keys_codebook",
+    "test/test_symbolic_iteration.py::test_forward_body_lifts_csleg_recon"
+  ],
+  "completed": [
+    "test/test_symbolic_iteration.py::test_csleg_one_symbol_apoha_emission",
+    "test/test_symbolic_iteration.py::test_csleg_virgin_fallback_stays_continuous",
+    "test/test_symbolic_iteration.py::test_csleg_adoption_writes_tags_and_is_idempotent",
+    "test/test_symbolic_iteration.py::test_csleg_recon_gather_lands_on_winner_rows",
+    "test/test_symbolic_iteration.py::test_csleg_naming_indices_thread_full_frame",
+    "test/test_symbolic_iteration.py::test_mm20m_second_order_reverse_keys_codebook",
+    "test/test_symbolic_iteration.py::test_forward_body_lifts_csleg_recon"
+  ],
+  "slow_selected": [
+    "test/test_symbolic_iteration.py::test_csleg_one_symbol_apoha_emission",
+    "test/test_symbolic_iteration.py::test_csleg_virgin_fallback_stays_continuous",
+    "test/test_symbolic_iteration.py::test_csleg_adoption_writes_tags_and_is_idempotent",
+    "test/test_symbolic_iteration.py::test_csleg_recon_gather_lands_on_winner_rows",
+    "test/test_symbolic_iteration.py::test_csleg_naming_indices_thread_full_frame",
+    "test/test_symbolic_iteration.py::test_mm20m_second_order_reverse_keys_codebook",
+    "test/test_symbolic_iteration.py::test_forward_body_lifts_csleg_recon"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_one_symbol_apoha_emission",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010783306788653135,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_symbolic_iteration.py', 121, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_virgin_fallback_stays_continuous",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.504209108650684e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_symbolic_iteration.py', 159, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_adoption_writes_tags_and_is_idempotent",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.583305705338717e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_symbolic_iteration.py', 189, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_recon_gather_lands_on_winner_rows",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.795802619308233e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_symbolic_iteration.py', 232, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_naming_indices_thread_full_frame",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.191707845777273e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_symbolic_iteration.py', 268, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_mm20m_second_order_reverse_keys_codebook",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.233303040266037e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_symbolic_iteration.py', 284, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_forward_body_lifts_csleg_recon",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.212499622255564e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_symbolic_iteration.py', 341, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

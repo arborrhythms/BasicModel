@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/diagnose_byte_parity.py",
+    "--mode",
+    "single",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/byte-diagnostic/single.json"
+  ],
+  "pid": 43770,
+  "exit_code": 143,
+  "reason": "interrupted",
+  "peak_memory_bytes": 3596439032,
+  "elapsed_seconds": 47.67038637504447,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/byte-diagnostic/single.log"
+}

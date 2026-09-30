@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-004.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-004.json"
+  ],
+  "pid": 17489,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 30392848,
+  "elapsed_seconds": 5.219435834093019,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-004.log"
+}

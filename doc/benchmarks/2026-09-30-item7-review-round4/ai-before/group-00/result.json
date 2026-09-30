@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-00/worker-000.json"
+      ],
+      "pid": 66556,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 488867208,
+      "elapsed_seconds": 7.753761332947761,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+      ],
+      "completed": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.2567301250528544,
+          "message": "test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root\n    assert root is not None and root.grad_fn is not None\nE   assert (tensor([[ 0.1500,  0.0630,  0.0812,  0.0649, -0.1622,  0.2487, -0.0637,  0.2479,\\n         -0.1690,  0.0056,  0.0246, -...  0.0015, -0.0007, -0.0149,  0.0344,\\n         -0.0046, -0.1289,  0.0207, -0.0956, -0.0709, -0.0047,  0.0095,  0.0498]]) is not None and None is not None)\nE    +  where None = tensor([[ 0.1500,  0.0630,  0.0812,  0.0649, -0.1622,  0.2487, -0.0637,  0.2479,\\n         -0.1690,  0.0056,  0.0246, -...  0.0015, -0.0007, -0.0149,  0.0344,\\n         -0.0046, -0.1289,  0.0207, -0.0956, -0.0709, -0.0047,  0.0095,  0.0498]]).grad_fn",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-00",
+  "elapsed_seconds": 17.197385707870126,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 488867208,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-00/collect.json"
+    ],
+    "pid": 66542,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433030368,
+    "elapsed_seconds": 8.84309612493962,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

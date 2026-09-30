@@ -1,0 +1,17 @@
+s......ssssF.                                                            [100%]
+=================================== FAILURES ===================================
+______________ test_tiny_canonical_detached_reverse_stops_at_root ______________
+test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root
+    assert root is not None and root.grad_fn is not None
+E   assert (tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]) is not None and None is not None)
+E    +  where None = tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]).grad_fn
+=============================== warnings summary ===============================
+test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root
+1 failed, 7 passed, 5 skipped, 1 warning in 22.63s

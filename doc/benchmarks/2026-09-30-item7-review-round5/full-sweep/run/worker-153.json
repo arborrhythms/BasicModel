@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates"
+  ],
+  "completed": [
+    "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2819895842112601,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

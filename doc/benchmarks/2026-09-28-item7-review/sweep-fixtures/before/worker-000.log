@@ -1,0 +1,136 @@
+..............FF.FFF..FFFFFF                                             [100%]
+=================================== FAILURES ===================================
+________________________ test_stage_word_mode_type_runs ________________________
+test/test_type_run_spans.py:158: in test_stage_word_mode_type_runs
+    assert _stage("word", "abc123")[0].tolist() == [[0, 3], [3, 6]]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:144: in _stage
+    return WholeSpace.stage_analysis_spans(fake, u)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+______________________ test_stage_accepts_three_dim_unity ______________________
+test/test_type_run_spans.py:166: in test_stage_accepts_three_dim_unity
+    out = WholeSpace.stage_analysis_spans(fake, u)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+_____________ test_live_ws_has_type_subspace_with_four_tagged_rows _____________
+test/test_type_run_spans.py:217: in test_live_ws_has_type_subspace_with_four_tagged_rows
+    assert isinstance(sub, SubSpace)
+E   assert False
+E    +  where False = isinstance(None, SubSpace)
+_________________ test_type_subspace_is_idempotent_on_rebuild __________________
+test/test_type_run_spans.py:236: in test_type_subspace_is_idempotent_on_rebuild
+    assert (a.type_subspace.what.property_kind
+            ^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'what'
+____________________ test_byte_mode_builds_no_type_subspace ____________________
+test/test_type_run_spans.py:249: in test_byte_mode_builds_no_type_subspace
+    assert _analysis_type_lut(ws) is _LUT_ANALYSIS_TYPE
+E   assert tensor([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 0, 3, ...1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) is tensor([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 0, 3, ...1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+E    +  where tensor([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 0, 3, ...1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) = _analysis_type_lut(WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...ing()\n    (whenEncoding): WhenStartDurationEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n))
+__________ test_derived_cut_byte_identical_across_a_spread_of_inputs ___________
+test/test_type_run_spans.py:296: in test_derived_cut_byte_identical_across_a_spread_of_inputs
+    module = _cut_from_module(samples)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:274: in _cut_from_module
+    return WholeSpace.stage_analysis_spans(fake, u)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+_______________ test_checkpoint_roundtrip_preserves_tags_and_cut _______________
+test/test_type_run_spans.py:306: in test_checkpoint_roundtrip_preserves_tags_and_cut
+    extras = a.vocab_extras()
+             ^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'vocab_extras'
+________ test_type_subspace_is_not_a_parameter_and_survives_a_backward _________
+test/test_type_run_spans.py:327: in test_type_subspace_is_not_a_parameter_and_survives_a_backward
+    tc = ws.type_subspace.what
+         ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'what'
+_______________________ test_digit_wholes_cut_each_digit _______________________
+test/test_type_run_spans.py:358: in test_digit_wholes_cut_each_digit
+    assert _digit_spans("12 plus 1") == [[0, 1], [1, 2], [3, 7], [8, 9]]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:352: in _digit_spans
+    from Spaces import _analysis_digit_mask
+E   ImportError: cannot import name '_analysis_digit_mask' from 'Spaces' (/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/bin/Spaces.py)
+_________________________ test_stage_digit_wholes_knob _________________________
+test/test_type_run_spans.py:366: in test_stage_digit_wholes_knob
+    assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+__________________ test_digit_wholes_property_basis_signature __________________
+test/test_type_run_spans.py:377: in test_digit_wholes_property_basis_signature
+    from Spaces import _analysis_digit_mask, _analysis_property_signature
+E   ImportError: cannot import name '_analysis_digit_mask' from 'Spaces' (/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/bin/Spaces.py)
+=============================== warnings summary ===============================
+test/test_type_run_spans.py::test_live_ws_has_type_subspace_with_four_tagged_rows
+test/test_type_run_spans.py::test_type_subspace_is_idempotent_on_rebuild
+test/test_type_run_spans.py::test_byte_mode_builds_no_type_subspace
+test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_tags_and_cut
+test/test_type_run_spans.py::test_type_subspace_is_not_a_parameter_and_survives_a_backward
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_type_run_spans.py::test_stage_word_mode_type_runs - RuntimeE...
+FAILED test/test_type_run_spans.py::test_stage_accepts_three_dim_unity - Runt...
+FAILED test/test_type_run_spans.py::test_live_ws_has_type_subspace_with_four_tagged_rows
+FAILED test/test_type_run_spans.py::test_type_subspace_is_idempotent_on_rebuild
+FAILED test/test_type_run_spans.py::test_byte_mode_builds_no_type_subspace - ...
+FAILED test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+FAILED test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_tags_and_cut
+FAILED test/test_type_run_spans.py::test_type_subspace_is_not_a_parameter_and_survives_a_backward
+FAILED test/test_type_run_spans.py::test_digit_wholes_cut_each_digit - Import...
+FAILED test/test_type_run_spans.py::test_stage_digit_wholes_knob - RuntimeErr...
+FAILED test/test_type_run_spans.py::test_digit_wholes_property_basis_signature
+11 failed, 17 passed, 8 warnings in 3.79s

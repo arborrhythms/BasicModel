@@ -1,0 +1,116 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-integrity-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-integrity-before/group-00/worker-000.json"
+      ],
+      "pid": 8495,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 448152872,
+      "elapsed_seconds": 4.446355083025992,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-integrity-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.5313503330107778,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:13: in test_copied_definition_index_is_owned_by_the_copied_store\n    assert restored.definitions.deref(word) is None\nE   assert 2 is None\nE    +  where 2 = deref(1)\nE    +    where deref = <Definitions.DefinitionIndex object at 0x140c03d40>.deref\nE    +      where <Definitions.DefinitionIndex object at 0x140c03d40> = TernaryTruthStore().definitions",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.17272945900913328,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:23: in test_two_pending_words_cannot_overbook_the_last_definition_row\n    with pytest.raises(RuntimeError,match='capacity'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE RuntimeError",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.6752316249767318,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:37: in test_word_concepts_exist_before_grounded_case_discovery\n    namespace['learn_grounded_xor'](tmp_path,4)\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:word-first:54: in learn_grounded_xor\n    ???\nE   AssertionError",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-integrity-before/group-00",
+  "elapsed_seconds": 6.399457958061248,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 448152872,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-integrity-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-integrity-before/group-00/collect.json"
+    ],
+    "pid": 8490,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179897136,
+    "elapsed_seconds": 1.72481645795051,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-integrity-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

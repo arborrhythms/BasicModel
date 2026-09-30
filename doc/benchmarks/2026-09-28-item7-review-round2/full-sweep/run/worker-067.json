@@ -1,0 +1,145 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+    "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+    "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+    "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+    "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+    "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+    "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+    "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+    "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite"
+  ],
+  "slow_selected": [
+    "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014466699212789536,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 475, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07835337496362627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 11.560872750007547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.681632250081748,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3245786669431254,
+      "message": "",
+      "stdout": "Canonical fullgraph compile: lazy fused tensor word-loop lowering on cuda with fixed capacity and residual-part axes\r\n"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.032680458039976656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007010000990703702,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001129999291151762,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 751, 'Skipped: strict real-model fullgraph trace is ~15s; set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.179196786135435e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 799, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.116705041378736e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 854, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.849993512034416e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 854, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.13510412501636893,
+      "message": "test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root\n    assert root is not None and root.grad_fn is not None\nE   assert (tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]) is not None and None is not None)\nE    +  where None = tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]).grad_fn",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.2769150419626385,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

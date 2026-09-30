@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
+    "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
+    "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+    "test/test_hierarchical.py::TestLevelShapes::test_two_levels",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_encoding",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
+    "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+    "test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-182.recycle.json"
+}

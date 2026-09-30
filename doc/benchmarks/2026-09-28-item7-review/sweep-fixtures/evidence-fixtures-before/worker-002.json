@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence",
+    "test/test_lies_can_be_learned.py::test_zero_provenance_registers_without_asserting"
+  ],
+  "completed": [
+    "test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence",
+    "test/test_lies_can_be_learned.py::test_zero_provenance_registers_without_asserting"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.001987915951758623,
+      "message": "test/test_lies_can_be_learned.py:11: in test_conflicting_claim_preserves_support_and_counterevidence\n    assert store.row(row)['evidence'] == pytest.approx((.8, .6))\nE   assert (0.0, 0.0) == approx((0.8 \u00b1....6 \u00b1 6.0e-07))\nE     \nE     comparison failed. Mismatched elements: 2 / 2:\nE     Max absolute difference: 0.8\nE     Max relative difference: inf\nE     Index | Obtained | Expected     \nE     0     | 0.0      | 0.8 \u00b1 8.0e-07\nE     1     | 0.0      | 0.6 \u00b1 6.0e-07",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lies_can_be_learned.py::test_zero_provenance_registers_without_asserting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010278749978169799,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

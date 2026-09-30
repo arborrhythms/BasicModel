@@ -1,0 +1,55 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "completed": [
+    "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "slow_selected": [
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.182248541852459,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012762495316565037,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_aligned_fold_binding.py', 191, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.872211707988754,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.412504732608795e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

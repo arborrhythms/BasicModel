@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+    "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-after/group-00/worker-000.recycle.json"
+}

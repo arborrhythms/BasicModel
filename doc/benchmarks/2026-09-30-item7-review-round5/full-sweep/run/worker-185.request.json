@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_corrections.py::test_reset_clears_only_the_selected_fields_time_band"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-185.recycle.json"
+}

@@ -1,0 +1,53 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row",
+    "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy"
+  ],
+  "completed": [
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row",
+    "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.05822387500666082,
+      "message": "test/test_two_codebook_meta_taxonomy.py:83: in test_insert_percept_returns_positive_idx_and_inserts\n    pos = ws.insert_percept(b\"hello\")\n          ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.027296166983433068,
+      "message": "test/test_two_codebook_meta_taxonomy.py:142: in test_insert_whole_default_init_random\n    pos_a = ws.insert_whole()\n            ^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_whole'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02727512503042817,
+      "message": "test/test_two_codebook_meta_taxonomy.py:113: in test_insert_whole_returns_positive_position_and_writes_row\n    pos = ws.insert_whole(init_vec=init_vec)\n          ^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_whole'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011712498962879181,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reverse_left_shift.py::test_left_shift_packs_real_positions_to_front",
+    "test/test_reverse_left_shift.py::test_left_shift_all_real_passthrough",
+    "test/test_reverse_left_shift.py::test_left_shift_all_padding_zeros_out",
+    "test/test_reverse_left_shift.py::test_left_shift_preserves_relative_order"
+  ],
+  "completed": [
+    "test/test_reverse_left_shift.py::test_left_shift_packs_real_positions_to_front",
+    "test/test_reverse_left_shift.py::test_left_shift_all_real_passthrough",
+    "test/test_reverse_left_shift.py::test_left_shift_all_padding_zeros_out",
+    "test/test_reverse_left_shift.py::test_left_shift_preserves_relative_order"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_reverse_left_shift.py::test_left_shift_packs_real_positions_to_front",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0121822499204427,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_left_shift.py::test_left_shift_all_real_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018666707910597324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_left_shift.py::test_left_shift_all_padding_zeros_out",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018104189075529575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_left_shift.py::test_left_shift_preserves_relative_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021074991673231125,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

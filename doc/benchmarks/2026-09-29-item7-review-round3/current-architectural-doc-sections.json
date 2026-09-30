@@ -1,0 +1,17 @@
+{
+  "sections": {
+    "doc/Architecture.md": {
+      "heading": "## Words are a formula for narrowing attention (2026-09-28)",
+      "sha256": "eb815d1b4b4879ed15ef8b0397bfea72251a094392996012268474039819a20d"
+    },
+    "doc/Language.md": {
+      "heading": "## Words narrow the domain of discourse (2026-09-28)",
+      "sha256": "6dc6faec1aa90ddce477b16a43798723d4676c1a5ff02df9b9e8bbaaf2081dfa"
+    }
+  },
+  "earlier_snapshot_matches": {
+    "doc/Architecture.md": true,
+    "doc/Language.md": false
+  },
+  "note": "Current dated architectural sections retained as read. The earlier edit audit is historical; its Language section hash now differs. No change to that section was made during the closing documentation corrections."
+}

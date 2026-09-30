@@ -24,7 +24,7 @@ untyped context vectors.
 > lifted), the routing-parser SS-analysis / CS-execution split, the
 > in-STM `IntraSentenceLayer` AR predictor, masked-word reconstruction
 > via priming, the relative-vs-absolute end-state preservation with its
-> content-aware learn-score gate, and the LTM chain of end-states feeding
+> grammatical clause closing, and the LTM chain of end-states feeding
 > inter-sentence prediction. Where a piece is a deliberate scaffold or a
 > deferred wiring, this chapter says so.
 
@@ -179,21 +179,21 @@ implemented in `ConceptualSpace.forward`
    the newest two occupied slots to the shared `OperationSelectionLayer`.
    Binary candidates and unary candidates at both positions compete in one
    softmax. Three fixed rounds follow each word, with early STOP; the sentence
-   seal runs up to twice capacity. A binary choice removes one slot, while a
+   closing runs up to twice capacity. A binary choice removes one slot, while a
    unary choice changes its selected slot without changing occupancy. STOP is
    forbidden until the complete STM fits the destination row (one absolute
    slot or up to three relative slots) and the phase allowance. Online rounds
-   allow `K - 1` occupied slots; seals allow one absolute or three relative slots.
+   allow `K - 1` occupied slots; endings allow one absolute or three relative slots.
    A fixed binary-logit prior grows with whole-STM occupancy and required
    reductions per remaining round. Its `reducePressure` weight defaults to `1`.
    When remaining rounds equal required reductions, unary and STOP candidates
    are masked. Unary operations remain available while there is slack.
-   Default budgets therefore reserve the next word's slot and finish each seal.
+   Default budgets therefore reserve the next word's slot and finish each closing.
    An initially infeasible budget may still leave an incomplete sentence;
    an attempted push into a full stack is an assertion failure.
    The trace records the actual operator and position in each round. Both
    derivations use hard execution with a probability-weighted straight-through
-   gradient from the untempered model softmax. At every sentence seal, each row
+   gradient from the untempered model softmax. At every sentence closing, each row
    trains both derivations from cached word vectors, retains the strictly
    lower sentence loss (ties retain exploit), and commits before the next
    sentence starts. Batch-end answer loss is outside this comparison.
@@ -583,190 +583,152 @@ exercises this path.
 
 ## 9. Relative vs absolute end-states
 
-At the sentence boundary, item 7.5 runs a fixed operation budget. The
-row capacity controls when STOP becomes eligible:
+The [two-truths contract](specs/2026-09-16-two-truths-ideas-and-relations.md)
+assigns a row to each grammatical S. Its selected derivation decides the
+one-slot or three-slot allowance. An absolute S fuses NP and VP into one
+idea point. A generic subject or an operand that references a relation makes
+the clause relative: its three roles are `[left, predicate, right]`, with
+native row references and no fused point. The committed physical STM stores
+those roles newest-first as `[right, left, predicate]`.
 
-- An absolute sentence must fit one idea slot.
-- A relative sentence may fit up to three slots. A three-slot end state
-  retains `[predicate, idea1, idea2]`, stored newest-first: the predicate
-  occupies the oldest slot (`depth - 1`), idea1 the middle slot and idea2
-  slot zero. Existing relation readers use that order.
+`NP → S` keeps an embedded absolute point; `NP → REF(S)` carries a relative
+clause reference. The tensor clause journal records these endings during each
+hard path. References remain trial-local until the per-sentence winner is
+known. Its durable transaction registers children before the enclosing row;
+embedded content receives no assertion authority merely from registration.
+An absolute enclosing clause can fuse only when all operands have points.
 
-`_stm_reduce_to_single_S` ([Models.py](../bin/Models.py)) runs at most `2K`
-rounds for STM capacity K, capped by a positive `syntacticOrder`. Each round
-uses the same joint selector as online composition, with the row's one-slot or
-three-slot allowance. Reduction pressure grows with occupancy and urgency;
-once remaining rounds equal required reductions, only binary choices are legal.
-STOP competes with binary and unary operations once the row fits; binary operations remain
-eligible below three slots. The older depth-three campaign therefore remains
-an empirical gate rather than a guaranteed reduction floor. An initially
-infeasible budget may leave an incomplete forest, which trains without
-publishing a program or memory row.
+Item 7.5 still supplies the fixed operation budget and early stop. Every
+round chooses one binary or unary operation, with STOP eligible only when
+the current sequence fits its allowance. Reduction pressure grows with
+occupancy and urgency; at the deadline only the required binary reductions
+remain eligible. `_stm_reduce_to_single_S` runs at most `2K` rounds for STM
+capacity K, capped by a positive `syntacticOrder`. The default feasible
+budget completes the reduction. A manually undersized cap can still leave
+an incomplete forest, which is tagged incomplete and cannot publish a
+program or memory row. The unchanged trained depth-three campaign remains
+an empirical test of the selected grammar, not a guaranteed learned result.
 
-**Conservative detection.** `_sentence_relative_mask` reads the actual selected
-operation trace and the grammar's relative-rule classification, with the
-existing closed-class anchor requirement. Packed choices are scoped to their
-own sentence. Tensor word-loop choices update this evidence without a second
-parse or a host-side choice inside the loop. The final sentence's same trace
-feeds `Language.sentence_relative_mask`, used by the existing relation-learning
-hook at reset. Explicit grammar plans remain readable when no operation trace
-has been staged. Missing relative evidence leaves the one-slot capacity.
-
-**Ineffable-relation routing.** Not every accepted relation becomes a
-WS-META row. `_route_learned_relation` ([Spaces.py](../bin/Spaces.py))
-splits by reducibility: a **REDUCIBLE** relation (both entity operands
-snap to existing codebook rows) resolves to WS positions and calls
-`WholeSpace.insert_relation` carrying the full tetralemma trust — the
-"intuitive knowing" path described below. An **INEFFABLE** relation (a
-composed idea that does not snap to an existing row) is instead stored
-UNCOLLAPSED as an `(idea1, predicate, idea2)` triple in the sibling
-`RelativeTruthStore` (or, on an `<ltmConsolidation>` config, is already
-present in the unified `ltm_store` from the observe site — see
-[Section 10](#10-ltm-as-the-chain-of-stm-end-states) — so no separate
-write happens) with a scalar trust collapsed from the tetralemma. This
-"explicit knowing" branch returns an `('idea', row)` tuple (`row == -1`
-when the store is full or, under consolidation, as the "lives in the
-unified store" marker) so a caller can tell the two homes apart; when no
-relative store is reachable it degrades to the reducible path rather than
-dropping the relation.
-
-**Learn-score acceptance gate.** Concept-codebook insertion of a learned
-relation is gated by a content-aware **learn-score**
-(`_compute_learn_score`, [Spaces.py](../bin/Spaces.py)):
-
-> **Terminology (2026-06-21 convention).** The CS part$\leftrightarrow$whole relation
-> table is the **Concept codebook** — each entry is a *concept* tying one
-> part-percept to one whole-percept by reference. Earlier text called this
-> the "symbol table"; the de-overloaded name is *concept* (a *symbol* is
-> the 0-D SymbolSpace reference *to* a concept, not the relation itself).
-> The taxonymic / perceptual codebooks consulted for lift/lower operands
-> (Sections 4, 8) are distinct and keep their names.
-
-$$
-\text{learn\_score} = \text{children\_in\_codebook} \times
-\text{is\_truth\_obvious} \times \text{resolves\_contradiction},
-$$
-
-each factor in $[0, 1]$. A relation is accepted **iff**
-$\text{learn\_score} \ge$ `<truthCriterion>` **and** $\text{truthCriterion} < 1$.
-The **default is `1.0`** — truth-learning is OFF by default (nothing
-learned or recorded); opt in by lowering `truthCriterion` toward $0$.
-Because the factors multiply, a **low `is_truth_obvious` does not on its
-own block**: lies and uncertain relations can still be learned if the
-other two factors are high. At `truthCriterion = 1` nothing is learned;
-at `0` everything is.
-
-Accepted insertions carry a **tetralemma trust 4-tuple** $(t, f, b, n)$
-(TRUE / FALSE / BOTH / NEITHER, summing to $1$) computed by
-`_tetralemma_trust` ([Spaces.py](../bin/Spaces.py)) from the
-TruthSet posture via `assess()`. On the REDUCIBLE branch (see
-"Ineffable-relation routing" above) this 4-tuple is bound onto the
-relation's WS-META node by `WholeSpace.insert_relation`
-([Spaces.py](../bin/Spaces.py)) with the predicate as the parent and the
-two ideas as its taxonomy children; on the INEFFABLE branch it is instead
-collapsed to a single scalar trust before it is stored (the
-`RelativeTruthStore` / `TernaryTruthStore` row format has one trust
-column, not four — see [Section 10](#10-ltm-as-the-chain-of-stm-end-states)).
-
-> **Honesty — the learn-score factors read the GLOBAL truth layer.**
-> The `is_truth_obvious` and `resolves_contradiction` factors currently
-> read the **global** `truth_layer.assess()` — `support` and `conflict`
-> respectively (`_learn_score_is_truth_obvious` /
-> `_learn_score_resolves_contradiction`,
-> [Spaces.py](../bin/Spaces.py)) — behind a swappable seam (each
-> factor is an independently overridable method, the plan's required test
-> seam). A **per-relation projection** is the documented refinement; the
-> global read is a first cut, not the final formula.
-
-Truth **recording** into the TruthLayer is governed by the *same*
-continuous `<truthCriterion>` bar (a per-cell activation is recorded when
-its clamped magnitude clears `truthCriterion`), so a single knob governs
-both recording and learned-relation acceptance — there is no separate gold
-path and no binary switch. The user-provided `<truth>` gold set is ingested
-by `store_truths`, which drops `truthCriterion` to `0` for the ingestion
-epoch (capturing every provided gold truth), then restores it; the same
-recording block fires during normal training per the configured
-`truthCriterion`. The binary `accumulateTruth` / `truthMinMagnitude`
-switches are **retired**. See [Params.md](Params.md) and
-[Logic.md](Logic.md).
-
-> **Behavioural note.** Unlike the retired binary gate (which kept
-> recording off during training), truths are now accumulated continuously
-> during training per `truthCriterion`; raise it toward `1` to suppress
-> recording.
+The clause closing is the sole production relation writer. It admits `part`,
+`implies` and `operator` rows into the shared store; there is no catch-all
+relation kind, WholeSpace META insertion, reducible/ineffable routing or
+multiplicative learn-score gate. Independent `(c_plus, c_minus)` poles retain
+both and neither distinctly. They record identification evidence. Source
+provenance supplies a separate scalar `trust` for the event as a whole;
+neither changing that scalar nor withdrawing its authority changes the pair.
+The row also keeps the ended field's `order`, so an abstract field can descend
+through the sigma inverses. Sentence content never selects its own trust.
+Luminosity reads idea rows only. See [Reasoning](Reasoning.md) for row-indexed
+relation readers and the declared `true` thought operator.
 
 ---
 
 ## 10. LTM as the chain of STM end-states
 
-LTM retains external sentence observations. `<ltmConsolidation>` selects the
-legacy per-row deque or the consolidated ternary store; storage alone does
-not certify that a described referent exists.
-[Observation path](../bin/Layers.py),
-[consolidated observation writer](../bin/Models.py).
+`symbolSpace.ltm_store` is the shared `TernaryTruthStore` for all completed
+clauses. `<ltmConsolidation>` is an ignored compatibility input and selects
+no alternative backing store. Storage alone does not certify that a
+described referent exists. Production observations must provide their owned
+end state. Occupancy determines idea or relation; the REL identity determines
+part, implies or operator. The writer neither needs nor stores a program.
+[Clause admission](../bin/ClauseRow.py),
+[observation writer](../bin/Models.py).
 
-**Legacy backing mode.** `InterSentenceLayer._stm_end_states` is a bounded
-per-row deque of `(depth, payload, trust)` values. The root-only compatibility
-path retains physical newest-first STM payloads. The structured production
-path instead stores canonical `[3, D]` payloads here and retains explicit
-occupancy in its separate bounded prediction view. This deque is transient
-host state; its legacy tuple API does not preserve all grammatical metadata.
-An explicit adapter converts physical STM to NP1/VP/NP2: three slots use
-`[1, 2, 0]`, two use `[1, 0]`. Occupancy is metadata; a zero-valued occupied
-role is not padding.
-[Observation storage](../bin/Layers.py),
-[canonical adapter](../bin/Meaning.py).
+Each row retains its native `row_ids` address, three `refs`, relation kind,
+independent positive and negative evidence poles, scalar source trust, order
+stamp, role presence, grammatical
+mode, polarity, evidence kind, writer origin and stable occurrence identity.
+An idea uses one point slot; its cached NP and VP references are taken just
+before fusion. Its numerical NP, V and modifier target exists only during
+reading, for prediction training. A relation uses three infix roles and
+references. Reading a row into words generates from its stored field and the
+grammar; no derivation is retained or replayed. An operand that is itself a relation has no point,
+so its vector slot is null and readers follow the row address.
 
-**Consolidated mode.** `symbolSpace.ltm_store` is the existing
-`TernaryTruthStore`, with `[capacity, 3, D]` infix NP1/VP/NP2 values. Its
-tensor columns retain role presence, relation tag, grammatical mode,
-polarity, signed trust, timestamp, evidence kind, writer origin and stable
-occurrence identity. A two-role observation retains NP1 and VP. Forward
-writers record `observation` with unspecified grammatical mode; explicit
-TruthSet admission may accept the observation as a fact. An origin tag alone
-does not do so, and questions/estimates cannot certify their own referents.
-[Store schema](../bin/Layers.py),
-[observation write](../bin/Models.py),
-[fact admission](../bin/Layers.py).
+The September 29 amendment adds `REL_DEF`, a fourth relation kind written
+only by `interpret`: `word DEF object`. The two operands name conceptual
+identities in `refs`, with null operand vectors and a fixed DEF atom in the
+middle slot. A new word costs one inventory row, which becomes the object's,
+and one row of this store. The definition has its own fixed `.when` and a
+refreshable recency timestamp, and it is eligible for forgetting. Its
+provenance and scalar trust do not come from the sentence containing the word.
+One derived index supplies form/unit → word, word → objects and object → words;
+load and compaction rebuild it. See
+[the definition contract](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
 
-The consolidated legacy `get_stm_chain` view returns infix payloads up to the
-highest occupied role, including depth two. It reads global timestamp order
-and ignores `b`; it is not the production expectation view. Sentence
-expectation uses its own bounded row/document-scoped observation view, so a
-different stream, an internal thought or a provisioned fact cannot become
-an external predecessor merely through this legacy recency reader.
-[Legacy read](../bin/Layers.py),
-[structured observation](../bin/Layers.py).
+The ended field's encoded `.where` and `.when` are stored separately from
+its opaque concept point. They come from the clause's owned leaf field,
+not coordinatewise averaging. `.when` retains the input field timestamp
+under item 9b; the chronological store timestamp is separate. Embedded clauses
+register without assertion. External TruthSet admission can assert the outer
+row through provenance, while a conversation observation, question or estimate
+cannot certify its own referents. Reasserting a relation joins its two evidence
+poles independently rather than appending a duplicate claim.
 
-Role tensors and scalar columns ride `state_dict`; bindings, semantic scope,
-constituent references and source text ride the versioned `truth_semantics`
-entry in the existing structural sidecar. Restore checks occurrence identity
-and its content fingerprint. Required metadata missing from a tensor-only
-restore makes that evidence unavailable until restored. Missing or swapped
-scope cannot silently become a different fact. Stable occurrence IDs survive
-row compaction and are not reused after reset.
-[Sidecar](../bin/Models.py),
-[validated restore](../bin/Layers.py),
-[guarded read](../bin/Layers.py).
+Sentence expectation consumes its bounded row/document observation view,
+including owned references. A different stream, internal thought or provisioned
+fact cannot become an external predecessor through global recency alone.
+The legacy `get_stm_chain` adapter is a read view of the shared store, not a
+separate writer or configurable persistence path.
+[Prediction context](../bin/Layers.py), [meaning roles](../bin/Meaning.py).
 
-External observation is independent of `truthCriterion`. The legacy deque
-evicts its oldest entry at capacity; the consolidated append returns `-1`
-when full. Observation/evidence storage and ordinary levelled thought-history
-retention have separate capacity contracts.
-[Capacity and evidence writes](../bin/Layers.py),
-[observation storage](../bin/Layers.py).
+Tensor columns ride `state_dict`; bindings, semantic scope, constituent
+references and source text ride the versioned `truth_semantics` sidecar.
+Version 4 contains no clause or derivation field. Older derivations are checked
+against their old fingerprint, then dropped with a warning. Restore validates occurrence identities and fingerprints. Missing
+required metadata makes evidence unavailable rather than silently rebinding it.
+Old catch-all conversation rows and their unavailable dependents are dropped
+with a warning; old provisioned rows are re-provisioned from XML. WholeSpace
+META state is retired and the native concept index is rebuilt from its rows
+and bindings. Native word/object META bindings migrate to DEF rows in every
+reading, including the serial aligned path; their META identities and fold
+are retired. [Checkpoint migration](../bin/Layers.py).
+
+Admission preflights clause dependencies and native concept capacity. A full
+store returns `-1` for a new clause without publishing a child prefix; it may
+still join evidence into an existing relation. Optional estimates yield to
+observations when capacity is tight. Stable addresses survive row compaction,
+and referenced prior states participate in the existing retention rules.
 
 `Exist` compares the full occupied description, bindings, scope and references
 against assertive fact records, retaining positive/negative degrees and
 provenance separately. Conversation observations, questions, estimates and
 unverified legacy rows are ineligible. The degree belongs to evidence about
 the referent; model activation alone cannot establish it.
-See [Existence evidence](ExistenceEvidence.md) for legacy migration, fact admission,
-matching and gradient boundaries, and
+See [Existence evidence](ExistenceEvidence.md) and
 [the implemented lookup](../bin/reasoning.py).
 
 ---
 ## 11. Inter-sentence prediction
+
+### Clause endings and shared LTM
+
+The [two-truths contract](specs/2026-09-16-two-truths-ideas-and-relations.md)
+ends every grammatical S. `NP → S` retains the absolute clause's fused
+point; `NP → REF(S)` carries a relative clause by reference. The allowed
+row width is one or three, selected by the derivation. Relativity propagates
+through a compound VP and enclosing S. The 7.5 reduction deadline still
+requires completion within the fixed round budget.
+
+Each derivation owns its clause references until the per-sentence choice.
+Both hard paths train; only the lower-loss path is committed, with exact
+ties going to exploit. Its nested rows register before the enclosing row,
+without granting the embedded content assertion authority. The clause closing
+is the writer of asserted relations; `interpret` owns the separate DEF
+transaction above. The closing retains independent evidence poles, field
+coordinates and the one-slot or three-slot end state. The temporary operation
+record is discarded; generation reads the row without replay. WholeSpace
+taxonomy insertion and the reducible/ineffable routing are retired.
+
+The expectation target reads the NP, V and modifier roles before fusion,
+while the sentence is open. These roles are not a stored derivation. A separate
+kind logit predicts idea versus relation. Its identity candidates are held
+in the bounded situation: live constituents, recent clause frames and frames
+brought into STM by `what`. The predictor carries an imputed identity;
+composition does not search LTM for one. Clearing the situation removes that
+cross-sentence carrier. Word provenance remains the current sentence's own
+reconstruction record when its subject refers to an earlier occurrence.
+
 
 ### Structured production path
 
@@ -775,12 +737,12 @@ prediction is enabled. `SentenceExpectation` reads the bounded
 chronological observation view as `[K, 3, D]` values plus `[K, 3]` occupancy.
 The three positions are NP1, VP and NP2. Padding is masked before the network;
 role and chronological positions remain distinct. It predicts three separate
-vectors and three presence logits. The loss is MSE over actual occupied
-roles plus mean binary cross entropy for presence. Targets are detached;
+vectors, three presence logits and one clause-kind logit. The loss combines
+role MSE with binary cross entropy for presence and clause kind. Targets are detached;
 current-step source representations remain live under the objective-local
 boundaries in [GradientFlow](GradientFlow.md). See [Layers.py](../bin/Layers.py).
 
-The packed observer uses the existing sealed end-slot/depth outputs for each
+The packed observer uses the existing ended end-slot/depth outputs for each
 sentence, with an explicit STM-to-infix permutation. Corpus source addresses
 identify each sentence's document, including changes within a packed row.
 `begin_document` clears only the selected prediction stream; already-scored
@@ -855,7 +817,7 @@ produces the next end-state **shape** $(\hat{d}, \hat{p}[\hat{d}, D])$:
   with none; the MSE term above still runs regardless). Fail-loud on a
   non-finite step.
 
-The prediction is subtracted only at the seal, as described in
+The prediction is subtracted only at the closing, as described in
 [ExpectationRetention](ExpectationRetention.md). The observation remains in STM
 and LTM unchanged; the conceived roles are derived evidence for the chooser.
 `generate_sentence` sends a positive predicted idea directly to `<generate>`.
@@ -999,8 +961,7 @@ newest unanswered input) and `latest_output` for the resolve step.
 - [Reasoning.md](Reasoning.md), [Logic.md](Logic.md) — the truth surfaces
   and tetralemma trust.
 - [Params.md](Params.md) — `<stmCapacity>`, `<intraLossWeight>`,
-  `<interLossWeight>`, `<routerWireSerial>`, `<ltmCapacity>`,
-  `<truthCriterion>` (the single continuous truth bar).
+  `<interLossWeight>`, `<routerWireSerial>` and `<ltmCapacity>`.
 - [What spec](specs/2026-07-27-teaching-modes-and-next-iteration.md) and
   the [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md)
   — the interaction slots' role in thinking (Section 13).
@@ -1057,7 +1018,7 @@ lemmas. The single normal controller records nested questions and typed returns
 on `WhatInteractionMemory`. Its attended context uses row-owned STM/history,
 the recent discourse chain and frames brought into STM by cued `what`, under
 the same work allowance. It never reads a recent slice of the LTM store.
-The seal writer owns the per-role leaf-code index ([AccessibleMind](AccessibleMind.md)).
+The closing writer owns the per-role leaf-code index ([AccessibleMind](AccessibleMind.md)).
 See [Taxonomy](../bin/Taxonomy.py), [Thoughts](../bin/Thoughts.py),
 [SelectedMeaning](SelectedMeaning.md) and [TaxonomyQueries](TaxonomyQueries.md).
 

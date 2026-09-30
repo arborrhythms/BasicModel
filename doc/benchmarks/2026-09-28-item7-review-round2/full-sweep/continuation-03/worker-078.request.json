@@ -1,0 +1,18 @@
+{
+  "selectors": [
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_forward_bpe_emits_word_level_vectors",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_accepts_bpe_with_nVectors_256",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_reads_new_config_fields",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_rejects_bpe_with_nVectors_below_256",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_max_fusion_elementwise_max",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_train_step_respects_nVectors_cap",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bpe_constructs_shared_store_with_aligned_ids",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_round_trips_smoke_prompt_through_store",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_mphf_constructs_shared_store_with_aligned_ids",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_promotion_mirrors_into_store",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-078.recycle.json"
+}

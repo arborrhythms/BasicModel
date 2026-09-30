@@ -1,0 +1,706 @@
+{
+  "reason": "resource_failure",
+  "exit_code": 137,
+  "selected": 5026,
+  "completed": 5023,
+  "pytest_outcomes": {
+    "passed": 4678,
+    "skipped": 322,
+    "failed": 22,
+    "xfailed": 1
+  },
+  "resource_outcomes": {
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model": {
+      "reason": "memory",
+      "peak_memory_bytes": 8886639768,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-135.log"
+    },
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built": {
+      "reason": "memory",
+      "peak_memory_bytes": 8867912808,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-01/worker-001.log"
+    },
+    "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation": {
+      "reason": "memory",
+      "peak_memory_bytes": 8950848760,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-02/worker-021.log"
+    }
+  },
+  "complete_unique_coverage": true,
+  "complete_pytest_coverage": false,
+  "accounted": 5026,
+  "missing": [],
+  "duplicate_completed": {},
+  "elapsed_seconds": 9287.391546333907,
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "peak_worker_memory_bytes": 8950848760,
+  "peak_aggregate_memory_bytes": 16659694488,
+  "compile_cache_retries": [],
+  "parts": [
+    "run/result.json",
+    "continuation-01/result.json",
+    "continuation-02/result.json",
+    "continuation-03/result.json"
+  ],
+  "interrupted_peers": [
+    {
+      "response": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-133.json",
+      "active": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+      "completed": [
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]"
+      ]
+    },
+    {
+      "response": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-134.json",
+      "active": null,
+      "completed": [
+        "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+        "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+        "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+        "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+        "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+        "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+        "test/test_concept_output.py::test_property_reverse_attributes_only_written_members"
+      ]
+    },
+    {
+      "response": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-01/worker-000.json",
+      "active": null,
+      "completed": [
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+        "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+      ]
+    },
+    {
+      "response": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-01/worker-002.json",
+      "active": "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+      "completed": [
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+        "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+        "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+        "test/test_training_device.py::test_quick_suite_retains_its_cpu_default"
+      ]
+    },
+    {
+      "response": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-02/worker-022.json",
+      "active": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "completed": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture"
+      ]
+    },
+    {
+      "response": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-02/worker-023.json",
+      "active": "test/test_reduction_pressure.py::test_pressure_and_deadlines_keep_fullgraph_forward_and_backward",
+      "completed": [
+        "test/test_reduction_pressure.py::test_online_deadline_uses_full_depth_behind_the_two_slot_window",
+        "test/test_reduction_pressure.py::test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word",
+        "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[0.0]",
+        "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[1.0]",
+        "test/test_reduction_pressure.py::test_row_allowance_is_one_or_three_never_two",
+        "test/test_reduction_pressure.py::test_pressure_is_zero_when_empty_and_increases_with_load_and_urgency",
+        "test/test_reduction_pressure.py::test_pressure_enters_credit_but_temperature_does_not",
+        "test/test_reduction_pressure.py::test_deadline_masks_unary_and_stop_in_the_credit_distribution",
+        "test/test_reduction_pressure.py::test_early_stop_cannot_leave_a_small_relative_stack_full"
+      ]
+    }
+  ],
+  "continuation_protocol": "continue_sweep.py: retain every completed outcome and resource failure; resume only unfinished coverage under the original cumulative 10800-second allowance",
+  "source_files": 699,
+  "source_matches_current_and_final_gates": true,
+  "measurement_equivalence": "measurement-source-bridge.json",
+  "source_digest": "0d42ea689e6f5021024e84c69be1e5b5dbb78515870665146413041147d15e46",
+  "resource_failures": [
+    {
+      "reason": "memory",
+      "selected": [
+        "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+      ],
+      "elapsed_seconds": 4.831359082949348,
+      "peak_memory_bytes": 8886639768,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-135.log"
+    },
+    {
+      "reason": "memory",
+      "selected": [
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+      ],
+      "elapsed_seconds": 4.8829185829963535,
+      "peak_memory_bytes": 8867912808,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-01/worker-001.log"
+    },
+    {
+      "reason": "memory",
+      "selected": [
+        "test/test_nanochat_grammar_eval.py::test_manifest_is_deterministic_document_heldout_and_frozen",
+        "test/test_nanochat_grammar_eval.py::test_manifest_round_trip_and_digest_guard",
+        "test/test_nanochat_grammar_eval.py::test_last_gated_intra_score_uses_final_active_word_per_row",
+        "test/test_nanochat_grammar_eval.py::test_capture_hook_runs_under_no_grad_without_loss_accumulation",
+        "test/test_nanochat_grammar_eval.py::test_new_model_configs_enable_word_grain_boundary",
+        "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+        "test/test_nanochat_grammar_eval.py::test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory"
+      ],
+      "elapsed_seconds": 6.422718874993734,
+      "peak_memory_bytes": 8950848760,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-02/worker-021.log"
+    }
+  ],
+  "comparison": "Exact selector names against review round 2 incoming receipt; no name normalization.",
+  "changed_outcome_counts": {
+    "passed -> resource_memory": 3,
+    "passed -> failed": 16,
+    "failed -> passed": 13
+  },
+  "changed_outcomes": [
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+      "before": "passed",
+      "after": "resource_memory"
+    },
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+      "before": "passed",
+      "after": "resource_memory"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "before": "passed",
+      "after": "resource_memory"
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+      "before": "failed",
+      "after": "passed"
+    }
+  ],
+  "prior_outcomes_of_current_failures": {
+    "failed": 6,
+    "passed": 16
+  },
+  "prior_outcomes_of_resource_cases": {
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model": "passed",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built": "passed",
+    "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation": "passed"
+  },
+  "item7_outcomes": {
+    "passed": 134
+  },
+  "item7_cases": {
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]": "passed",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]": "passed",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]": "passed",
+    "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract": "passed",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot": "passed",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references": "passed",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed": "passed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator": "passed",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path": "passed",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs": "passed",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows": "passed",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity": "passed",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion": "passed",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding": "passed",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary": "passed",
+    "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence": "passed",
+    "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither": "passed",
+    "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program": "passed",
+    "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole": "passed",
+    "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority": "passed",
+    "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order": "passed",
+    "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order": "passed",
+    "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung": "passed",
+    "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order": "passed",
+    "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value": "passed",
+    "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification": "passed",
+    "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust": "passed",
+    "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row": "passed",
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids": "passed",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots": "passed",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind": "passed",
+    "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence": "passed",
+    "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision": "passed",
+    "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties": "passed",
+    "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s": "passed",
+    "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference": "passed",
+    "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows": "passed",
+    "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots": "passed",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]": "passed",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]": "passed",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]": "passed",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]": "passed",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands": "passed",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows": "passed",
+    "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse": "passed",
+    "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows": "passed",
+    "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind": "passed",
+    "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate": "passed",
+    "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence": "passed",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]": "passed",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]": "passed",
+    "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands": "passed",
+    "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses": "passed",
+    "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows": "passed",
+    "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row": "passed",
+    "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content": "passed",
+    "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection": "passed",
+    "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates": "passed",
+    "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither": "passed",
+    "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all": "passed",
+    "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity": "passed",
+    "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust": "passed",
+    "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target": "passed",
+    "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea": "passed",
+    "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it": "passed",
+    "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands": "passed",
+    "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands": "passed",
+    "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution": "passed",
+    "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown": "passed",
+    "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references": "passed",
+    "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive": "passed",
+    "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip": "passed",
+    "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs": "passed",
+    "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning": "passed",
+    "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles": "passed",
+    "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child": "passed",
+    "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows": "passed",
+    "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program": "passed",
+    "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation": "passed",
+    "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles": "passed",
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object": "passed",
+    "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects": "passed",
+    "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time": "passed",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined": "passed",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer": "passed",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it": "passed",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix": "passed",
+    "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta": "passed",
+    "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index": "passed",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access": "passed",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]": "passed",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]": "passed",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular": "passed",
+    "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words": "passed",
+    "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type": "passed",
+    "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator": "passed",
+    "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices": "passed",
+    "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read": "passed",
+    "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate": "passed",
+    "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope": "passed",
+    "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score": "passed",
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns": "passed",
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets": "passed",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling": "passed",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references": "passed",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity": "passed",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand": "passed",
+    "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient": "passed",
+    "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors": "passed",
+    "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree": "passed",
+    "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind": "passed",
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema": "passed",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english": "passed",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields": "passed",
+    "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner": "passed",
+    "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims": "passed",
+    "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate": "passed",
+    "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state": "passed",
+    "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses": "passed",
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value": "passed",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed": "passed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface": "passed",
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline": "passed",
+    "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors": "passed",
+    "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation": "passed",
+    "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words": "passed",
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication": "passed",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles": "passed"
+  },
+  "new_selectors": {
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review-round2/README.md]": "passed",
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns": "passed",
+    "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient": "passed",
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline": "passed",
+    "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract": "passed",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]": "passed",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]": "passed",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]": "passed",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field": "passed"
+  },
+  "removed_selectors": {
+    "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge": "failed",
+    "test/test_init_scale.py::test_whole_space_init_scale_wiring": "failed",
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist": "failed",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend": "failed",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip": "failed",
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer": "failed",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer": "failed",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter": "failed",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers": "failed",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place": "failed",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters": "failed"
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.070530958008021,
+      "message": "test/test_compiled_word_chunk.py:308: in test_chunk_views_keep_one_graph_across_part_and_bucket_widths\n    assert len(graphs) == 1\nE   assert 2 == 1\nE    +  where 2 = len([GraphModule(), GraphModule()])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-065.log"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.13510412501636893,
+      "message": "test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root\n    assert root is not None and root.grad_fn is not None\nE   assert (tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]) is not None and None is not None)\nE    +  where None = tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]).grad_fn",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-067.log"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7639040000503883,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-132.log"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1618506669765338,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-132.log"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7543456249404699,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-132.log"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.2924482090165839,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-132.log"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7652655829442665,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-132.log"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1645279160002246,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-132.log"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 3.599140999955125,
+      "message": "test/test_compile_cache_recovery.py:46: in test_stale_header_retry_is_once_and_preserves_real_failures\n    assert sorted(result[\"completed\"]) == sorted(result[\"selected\"])\nE   AssertionError: assert ['test_cache.py::test_other'] == ['test_cache....::test_other']\nE     \nE     At index 0 diff: 'test_cache.py::test_other' != 'test_cache.py::test_compile'\nE     Right contains one more item: 'test_cache.py::test_other'\nE     Use -v to get more diff",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.4s; peak 0.04 GiB\n[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 1; 0.0s; peak 0.04 GiB\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-133.log"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.5912164170295,
+      "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-134.log"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.6361367080826312,
+      "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-134.log"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.7156570830848068,
+      "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-134.log"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.5112450000597164,
+      "message": "test/test_compile_cache_recovery.py:46: in test_stale_header_retry_is_once_and_preserves_real_failures\n    assert sorted(result[\"completed\"]) == sorted(result[\"selected\"])\nE   AssertionError: assert [] == ['test_cache....::test_other']\nE     \nE     Right contains 2 more items, first extra item: 'test_cache.py::test_compile'\nE     Use -v to get more diff",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 0.0s; peak 0.04 GiB\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-01/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.499818000011146,
+      "message": "test/test_reasoning_cde_model.py:60: in test_training_step_uses_the_normal_policy_configuration\n    self.m.runEpoch(optimizer=opt, batchSize=6, split='train',\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16242: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14020: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14192: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14559: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9257: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10735: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8956: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23831: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17752: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22007: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21549: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20792: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20776: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20432: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20399: in _sentence_observation\n    _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13170: in _capture_reading_programs\n    self._program_entries(program, leaves, rows, word_rows, activations, end,\nbin/Models.py:13227: in _program_entries\n    **{name: value[b].index_select(0, pos.to(value.device))\n             ^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   IndexError: index 1 is out of bounds for dimension 0 with size 1",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-001.log"
+    },
+    {
+      "nodeid": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.054458083002828,
+      "message": "test/test_space_equiv_selfcheck.py:25: in test_identity_candidate_passes\n    n = run_space_gate(Spaces.PartSpace, \"_embed_bpe\",\ntest/space_equiv.py:104: in run_space_gate\n    m.runEpoch(optimizer=opt, batchSize=batch_size, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16242: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14020: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14192: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14559: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9257: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10735: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8956: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23831: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17752: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22007: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21549: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20792: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20776: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20432: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20403: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:208: in _boundary_observation_view\n    clause = finish_clause(language, entry, meaning=meaning,\nbin/ClauseJournal.py:100: in finish_clause\n    raise ValueError('a completed field must have one or three slots')\nE   ValueError: a completed field must have one or three slots",
+      "stdout": "Loading text: 1 shard(s), max 64 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 64 docs -> 2558 sentences (1927 train, 317 val, 314 test)\nStarting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-023.log"
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8534762499621138,
+      "message": "test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode\n    assert memory.get_what_slots(b=0) == []\nE   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []\nE     \nE     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0917, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2129, 1.9925,\\n          0.4234, 1.9584, 0.04... 'iteration': 0, 'closure_pressure': 0.0, 'forced': False, 'temporal': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))\nE     Use -v to get more diff",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/256 docs\n[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-031.log"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0323294170666486,
+      "message": "test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:174: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23814: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13583: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:55: in lookup_word\n    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=word_reading)\nbin/Spaces.py:18228: in _populate_concept_weights\n    self.add_concept_edge(c_row, target, 1.)\nbin/Spaces.py:17304: in add_concept_edge\n    source0 = self._order0_inventory_row(int(col))\n                                         ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-032.log"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.03463845793157816,
+      "message": "test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:174: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23814: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13583: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:55: in lookup_word\n    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=word_reading)\nbin/Spaces.py:18228: in _populate_concept_weights\n    self.add_concept_edge(c_row, target, 1.)\nbin/Spaces.py:17304: in add_concept_edge\n    source0 = self._order0_inventory_row(int(col))\n                                         ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-032.log"
+    },
+    {
+      "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.48604224994778633,
+      "message": "bin/Models.py:3113: in getOptimizer\n    remapped = remap_optimizer_state_by_name(\nbin/checkpoint_migrations.py:739: in remap_optimizer_state_by_name\n    raise ValueError(\"optimizer parameter-group layout differs\")\nE   ValueError: optimizer parameter-group layout differs\n\nThe above exception was the direct cause of the following exception:\ntest/test_fineweb_preflight.py:146: in test_checkpoint_restores_optimizer_counters_and_rng\n    opt = restored.getOptimizer(lr=1e-4)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:3129: in getOptimizer\n    raise ValueError(message) from exc\nE   ValueError: [BasicModel] Optimizer checkpoint was not restored: optimizer parameter-group layout differs",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8330/test_checkpoint_restores_optim0/resume.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8330/test_checkpoint_restores_optim0/resume.ckpt\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-051.log"
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.20247558294795454,
+      "message": "test/test_order0_attended_field.py:136: in test_more_than_eight_words_reuse_the_attended_field\n    cid, = cs.word_concepts(word)\n    ^^^^\nE   ValueError: too many values to unpack (expected 1)",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-054.log"
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.09358391689602286,
+      "message": "test/test_concept_memberships.py:224: in test_distributed_codes_follow_features_at_the_boundary_only\n    torch.testing.assert_close(cs._cs_last_a0, before, atol=0, rtol=0)\nE   AssertionError: The values for attribute 'shape' do not match: torch.Size([9, 4, 1, 2]) != torch.Size([8, 4, 1, 2]).",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-095.log"
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_symbol_history_projection",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0036712089786306024,
+      "message": "test/test_relevance_bases.py:215: in test_symbol_history_projection\n    assert cs._csw_row_of(C1) is None\nE   assert 32 is None\nE    +  where 32 = _csw_row_of(3)\nE    +    where _csw_row_of = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n)._csw_row_of",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-258.log"
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_arity_is_two",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_is_grammarlayer_subclass",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_rule_name",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_space_role_is_CS",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_arity_is_two",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_is_grammarlayer_subclass",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_rule_name",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_space_role_is_CS",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_forward_two_operands_one_result",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_reverse_returns_pair",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_forward_two_operands_one_result",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_reverse_returns_pair",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lift_round_trip_consistent",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lower_round_trip_consistent",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_compose_dispatches_to_forward",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_generate_dispatches_to_reverse",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_lower_classes_no_substrate_borrow_in_source",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lift_has_internal_sigma",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority"
+  ],
+  "completed": [
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_arity_is_two",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_is_grammarlayer_subclass",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_rule_name",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_space_role_is_CS",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_arity_is_two",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_is_grammarlayer_subclass",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_rule_name",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_space_role_is_CS",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_forward_two_operands_one_result",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_reverse_returns_pair",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_forward_two_operands_one_result",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_reverse_returns_pair",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lift_round_trip_consistent",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lower_round_trip_consistent",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_compose_dispatches_to_forward",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_generate_dispatches_to_reverse",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_lower_classes_no_substrate_borrow_in_source",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lift_has_internal_sigma",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_arity_is_two",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012012501247227192,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_is_grammarlayer_subclass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.933300316333771e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_rule_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.341596160084009e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lift_space_role_is_CS",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.50830290094018e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_arity_is_two",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.245797991752625e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_is_grammarlayer_subclass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.112502448260784e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_rule_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.93749126791954e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_space_role_is_CS",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.545800276100636e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_forward_two_operands_one_result",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021524159237742424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_reverse_returns_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008595840772613883,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_forward_two_operands_one_result",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008314999286085367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_reverse_returns_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008818330243229866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lift_round_trip_consistent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001047833007760346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lower_round_trip_consistent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009725000709295273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_compose_dispatches_to_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007656250381842256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_generate_dispatches_to_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009740829700604081,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008852500468492508,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040504196658730507,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_lower_classes_no_substrate_borrow_in_source",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1256597499595955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007226670859381557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lift_has_internal_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039945903699845076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034725002478808165,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005518330726772547,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

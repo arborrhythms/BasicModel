@@ -1,0 +1,6 @@
+{
+  "test/fixtures/item7_byte_columns.pt": "1b57eaa1a99e37f3afd65489e959a7f87daa6a4634ba4089c4c8a9383e8a14d6",
+  "test/fixtures/item7_legacy_definition.pt": "799cb1717637c543c88d997fcad32169a64a3bc033ec95ce3fbe4db37181e708",
+  "test/fixtures/transitional_pos.grammar": "43bf934bf153a293851c96e851e26f8b302d70f2fa8bef48843c117795a7cfa9",
+  "test/fixtures/where_tiling_corpus.jsonl": "f5c959f65ee59a7b0a62c9cb273551025a25d90ee554f52649003049c09f61d0"
+}

@@ -1,0 +1,41 @@
+--- bin/ClauseJournal.py (before AF)
++++ bin/ClauseJournal.py (after AF)
+@@ -240,6 +240,11 @@
+                     predicate_ref = operation_concept(node)
+                     predicate = predicate_ref.point
+                     role_nodes = operands[0], None, operands[1]
++            if relation is not None and predicate_ref == -1:
++                # A lexical predicate over an ended relation can be an
++                # unindexed phrase too. Give its point an unasserted LTM
++                # occurrence, exactly as for either referenced operand.
++                predicate, predicate_ref = operand(role_nodes[1])
+             zero = torch.zeros_like(program.leaves[0])
+             roles = torch.stack((zero if left is None else left,
+                                  predicate.to(zero), zero if right is None else right))
+@@ -305,7 +310,7 @@
+         roles = []
+         for slot, node in enumerate(stack):
+             node = head(node)
+-            if slot != 1 and (is_clause(node) or concept(node) == -1):
++            if is_clause(node) or concept(node) == -1:
+                 references.append(('clause', len(children)))
+                 child = recover(node)
+                 children.append(child)
+@@ -320,11 +325,12 @@
+             if probe is None:
+                 probe = ConceptualMeaning(torch.stack(roles), torch.ones(3, dtype=torch.bool),
+                                           role_refs=tuple(('sym', ref) if type(ref) is int and ref > 0 else None for ref in references))
+-            try:
+-                operation = registry.signature_for(
+-                    replace(probe, mode='interrogative')).operation.semantic_id
+-            except ValueError:
+-                pass
++            if probe.role_refs[1] is not None:
++                try:
++                    operation = registry.signature_for(
++                        replace(probe, mode='interrogative')).operation.semantic_id
++                except ValueError:
++                    pass
+         if operation not in relative:
+             if not any(child.relation is not None for child in children) and all(node['has_point'] for node in stack):
+                 raise ValueError('three slots have no selected relative clause')

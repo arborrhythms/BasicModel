@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_codebook_update_law.py::test_law_truth_table",
+    "test/test_codebook_update_law.py::test_law_edge_cases",
+    "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+    "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+    "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+    "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+    "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+    "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+    "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+  ],
+  "completed": [
+    "test/test_codebook_update_law.py::test_law_truth_table",
+    "test/test_codebook_update_law.py::test_law_edge_cases",
+    "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+    "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+    "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+    "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+    "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+    "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+    "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_law_truth_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025404198095202446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_law_edge_cases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017125019803643227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003902541007846594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017293328419327736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027935001999139786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022192918695509434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005699999164789915,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047683296725153923,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_codebook_update_law.py::test_install_without_codebook_returns_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.179185144603252e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

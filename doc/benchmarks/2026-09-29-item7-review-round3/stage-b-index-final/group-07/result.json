@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-07/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-07/worker-000.json"
+      ],
+      "pid": 10944,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436208984,
+      "elapsed_seconds": 3.6176814580103382,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-07/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "completed": [
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.014319791924208403,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-07",
+  "elapsed_seconds": 7.381403625011444,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 436208984,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-07/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-07/collect.json"
+    ],
+    "pid": 10925,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428229808,
+    "elapsed_seconds": 3.5349741670070216,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-07/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

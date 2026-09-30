@@ -1,0 +1,118 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+    "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+    "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert"
+  ],
+  "completed": [
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+    "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+    "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-16/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-16/worker-000.json"
+      ],
+      "pid": 9615,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426362176,
+      "elapsed_seconds": 3.67785624996759,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-16/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+        "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+        "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert"
+      ],
+      "completed": [
+        "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+        "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+        "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00017241702880710363,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_table.py', 55, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00046620797365903854,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009061669697985053,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-16",
+  "elapsed_seconds": 6.149387332960032,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 426362176,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-16/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-16/collect.json"
+    ],
+    "pid": 9607,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 260195216,
+    "elapsed_seconds": 2.240523917018436,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-16/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+        "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+        "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

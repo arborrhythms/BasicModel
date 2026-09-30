@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-270.recycle.json"
+}

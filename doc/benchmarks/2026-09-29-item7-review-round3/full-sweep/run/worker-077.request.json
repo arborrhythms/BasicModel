@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-077.recycle.json"
+}

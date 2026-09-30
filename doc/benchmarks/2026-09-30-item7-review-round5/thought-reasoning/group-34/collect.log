@@ -1,0 +1,5 @@
+test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser
+test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer
+test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one
+
+3 tests collected in 0.45s

@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-568.recycle.json"
+}

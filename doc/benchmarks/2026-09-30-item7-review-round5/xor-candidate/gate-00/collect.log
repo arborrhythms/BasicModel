@@ -1,0 +1,8 @@
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+test/test_grounded_xor.py::test_native_unseeded_xor[0-8]
+test/test_grounded_xor.py::test_native_unseeded_xor[1-4]
+test/test_grounded_xor.py::test_native_unseeded_xor[1-8]
+test/test_grounded_xor.py::test_native_unseeded_xor[2-4]
+test/test_grounded_xor.py::test_native_unseeded_xor[2-8]
+
+6 tests collected in 2.27s

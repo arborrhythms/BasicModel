@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_benchmark.py::test_windows_exclude_targets_future_sentences_and_other_documents",
+    "test/test_expectation_benchmark.py::test_masked_target_roles_and_history_are_reported_separately",
+    "test/test_expectation_benchmark.py::test_throughput_excludes_warmup_and_counts_actual_sentences_pairs_and_labels",
+    "test/test_expectation_benchmark.py::test_sentence_rate_is_independent_of_predictor_observation_eligibility",
+    "test/test_expectation_benchmark.py::test_counts_one_joint_step_for_native_dense_and_sparse_optimizer",
+    "test/test_expectation_benchmark.py::test_fixed_meaning_controls_keep_the_input_device_under_an_ambient_device",
+    "test/test_expectation_benchmark.py::test_context_free_control_removes_presence_and_length_as_well_as_values",
+    "test/test_expectation_benchmark.py::test_prediction_thought_scoring_rejects_unknown_truth_and_wrong_operations"
+  ],
+  "completed": [
+    "test/test_expectation_benchmark.py::test_windows_exclude_targets_future_sentences_and_other_documents",
+    "test/test_expectation_benchmark.py::test_masked_target_roles_and_history_are_reported_separately",
+    "test/test_expectation_benchmark.py::test_throughput_excludes_warmup_and_counts_actual_sentences_pairs_and_labels",
+    "test/test_expectation_benchmark.py::test_sentence_rate_is_independent_of_predictor_observation_eligibility",
+    "test/test_expectation_benchmark.py::test_counts_one_joint_step_for_native_dense_and_sparse_optimizer",
+    "test/test_expectation_benchmark.py::test_fixed_meaning_controls_keep_the_input_device_under_an_ambient_device",
+    "test/test_expectation_benchmark.py::test_context_free_control_removes_presence_and_length_as_well_as_values",
+    "test/test_expectation_benchmark.py::test_prediction_thought_scoring_rejects_unknown_truth_and_wrong_operations"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_windows_exclude_targets_future_sentences_and_other_documents",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001171708106994629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_masked_target_roles_and_history_are_reported_separately",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002371249720454216,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_throughput_excludes_warmup_and_counts_actual_sentences_pairs_and_labels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002657079603523016,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_sentence_rate_is_independent_of_predictor_observation_eligibility",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010366598144173622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_counts_one_joint_step_for_native_dense_and_sparse_optimizer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013383375015109777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_fixed_meaning_controls_keep_the_input_device_under_an_ambient_device",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005822079256176949,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_context_free_control_removes_presence_and_length_as_well_as_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014041713438928127,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_benchmark.py::test_prediction_thought_scoring_rejects_unknown_truth_and_wrong_operations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002914171200245619,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

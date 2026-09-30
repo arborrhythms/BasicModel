@@ -1,0 +1,57 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+______________ test_migration_discards_dependents_of_retired_rows ______________
+
+    def test_migration_discards_dependents_of_retired_rows():
+        import copy
+        store = TernaryTruthStore(4, capacity=8)
+        old = store.append_idea(torch.ones(4))
+        store.set_origin(old, store.ORIGIN_PROVISIONED)
+        child = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool),
+            role_refs=(store.occurrence_of(old), None, None))
+        store.append_meaning(child, kind='observation', rel_type=store.REL_PARTOF)
+        store.append_idea(torch.zeros(4))
+        state, extras = copy.deepcopy(store.state_dict()), copy.deepcopy(store.semantic_extras())
+        state.pop('truth_schema')
+        restored = TernaryTruthStore(4, capacity=8)
+        with pytest.warns(UserWarning):
+            restored.load_state_dict(state)
+>           restored.load_semantic_extras(extras)
+
+test/test_item7_storage.py:271: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:9664: in load_semantic_extras
+    self._validate_constituent_graph(incoming, namespace)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+contexts = {1: {'role_refs': (('ltm', 'cc87f095fce745a38f77ed1252e0d5c5', 0), None, None), 'bindings': (), 'scope': ()}, 2: {'role_refs': (None, None, None), 'bindings': (), 'scope': ()}}
+namespace = 'cc87f095fce745a38f77ed1252e0d5c5'
+
+    @staticmethod
+    def _validate_constituent_graph(contexts, namespace):
+        """Validate local semantic links before replacing owner metadata.
+    
+        All local references must resolve among the proposed records.  Only
+        role references create structural edges; bindings and scopes are roots
+        for retention but do not turn into hidden syntax.  The iterative DFS
+        rejects cycles before the caller mutates durable state.
+        """
+        edges = {}
+        for identifier, context in contexts.items():
+            references = TernaryTruthStore._context_occurrence_references(context)
+            if any(ref[2] not in contexts
+                   for ref in references
+                   if ref[:2] == ('ltm', namespace)):
+>               raise ValueError("semantic context occurrence is unavailable")
+E               ValueError: semantic context occurrence is unavailable
+
+bin/Layers.py:9441: ValueError
+=============================== warnings summary ===============================
+test/test_item7_storage.py::test_observation_without_selected_clause_cannot_guess_a_relation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows
+1 failed, 1 passed, 21 deselected, 1 warning in 2.24s

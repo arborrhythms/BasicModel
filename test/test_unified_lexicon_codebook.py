@@ -942,122 +942,12 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
 # ==========================================================================
 
 
-class TestStage8MetaTaxonomyStructural(unittest.TestCase):
-    """Stage 8 structural assertions over (insert_percept, insert_whole,
-    insert_meta) on the radix-mode model.
-
-    The legacy ``insert_paired_word`` tests above continue to assert the
-    orth-row-copy contract under the lexicon path; this class is the
-    Stage-8 replacement: in radix mode the percept lives on
-    ``PS.percept_store`` and the SS-side row for the meaning is freshly
-    allocated, bound via a META node that records cross-codebook signed
-    references rather than copying the PS vector into SS.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        import warnings
-        import Models as _Models
-        import Language as _Language
-        from util import init_config as _init_config
-        # 2026-05-29: use MM_xor_fixture.xml (dedicated test fixture
-        # with chunking=radix AND SS codebook=quantize) so runtime
-        # experiments on MM_xor.xml don't break the META taxonomy
-        # tests, which inherently require an SS Codebook for
-        # ``insert_whole`` to allocate rows.
-        cfg = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
-        _init_config(path=cfg, defaults_path=_DEFAULTS)
-        _Language.TheGrammar._configured = False
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            cls.model, _ = _Models.BasicModel.from_config(cfg)
-        _Models.TheData.load("xor")
-
-    def test_radix_mode_supplies_percept_store(self):
-        ps_space = self.model.perceptualSpace
-        self.assertIsNotNone(
-            ps_space.percept_store,
-            "MM_xor radix-mode model must expose percept_store on PS")
-
-    def test_insert_meta_records_positive_int_cross_codebook_references(self):
-        """The META node's children list contains a PS-tagged position
-        and an SS-tagged position. PS-side bytes are recoverable via
-        ``PerceptStore.bytes_for(ps_row)`` where ``ps_row`` resolves
-        through ``WholeSpace._ps_pos_to_row``.
-        """
-        ws = self.model.wholeSpace
-        ps_store = self.model.perceptualSpace.percept_store
-        # Insert PS-side bytes + SS-side meaning row; bind via META.
-        ps_pos = ws.insert_percept(b"structural_meta")
-        ws_pos = ws.insert_whole()
-        meta_pos = ws.insert_meta(ps_pos, ws_pos)
-        # All three are positive positions; kinds are tagged accordingly.
-        self.assertGreater(ps_pos, 0,
-                           "insert_percept must return a positive position")
-        self.assertGreater(ws_pos, 0,
-                           "insert_whole must return a positive position")
-        self.assertGreater(meta_pos, 0,
-                           "insert_meta must return a positive position")
-        self.assertEqual(ws._pos_kind.get(ps_pos), "ps")
-        self.assertEqual(ws._pos_kind.get(ws_pos), "ws")
-        self.assertEqual(ws._pos_kind.get(meta_pos), "meta")
-        # Children list contains both PS and SS positions.
-        children = ws.taxonomy_children(meta_pos)
-        ps_children = [c for c in children if ws._pos_kind.get(c) == "ps"]
-        ws_children = [c for c in children if ws._pos_kind.get(c) == "ws"]
-        self.assertTrue(
-            ps_children and ws_children,
-            f"META children must contain both PS- and SS-tagged "
-            f"positions; got {children!r}")
-        # PS-side bytes recoverable via the position -> row lookup.
-        ps_row = ws._ps_pos_to_row[ps_children[0]]
-        self.assertEqual(ps_store.bytes_for(ps_row), b"structural_meta")
-
-    def test_ws_row_not_copied_from_ps_vector(self):
-        """The retired contract: the META node's SS row is NOT a copy of
-        the PS vector. (Under the new structural binding, SS gets a fresh
-        symbolic row + a separately allocated META row; neither is a
-        copy of the percept_store row.)
-        """
-        ws = self.model.wholeSpace
-        ps_store = self.model.perceptualSpace.percept_store
-        ps_pos = ws.insert_percept(b"distinct_storage")
-        ps_row = ws._ps_pos_to_row[ps_pos]
-        # Pin the PS row to a known vector so we can prove the SS-side
-        # rows are not duplicates of it.
-        D = int(ws.nDim)
-        marker = torch.zeros(D)
-        marker[0] = 1.0  # distinctive shape
-        with torch.no_grad():
-            ps_store.codebook.data[ps_row].copy_(
-                marker.to(ps_store.codebook.device, ps_store.codebook.dtype))
-        # Allocate a *random* SS row and bind via META using a custom
-        # fused vec also distinct from the pinned PS row.
-        sym_init = torch.zeros(D)
-        sym_init[1] = 1.0
-        ws_pos = ws.insert_whole(init_vec=sym_init)
-        fused_init = torch.zeros(D)
-        fused_init[2] = 1.0
-        meta_pos = ws.insert_meta(ps_pos, ws_pos, fused_vec=fused_init)
-        # SS row for ws_pos must not equal the PS row.
-        ws_row = ws._ws_pos_to_row[ws_pos]
-        W = ws.subspace.what.getW()
-        ps_vec = ps_store.codebook[ps_row].detach()
-        ws_vec = W[ws_row].detach()
-        self.assertFalse(
-            torch.allclose(ws_vec.to(ps_vec.device, ps_vec.dtype),
-                           ps_vec, atol=1e-5),
-            "SS row must NOT be a copy of the PS vector under the Stage 8 "
-            "structural-binding contract")
-        # Same for the META row.
-        meta_row = ws._ws_pos_to_row[meta_pos]
-        meta_vec = W[meta_row].detach()
-        self.assertFalse(
-            torch.allclose(meta_vec.to(ps_vec.device, ps_vec.dtype),
-                           ps_vec, atol=1e-5),
-            "META row must NOT be a copy of the PS vector under the "
-            "Stage 8 structural-binding contract")
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_retired_wholespace_taxonomy_writer_is_absent():
+    from Spaces import WholeSpace
+    assert not hasattr(WholeSpace, "insert_meta")

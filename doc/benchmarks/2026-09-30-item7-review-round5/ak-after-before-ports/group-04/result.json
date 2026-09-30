@@ -1,0 +1,593 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+    "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+    "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+    "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+    "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+    "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+    "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+    "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+    "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+    "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+    "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+    "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+    "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+    "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+    "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+    "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+    "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+    "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+    "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+    "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+    "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+    "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+    "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+    "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+    "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+    "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+    "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+    "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+    "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+  ],
+  "completed": [
+    "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+    "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+    "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+    "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+    "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+    "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+    "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+    "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+    "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+    "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+    "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+    "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+    "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+    "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+    "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+    "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+    "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+    "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+    "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+    "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+    "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+    "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+    "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+    "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+    "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+    "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+    "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+    "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+    "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/worker-000.json"
+      ],
+      "pid": 10227,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 435651880,
+      "elapsed_seconds": 3.6836587078869343,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+        "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+        "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+        "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+        "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+        "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+        "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+        "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+        "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+        "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+        "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+        "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+        "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+        "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+        "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+        "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+        "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+        "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+        "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+        "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views"
+      ],
+      "completed": [
+        "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+        "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+        "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+        "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+        "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+        "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+        "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+        "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+        "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+        "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+        "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+        "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+        "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+        "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+        "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+        "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+        "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+        "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+        "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+        "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003042081370949745,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00014395895414054394,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012387498281896114,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001557499635964632,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000260957982391119,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001055421307682991,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010966695845127106,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002281291875988245,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0019601660314947367,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001720125088468194,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00011708284728229046,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.612498641014099e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017524589784443378,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0018511659000068903,
+          "message": "test/test_thought_operation_catalog.py:225: in test_tiny_concept_inventory_keeps_thought_families_structural_not_partial\n    assert registry.executable_operation_ids == ()\nE   AssertionError: assert ('part', 'equal') == ()\nE     \nE     Left contains 2 more items, first extra item: 'part'\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002637833124026656,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0021616669837385416,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002236291067674756,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002492832951247692,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002511124825105071,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017817080952227116,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00039362511597573757,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007120410446077585,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005850829184055328,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018897089175879955,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016852919943630695,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002476333174854517,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004048328846693039,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003911166917532682,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00023174984380602837,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002312918659299612,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005488751921802759,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002395829651504755,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/worker-001.json"
+      ],
+      "pid": 10235,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 432276752,
+      "elapsed_seconds": 3.635558000067249,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+        "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+        "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+        "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+        "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+        "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+      ],
+      "completed": [
+        "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+        "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+        "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+        "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+        "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+        "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00036375015042722225,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0033486660104244947,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002481207950040698,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002245292067527771,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005967417033389211,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0030940829310566187,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04",
+  "elapsed_seconds": 11.230717625003308,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435651880,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/collect.json"
+    ],
+    "pid": 10216,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432604360,
+    "elapsed_seconds": 3.5509590001311153,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+        "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+        "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+        "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+        "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+        "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+        "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+        "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+        "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+        "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+        "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+        "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+        "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+        "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+        "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+        "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+        "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+        "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+        "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+        "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+        "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+        "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+        "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+        "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+        "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+        "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

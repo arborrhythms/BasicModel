@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
+    "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
+    "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+    "test/test_compose_operations.py::test_hard_selected_candidate_keeps_probability_gradient",
+    "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+    "test/test_compose_operations.py::test_tiling_and_per_position_unary_implementations_are_deleted",
+    "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
+    "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
+    "test/test_compose_operations.py::test_budget_exhaustion_reports_overlarge_derivation",
+    "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-183.recycle.json"
+}

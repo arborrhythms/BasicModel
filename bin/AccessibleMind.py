@@ -23,7 +23,7 @@ PERMISSIONS = {
                 frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL, S.EXPECTATION, S.BUDGET))),
     'generate': (frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL, S.BUDGET)), frozenset((S.PERCEPT, S.BUDGET))),
     'chooser': (frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL, S.EXPECTATION, S.LTM, S.BUDGET)), frozenset()),
-    'seal': (frozenset((S.SERIAL, S.EXPECTATION)), frozenset((S.LTM, S.EXPECTATION))),
+    'closing': (frozenset((S.SERIAL, S.EXPECTATION)), frozenset((S.LTM, S.EXPECTATION))),
 }
 
 

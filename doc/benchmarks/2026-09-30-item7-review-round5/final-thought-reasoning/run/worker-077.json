@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty"
+  ],
+  "completed": [
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006082919426262379,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

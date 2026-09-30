@@ -1,0 +1,220 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+    "test/test_category_codebook.py::test_enable_noop_without_roles",
+    "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+    "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+    "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+    "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+    "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+    "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+    "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+    "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+    "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys"
+  ],
+  "completed": [
+    "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+    "test/test_category_codebook.py::test_enable_noop_without_roles",
+    "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+    "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+    "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+    "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+    "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+    "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+    "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+    "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+    "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-08/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-08/worker-000.json"
+      ],
+      "pid": 10962,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435275096,
+      "elapsed_seconds": 3.6824570409953594,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-08/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+        "test/test_category_codebook.py::test_enable_noop_without_roles",
+        "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+        "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+        "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+        "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+        "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+        "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+        "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+        "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+        "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys"
+      ],
+      "completed": [
+        "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+        "test/test_category_codebook.py::test_enable_noop_without_roles",
+        "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+        "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+        "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+        "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+        "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+        "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+        "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+        "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+        "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0027959169819951057,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_enable_noop_without_roles",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016697089886292815,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018036250257864594,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0023955840151757,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001652040984481573,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0015498329885303974,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0025833749677985907,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004863583017140627,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03585295891389251,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004283832968212664,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0028202920220792294,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-08",
+  "elapsed_seconds": 7.412892666994594,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435275096,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-08/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-08/collect.json"
+    ],
+    "pid": 10952,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428688584,
+    "elapsed_seconds": 3.502270541037433,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-08/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+        "test/test_category_codebook.py::test_enable_noop_without_roles",
+        "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+        "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+        "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+        "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+        "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+        "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+        "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+        "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+        "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

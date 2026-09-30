@@ -1,0 +1,6 @@
+test/test_where_encoding_recovery.py::test_allocate_starts_at_one
+test/test_where_encoding_recovery.py::test_allocate_monotonic
+test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras
+test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one
+
+4 tests collected in 2.00s

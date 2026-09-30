@@ -1,0 +1,73 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+  ],
+  "completed": [
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7239946250338107,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.0805125419283286,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7052693750010803,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1471703329589218,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7070702919736505,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.0950973749859259,
+      "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+  ],
+  "completed": [
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010005839867517352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010054197628051043,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

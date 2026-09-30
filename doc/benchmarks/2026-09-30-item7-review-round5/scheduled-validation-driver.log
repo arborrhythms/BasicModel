@@ -1,0 +1,32 @@
+{
+  "named_pytest_outcomes": {
+    "passed": 44,
+    "failed": 5
+  },
+  "guarded_group_outcomes": {
+    "passed": 24,
+    "test_failure": 5
+  },
+  "guarded_roundtrip_outcomes": {
+    "passed": 12,
+    "test_failure": 3
+  }
+}
+{
+  "final-item7": {
+    "passed": 202
+  },
+  "final-thought-reasoning": {
+    "passed": 315,
+    "skipped": 5
+  },
+  "final-graph-release": {
+    "passed": 1
+  },
+  "final-xor-candidate": {
+    "passed": 44,
+    "failed": 5
+  }
+}
+XOR comparison: 49 attempts per tree; 15 exact repetitions.
+{'HEAD': {'completed_under_guard': 10, 'median_ending_mse': 0.06961572170257568}, 'before AK': {'completed_under_guard': 10, 'median_ending_mse': 0.13429675996303558}, 'candidate': {'completed_under_guard': 10, 'median_ending_mse': 0.10661789774894714}}

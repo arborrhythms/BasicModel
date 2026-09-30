@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row",
+    "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy"
+  ],
+  "completed": [
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row",
+    "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05046804202720523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01915341697167605,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01912750001065433,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010241696145385504,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

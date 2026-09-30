@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta",
+    "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "completed": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta",
+    "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0036178750451654196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002390249981544912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022893339628353715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00150862499140203,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.13750084489584e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004165249993093312,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031337079126387835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022757089463993907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007906666956841946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0075159999541938305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005225708009675145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005487833055667579,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00682254193816334,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

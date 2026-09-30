@@ -1,0 +1,126 @@
+{
+  "pid": 17664,
+  "phase": "measurements_finished_receipt_pending",
+  "jobs": {
+    "final-xor-candidate": {
+      "pid": 15554,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_xor_matched.py",
+        "final-xor-candidate",
+        "/Users/arogers/github/WikiOracle/basicmodel"
+      ],
+      "log": "final-xor-candidate-driver.log",
+      "status": "finished",
+      "started_at": "2026-09-30T19:04:04.075828+00:00",
+      "exit_code": 1,
+      "finished_at": "2026-09-30T19:38:33.109569+00:00"
+    },
+    "final-mm-grammar-candidate": {
+      "pid": 15555,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_final_mm_grammar.py",
+        "/Users/arogers/github/WikiOracle/basicmodel",
+        "final-mm-grammar-candidate"
+      ],
+      "log": "final-mm-grammar-candidate-driver.log",
+      "status": "finished",
+      "started_at": "2026-09-30T19:04:04.077075+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-09-30T19:33:12.419317+00:00"
+    },
+    "final-item7": {
+      "pid": 15556,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_checks_matched.py",
+        "final-item7",
+        "/Users/arogers/github/WikiOracle/basicmodel",
+        "test/test_item7_acceptance.py",
+        "test/test_item7_byte_columns.py",
+        "test/test_item7_clause_program.py",
+        "test/test_item7_clause_state.py",
+        "test/test_item7_closing_identities.py",
+        "test/test_item7_context.py",
+        "test/test_item7_definition_integrity.py",
+        "test/test_item7_definitions.py",
+        "test/test_item7_end_state_storage.py",
+        "test/test_item7_expectation.py",
+        "test/test_item7_grammar.py",
+        "test/test_item7_lesson_gradients.py",
+        "test/test_item7_nested_references.py",
+        "test/test_item7_point_owners.py",
+        "test/test_item7_predicate_identity.py",
+        "test/test_item7_predicate_storage.py",
+        "test/test_item7_property_cache_release.py",
+        "test/test_item7_property_only.py",
+        "test/test_item7_property_read_storage.py",
+        "test/test_item7_provenance.py",
+        "test/test_item7_reduction_deadline.py",
+        "test/test_item7_references.py",
+        "test/test_item7_retention.py",
+        "test/test_item7_row_schema.py",
+        "test/test_item7_selected_property_rows.py",
+        "test/test_item7_sentence_boundary.py",
+        "test/test_item7_sentence_gradients.py",
+        "test/test_item7_storage.py",
+        "test/test_item7_taxonomy.py",
+        "test/test_item7_truth_text.py",
+        "test/test_item7_unfold_index.py",
+        "test/test_item7_unindexed_relations.py",
+        "test/test_item7_word_admission.py",
+        "test/test_item7_word_interpretation.py"
+      ],
+      "log": "final-item7-driver.log",
+      "status": "finished",
+      "started_at": "2026-09-30T19:04:04.078633+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-09-30T19:20:10.519773+00:00"
+    },
+    "final-thought-reasoning": {
+      "pid": 17665,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_scheduled_checks.py",
+        "final-thought-reasoning"
+      ],
+      "log": "final-thought-reasoning-driver.log",
+      "status": "finished",
+      "started_at": "2026-09-30T19:20:10.519131+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-09-30T19:50:54.159066+00:00"
+    },
+    "final-graph-release": {
+      "pid": 19513,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_checks_matched.py",
+        "final-graph-release",
+        "/Users/arogers/github/WikiOracle/basicmodel",
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "log": "final-graph-release-driver.log",
+      "status": "finished",
+      "started_at": "2026-09-30T19:50:54.228098+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-09-30T19:51:19.260848+00:00"
+    },
+    "full-sweep": {
+      "pid": 19539,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_final_sweep.py"
+      ],
+      "log": "full-sweep-driver.log",
+      "status": "finished",
+      "started_at": "2026-09-30T19:51:19.703433+00:00",
+      "exit_code": 1,
+      "finished_at": "2026-09-30T21:20:58.457825+00:00"
+    }
+  },
+  "updated_at": "2026-09-30T21:20:58.486752+00:00",
+  "coordinator_stopped_at": "2026-09-30T19:10:25.879428+00:00",
+  "reason": "User rejected 3\u20134 hour test-suite duration. Automatic follow-up paused. Existing child measurements continue; no broad follow-on or full sweep is authorized to launch from this coordinator.",
+  "continuation": "resume_scheduled_validation.py"
+}

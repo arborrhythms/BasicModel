@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-1-expected0]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-4-expected1]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[off-4-expected2]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[1, 3-4-expected3]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[0]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[4]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[-1]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[1,no]",
+    "test/test_subsymbolic_loop.py::test_default_and_overlay_use_subsymbolic_loop",
+    "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
+    "test/test_subsymbolic_loop.py::test_selected_pass_changes_the_attentive_extent"
+  ],
+  "completed": [
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-1-expected0]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-4-expected1]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[off-4-expected2]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[1, 3-4-expected3]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[0]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[4]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[-1]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[1,no]",
+    "test/test_subsymbolic_loop.py::test_default_and_overlay_use_subsymbolic_loop",
+    "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
+    "test/test_subsymbolic_loop.py::test_selected_pass_changes_the_attentive_extent"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-1-expected0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010908290278166533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-4-expected1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.658397175371647e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_attention_pass_selection[off-4-expected2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.187508840113878e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_attention_pass_selection[1, 3-4-expected3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.32089751586318e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001384170027449727,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010962504893541336,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.666697587817907e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[1,no]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.583297651261091e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_default_and_overlay_use_subsymbolic_loop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011817874968983233,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010081459069624543,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_selected_pass_changes_the_attentive_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05967291700653732,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

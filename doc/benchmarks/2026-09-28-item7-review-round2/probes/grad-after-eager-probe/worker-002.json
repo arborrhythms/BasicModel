@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+  ],
+  "completed": [
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 145.2703329580836,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=63.208s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1274.3680698749376,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 1 (\u0394=388.224s)\r\nbatch = 0 (\u0394=287.886s)\r\nbatch = 1 (\u0394=223.021s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

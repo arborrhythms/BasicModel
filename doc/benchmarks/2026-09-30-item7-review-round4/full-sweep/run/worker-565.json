@@ -1,0 +1,83 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+    "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+    "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
+    "test/test_surface_schema.py::test_copy_swap_use_elision_template",
+    "test/test_surface_schema.py::test_marker_binds_from_cooccurrence",
+    "test/test_surface_schema.py::test_emit_replays_marker",
+    "test/test_surface_schema.py::test_emit_uses_route_meta_not_lossy_generate"
+  ],
+  "completed": [
+    "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+    "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+    "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
+    "test/test_surface_schema.py::test_copy_swap_use_elision_template",
+    "test/test_surface_schema.py::test_marker_binds_from_cooccurrence",
+    "test/test_surface_schema.py::test_emit_replays_marker",
+    "test/test_surface_schema.py::test_emit_uses_route_meta_not_lossy_generate"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017329188995063305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.766686707735062e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.737505413591862e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_copy_swap_use_elision_template",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004719169810414314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_marker_binds_from_cooccurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010904110968112946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_emit_replays_marker",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.904103353619576e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_emit_uses_route_meta_not_lossy_generate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015270779840648174,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

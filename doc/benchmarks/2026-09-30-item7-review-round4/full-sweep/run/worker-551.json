@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_space_scoped_starts.py::test_ps_start_scoped_to_perceptual_space",
+    "test/test_grammar_space_scoped_starts.py::test_ws_start_scoped_to_symbolic_space",
+    "test/test_grammar_space_scoped_starts.py::test_global_start_aliases_symbolic_space",
+    "test/test_grammar_space_scoped_starts.py::test_relative_and_absolute_starts_from_name_attribute",
+    "test/test_grammar_space_scoped_starts.py::test_identity_rule_uses_symbolic_start",
+    "test/test_grammar_space_scoped_starts.py::test_top_level_start_back_compat"
+  ],
+  "completed": [
+    "test/test_grammar_space_scoped_starts.py::test_ps_start_scoped_to_perceptual_space",
+    "test/test_grammar_space_scoped_starts.py::test_ws_start_scoped_to_symbolic_space",
+    "test/test_grammar_space_scoped_starts.py::test_global_start_aliases_symbolic_space",
+    "test/test_grammar_space_scoped_starts.py::test_relative_and_absolute_starts_from_name_attribute",
+    "test/test_grammar_space_scoped_starts.py::test_identity_rule_uses_symbolic_start",
+    "test/test_grammar_space_scoped_starts.py::test_top_level_start_back_compat"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_space_scoped_starts.py::test_ps_start_scoped_to_perceptual_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005960830021649599,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_space_scoped_starts.py::test_ws_start_scoped_to_symbolic_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003695420455187559,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_space_scoped_starts.py::test_global_start_aliases_symbolic_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002937079407274723,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_space_scoped_starts.py::test_relative_and_absolute_starts_from_name_attribute",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028799986466765404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_space_scoped_starts.py::test_identity_rule_uses_symbolic_start",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028241705149412155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_space_scoped_starts.py::test_top_level_start_back_compat",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023933290503919125,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

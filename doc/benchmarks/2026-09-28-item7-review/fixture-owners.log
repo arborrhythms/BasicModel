@@ -1,0 +1,144 @@
+...................................................................F.... [ 45%]
+..............................................F.....F................... [ 90%]
+...............                                                          [100%]
+=================================== FAILURES ===================================
+______ test_completed_unary_concept_program_enters_the_normal_controller _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1213bc8f0>
+
+    def test_completed_unary_concept_program_enters_the_normal_controller(
+            monkeypatch):
+        """A grammar-selected unary concept tool reaches its typed executor.
+    
+        The normal bridge must not assume every selected program is a binary
+        truth relation.  A completed ``what(quantize(x))`` owns its live signed
+        leaf and grammar-native VP, enters the same ordinary episode, and retains
+        the checked ``code`` result without coercing that result into a truth or
+        answer seed.
+        """
+        from Understanding import AnswerProgram
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, leaves, _program, _part, _whole = (
+            _program_owner(monkeypatch))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        quantize = next(
+            index for index, rule in enumerate(language._compose_unary_rules)
+            if rule.method_name == "quantize")
+        what = next(
+            index for index, rule in enumerate(language._compose_unary_rules)
+            if rule.method_name == "what")
+        entry = AnswerProgram(
+            rows=torch.tensor([3]), word_rows=torch.tensor([7]),
+            activations=torch.tensor([-.25]), leaves=leaves[:1],
+            actions=torch.tensor(
+                [[0, -1, 0], [2, quantize, -1], [2, what, -1]],
+                dtype=torch.long),
+            targets=torch.tensor([quantize, what, -1]),
+            end_state=torch.zeros(3, leaves.shape[-1]),
+            concept_ids=torch.tensor([-1]), lexical_forms=(None,))
+    
+        with model._query_boundary_scope((0,)):
+            selected = model._run_selected_sentence_thoughts((sentence_state(language, entry, registry),), work_budget=16)
+    
+        assert len(selected) == 1
+        row, result = selected[0]
+        assert row == 0 and result.meaning.mode == "interrogative"
+        assert result.result is not None
+        assert result.result.semantic_id == "quantize"
+        assert result.result.result_kind == "code"
+>       assert [record.operation for record in result.records if record.kind == "thought"] == [
+            "quantize", "conclude"]
+E       AssertionError: assert ['quantize'] == ['quantize', 'conclude']
+E         
+E         Right contains one more item: 'conclude'
+E         Use -v to get more diff
+
+test/test_normal_thought_controller.py:343: AssertionError
+_________ test_normal_what_effect_enters_recency_and_detached_knowing __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1453d7740>
+
+    def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
+        from dataclasses import replace
+        from QueryWork import QueryWorkBudget
+        from test_normal_thought_controller import _catalog_world
+        from Queries import ThoughtResult
+        model, registry, memory, part, whole = _catalog_world()
+        store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
+        fact = registry.form('part', part, whole, mode='assertive')
+        oldest = store.append_meaning(fact, trust=.7)
+        for _ in range(20):
+            store.append_meaning(replace(fact, roles=fact.roles + 20,
+                                        role_refs=(('sym', 500), None, ('sym', 501))), trust=.1)
+        cue = replace(fact, mode='interrogative', role_mask=torch.tensor([True, True, False]),
+                      role_refs=(part, fact.role_refs[1], None))
+        cue_row = store.append_meaning(cue, kind='question')
+        with model._query_boundary_scope((0,)):
+            meter = QueryWorkBudget(256)
+            context = model._thought_grammar_context(cue, row=0, work=meter, continuation=None)
+            question = registry.form('what', store.occurrence_of(cue_row), context=context)
+        def choose(root, active, actions, **kw):
+            if kw.get('evidence') is not None:
+                return None
+            return next(action for action in actions if action and action.semantic_id == 'what')
+        monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+        with model._query_boundary_scope((0,)):
+            before = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
+            result = model.run_selected_thought(question, work_budget=256)
+            after = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
+>       assert not bool(before[1].any()) and bool(after[1].any())
+E       assert (not False and False)
+E        +  where False = bool(tensor(False))
+E        +    where tensor(False) = <built-in method any of Tensor object at 0x145604370>()
+E        +      where <built-in method any of Tensor object at 0x145604370> = tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]).any
+E        +  and   False = bool(tensor(False))
+E        +    where tensor(False) = <built-in method any of Tensor object at 0x1455da8a0>()
+E        +      where <built-in method any of Tensor object at 0x1455da8a0> = tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]).any
+
+test/test_accessible_mind.py:245: AssertionError
+_________ test_normal_priming_uses_boosted_rows_not_the_identity_mask __________
+
+    def test_normal_priming_uses_boosted_rows_not_the_identity_mask():
+        from dataclasses import replace
+        from QueryWork import QueryWorkBudget
+        from test_normal_thought_controller import _catalog_world
+        from test_query_vp_boundaries import _signature
+        model, registry, memory, part, whole = _catalog_world()
+        store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=4)
+        fact = registry.form('part', part, whole, mode='assertive')
+        append_indexed(store, fact, terms=((50,), (51,), (52,)))
+        cue = replace(fact, role_mask=torch.tensor([True, False, False]),
+                      role_refs=(part, None, None), mode='interrogative')
+        priming = torch.ones(64)
+>       monkeypatch.setattr(model._concept_owner(), 'priming_weights', lambda **kw: priming)
+        ^^^^^^^^^^^
+E       NameError: name 'monkeypatch' is not defined
+
+test/test_accessible_mind.py:339: NameError
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller
+FAILED test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing
+FAILED test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask
+3 failed, 156 passed, 2 warnings in 4.01s

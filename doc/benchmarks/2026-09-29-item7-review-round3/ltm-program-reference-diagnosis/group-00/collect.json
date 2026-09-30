@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

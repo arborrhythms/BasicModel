@@ -1,0 +1,15 @@
+--- before/bin/Models.py
++++ after/bin/Models.py
+@@ -20935,8 +20935,10 @@
+         readout_coefficients = getattr(isp, '_ar_readout_coefficients', None)
+         whole_reference_presence = getattr(isp, '_ar_whole_reference_presence', None)
+         # Ordinary batches can differ from provisioning and from each other.
+-        # Rebuild their boundaries; packed input validates its staged layout.
+-        isp._finalize_sentence_word_layout(active)
++        # Rebuild their boundaries at the host entry; a compiled forward
++        # consumes the layout already prepared by the lexical stem.
++        if not torch.compiler.is_compiling():
++            isp._finalize_sentence_word_layout(active)
+         sentence_end_mask = isp._packed_sentence_end_mask.to(
+             dtype=torch.bool)
+         intermediate_end_mask = (

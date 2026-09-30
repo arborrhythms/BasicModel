@@ -1,0 +1,18 @@
+......F....                                                              [100%]
+=================================== FAILURES ===================================
+______ test_closing_discards_operations_without_changing_other_live_rows _______
+test/test_item7_end_state_storage.py:122: in test_closing_discards_operations_without_changing_other_live_rows
+    _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
+bin/Models.py:20427: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+=============================== warnings summary ===============================
+test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows
+1 failed, 10 passed, 1 warning in 3.26s

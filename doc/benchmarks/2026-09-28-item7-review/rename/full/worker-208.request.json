@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_percept_returns_positive_position",
+    "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_whole_returns_positive_position",
+    "test/test_positive_int_taxonomy.py::test_meta_members_are_positive_native_concept_ids"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-208.recycle.json"
+}

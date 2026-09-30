@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0055483750766143,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

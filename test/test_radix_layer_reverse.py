@@ -106,37 +106,16 @@ class TestRadixLayerReverseStandalone(unittest.TestCase):
                          f"PS row; got {out!r}")
 
 
-class TestRadixLayerReverseWithSS(unittest.TestCase):
-    """``RadixLayer.reverse(vec, symbolic_space=ws)`` walks META taxonomy."""
-
-    def test_ws_walk_recovers_bytes_via_meta_taxonomy(self):
-        m = _make_radix_model()
-        ws = m.wholeSpace
-        ps = m.perceptualSpace.percept_store
-        words = [b"alpha", b"beta", b"gamma"]
-        meta_idxs = []
-        for w in words:
-            pid = ws.insert_percept(w)
-            sid = ws.insert_whole()
-            mid = ws.insert_meta(pid, sid)
-            meta_idxs.append(mid)
-        # Pin META rows to deterministic vectors.
-        cb = ws.subspace.what
-        W = cb.getW()
-        D = int(ws.nDim)
-        for i, mid in enumerate(meta_idxs):
-            row = _ws_row_from_pos(ws,mid)
-            v = torch.zeros(D, device=W.device, dtype=W.dtype)
-            v[i] = 1.0
-            with torch.no_grad():
-                W.data[row, :].copy_(v)
-        # Target "beta" -> pinned META vector.
-        target_vec = torch.zeros(D, device=W.device, dtype=W.dtype)
-        target_vec[1] = 1.0
-        out = ps.reverse(target_vec, symbolic_space=ws)
-        self.assertEqual(out, b"beta",
-                         f"SS-walk reverse should recover the matching "
-                         f"surface bytes; got {out!r}")
+def test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk():
+    from Layers import RadixLayer
+    from test_item9b_interpret import _operator
+    cs, interpret = _operator()
+    word = interpret.lookup_word([1, 2], [], form='beta')
+    obj = interpret.forward(word)
+    row = cs._csw_row_of(obj)
+    target = cs.similarity_codebook.getW()[row].detach().clone()
+    reader = RadixLayer(dim=8, initial_cap=8)
+    assert reader.reverse(target, symbolic_space=cs) == b'beta'
 
 
 class TestRadixLayerReverseFailLoudOnNaN(unittest.TestCase):

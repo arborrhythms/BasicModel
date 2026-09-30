@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_af.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-02/worker-000.recycle.json"
+}

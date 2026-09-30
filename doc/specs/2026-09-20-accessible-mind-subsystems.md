@@ -4,10 +4,19 @@ Status: DRAFT for review (Alec, 2026-09-20; rev 5: codes are projections at entr
 off-codebook generative vectors; a higher-order vector is a region of order
 0; LTM holds serial form only, episodes by chaining; rev 6: recency buffer
 plus cued retrieval, surprise as the learned residual, expectation's gain;
-rev 7: expectation as a negative image added at the seal, negation only
+rev 7: expectation as a negative image added at the closing, negation only
 for concepts, attention as the non-affirming exclusion of the non-object,
 needing no prediction; semantic and
-episodic LTM; psychological cross-reference).
+episodic LTM; psychological cross-reference; **rev 8, Alec 2026-09-28: the
+symbolic / conceptual distinction in 2.0, negation at every order (the
+"only above order 0" rule withdrawn), poles antipodal in direction and
+independent in magnitude, trust univalent and not evidence; **rev 9, Alec
+2026-09-28: words are a formula for narrowing attention — the domain of
+discourse; words as projection operators; nouns, adjectives and verbs as one
+kind of operator; three indices; concepts stay opaque (2.0.1)**; **rev 10,
+Alec 2026-09-29: the noun phrase combines by an idempotent election, a form
+of intersection; compounds are sub-typing; the adverb is multiplicative, a
+modifier of a modifier (2.0.1)**).
 Companion to
 [thought operations in compose](2026-09-18-thought-operations-in-compose.md)
 and to the gradient factorization in
@@ -35,7 +44,7 @@ declared and charged. "Access to X" never means "all of X".
 ### 2.0 Fields, codes and ideas
 
 A higher-order vector names a possibly discontinuous union of lower regions:
-sigma over the preceding order's symbols, sealed by symbolization. Pi
+sigma over the preceding order's symbols, ended by symbolization. Pi
 intersects located readings only in order 0, before those readings lose
 their occurrence structure. The [Architecture argument](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)
 explains this restriction. Order counts symbolizations, with lexical
@@ -47,7 +56,9 @@ codebook, one row per concept.
 
 * A **field** `a ∈ ℝ^N` is an activation per concept over the whole codebook
   at once. It is *subsymbolic* — each activation is graded — and *parallel*.
-  This is parallel knowing (2.2, 2.3).
+  This is parallel knowing (2.2, 2.3). It is what is meant by the symbolic
+  state: "the symbolic state is the activation level of all symbols, pos
+  and neg" (Alec, 2026-09-28).
 * A **code** (a concept) is the **serial, nearest-neighbour projection of a
   field**: `π(a) = argmaxᵢ aᵢ`, a row of `W`. It is *symbolic*, one discrete
   index, produced one at a time — which is what makes thinking serial. `π` is
@@ -62,6 +73,39 @@ codebook, one row per concept.
   through the tied inverse and `<generate>` operators, into a *sequence of
   operations and codes that are in codebooks*, each step ending in a
   projection.
+
+**Symbolic and conceptual (Alec, 2026-09-28).** Across all three forms the
+distinction that matters is *what the encoding is written in*. An encoding is
+**symbolic** when it can be written exclusively in terms of symbol values,
+positive and negative: a field is symbolic, and so is any signed
+superposition of rows, whether or not a row exists for the result — the union
+of two nouns has no row and is still symbolic. An encoding is **conceptual**
+when it cannot be: an adjective applied to a noun is the noun *moved* in
+conceptual space according to the adjective, a temporary vector that need not
+exist as a symbol. The line is **superposition versus transformation**, and
+it is not the same line as "has a row": temporary and conceptual are
+independent properties.
+
+Both encodings are indexed by order, independently: a thought may be concrete
+or abstract exactly as a symbol may be. A stored vector therefore needs its
+**order beside it**, because decoding an abstract one means running the sigma
+inverses down the ladder (2.7).
+
+This is the criterion behind the field's operator set, which 6.8 states as a
+rule and which follows here from the representation. The operations closed on
+a symbolic encoding are exactly the **coordinatewise** ones on the signed
+pairs — `and` and `or` are monotone on the coefficients, `not` swaps the pair,
+`non` zeroes the expressed pole — and those are precisely the
+order-independent operations. `lift`, `lower`, `verb` and `preposition`
+displace the point off the span of the rows, which is why they require an
+identified concept and act between brackets rather than inside one. Two
+independent axes therefore belong in every operator's signature: the
+**encoding** it takes (symbolic or conceptual) and the **cardinality** it
+requires (a pooled plural reading, or one identified concept). `conjunction`
+and `disjunction` are the symbolic pair, over codebook activation patterns;
+`intersection` and `union` are the conceptual pair, over vectors in
+conceptual space (Alec, 2026-09-28); `not` and `non` are unrestricted on both
+axes, being coordinatewise.
 
 That last requirement is an optimistic one and the spec names it:
 **generativity**. The operators must map codes into a space meaningful enough
@@ -81,10 +125,38 @@ limited to a concrete prototype; it can be as abstract as the orders allow,
 and so can anything LTM stores (2.7). XOR is the textbook case: two disjoint
 corners of zero-order space that become one point only once order is raised.
 
-**Sign.** Order 0 is presence in `[0, 1]` and carries no sign; signed
-activation begins at the first rung. Negation therefore exists only at
-order ≥ 1, and the negation of a zeroth-order point is a region, so it
-raises order (2.6.2).
+**Sign** *(amended, Alec, 2026-09-28; the paragraph replaced here said
+negation exists only at order ≥ 1)*. Presence in `[0, 1]` is the chart of an
+*activation*, not of conceptual space, and since item 11 every concept owns
+**two symbols**, so bivalence at order 0 is carried by the pair `(c⁺, c⁻)`
+rather than by a sign. The two poles are **antipodal in direction and
+independent in magnitude**: one row holds the content and the two symbols
+differ only in sign, while the evidence for and the evidence against are
+separate quantities — which is what makes *both* real and distinct from
+*neither*. The identity forces this: if `not` swaps the poles, then
+`R(not c) = −R(c)` for all activations **iff** `v⁻ = −v⁺`, so
+negation-as-reflection and an independent negative *direction* cannot both
+hold.
+
+A concept contributes `(c⁺ − c⁻)·v` to the vector it is part of, and that
+resultant lives in the **signed span of the rows**, which is closed under
+reflection through the origin at every order. Negation is that reflection: it
+never forms a complement, so it never needs a region and never raises order.
+"The reversal of a point is its negation wrt the origin, which is just
+another point, not a region" (Alec, 2026-09-28). The `[0, 1]` chart
+constrains activations, never the resultant. Nothing antipodal is written to
+a codebook: the sign lives on the symbol, and `Space.snap` already treats `u`
+and `−u` as one reference (`argmax |q·v|`, polarity on the activation), which
+is what keeps a reflected row from ever being minted.
+
+The pair carries **two coordinates, and a single vector carries one of them**:
+`d = c⁺ − c⁻` is the signed evidence, the coordinate of the resultant, and
+`m = min(c⁺, c⁻)` is the dissonance, the *both* mass, which the resultant
+cannot see — *both* and *neither* sit at the same point. **The origin is
+uncertainty** (Alec, 2026-09-28). This is why a stored vector is not a stored
+pair (2.7), why accumulating evidence across mentions may not mean-pool
+toward the origin, and why `|trust|` is not a collapse of `(c⁺, c⁻)`: trust
+is univalent and is not evidence (2.7).
 
 "A vector in knowing" is a category error: an operator on ideas writes 2.4;
 an operator on activation writes 2.2 / 2.3. `quantize` takes an idea back to
@@ -102,6 +174,486 @@ the input–output correlations, coarse distinctions first (Saxe, McClelland &
 Ganguli 2019); and word meaning can be recovered as a low-rank decomposition
 of a word-by-episode matrix (Landauer & Dumais 1997). Higher-order symbols
 (2.3) are where such a coarse-to-fine ordering lives in this architecture.
+
+#### 2.0.1 Words are a formula for narrowing attention
+
+*Alec, 2026-09-28. Decided in direction; nothing in this subsection is
+implemented as such or measured, and the code notes at its end say what
+exists today.*
+
+**The domain of discourse.** "Words are a formula for narrowing attention."
+What they narrow is the **domain of discourse**, written `thing` in a parse:
+Boole's universe of discourse, the field "within which all the objects of
+our discourse are found", whose limit is "assumed or expressed" by the
+discourse itself (Boole 1854). It is a register, not a constant. The
+situation (item 7) seeds it at the start of a sentence, and with no context
+it is all of conceptual space; each word narrows it; within the sentence its
+running value is the idea under construction (2.4); and the determiner
+individuates from what is left.
+
+**Words are projection operators** *(the hypothesis, Alec, 2026-09-28)*:
+"words are projection operators onto lower-dimensional or smaller
+subspaces." A projection is idempotent, `P² = P`, which is Boole's
+fundamental law `x² = x`; commuting projections compose to the projection
+onto the intersection of their ranges; and a thing lies in a projection's
+range exactly when the projection leaves it unchanged, which is the
+membership test below. Propositions as projections on a space are Birkhoff
+and von Neumann's (1936); the restrictors here, being diagonal in one basis,
+are the commuting, Boolean part of that lattice. The crisp projection is the
+limit of the graded operators the model learns: a learned gain never reaches
+zero (the verb's `e^{w} > 0`), which is what keeps the operators invertible,
+and generativity needs the inverse that a true projection does not have.
+This hypothesis mostly undoes the older conjecture that part of speech falls
+out of a row's tower of origin
+([Language](../Language.md#future-work-nouns-from-partspace-adjectives-from-wholespace)).
+
+**Exclusion, and the word that excludes nothing** *(Alec, 2026-09-28)*.
+"The exclusion is framed in apoha theory as the non-affirming negation of
+the complement of the object; that is the locus of perceptual attention
+(which treats everything not relevant to the definition of the cup as a zero
+value)." That is a projection: what is not relevant is given zero, and zero
+rather than a negative value is what makes the negation non-affirming
+(2.6.2). The word is the formula and attention is what it produces: the word
+specifies the projection, and perceptual attention carries out the
+exclusion. The identity among the operators is the symbol `everything`, the
+top pole `[1, 1, …]`: "percepts are not necessarily limiting because they
+may direct us to the symbol 'everything', which has no narrowing effect." It
+is to the domain what the open read is to the bracket. The narrowing budget
+(`attentionBudget`) is spent on the bracket, before grammatical analysis,
+and the words do not draw on it
+([one attention](../plans/2026-09-27-item-6-8-one-attention.md)).
+
+**Two attentions, one budget, and a Ground** *(Alec, 2026-09-28)*. "The
+perceptual and conceptual attentions are significant, by the way, since we
+regard symbols as percepts. So perceptual attention may exclude perception
+or higher order thought; and there is good evidence that both of those do
+share a single attentional budget. The conceptual narrowing is different,
+and probably needs a Ground in order to make its Figure meaningful."
+
+So perceptual attention has two kinds of object, the percepts of the input
+and the symbols of thought, and one budget for both. The evidence is that
+attention to internal representations and to sensory information have
+similar limited capacities and share a limited resource (Chun, Golomb &
+Turk-Browne 2011; Kiyonaga & Egner 2013).
+
+Conceptual narrowing differs in what becomes of the complement. Perceptual
+attention discards it: what is excluded is not taken up, and leaves no trace
+and no absence (2.6.2). Conceptual narrowing keeps it: the domain from which
+a word elects stays as the **Ground** against which the elected **Figure**
+has its meaning. That is why `big` can read its scale from the domain, why
+Boole's complement is taken within the universe of discourse, and why the
+register is kept beside the idea under construction instead of being
+overwritten by it. It is the profile against its base (Langacker 1987) and
+Figure against Ground in language (Talmy 2000). The closing already has this
+shape: in `c = o − g·(1 − m)·κ·ê` the mask `m` is the object of observation,
+the Figure, and `1 − m` is the Ground, where expectation applies.
+
+So the two are different in kind and meet in one chooser: bracket
+candidates and restrictors are both candidates in the 7.5 softmax.
+
+**The budget is for percepts** *(Alec, 2026-09-28)*: "I think there is a
+budget for percepts, not for conceptual space (although thoughts do shape
+the latter)." Attention is what is scarce, and attention is perceptual, so
+what is metered is attending: to the input, and to symbols. Conceptual
+narrowing is not metered, and neither is the shaping of conceptual space by
+thought. *Claude's reading of the consequence, to confirm:* a thought
+operation charges the budget (2.8) because its objects are symbols, which
+are percepts, not because it does conceptual work; so 2.8 and
+`attentionBudget` are one meter in the design, though they are separate in
+the code today, where the thought work meter exists and `attentionBudget`
+is not yet built. The static round count of 7.5 is the shape of a compiled
+loop, not a budget of attention.
+
+**Nouns and adjectives are both operators.** "`gun(space)` and `fake(space)`
+are both narrowing of conceptual space. But neither may be a region; they
+may both be operators, which can be treated as nouns when mapped to all of
+space, or which restrict the noun they are applied to." So "a fake gun"
+parses as `lower(fake(gun(thing)))`, in which "`fake()` and `gun()` are
+essentially the same operation, the difference being that `gun()` has
+already been applied", and `gun(fake(thing))` has the same meaning. Noun and
+adjective are **roles in a derivation, not properties of a row**, and
+English agrees in both directions: "a fake" is a noun, and in "gun oil"
+`gun` restricts another noun.
+
+This is Boole's elective symbol, the mental operation of selecting from the
+universe, with the universe as `1`, "white sheep" as `xy`, and `xy = yx`
+(Boole 1847, 1854). What follows from it:
+
+* **One row, two uses.** For an elementwise operator the parameters and the
+  image of the whole domain are the same vector, `g ⊙ 1 = g`. The operator
+  read against the whole domain is the noun, at no cost in storage.
+* **What it forces, and where it stops.** That identification holds only if
+  the restrictors are diagonal in one shared basis, which is also exactly
+  what makes them commute. It holds of compatible restrictors and not of
+  all of them: order of application matters (below). An earlier version of
+  this bullet required the shared basis of every restrictor, which was too
+  strong.
+* **Regions are derived, never stored.** Membership is invariance under the
+  operator, *x* is a gun if `gun(x) = x`; subsumption is absorption, cats are
+  animals if `animal(cat) = cat`, which is Boole's own form of "all Ys are
+  Xs", `y = xy`. So `part`, `whole` and `equal` are tests on the restrictor
+  algebra rather than a separate mechanism.
+* **Two neutrals, one element.** The neutral *operator* is `1`, nothing
+  excluded; the neutral *state* is the origin, nothing known (Sign, above).
+  They are the same element in two charts, `1 = e⁰`. In the same way,
+  "moving" a code and "narrowing" the domain are one operation: a product in
+  the multiplicative chart is a translation in the log chart.
+* **Why the product and not pooling.** The product acts on the noun: it
+  scales whatever value the noun has, so it is defined for every noun.
+  Pooling lays two descriptions side by side and fails as soon as the noun
+  has its own value where the adjective speaks (a red banana's colour would
+  cancel instead of becoming red).
+* **Domain-relative operators.** `big` reads its scale from the current
+  domain, which is why it must follow the noun. There is one kind of
+  operator; commutation fails only when the operator depends on the domain
+  it is given. The test is whether the operator can stand as a noun over the
+  whole domain: *fake*, *noble* and *criminal* can, *big* and *skillful*
+  cannot. Partee's coercion of "gun" under "fake" is a shift of the domain
+  (Kamp & Partee 1995; Partee 2010).
+* **Complement is relative to the domain.** Boole's `1 − x` means "in the
+  domain but not *x*", so a complement is never taken against all of
+  conceptual space unless the discourse is unfettered.
+
+**Where this system departs from Boole.** His fundamental law `x² = x` holds
+for crisp membership and for `min`, and not for a graded product, where
+`x·x < x`. His principle of contradiction `x(1 − x) = 0`, which he derives
+from it, is `c⁻ = 1 − c⁺` with no dissonance: exactly the constraint the Sign
+paragraph relaxes. Boole's algebra is the slice of this system that has
+neither *both* nor *neither*.
+
+**The determiner** *(decided in direction, Alec, 2026-09-28)*. "`lower()`
+indicates that the determiner lowers the order of the NP." `lower(DET, ·)`
+individuates whatever has been narrowed, and it needs no sortal: "a fake" is
+as well formed as "a gun". The determiner selects what happens:
+
+| determiner | lowers now | effect |
+|---|---|---|
+| "a" | yes | mints a particular |
+| "the" | yes | binds to a particular in the recency buffer or the cued frames |
+| "every" | no | writes a relation between the concepts at their own order: "it remains a high-order relation" |
+
+"Every" looks through the kind to its members, but that describes what the
+relation licenses, not what is stored: the lowering happens later, when
+thought applies the relation to a particular. It is Boole's "all Ys are Xs",
+`y = xy`, a relation between classes in which no individual is selected, and
+it is the generic subject of
+[two truths](2026-09-16-two-truths-ideas-and-relations.md), which writes a
+relation row. With verbs as restrictors (below) "every cat sleeps" is the
+subsumption `sleeps(cat) = cat`, the same form as "cats are animals". So
+"every" is not a `lower`: the rule `lower(DET, NP)` covers "a" and "the",
+and "every" marks the subject generic. (A reading considered the same day,
+that "every" lowers without specifying, was withdrawn.) *Amended (Alec,
+2026-09-30): "every lowers like all but has a different plurality", and a
+bare plural lowers by an implicit plural determiner, "all" or "some"
+([5.5 spec §6](2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers)).* "A" and "the" are
+the mint and bind candidates of
+[independent components §2.7](2026-09-26-independent-components.md#27-tie-to-the-grammatical-derivation);
+the word is a cue for the choice, never an anchor. The mint and the bind
+meant are "those used by the identity tracking system" (Alec, 2026-09-28):
+"a cat" introduces a new individual, not a new concept, so this is not the
+minting of a concept or object row by `interpret` or by discovery.
+
+**Verbs restrict too, and concepts stay opaque** *(decided, Alec,
+2026-09-28: "Yes, keep concepts opaque")*. The question was whether, "since
+VP is really a 4D extension of a 3D NP", conceptual space should be treated
+"as two orthogonal subspaces", with modality a fifth dimension "since we
+consider multiple 4D worldlines" — against the worry that this conflates
+"the conceptual space with its projection into a symbolic or rational
+encoding". It is not split. *(Reopened by Alec on 2026-09-29: "I thought we
+were oscillating between two implementations", a transformation found by
+ICA on the differences between events, and projections onto orthogonal
+subspaces of space and time. Both, and what separates them, are in
+[the operator catalogue §4.4](2026-09-29-operator-catalogue.md#44-the-noun-phrase-and-the-verb-phrase-two-implementations-and-the-candidate),
+with the candidate he took up the same day: projections within a sentence,
+onto subspaces that are learned, and the transformation between events;
+and the modal phrase as a further projection. Modality is a dimension,
+not an order: "To square, now: modality is not order, it is dimension; I
+think these are different" (Alec, 2026-09-29). What follows in this
+paragraph is the reading of 2026-09-28.)* **A verb adds dimensions to the description and
+removes freedom from the thing described**; the dimensions were always in
+the space, and the noun was silent on them. "NPs are basically eternal and
+can do anything until the VP comes along and restricts their movement or
+freedom on the temporal dimension": the noun's operator is the identity on
+those dimensions and the verb constrains them, exactly as an adjective
+constrains the dimensions the noun left free. English makes verbs into
+adjectives ("the sleeping cat", "melted ice"), and "sleeping cats" is
+Boole's `xy`. This is why the verb is sparse, and why NP and VP look
+orthogonal: their supports barely overlap. "The VP acts on the NP point" and
+"NP and VP both narrow the domain" are one product with two bracketings.
+
+The ladder 3D → 4D → 5D counts **indices**, not dimensions of conceptual
+space. Each index has words that narrow along it and words that individuate
+from what is left:
+
+| index | narrowed by | individuated by |
+|---|---|---|
+| which thing | noun, adjective | determiner |
+| which stretch of time | verb, adverb | tense and aspect |
+| which alternative | conditional | modal |
+
+"A" and "might" pick some; "every" and "must" take all, and what takes all
+does not lower. Temporal *content*, what kind of change, is ordinary content
+of the opaque code, which the verb restricts; *when it happened* is an
+index, carried by the symbolic layer and the row. A concept has been one
+opaque full-width code with no `.where` / `.when` band since 2026-09-13/14,
+tense at the conceptual level being "carried by the concept code itself".
+The third index has no machinery yet
+([FutureWork](../FutureWork.md#modality-as-the-third-index-noted-2026-09-28)).
+
+**What the operation is** *(Alec's question, 2026-09-28: "what is the
+mathematical operation that corresponds to a noun phrase, if not the
+presentation conceptual vector itself?")*. It is the presentation vector.
+For an elementwise operator the vector is the operator's diagonal, and the
+noun phrase is the operator applied to `everything`; no further operation
+turns a vector into an operator. What is open is which algebra the vectors
+combine in, because the hypothesis and the present code differ:
+
+| | election | accumulation |
+|---|---|---|
+| chart | presence `[0, 1]` | log-odds, `atanh` |
+| combine | `min`, or the product, of masks | the sum of rows, which is the product of odds |
+| `everything` | `[1, 1, …]` | the origin |
+| a silent dimension holds | 1 | 0 |
+| idempotent | `min` yes, product no | no: "red red ball" is redder |
+| in the code | `intersection` on presence | `lower` and `lift` |
+
+Election is nearer the hypothesis — words as projections, `x² = x`, `thing`
+not the origin — though Alec is "not clear I am describing election
+(although of the two, I like it better)". Accumulation is what the adjective
+rule computes, and in native
+coordinates it is `(a + b) / (1 + ab)` on each dimension. The two agree
+where features are crisp. **Decided (Alec, 2026-09-29): election, and
+idempotent.** "Nouns and adjectives are roughly the same, nouns having been
+pre-applied to 'everything'. So symmetry, and of the two [kinds] you
+previously specified, I think they should be the kind that does not amplify
+when applied twice (a red red bird is no more red than a red bird), so
+perhaps a form of intersection." So the adjective and its noun combine
+symmetrically and idempotently, which is the left-hand column with `min`
+and not the product. **The adverb is the other kind:** "Adverbs relate to
+verbs, on the other hand, in a more multiplicative way, since a very, very,
+fast runner is faster than a fast runner. We can (and I think already do)
+model verbs as modifiers, and adverbs as modifiers of modifiers." What
+follows for the operators, and what the code does today, is in
+[the operator catalogue §4](2026-09-29-operator-catalogue.md#4-noun-adjective-verb-and-adverb).
+One consequence is stated here because it is the price of the choice: an
+idempotent combination has no exact reverse, so the words of a noun phrase
+are recovered by a search among the words known and not by a formula.
+
+**Order of application matters** *(Alec, 2026-09-28)*. "Gun oil is a kind of
+oil. Oil gun is a kind of gun. These suffice to show that order of
+application matters. So it is not the case that f(oil, gun(thing)) is
+f(oil(thing), gun) for the f we are looking for." Both algebras in the table
+are symmetric, so neither is that `f` by itself. The two examples fix two
+properties of it: `f(m, h)` is a kind of the head `h`, and it is not in
+general a kind of the modifier `m`. So `f` leaves the head's identity alone
+and uses the modifier only where the head is free.
+
+**The Ground is the head's own shape** *(Alec, 2026-09-28)*. "'The way oils
+differ' is referring to the shape of the higher order noun 'oil'. That shape
+already exists in virtue of the folds at every order, so no new
+parameterization should be necessary." The shape of a higher-order noun is
+its cases: the sigma members one order below, and theirs in turn, down to
+order 0, where it is the pi memberships of the definition. They are already
+stored (`taxonomy_children`; "`W_σ` edges run from order-k rows to
+order-(k−1) symbols",
+[item 11c](../plans/2026-09-24-item-11c.md)).
+
+**Order, part of speech and taxonomy are three things** *(Alec, 2026-09-28,
+correcting statements he made earlier the same day)*. "'Felix is a cat' is a
+fold edge because of the determiner 'a' and a taxonomic fact in virtue of
+the defining word 'is'. The relation of the taxonomy and the higher-order
+seems correct. I guess what we are teasing apart is the part of speech. So
+Felix is a cat and cats are animals: both are taxonomic relations, and both
+can participate in the sigma fold, but the first contains a proper noun and
+count noun, and the second two count nouns. So I was conflating order with
+part of speech, which only sometimes correspond."
+
+| | what it is | decided by |
+|---|---|---|
+| order | how many folds lie between a concept and the percepts | the sigma or pi fold over the class it names |
+| part of speech | proper noun, count noun, mass noun | the grammar |
+| taxonomy | what is a kind of what | the defining word, "is" or "are" |
+
+| sentence | parts of speech | taxonomic relation | fold edge |
+|---|---|---|---|
+| "Felix is a cat" | proper noun, count noun | yes, by "is" | yes, by "a" |
+| "cats are animals" | count noun, count noun | yes, by "are" | it can be one |
+
+What stands from the same day:
+
+* "Order only drops when the determiner is applied, adjectives do not
+  perform that role." A modifier narrows and leaves the order where it was.
+  *Amended (Alec, 2026-09-29), of "the order drops at the determiner and
+  nowhere else":* "probably wrong; remove the part about nowhere else".
+  What stands is that adjectives do not drop the order.
+* "Taxonomy is not storing order; that is determined by sigma or pi fold
+  over a class." The order of a concept is read off its fold.
+* The taxonomy and the higher-order concepts are one structure, as the
+  2026-09-22 amendment of
+  [two truths §3.4](2026-09-16-two-truths-ideas-and-relations.md) has it.
+
+What is withdrawn, as the conflation it names: that "oil gun" and "gun", or
+"cat" and "animal", are of one order *because* both are count nouns. They
+are of one part of speech. Withdrawn with it are two things an earlier
+version of this note built on it: a table that made the taxonomy a
+structure apart from the fold, inside a single order, and the statement
+that compatibility note (a) of todo item 7 had to go. The rule of item 7,
+that a testified parent sits one order above its part, is not contradicted
+by anything here.
+
+*Claude's reading of how a modifier acts, to confirm.* `f` unfolds the head,
+keeps what the modifier selects, and folds back: reverse sigma to the
+head's cases, a selection among them by the modifier, and sigma over what
+remains. The result is a kind at the head's order whose extent lies inside
+the head's, which gives both properties at once — it is a kind of the head
+and not of the modifier — and makes the order of application matter. The
+descent is internal to the operation and leaves no lower-order result
+behind, which is how a modifier can use the head's cases and still leave
+the order alone. A kind narrowed in this way is a composed idea; it is not
+thereby a row in the taxonomy, and becomes one only if it is symbolized. An
+earlier version of this note wrote the operation as `h + Π_h·m` with a
+projector `Π_h`; the projector only describes the span of the cases and is
+withdrawn as an object of its own. Where nothing among the head's cases
+answers to the modifier the reading is *neither*, and the prompt already
+decided for it applies: descend, and mint on recurrence.
+
+**Two statements refined** *(Alec, 2026-09-28, latest)*. On the determiner
+and the adjective: "Determiners move from plurality to singularity in
+conceptual space: they get more specific in a categorical way. Adjectives
+are dynamic modifications of shape that reduce the size of conceptual
+space. Is there a way that these could be the same operation?" On the
+taxonomy and order: "Sigma fold, since we are computing over symbols. But
+we have now said that taxonomy looks more like spatial modification by
+properties (mereology), whereas the order is a more heavyweight change in
+kind that maps to grammatical class (and prevents their combination in
+language precisely because they no longer live in the same field; the
+determiner must be applied before combination (or definition) can happen."
+
+**Set and part** *(decided, Alec, 2026-09-28)*. Asked whether `cat` and
+`animal` are still of one order once the model has been told that cats are
+animals: "No; cats and dogs, two discrete concepts, create animals, which
+is then necessarily of a different order: a superset. Blue cats is a part
+of the extension of cats. So there we have the set vs part difference.
+Combinations of non-symbolic parts creates contiguous parts, perhaps."
+
+| | set | part |
+|---|---|---|
+| example | cats and dogs make animals | blue cats, within cats |
+| made from | discrete concepts, which are symbols | the extension of one concept, which is not symbolic |
+| made by | the sigma fold | a property that reduces the extension |
+| order | the set is one order above its members | kept |
+| shape | may be discontinuous | contiguous, perhaps |
+| the word that moves along it | the determiner, from the set to a member | the adjective, from the whole to a part |
+
+Three things are settled by it. The taxonomy of named kinds is the fold:
+the 2026-09-22 amendment of two truths §3.4 stands, and item 7's rule that
+a testified parent sits one order above its part is right as the candidate
+has it. "Oil gun" is of the order of "gun" because it is a part of gun's
+extension, not because both are count nouns. And the determiner and the
+adjective are not one operation: they are the two relations, member of a
+set and part of a whole, which is why the one changes the order and the
+other cannot. It is the line two truths already draws, that taxonomic
+subsumption is "inferential, never a `.where` meronomy" (§5).
+
+An earlier version of this note answered that the determiner and the
+adjective were one operation up to a final fold. That treated every
+extension as a set of cases, and is withdrawn. How a part is computed is a
+separate matter: the reading above, through the head's cases, is one way
+and is unconfirmed.
+
+**Compounds are sub-typing, not adjectives** *(proposed by Alec on
+2026-09-28 and decided by him on 2026-09-29: "Compounds are subtyping,
+which explains their order effects")*.
+"Oil gun and gun oil may be interesting cases of sub-typing without creating
+a new term, which is masquerading as an adjective. That would solve the
+problem that adjective order is significant." So the two examples that
+showed that order of application matters were not adjectives. A compound
+names a sub-type of its head without coining a word for it, which puts it
+on the set side of the table above, and the head is what is sub-typed,
+which is why the order of the two nouns matters. An adjective stays on the
+part side, a property that reduces an extension, and adjectives commute
+again, as `fake(gun(thing))` and `gun(fake(thing))` were first said to.
+
+| | adjective | compound |
+|---|---|---|
+| example | blue cats | gun oil, oil gun |
+| relation | part of the head's extension | sub-type of the head |
+| side | part | set |
+| order of the words | does not matter | matters: the head is sub-typed |
+| can be said of the head | "the cat is blue" | not "the oil is gun" |
+| takes degree | "very blue" | not "very gun" |
+| place | anywhere before the noun | next to the noun |
+
+The last three rows are how English tells them apart, and the first of
+them is the line drawn between an adjective that describes and one that
+classifies: a classifying modifier denotes a property of kinds, not of
+individuals (McNally & Boleda 2004). The reading given above under "how a
+modifier acts", selection among the head's cases, is then a reading of the
+compound and not of the adjective.
+
+**A compound selects; it does not determine** *(decided, Alec, 2026-09-28)*.
+"I don't think compounds do the work of determiners, but they select from
+the determined set. An oil is a kind of oil, a gun oil is a specific kind
+of oil." So the order drops at the determiner, and the compound says which
+member the determiner's move arrives at. (*Amended, Alec, 2026-09-29:* the
+words "and nowhere else, without exception" stood after "determiner" and
+are removed, as "probably wrong".) An earlier version of this note offered that the compound and
+the determiner were one move, the compound naming its choice; that is
+withdrawn.
+
+*Claude's reading, to confirm.* The three words then divide as follows,
+the compound being to a set what the adjective is to an extension:
+
+| | acts on | from, to | order |
+|---|---|---|---|
+| adjective | the extension of one concept, which is not symbolic | the whole, to a part | kept |
+| compound | a set of discrete sub-types | the set, to the sub-types it names | kept |
+| determiner | a set | the set, to one member | one lower |
+
+What is missing is wiring, not parameters: the adjective rule is the
+symmetric fold below and does not consult the head's cases, and the choice
+of case on descent is not conditioned on a modifier.
+
+**A head must have a shape** *(Alec, 2026-09-28)*. "'Gun Felix' does not
+work precisely because Felix is a proper noun, not a kind." A particular has
+no cases of the sort a compound chooses among, so the descent has nothing to
+descend into. This separates two failures: a kind with no case that answers
+to the modifier, which is *neither* and mints on recurrence, and a head with
+no cases at all, where the modification is ill formed. It also fixes a
+sequence: modification acts on the kind and the determiner's `lower`
+individuates afterwards, whereas a proper noun arrives already individuated.
+*Claude's reading, to confirm:* a particular still has a shape one order
+down, its occurrences (event ⊂ individual ⊂ kind,
+[item 11c](../plans/2026-09-24-item-11c.md)), which is why "young Felix"
+works where "gun Felix" does not, and why a modified proper name takes a
+determiner again, as in "an admirable Mozart" (Burge 1973; Matushansky
+2008): it is treated as a kind of its own occurrences and lowered once more.
+
+*Code notes (2026-09-28, verified, not touched).* `LowerLayer`, the
+adjective rule `AP = lower(ADJ, NP)`, computes
+`tanh(W·(atanh a + atanh b) + b/2)`: `PiLayer.compose` adds the two operands
+in the log-odds chart, `_log_mult(x) = log((1 + x)/(1 − x)) = 2·atanh x`,
+and applies one shared learned map. `LiftLayer` has the same form with its
+own map (`SigmaLayer.compose`). Both are therefore **exactly symmetric in
+their operands** — an earlier version of this note called commutation a
+test to run, which was wrong — and neither can treat a modifier differently
+from its head. The identity of the fold is the signed origin, `x = 0 → 1`,
+"absent = multiplicative identity", so a row that is zero where it is
+silent contributes nothing. The per-word gate that would let a word's code
+modulate the operator, `lexical_gate`, a learned projection of the code
+onto the LDU diagonal, has no callers; the verb is the only operator in
+which one operand's code becomes an operator on the other.
+`intersection` (RadMin) is `min` on presence, where `1` is its identity and
+it is idempotent — Boole's product at every grade; on signed codes the
+all-ones domain is no longer an identity, because opposite signs collapse to
+zero. The verb is `VP(NP) = tanh(e^{w} ⊙ atanh(NP))` and routes its code
+through a learned readout to log-gains before it acts (`_verb_spec`, soft
+threshold `τ = 0.1`, clamp `±8`, both hard-coded), so if restrictors follow
+that pattern "one row, two uses" holds of the mask, not of the raw row. A
+constant `1.0` in a kernel
+(`NonLayer`, the percept complement) asserts the unfettered domain.
+`NonLayer`'s `1 − x` is Boole's complement, which on Boole's slice equals the
+pole swap `not`.
 
 ### 2.1 Perceptual knowing
 The activation of the two meronymic towers: PartSpace (synthesis,
@@ -206,7 +758,7 @@ observation); and `o` the idea composed from the sentence.
 
 ```text
 n = −g · (1 − m) ⊙ κ ⊙ ê      the negative image, left before the sentence arrives
-c = o + n                      what is conceived, per role, at the seal
+c = o + n                      what is conceived, per role, at the closing
 o = c − n                      exactly, for as long as the estimate is retained
 ```
 
@@ -239,23 +791,50 @@ rung of the pyramid is signed any more. Conceptual negation is the
 presence `c⁻` of the concept's negative symbol, computed from the parts by
 the De Morgan dual fold
 ([two truths §1.1](2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23));
-the signed carrier below is the sealed idea in a slot, where expectation's
-negative image remains a separate operation. So a negative image cannot be
-left at order 0: there is nowhere to put it. Consequences:
+the signed carrier below is the ended idea in a slot, where expectation's
+negative image remains a separate operation.
+
+*Amended (Alec, 2026-09-28).* The sentence that stood here — that a negative
+image cannot be left at order 0 because there is nowhere to put it — is
+withdrawn along with the region argument in item 2 below. Since item 11 gave
+every concept a negative symbol, order 0 has somewhere to put it: the pair.
+This section's title is now read as "negation exists for concepts, not
+percepts", with no order restriction. Consequences:
 
 1. **Sensation is never subtracted from.** Perceptual knowing (2.1), the
    order-0 field (2.2), the word stream and the codes of arriving words are
    the same whatever is expected. Expectation has no write access to them
    (§4).
-2. **The negative image is an idea, and an idea of order ≥ 1.** The negation
-   of a point among the zeroth-order concepts is not another such point: what
-   `not cat` denotes in zero-order space is a *region* — everything the
-   exclusion leaves — and by 2.0 a vector that denotes a region is
-   higher-order. Here the region is fixed by exclusion rather than by
-   membership edges. So forming `−ê` raises order even where `ê` is a bare
-   zeroth-order concept, and it is added where signed serial form exists: to
-   the sealed idea. The predictor's whole-sentence estimate is already that
-   kind of object.
+2. **The negative image is an idea, at the order of what it predicts**
+   *(amended, Alec, 2026-09-28; this item previously required order ≥ 1)*.
+   The withdrawn argument was that `not cat` denotes a *region* in zero-order
+   space — everything the exclusion leaves — so its vector must be
+   higher-order. Negation forms no complement: it is reflection through the
+   origin, "just another point, not a region" (Alec, 2026-09-28), and
+   `not cat` is the negative symbol of *cat*, not the set of non-cats. So
+   `−ê` raises no order, and the image is added at whatever order the estimate
+   has, order 0 included, where the carrier is the pair `(c⁺, c⁻)` rather
+   than a sign. The predictor's whole-sentence estimate remains the usual
+   case. **Decided (Alec, 2026-09-28): at order 0 the image is applied to the
+   resultant**, as at every other order, so the closing has no special case.
+   Three things follow. The chart is already there: §2.6.1's "a conceptual
+   activation of `0` is presence `½` — neutral, nothing new" *is* the
+   resultant's origin, and the origin is uncertainty (2.0). The coordinate is
+   the same one everything else in the serial path uses: ideas, LTM rows and
+   the predictor all carry `d = c⁺ − c⁻`, and applying the image to the pair
+   would make expectation the only stage that sees `m`. And expectation is
+   therefore **blind to dissonance** — a prediction of *neither* is not
+   surprised by an observation of *both*, the two zero corners being
+   indistinguishable in `d`. That is a division of labour, not a gap: the
+   *both* corner is the prompt to divide the bracket and look closer
+   ([one attention](../plans/2026-09-27-item-6-8-one-attention.md)), so `d`
+   is expectation's coordinate and `m` is attention's.
+
+   *Verified in code (2026-09-28): nothing to change.* `Meaning.negative_image`
+   applies `observed + (−g·(1 − mask)·presence·estimate)` to the three role
+   vectors of the ended idea with **no order gate of any kind**. The
+   order-≥-1 restriction lived in this spec and was never implemented, so
+   this amendment brings the spec to the code rather than the reverse.
 3. **Only what is conceptualised can be cancelled.** Content that reaches no
    idea — an unparsed span, a percept with no concept — has no negative image
    and is met in full every time. One habituates only to what one has a model
@@ -264,11 +843,27 @@ left at order 0: there is nowhere to put it. Consequences:
 
    | | unsigned carrier | signed carrier |
    |---|---|---|
-   | where | presence `[0, 1]` (2.1, 2.2); the priority surface of 2.5 (floor 0); the `.where` reading scope | conceptual activation `[−1, 1]` at order ≥ 1; ideas in slots |
-   | negation available | `non`: withdrawal, the complement, "not taken up" | `not`: sign reversal, "the opposite is affirmed" |
+   | where | presence `[0, 1]` (2.1, 2.2); the priority surface of 2.5 (floor 0); the `.where` reading scope | the signed span of the rows, at **any** order (amended 2026-09-28); ideas in slots, and the pair `(c⁺, c⁻)` at order 0 |
+   | negation available | `non`: withdrawal — **the expressed pole set to zero** (Alec, 2026-09-28), "not taken up"; *not* the complement `1 − x`, which affirms the other pole and so is an affirming negation | `not`: **the poles swapped**, "the opposite is affirmed" |
    | faculty | **attention**, as selection | **expectation**, as the negative image |
    | failing to register | the unattended is not conceived at all: no trace and no absence | the expected is cancelled: nothing new is conceived, and the estimate stands for it |
    | omission | nothing — one does not miss what one was not looking for | an uncancelled negative image: the absence is conceived |
+
+   In the pair's coordinates (2.0): `not` maps `(c⁺, c⁻) → (c⁻, c⁺)`, so
+   `d → −d` and the dissonance `m` is preserved — an isometry of the
+   resultant. `non` maps `(c⁺, c⁻) → (0, c⁻)`, so `m → 0` and the resultant
+   moves *toward* the origin rather than through it, which is the formal
+   content of "withdrawn without asserting the opposite", and is why `non` is
+   irreversible while `not` is self-inverse.
+
+   *Code notes (2026-09-28, verified, unfixed, not touched here — item 11
+   residue):* `NonLayer.forward` computes `1 − x` on both poles, which
+   affirms the opposite pole, making the implemented `non` an affirming
+   negation and spuriously self-inverse. `ConjunctionLayer` reads
+   `effective_activation()`, `max(c⁺, c⁻)`, which is invariant under `not`'s
+   swap — so `not` is invisible to symbolic conjunction and De Morgan cannot
+   hold on that path; the docstring's premise, "there's no negative pole to
+   manage", predates item 11.
 
 #### 2.6.3 Purity
 
@@ -278,7 +873,7 @@ rule the same holds when we do predict:
 **For a fixed input, a fixed object of observation and fixed identities,
 everything composed from the input — order-0 presence, the codes, the
 derivation, the raw idea `o` — is independent of `ê` and of `g`.** Expectation
-enters once, after composition, as an addition to the sealed idea.
+enters once, after composition, as an addition to the ended idea.
 
 *Identity is the exception, and it has to be* (Alec, 2026-09-21). Which
 earlier individual a word is tied to is not in the input and is not a fact
@@ -333,7 +928,7 @@ input says that the dog did not bark; the sentence is silent, and the silence
 is informative only against the expectation of a bark.
 
 * **Compose writes no negation it did not read.** The uncancelled image is
-  evidence at the seal, not a row.
+  evidence at the closing, not a row.
 * **An absence is concluded, not perceived.** A model that is to hold
   absences declares `not` in `<thought>` (today it is structural-only); the
   chooser may then conclude `not X` from an uncancelled image, and the result
@@ -394,7 +989,7 @@ non-object *is* — only which thing is the object.
   conceived, no trace, and no absence (2.6.2).
 * **Where there is also an estimate, it is applied to everything but the
   object.** That is the factor `(1 − m)` in 2.6.1, and it is attention's one
-  effect at the seal: the context is cancelled to the extent it was expected,
+  effect at the closing: the context is cancelled to the extent it was expected,
   and the object of observation is conceived in full, expected or not. With
   no estimate the factor does nothing, and attention has lost nothing.
 * **Where `m` comes from.** The open roles of the active question or thought.
@@ -504,6 +1099,38 @@ prototypes: a single stored vector can denote a discontinuous region of
 zero-order space (2.0). This is *semantic* memory, and it is what LTM mostly
 stores.
 
+**The row carries its order** *(Alec, 2026-09-28)*. A stored vector may be
+concrete or abstract, and conceptual encodings are order-indexed exactly as
+symbolic ones are (2.0), so the order must be stored beside the point:
+decoding an abstract row means running the sigma inverses down the ladder,
+and without the stamp the row cannot say how far down. This belongs in the
+same row-schema amendment item 7 is making.
+
+**Trust is univalent, and is not evidence** *(Alec, 2026-09-28)*. Evidence
+`(c⁺, c⁻)` says how well the input identified a concept; trust says whether
+the event the row refers to is veridical, applies to the event as a whole,
+and is supplied rather than presented — "the concept may be well-identified
+by the sentence or scene, it may be present, but since it refers to something
+else (an event), the well-identified referent may not be veridical". It is
+therefore a **single value**, not a pair: "if it is bivalent, the one who
+trusts needs to further analyse their truth statement". This follows the
+*both* rule in general — the both corner is a prompt to analyse, and at the
+trust level there is nothing to divide, so a bivalent trust would be a state
+one could not act on. Consequences: no operator writes trust (the closing writes
+it from provenance, and the sentence never sets its own); and `|trust|` in
+[forgetting](2026-09-16-forgetting.md)'s value term is that scalar, **not**
+a collapse `|c⁺ − c⁻|` of an evidence pair. The dissonance in the luminosity
+term is the ended idea's evidence, a different column.
+
+**Accumulation across mentions happens here, not in the grammar** *(Alec,
+2026-09-28)*. When the same individual is mentioned twice, something must
+combine the two evidence pairs; that is accumulation along the knowledge
+order, not a Boolean, and it "is about persistent identity rather than the
+deep structure of the language", so the closing does it and no operator is
+declared for it. One constraint from 2.0: **the origin is uncertainty**, so
+the accumulation may not mean-pool — averaging an unattested mention toward
+the origin would let absence of evidence count as evidence.
+
 There are two different ways of holding several zero-order concepts at once,
 and only the first comes free:
 
@@ -581,7 +1208,7 @@ the store; that is what this replaces.)
   it, per role*. The terms are the leaf codes recorded at write time; a row
   with no derivation (an estimate, a thought result) gets its terms by
   unfolding its idea. The index is exact for the codes it holds and is
-  maintained by the one writer at the seal and rebuilt on compaction. A row
+  maintained by the one writer at the closing and rebuilt on compaction. A row
   that is near in meaning but shares no code with the cue is reached only
   because priming's spread adds related codes to the cue — which is the job
   priming does in retrieval. Beside it: the `.where` / `.when` endpoint-sum
@@ -643,10 +1270,10 @@ form and in life: STM is position-addressed, live to the gradient, displaced
 by what arrives next; LTM is content-addressed, detached, and forgotten by
 value. But they are one chain in use: a row retrieved by `what` lives in STM
 while it is active — working memory as the activated part of long-term
-memory — and **the seal is the one writer** from STM to LTM.
+memory — and **the closing is the one writer** from STM to LTM.
 
 **Entering LTM has its own criterion, and it is not time spent in the
-buffer.** A composed idea enters when it seals: what was processed to a
+buffer.** A composed idea enters when it endings: what was processed to a
 meaning is stored; what was merely held is not. Whether it *stays* is
 decided by value, and the surprise it carried is part of that value. So there
 is broad encoding and selective retention, no separate admission gate, and
@@ -657,6 +1284,13 @@ The remaining work and the closure pressure. The thinking system must be
 able to **read** it, in order to know it is about to be cut off and make a
 final answer; every thought operation **charges** it. It is a resource, not
 content: it is never a learned semantic feature of an idea.
+
+*Amended (Alec, 2026-09-28).* It is a budget **for percepts**: "there is a
+budget for percepts, not for conceptual space (although thoughts do shape
+the latter)". Symbols are percepts, so perceptual attention "may exclude
+perception or higher order thought", and the two share the one budget
+(2.0.1). What a thought operation pays for is attending to symbols.
+Conceptual space has no budget of its own.
 
 ### 2.9 Meronymic access
 Access to the **residual of the parthood operator**, as `part` is already
@@ -698,7 +1332,7 @@ So the irreducible stores are four — perceptual knowing, conceptual knowing
 (two orders of one indexed table), priming, LTM — plus one resource
 (budget) and one relation (taxonomy). Serial thinking and expectation are
 views of conceptual knowing (serial thinking as codes and ideas, expectation
-as a sign-reversed idea added at the seal); meronymic access is a
+as a sign-reversed idea added at the closing); meronymic access is a
 computation over idea vectors. LTM stores
 what serial thinking produces — ideas — and nothing of what parallel knowing
 held; an episode is approximated by chaining ideas.
@@ -710,9 +1344,9 @@ held; an episode is approximated by chaining ideas.
 | `<compose>` | R | R W | R W | R | — (purity, 2.6.3) | — | — | R | — |
 | `<thought>` | — | R W (effects; episodic reinstatement) | R W | cue only | R (the conceived remainder `c`), W by `arma` | R via frames; `what` brings frames | R, charged | R | R |
 | `<generate>` | W (output stream) | R | R (idea), own emitted prefix | — | — | — | walk budget | — | — |
-| `interpret` (mandatory compose) | R | R W | R W | — | — | — | — | — | — |
+| `interpret` (mandatory compose) | R | R W | R W | — | — | R (the definitions table), W (definition rows only) | — | — | — |
 | chooser (not an operator) | — | R | R | — | R (`c` per role) | R (attended frames) | R | — | — |
-| the seal (not an operator) | — | — | R (the completed idea `o`) | — | R (the image `n`), W (`c`) | W (the one writer; the estimate / observation pair) | — | — | — |
+| the closing (not an operator) | — | — | R (the completed idea `o`) | — | R (the image `n`), W (`c`) | W (the one writer; the estimate / observation pair) | — | — | — |
 
 A subsymbolic operator, when declared, has exactly the `<compose>` /
 `<generate>` row. It sees nothing a structural operator does not.
@@ -725,6 +1359,17 @@ Nothing has write access to 2.1 or 2.2 on expectation's behalf, and
 `<compose>` has no access to 2.6 at all: that pair of blanks is the purity
 invariant (2.6.3) in table form.
 
+*Amended (Alec, 2026-09-29).* `interpret` ties a word to its object by a
+definition row, `word DEF object`, and finds the object through a lookup
+table over those rows
+([two truths §17](2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29)).
+That is its entry under 2.7: it reads the definitions and nothing else of
+LTM, and it writes definitions and nothing else. `<compose>` otherwise
+still has no LTM access, and the closing is still the one writer of what a
+sentence asserts. A definition is a row like any other: it has its
+`.when`, and it is in the recency buffer with the rest ("I don't see any
+need to keep it out of recency or forgetting").
+
 ## 5. Consequences for the code
 
 1. The executor descriptors' `read_scope` strings become members of this
@@ -734,7 +1379,7 @@ invariant (2.6.3) in table form.
    prediction → 2.6, the staged estimate (an idea, 2.6.1); subgoal → frames
    scheduled into 2.4.
 3. `arma`'s estimate, already staged at the preceding boundary, becomes the
-   negative image for the next seal (item 2 of the todo): sign-reversed,
+   negative image for the next closing (item 2 of the todo): sign-reversed,
    scaled by gain, presence and the object mask, added to the completed
    idea per role (2.6.1). It is never added to compose's inputs, never
    unfolded into codes, never parked in a slot. The comprehension-time
@@ -772,7 +1417,7 @@ invariant (2.6.3) in table form.
     beginner's mind. No suspension schedule and no zero-gain training
     subset: composition is pure at every gain, so the predictor trains on
     every sentence that has a prior context.
-13. The seal computes the conceived remainder `c` per role and exposes it to
+13. The closing computes the conceived remainder `c` per role and exposes it to
     the chooser. Compose writes no negation it did not read; an absence is
     concluded only by a thought operator, and only in a model that declares
     `not` in `<thought>` (2.6.5).
@@ -881,7 +1526,7 @@ it needs the forgetting pass; test 14 to
     retrieved frame, a question's bound roles cancel and the filler of its
     open role is what remains.
 28. **Order 0 is untouched, and attention does not predict.** Staging the
-    estimate and sealing write nothing to 2.1 or 2.2; no presence carrier
+    estimate and ending write nothing to 2.1 or 2.2; no presence carrier
     ever holds a value outside `[0, 1]`; the reading scope and the priority
     surface are identical with and without a staged estimate.
 29. **Honest at every gain.** For one batch, the predictor's loss and its
@@ -918,6 +1563,18 @@ store fields (episodic) — has close precedents. References are in §8.
 | | a non-linguistic preverbal message from which lemmas and their order are generated; serial order from a single plan | Levelt 1989; Lashley 1951 |
 | adjectives move a code; lifting extends its temporal dimension (2.0) | nouns as vectors, adjectives as functions on them; composition as the application of such maps | Baroni & Zamparelli 2010; Mitchell & Lapata 2010 |
 | | nouns profile atemporal things, verbs profile processes scanned through conceived time | Langacker 1987 |
+| words narrow the domain of discourse; noun and adjective as one kind of operator (2.0.1) | classes as acts of election from a universe of discourse, commuting and idempotent | Boole 1847, 1854; De Morgan 1847 |
+| | privative adjectives are intersective once the noun is coerced to a broader reading | Kamp & Partee 1995; Partee 2010 |
+| | grammatical type decides the kind of object: nouns as vectors, modifiers and verbs as maps; a verb as a matrix followed by pointwise multiplication; one sentence space | Coecke, Sadrzadeh & Clark 2010; Kartsaklis, Sadrzadeh & Pulman 2012 |
+| | that categorical composition carried into conceptual spaces, with nouns, adjectives and verbs as convex relations | Bolt et al. 2019 |
+| a verb is a sparse, non-destructive edit of the NP (2.0.1, code notes) | an event as a force vector and a result vector; a verb refers to a single domain | Gärdenfors & Warglien 2012; Warglien, Gärdenfors & Westera 2012; Gärdenfors 2014 |
+| the concept inventory: parts and wholes, taxonomy as order (2.0, 2.10) | a concept as an extent–intent pair under a Galois connection; the concept lattice, conjunctive only, with negation by complement | Wille 1982; Ganter & Wille 1999; Wille 2000 |
+| evidence for and against as a pair; four corners (2.0, Sign) | a four-valued logic with a truth order and a knowledge order; concepts kept as owned / not-owned pairs | Belnap 1977; Qi, Wei & Yao 2014 |
+| words are projection operators (2.0.1) | propositions as projection operators on a space, idempotent, with conjunction the intersection of subspaces; the commuting projections form the Boolean part of that lattice | Birkhoff & von Neumann 1936 |
+| perception and higher-order thought share one attentional budget (2.0.1) | attention to internal representations and to sensory information has similar limited capacity; working memory as internal attention, sharing a limited resource with external selection | Chun, Golomb & Turk-Browne 2011; Kiyonaga & Egner 2013 |
+| conceptual narrowing keeps a Ground for its Figure (2.0.1) | an expression profiles an entity against a base in the attentional background; Figure and Ground in language | Langacker 1987; Talmy 2000 |
+| "a" mints and "the" binds an individual (2.0.1) | an indefinite requires that no file exist for its referent and a definite that one does; the file card as the carrier of identity across sentences | Heim 1982, 1983 |
+| `non` withdraws a pole without asserting the other (2.6.2) | negation of a word vector as projection onto the orthogonal complement, which removes a sense and its neighbours rather than asserting an opposite | Widdows & Peters 2003 |
 | one estimate, positive in production and negative in comprehension (2.6.3) | the copy of the motor command is subtracted from what comes back, leaving only what the world added; comprehenders predict by covertly running their production system | von Holst & Mittelstaedt 1950; Pickering & Garrod 2013; Dell & Chang 2014 |
 | parallel knowing vs serial thinking (2.2–2.4) | one content at a time selected from parallel processors and broadcast; associative versus rule-based reasoning | Dehaene & Naccache 2001; Sloman 1996; Evans 2008 |
 | rows as `[NP1, VP, NP2]` (2.7) | memory for discourse is propositional; surface form is lost within seconds, meaning kept | Anderson & Bower 1973; Kintsch & van Dijk 1978; Kintsch 1988; Sachs 1967; Bransford & Franks 1971 |
@@ -1247,3 +1904,34 @@ Winston, M. E., Chaffin, R., & Herrmann, D. (1987). A taxonomy of part-whole rel
 Yonelinas, A. P. (2002). The nature of recollection and familiarity: A review of 30 years of research. *Journal of Memory and Language, 46*, 441–517.
 Zwaan, R. A., & Radvansky, G. A. (1998). Situation models in language comprehension and memory. *Psychological Bulletin, 123*, 162–185.
 Zwaan, R. A., Langston, M. C., & Graesser, A. C. (1995). The construction of situation models in narrative comprehension: An event-indexing model. *Psychological Science, 6*, 292–297.
+
+**Added 2026-09-28 for 2.0 and 2.0.1** (the claims were checked against the
+sources; the page numbers were not):
+
+Belnap, N. D. (1977). A useful four-valued logic. In J. M. Dunn & G. Epstein (Eds.), *Modern uses of multiple-valued logic* (pp. 5–37). Reidel.
+Birkhoff, G., & von Neumann, J. (1936). The logic of quantum mechanics. *Annals of Mathematics, 37*, 823–843.
+Bolt, J., Coecke, B., Genovese, F., Lewis, M., Marsden, D., & Piedeleu, R. (2019). Interacting conceptual spaces I: Grammatical composition of concepts. In M. Kaipainen, F. Zenker, A. Hautamäki, & P. Gärdenfors (Eds.), *Conceptual spaces: Elaborations and applications.* Springer. arXiv:1703.08314.
+Boole, G. (1847). *The mathematical analysis of logic.* Macmillan, Barclay & Macmillan.
+Boole, G. (1854). *An investigation of the laws of thought.* Walton & Maberly.
+Burge, T. (1973). Reference and proper names. *Journal of Philosophy, 70*, 425–439.
+Chun, M. M., Golomb, J. D., & Turk-Browne, N. B. (2011). A taxonomy of external and internal attention. *Annual Review of Psychology, 62*, 73–101.
+Coecke, B., Sadrzadeh, M., & Clark, S. (2010). Mathematical foundations for a compositional distributional model of meaning. *Linguistic Analysis, 36*, 345–384.
+De Morgan, A. (1847). *Formal logic.* Taylor & Walton.
+Ganter, B., & Wille, R. (1999). *Formal concept analysis: Mathematical foundations.* Springer.
+Gärdenfors, P. (2014). *The geometry of meaning: Semantics based on conceptual spaces.* MIT Press.
+Gärdenfors, P., & Warglien, M. (2012). Using conceptual spaces to model actions and events. *Journal of Semantics, 29*, 487–519.
+Heim, I. (1982). *The semantics of definite and indefinite noun phrases* (Doctoral dissertation). University of Massachusetts, Amherst.
+Heim, I. (1983). File change semantics and the familiarity theory of definiteness. In R. Bäuerle, C. Schwarze, & A. von Stechow (Eds.), *Meaning, use, and interpretation of language* (pp. 164–189). de Gruyter.
+Kamp, H., & Partee, B. (1995). Prototype theory and compositionality. *Cognition, 57*, 129–191.
+Kartsaklis, D., Sadrzadeh, M., & Pulman, S. (2012). A unified sentence space for categorical distributional-compositional semantics: Theory and experiments. *Proceedings of COLING 2012: Posters*, 549–558.
+Kiyonaga, A., & Egner, T. (2013). Working memory as internal attention: Toward an integrative account of internal and external selection processes. *Psychonomic Bulletin & Review, 20*, 228–242.
+McNally, L., & Boleda, G. (2004). Relational adjectives as properties of kinds. *Empirical Issues in Syntax and Semantics, 5*, 179–196.
+Matushansky, O. (2008). On the linguistic complexity of proper names. *Linguistics and Philosophy, 31*, 573–627.
+Partee, B. H. (2010). Privative adjectives: Subsective plus coercion. In R. Bäuerle, U. Reyle, & T. E. Zimmermann (Eds.), *Presuppositions and discourse: Essays offered to Hans Kamp* (pp. 273–285). Emerald.
+Qi, J., Wei, L., & Yao, Y. (2014). Three-way formal concept analysis. In *Rough sets and knowledge technology* (LNCS 8818, pp. 732–741). Springer.
+Talmy, L. (2000). *Toward a cognitive semantics* (Vol. 1). MIT Press.
+Warglien, M., Gärdenfors, P., & Westera, M. (2012). Event structure, conceptual spaces and the semantics of verbs. *Theoretical Linguistics, 38*, 159–193.
+Williams, E. (1981). On the notions "lexically related" and "head of a word". *Linguistic Inquiry, 12*, 245–274.
+Widdows, D., & Peters, S. (2003). Word vectors and quantum logic: Experiments with negation and disjunction. *Proceedings of Mathematics of Language 8*, 141–154.
+Wille, R. (1982). Restructuring lattice theory: An approach based on hierarchies of concepts. In I. Rival (Ed.), *Ordered sets* (pp. 445–470). Reidel.
+Wille, R. (2000). Boolean concept logic. In B. Ganter & G. W. Mineau (Eds.), *Conceptual structures: Logical, linguistic, and computational issues* (LNAI 1867, pp. 317–331). Springer.

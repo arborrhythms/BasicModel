@@ -44,11 +44,12 @@ def test_repeated_percept_occurrences_use_input_starts_and_one_time(model):
 def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model):
     from What import What
     text = 'cat cat sat'
-    with torch.no_grad():
+    from reading_fixtures import capture_readings
+    with capture_readings(model) as readings, torch.no_grad():
         model.runBatch(train=False, split='validation', batchSize=1,
             batch_override=(model.inputSpace.prepInput([text]), torch.empty(1, 0)),
             questions=(What.present(0, split='validation'),))
-    program, = model._last_understanding.answer_program
+    program, = readings[0]
     # This grammar retains the two spaces as units too.
     assert len(program.rows) == 5
     torch.testing.assert_close(model.where_encoding.decode_index(program.symbol_where),

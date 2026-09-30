@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only ___
+/Users/arogers/github/WikiOracle/basicmodel/test/test_output_synthesis.py:339: in test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+    assert not torch.allclose(first.actual, out_after)        # answer path moved
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert not True
+E    +  where True = <built-in method allclose of type object at 0x10d0f53a0>(tensor([[[0.]],\n\n        [[0.]]]), tensor([[[0.]],\n\n        [[0.]]]))
+E    +    where <built-in method allclose of type object at 0x10d0f53a0> = torch.allclose
+E    +    and   tensor([[[0.]],\n\n        [[0.]]]) = AnswerConstruction(actual=tensor([[[0.]],\n\n        [[0.]]]), derivation=AnswerDerivation(answer_symbol=tensor([[[0., 0...ceptual', 'shape': (2, 8, 14), 'selections': ()}, {'operation': 'output:from_percepts', 'shape': (2, 1, 1)}), texts=()).actual
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+1 failed in 2.19s

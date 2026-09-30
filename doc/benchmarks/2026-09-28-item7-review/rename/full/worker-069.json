@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+  ],
+  "completed": [
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 258.71172408398706,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\ngeneration-gradient-evidence {\"output_loop\": true, \"initialization\": \"ambient RNG\", \"output_loss\": 0.055146604776382446, \"stepped_shared_groups\": [], \"conclusion_gradient\": 0}\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

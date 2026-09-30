@@ -1,0 +1,28 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_____ TestShamathaInlineGrammar.test_dnf_stack_wired_into_conceptual_space _____
+bin/Language.py:14667: in __getattr__
+    return super().__getattr__(name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'SymbolSpace' object has no attribute 'propositional_negation'
+
+During handling of the above exception, another exception occurred:
+test/test_shamatha_inline_grammar.py:64: in test_dnf_stack_wired_into_conceptual_space
+    m.symbolSpace.propositional_negation, Layers.NotLayer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14671: in __getattr__
+    return getattr(sub, name)
+           ^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:6423: in __getattr__
+    return super().__getattr__(name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'SymbolSubSpace' object has no attribute 'propositional_negation'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 8-dim embedding (words added at runtime)
+=========================== short test summary info ============================
+FAILED test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space
+1 failed, 1 passed in 2.52s

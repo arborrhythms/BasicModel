@@ -1,0 +1,224 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_chunk_views_keep_one_graph_across_part_and_bucket_widths _________
+test/test_compiled_word_chunk.py:308: in test_chunk_views_keep_one_graph_across_part_and_bucket_widths
+    assert len(graphs) == 1
+E   assert 2 == 1
+E    +  where 2 = len([GraphModule(), GraphModule()])
+----------------------------- Captured stderr call -----------------------------
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles] Recompiling function _aligned_word_chunk2 in /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:19118
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     - 0/0: not hasattr(self._modules['conceptualSpace'].__dict__['_modules']['stm'], '_clause_state')  # value = getattr(self, '_clause_state', None)  # bin/Layers.py:15485 in ensure_clause_state
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     - User stack trace:
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 19144, in _aligned_word_chunk2
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -     self._per_word_body_step(
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -   File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 256, in part_reading_body
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -     result = original_body(word, p, gate, out_slot, active_host)
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -   File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 84, in _fake_word_body
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -     stm.push_step_masked(
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 15939, in push_step_masked
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -     self._clause_state = ClauseScope.push(self.ensure_clause_state(),
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 15485, in ensure_clause_state
+V0930 01:27:41.812000 67054 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     -     value = getattr(self, '_clause_state', None)
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:side_effects.py:1484 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch._dynamo.guards.__recompiles:guards.py:5621 Recompiling function _aligned_word_chunk2 in /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:19118
+    triggered by the following guard failure(s):
+    - 0/0: not hasattr(self._modules['conceptualSpace'].__dict__['_modules']['stm'], '_clause_state')  # value = getattr(self, '_clause_state', None)  # bin/Layers.py:15485 in ensure_clause_state
+    - User stack trace:
+    -   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 19144, in _aligned_word_chunk2
+    -     self._per_word_body_step(
+    -   File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 256, in part_reading_body
+    -     result = original_body(word, p, gate, out_slot, active_host)
+    -   File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 84, in _fake_word_body
+    -     stm.push_step_masked(
+    -   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 15939, in push_step_masked
+    -     self._clause_state = ClauseScope.push(self.ensure_clause_state(),
+    -   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 15485, in ensure_clause_state
+    -     value = getattr(self, '_clause_state', None)
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:side_effects.py:1484 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths
+1 failed in 6.63s

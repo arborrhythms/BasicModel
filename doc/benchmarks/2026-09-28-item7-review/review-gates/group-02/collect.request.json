@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

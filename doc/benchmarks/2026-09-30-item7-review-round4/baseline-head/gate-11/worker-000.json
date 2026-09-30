@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow"
+  ],
+  "completed": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow"
+  ],
+  "slow_selected": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.815762208076194,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.662s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

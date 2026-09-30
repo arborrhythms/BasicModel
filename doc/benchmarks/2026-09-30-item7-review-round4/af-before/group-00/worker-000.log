@@ -1,0 +1,30 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_nested_relation_forest_keeps_its_unindexed_predicate ___________
+doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py:13: in test_nested_relation_forest_keeps_its_unindexed_predicate
+    clause = finish_reading(f.language, entry, registry=f.registry, depth=3)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:324: in finish_clause
+    operation = registry.signature_for(
+bin/Queries.py:2285: in signature_for
+    reference = concept_reference(meaning.role_refs[1])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Taxonomy.py:15: in concept_reference
+    raise TypeError("taxonomy operands require a ('sym', positive concept id) reference")
+E   TypeError: taxonomy operands require a ('sym', positive concept id) reference
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate
+1 failed, 2 warnings in 2.31s

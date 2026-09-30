@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-001.recycle.json"
+}

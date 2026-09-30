@@ -1,0 +1,24 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_c.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_b.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-02/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

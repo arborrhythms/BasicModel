@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_ps_analyze_routed.py::test_routed_known_word_is_one_terminal",
+    "test/test_ps_analyze_routed.py::test_routed_analysis_round_trips",
+    "test/test_ps_analyze_routed.py::test_routed_terminal_view_consumable"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-518.recycle.json"
+}

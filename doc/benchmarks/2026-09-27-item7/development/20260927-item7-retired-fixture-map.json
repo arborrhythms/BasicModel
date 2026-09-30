@@ -1,0 +1,42 @@
+{
+  "test_aligned_fold_binding.py": [
+    "test_meta_fold_support_roundtrips_with_vocab_extras"
+  ],
+  "test_abstraction_order_canonical.py": [
+    "test_default_autobind_meta_is_order_one",
+    "test_ws_constraint_targets_the_right_rung",
+    "test_ws_vocab_extras_roundtrip_preserves_orders"
+  ],
+  "test_mereology_raise.py": [
+    "test_delete_meta_inverts_insert_meta",
+    "test_ps_children_of_whole_counts_parts",
+    "test_unlink_child_then_collapse"
+  ],
+  "test_property_tiling.py": [
+    "test_autobind_cross_tower_live_where_gated",
+    "test_autobind_cross_tower_noop_without_spans",
+    "test_cross_tower_letters_bind_without_raising",
+    "test_cross_tower_type_edge_idempotent_no_churn",
+    "test_cross_tower_where_gates_the_edge",
+    "test_lattice_part_belongs_to_multiple_wholes",
+    "test_property_class_whole_minted_once",
+    "test_taxonomy_parents_empty_for_unbound"
+  ],
+  "test_unified_lexicon_codebook.py": [
+    "TestStage8MetaTaxonomyStructural"
+  ],
+  "test_symbolize_layer.py": [
+    "TestSymbolizeLayerForward",
+    "TestSymbolizeLayerGradient",
+    "TestSymbolizeLayerIdempotency",
+    "TestSymbolizeLayerNoPerceptStoreFallback",
+    "TestSymbolizeLayerReverse"
+  ],
+  "test_active_decode_candidates.py": [
+    "test_symbolize_forward_ignores_exact_inactive_ps_and_ws_rows",
+    "test_symbolize_reverse_ignores_exact_inactive_meta_row"
+  ],
+  "test_gather_first_percept_reads.py": [
+    "test_symbolize_uses_radix_occupied_prefix_without_full_read"
+  ]
+}

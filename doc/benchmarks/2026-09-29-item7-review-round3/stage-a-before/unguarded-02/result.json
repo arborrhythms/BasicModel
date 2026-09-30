@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 14562340048,
+  "elapsed_seconds": 5.7419862089445814
+}

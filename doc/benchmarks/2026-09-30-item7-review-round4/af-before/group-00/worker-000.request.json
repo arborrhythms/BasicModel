@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-before/group-00/worker-000.recycle.json"
+}

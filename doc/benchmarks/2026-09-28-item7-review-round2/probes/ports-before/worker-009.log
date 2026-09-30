@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_symbolic_references_parameter_attached_via_knowledge ___________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_bivector_retirement_state.py:88: in test_symbolic_references_parameter_attached_via_knowledge
+    assert hasattr(sym, 'references')
+E   AssertionError: assert False
+E    +  where False = hasattr(WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...ing()\n    (whenEncoding): WhenStartDurationEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n), 'references')
+=============================== warnings summary ===============================
+test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/../bin/Spaces.py:1740: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/../bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge
+1 failed, 2 warnings in 2.25s

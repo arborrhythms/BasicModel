@@ -1,0 +1,4 @@
+test/test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager
+test/test_ir_fullgraph_compile.py::test_serial_per_word_forward_compiles_fullgraph_eager
+
+2 tests collected in 0.07s

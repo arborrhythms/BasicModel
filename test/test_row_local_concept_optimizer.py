@@ -287,7 +287,6 @@ def test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode():
         "subsymbolicOrder": 2,
     })
     TheXMLConfig._data["WholeSpace"].update({
-        "propertyBasis": True,
         "nDim": 16,
     })
     model = BasicModel()

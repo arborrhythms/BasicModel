@@ -38,7 +38,7 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
         'ConceptualSpace/nInput': slots, 'ConceptualSpace/nOutput': slots,
         'ConceptualSpace/nVectors': 8 * pool if inventory is None else inventory,
         'WholeSpace/nInput': slots, 'WholeSpace/nOutput': slots,
-        'WholeSpace/nVectors': 16, 'WholeSpace/propertyBasis': True,
+        'WholeSpace/nVectors': 16,
         'WholeSpace/analysis': 'meronomy', 'WholeSpace/digitWholes': False,
         'WholeSpace/divideWithinWhole': False, 'OutputSpace/nInput': slots,
     }

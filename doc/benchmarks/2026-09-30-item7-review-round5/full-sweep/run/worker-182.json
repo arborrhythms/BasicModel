@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances"
+  ],
+  "completed": [
+    "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1455662080552429,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

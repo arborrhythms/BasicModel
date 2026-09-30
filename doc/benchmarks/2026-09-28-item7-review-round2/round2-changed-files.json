@@ -1,0 +1,99 @@
+{
+  "head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "changes": {
+    "bin/Interpret.py": {
+      "before": "6d12012058e5747308cebf08b5ab10fda2f7d4b4faeea4c7cf65a9976bc1f3f3",
+      "after": "de0bbb9207f43e09719100b1bc05567cc90fbfa9114c2481c6b88fbac13b7ecd"
+    },
+    "bin/Language.py": {
+      "before": "795503ed775334d014922fb24aef67d2ff5d3bc1e127df43588d6bdb5a05e48a",
+      "after": "65112c4635fddcdd9ef4d3a5796a124bfdbfcd515a1e8b3bcfb6fceaa667e010"
+    },
+    "bin/Models.py": {
+      "before": "d6850de212ca74cd46d48d049a6c84f5d28dc9173f61953a94b1100780b3d477",
+      "after": "a9a68c60af000c5568dd34f7e25ea8a4088b44164a4e166d0e88dc2967a18f21"
+    },
+    "bin/Spaces.py": {
+      "before": "c0a34d14dd7b3eb48fb4577cfbbe5c9934016100838223849aae1ad31210fa94",
+      "after": "e72170e4947a2965c9f7e4021ff92706c693963c54972aefa425c4b4025cb0df"
+    },
+    "test/test_bivector_retirement_state.py": {
+      "before": "810b76e4bd4d1f8544ad8092a9aa5ef334b3dea3d089603a9f5c05b2e86b9d73",
+      "after": "261577c8e809fd3caee34444e46c66aa00e3199a1e5c999a0a3947b1124698f0"
+    },
+    "test/test_compose_pair_driver.py": {
+      "before": "c19b6c5292e808eda3eeef3bc9c8fadd6ccbd42903c32720af315e755eb9d685",
+      "after": "5ea644a4039b3b6167b40cbbfd47b6e687bfc52ef4ef28cf435f5c085215d6dc"
+    },
+    "test/test_init_scale.py": {
+      "before": "dab5bae8fe108c4b86a7182cb670f99fed8c2b7ea8dbe1af03c440382fc0d66a",
+      "after": "4e5b3c6818901afa2a3055fa16328af39ed47f6684e80da3543c3780b675b2db"
+    },
+    "test/test_item7_byte_columns.py": {
+      "before": null,
+      "after": "5f468333dbfc73ca1f57f552220438be8860b46c08713ba09448e0b2577cafa3"
+    },
+    "test/test_item7_lesson_gradients.py": {
+      "before": null,
+      "after": "7cf1bbb9487fdb66ca38f0aff4c81399b1615e416b003f3d4f53f9a581af47f2"
+    },
+    "test/test_item7_reduction_deadline.py": {
+      "before": null,
+      "after": "51debf3b0bbedd35c3691300d35818ebddf6ef5211989e70af894f950609157c"
+    },
+    "test/test_item7_sentence_gradients.py": {
+      "before": null,
+      "after": "a68245bcf661428fa27a169771ad8da991b9cefba7ad599a2904399d59084775"
+    },
+    "test/test_item7_word_interpretation.py": {
+      "before": null,
+      "after": "9e95b6ba0fce553fffd45cbc85a38063bd2816f1e40239774bbf4235e9fb976c"
+    },
+    "test/test_mental_model.py": {
+      "before": "1e02ba8b11fe4f28a8bf907c280c07b8d523915371ccabbfd34693f6d9329525",
+      "after": "5dfdaf2297a9f7988c57cb937047b291e4a5fb292a9ac70786a3b6f77ecaae56"
+    },
+    "test/test_mm_xor.py": {
+      "before": "f31b7717533ebe163c0f1d6c9460fb8095415295b8ffc88737908d094fab382a",
+      "after": "ce7ca19088d696d085869280320e05eed5a1cb6aa2e8954e77b6d70dc0fc31fc"
+    },
+    "test/test_packed_reconstruction_parity.py": {
+      "before": "9837d850071739bddc4e9c388b16a25201c692182ea5f136eb38fa20b41d8159",
+      "after": "5f41dbcae6cb362b3444740a73f06b7d708323de8c73c2ac9c21f8624a012ce1"
+    },
+    "test/test_perceptual_loopback.py": {
+      "before": "2fc3de8e975d2762429cedac03597d56485f83165c3b567cae54e6c499703da0",
+      "after": "f95ab495074577c8a8ebcb7711ebf3024c02c6f48b9bdd3893c123004fc9baaa"
+    },
+    "test/test_phase2_end_to_end.py": {
+      "before": "c5427becd58b9aa2c1f637fa153c5975651ac7341b95ecbb15b5fb310092e5c4",
+      "after": "b048628c94fa0ca7e2f74520bf188ec6f78f612ea3bc7e96f5ba557042ae14a0"
+    },
+    "test/test_runtime_split_ingestion.py": {
+      "before": "8ad374f4663a759fb0e7c6b5b15887204879367f5cf6a7db34b8413dc0f406f9",
+      "after": "adcd3572b7d764053f27dded57def3ca1a2f06d3874747be2c9b1ea8598bad22"
+    },
+    "test/test_shamatha_inline_grammar.py": {
+      "before": "43afec8c58f3c13dd0ad1847a020946617dbaef87e6aa8974f67725615367af4",
+      "after": "bc2c3e77dc6fc9c9273f3f8f75141039db3ea600a5405d86e0d050915f40dc90"
+    },
+    "test/test_sparsity_regularizer.py": {
+      "before": "431a3be9012913ff98b4352fcf281ad6fb634f2d6a4da3f693fe7e88ec869473",
+      "after": "dc4a51caf7b5baa6023be68ace264ef50c4ac03a51d35445ea71663f01e4775e"
+    },
+    "test/test_subspace_context.py": {
+      "before": "f1981483f6e5fda6b0ae1932d58aba0b23e2bcc5da1e2ddbf6cecf570b29cc34",
+      "after": "67dbcf92c726531d4ef3b49ef426a2c5aca47b1c98f833c3b7207138a94c9a4b"
+    },
+    "test/test_subspace_what_stm_contract.py": {
+      "before": "f4321a1cda4482c2c66f4d1f71915abd4e2fb62ec851b5609280e2f88ea4ccd1",
+      "after": "b46b574e3f446f90e72816e012cbb579ae4b1d33ebf512c54c50d475d5f6fa3b"
+    },
+    "test/test_word_space_attach_knowledge.py": {
+      "before": "07fd5c19c4bf86b34dc9dc0c9b16f0622086599e17b7f4f4720c2ad280c1172c",
+      "after": "ed67d7db515eb1f2cebc9afbb1dd80c5e7bafebfc89a0d755155055ec65bbc05"
+    }
+  },
+  "supporting_fixture": "test/fixtures/item7_byte_columns.pt",
+  "source_digest": "0d42ea689e6f5021024e84c69be1e5b5dbb78515870665146413041147d15e46"
+}

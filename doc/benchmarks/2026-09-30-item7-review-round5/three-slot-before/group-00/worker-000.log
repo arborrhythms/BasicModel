@@ -1,0 +1,63 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+____________ test_first_three_slot_predicate_occurrence[False-part] ____________
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence
+    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:334: in finish_clause
+    raise ValueError('three slots have no selected relative clause')
+E   ValueError: three slots have no selected relative clause
+__________ test_first_three_slot_predicate_occurrence[False-implies] ___________
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence
+    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:334: in finish_clause
+    raise ValueError('three slots have no selected relative clause')
+E   ValueError: three slots have no selected relative clause
+____________ test_first_three_slot_predicate_occurrence[True-part] _____________
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:27: in test_first_three_slot_predicate_occurrence
+    row = f.store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:225: in point_of_row
+    raise ValueError(f'unavailable shared row {reference}')
+E   ValueError: unavailable shared row 4010033338316264258
+___________ test_first_three_slot_predicate_occurrence[True-implies] ___________
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence
+    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:334: in finish_clause
+    raise ValueError('three slots have no selected relative clause')
+E   ValueError: three slots have no selected relative clause
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]
+FAILED doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-implies]
+FAILED doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-part]
+FAILED doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-implies]
+4 failed, 2 warnings in 3.18s

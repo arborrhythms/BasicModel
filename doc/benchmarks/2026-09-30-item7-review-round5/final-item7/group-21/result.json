@@ -1,0 +1,181 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+  ],
+  "completed": [
+    "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21/worker-000.json"
+      ],
+      "pid": 16218,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429000048,
+      "elapsed_seconds": 4.274986417032778,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+        "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+        "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+        "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+        "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+        "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+        "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+        "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+      ],
+      "completed": [
+        "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+        "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+        "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+        "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+        "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+        "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+        "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+        "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0023181249853223562,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010207919403910637,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005599171854555607,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0015380829572677612,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00317199993878603,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01356083294376731,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012741703540086746,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01146212499588728,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21",
+  "elapsed_seconds": 8.730457291007042,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 429000048,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21/collect.json"
+    ],
+    "pid": 16210,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 424395976,
+    "elapsed_seconds": 4.154936166945845,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+        "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+        "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+        "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+        "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+        "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+        "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+        "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "completed": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-18/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-18/worker-000.json"
+      ],
+      "pid": 9662,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 432768272,
+      "elapsed_seconds": 3.6780239589279518,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-18/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+        "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+        "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+        "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+        "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+        "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+        "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+        "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+        "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+      ],
+      "completed": [
+        "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+        "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+        "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+        "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+        "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+        "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+        "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+        "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+        "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0042243750067427754,
+          "message": "test/test_item7_taxonomy.py:26: in test_part_testimony_symbols_the_parent_one_order_above_the_object\n    assert parent in cs.word_concepts('animal')\nE   AssertionError: assert 5 in (3, 4)\nE    +  where (3, 4) = word_concepts('animal')\nE    +    where word_concepts = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).word_concepts",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003137041931040585,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0023062919499352574,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016634589992463589,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.412497118115425e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004376458004117012,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002889332943595946,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.007599957985803485,
+          "message": "test/test_item7_taxonomy.py:132: in test_closing_binds_subject_form_to_particular_without_widening_compose_access\n    assert cid in f.cs.word_concepts('cat')\nE   AssertionError: assert 16 in (12, 13)\nE    +  where (12, 13) = word_concepts('cat')\nE    +    where word_concepts = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).word_concepts\nE    +      where ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n) = <test_item7_acceptance.SentenceFixture object at 0x11e9c0bc0>.cs",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00566237501334399,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0050507920095697045,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.007545500062406063,
+          "message": "test/test_item7_taxonomy.py:175: in test_selected_anaphor_form_binds_to_its_own_end_particular\n    assert int(f.store.row_ids[row]) in f.cs.word_concepts('he')\nE   AssertionError: assert 19 in (15, 16)\nE    +  where 19 = int(tensor(19))\nE    +  and   (15, 16) = word_concepts('he')\nE    +    where word_concepts = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).word_concepts\nE    +      where ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n) = <test_item7_acceptance.SentenceFixture object at 0x11eac2a20>.cs",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-18",
+  "elapsed_seconds": 7.421999374986626,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 432768272,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-18/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-18/collect.json"
+    ],
+    "pid": 9654,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428590304,
+    "elapsed_seconds": 3.5116776659851894,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-18/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+        "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+        "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+        "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+        "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+        "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+        "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+        "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+        "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

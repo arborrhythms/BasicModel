@@ -1,0 +1,857 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 8589934592,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 169,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-table.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/validation-runtime.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/table.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-12-compiled-reverse-loops.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-14-answer-path-ownership-and-training.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-15-next-sentence-as-the-production-objective.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-17-bounded-fixture-reuse.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-18-thought-operator-unification.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-20-selected-thought-completion.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-24-item-11c.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-25-item-9b-mode-sharing-and-interpret.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-27-item-6-8-one-attention.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-29-item-6-9-xor-grammar.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/research/2017-jang-gumbel-softmax.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/research/2019-kim-compound-pcfg.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/research/2022-yang-rank-space-pcfg.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/research/attention.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/research/forest-regularization.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/research/three-surfaces.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-07-27-teaching-modes-and-next-iteration.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-09-mathematical-thinking.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-11-sentence-boundary-thinking.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-16-forgetting.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-16-two-truths-ideas-and-relations.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-18-thought-operations-in-compose.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-20-accessible-mind-subsystems.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-26-independent-components.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-26-one-operation-per-round.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-29-operator-catalogue.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-30-occurrence-tense-aspect.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[README.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[todo.md]"
+      ],
+      "estimated_seconds": 0.03617800213396549,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/findings-in-progress.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/memory-owners.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/review-map.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ae-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-af-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ah-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ai-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-baseline-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-final-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-z-comparison.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/table.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-head/table.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-mm-grammar-table.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/README.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/table.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md]"
+      ],
+      "estimated_seconds": 0.015203210525214672,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/README.md]"
+      ],
+      "estimated_seconds": 0.0047639168333262205,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review/README.md]"
+      ],
+      "estimated_seconds": 0.0038512907922267914,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Testing.md]"
+      ],
+      "estimated_seconds": 0.0038192090578377247,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Architecture.md]"
+      ],
+      "estimated_seconds": 0.002890540985390544,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Training.md]"
+      ],
+      "estimated_seconds": 0.0025160410441458225,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-tied-input-reconstruction.md]"
+      ],
+      "estimated_seconds": 0.002482249867171049,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/STM.md]"
+      ],
+      "estimated_seconds": 0.0022291250061243773,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]"
+      ],
+      "estimated_seconds": 0.0016935828607529402,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/FutureWork.md]"
+      ],
+      "estimated_seconds": 0.0015727919526398182,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Spaces.md]"
+      ],
+      "estimated_seconds": 0.0015065839979797602,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/KernelRetirement.md]"
+      ],
+      "estimated_seconds": 0.001439749961718917,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Language.md]"
+      ],
+      "estimated_seconds": 0.001432207878679037,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item11/README.md]"
+      ],
+      "estimated_seconds": 0.0014164161402732134,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Params.md]"
+      ],
+      "estimated_seconds": 0.0013850829564034939,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/ExistenceEvidence.md]"
+      ],
+      "estimated_seconds": 0.0013743750751018524,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/README.md]"
+      ],
+      "estimated_seconds": 0.0013494589366018772,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-22-item11/README.md]"
+      ],
+      "estimated_seconds": 0.0013476249296218157,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item10/README.md]"
+      ],
+      "estimated_seconds": 0.0013419580645859241,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item10/README.md]"
+      ],
+      "estimated_seconds": 0.0013360001612454653,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11c/README.md]"
+      ],
+      "estimated_seconds": 0.0012899171561002731,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-corrections/README.md]"
+      ],
+      "estimated_seconds": 0.001209666021168232,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-corrections/README.md]"
+      ],
+      "estimated_seconds": 0.0011877499055117369,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Philosophy.md]"
+      ],
+      "estimated_seconds": 0.001107791904360056,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-forward/README.md]"
+      ],
+      "estimated_seconds": 0.0010742500890046358,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/TaxonomyQueries.md]"
+      ],
+      "estimated_seconds": 0.0010697080288082361,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11/README.md]"
+      ],
+      "estimated_seconds": 0.0010409168899059296,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/README.md]"
+      ],
+      "estimated_seconds": 0.0010213751811534166,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-parity/README.md]"
+      ],
+      "estimated_seconds": 0.0010034169536083937,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]"
+      ],
+      "estimated_seconds": 0.0009759159293025732,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item7-5/README.md]"
+      ],
+      "estimated_seconds": 0.0009537909645587206,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review-round2/README.md]"
+      ],
+      "estimated_seconds": 0.0009530419483780861,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/GradientFlow.md]"
+      ],
+      "estimated_seconds": 0.000938541954383254,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/README.md]"
+      ],
+      "estimated_seconds": 0.000928542111068964,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-extent/README.md]"
+      ],
+      "estimated_seconds": 0.0009195830207318068,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/README.md]"
+      ],
+      "estimated_seconds": 0.0009191660210490227,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-resolution/README.md]"
+      ],
+      "estimated_seconds": 0.0009014159440994263,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-review/README.md]"
+      ],
+      "estimated_seconds": 0.0008999169804155827,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md]"
+      ],
+      "estimated_seconds": 0.000895458972081542,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/README.md]"
+      ],
+      "estimated_seconds": 0.000894750002771616,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Mereology.md]"
+      ],
+      "estimated_seconds": 0.0008839590009301901,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/README.md]"
+      ],
+      "estimated_seconds": 0.0008834160398691893,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/README.md]"
+      ],
+      "estimated_seconds": 0.0008723749779164791,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/README.md]"
+      ],
+      "estimated_seconds": 0.0008048331364989281,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-landing/README.md]"
+      ],
+      "estimated_seconds": 0.0008025828283280134,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/README.md]"
+      ],
+      "estimated_seconds": 0.0007815421558916569,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item12/README.md]"
+      ],
+      "estimated_seconds": 0.000767500139772892,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank/README.md]"
+      ],
+      "estimated_seconds": 0.0007474590092897415,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]"
+      ],
+      "estimated_seconds": 0.0007432918064296246,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/SymbolFirewall.md]"
+      ],
+      "estimated_seconds": 0.0007325001060962677,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank-sync/README.md]"
+      ],
+      "estimated_seconds": 0.0007213749922811985,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/NestedRetention.md]"
+      ],
+      "estimated_seconds": 0.000711832894012332,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Reasoning.md]"
+      ],
+      "estimated_seconds": 0.0007015420123934746,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/AccessibleMind.md]"
+      ],
+      "estimated_seconds": 0.0006955829448997974,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/QueryWork.md]"
+      ],
+      "estimated_seconds": 0.0006944169290363789,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Logic.md]"
+      ],
+      "estimated_seconds": 0.000677499920129776,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/README.md]"
+      ],
+      "estimated_seconds": 0.0006655410397797823,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-sentence-expectation.md]"
+      ],
+      "estimated_seconds": 0.0006515840068459511,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item2/README.md]"
+      ],
+      "estimated_seconds": 0.0006514578126370907,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/LLMEquivalence.md]"
+      ],
+      "estimated_seconds": 0.0006445420440286398,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/SelectedMeaning.md]"
+      ],
+      "estimated_seconds": 0.0006337908562272787,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModel.md]"
+      ],
+      "estimated_seconds": 0.0006191248539835215,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8-review/README.md]"
+      ],
+      "estimated_seconds": 0.000613542040809989,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/ThoughtHistory.md]"
+      ],
+      "estimated_seconds": 0.0005940410774201155,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/README.md]"
+      ],
+      "estimated_seconds": 0.0005915840156376362,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/MachineMinds.md]"
+      ],
+      "estimated_seconds": 0.0005682918708771467,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Lexicon.md]"
+      ],
+      "estimated_seconds": 0.0005359170027077198,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table-final.md]"
+      ],
+      "estimated_seconds": 0.000490417005494237,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-reconstruction-table.md]"
+      ],
+      "estimated_seconds": 0.0004848749376833439,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-09-math-thinking-pilot.md]"
+      ],
+      "estimated_seconds": 0.00046904198825359344,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-table.md]"
+      ],
+      "estimated_seconds": 0.00046583404764533043,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/WhatSpacetimeDesign.md]"
+      ],
+      "estimated_seconds": 0.00045420811511576176,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/ExpectationRetention.md]"
+      ],
+      "estimated_seconds": 0.00045333290472626686,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/QueryContracts.md]"
+      ],
+      "estimated_seconds": 0.00044137495569884777,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table-final.md]"
+      ],
+      "estimated_seconds": 0.00043558282777667046,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-11-fold-ladder-throughput.md]"
+      ],
+      "estimated_seconds": 0.0004271250218153,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table.md]"
+      ],
+      "estimated_seconds": 0.00042508309707045555,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/reviewed-spec.md]"
+      ],
+      "estimated_seconds": 0.0004078340716660023,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-head/table.md]"
+      ],
+      "estimated_seconds": 0.0004015830345451832,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModelStabilityPlan.md]"
+      ],
+      "estimated_seconds": 0.0004002919886261225,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/spec.md]"
+      ],
+      "estimated_seconds": 0.00039275013841688633,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-xor-head/table.md]"
+      ],
+      "estimated_seconds": 0.00038554100319743156,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/PROTOCOL.md]"
+      ],
+      "estimated_seconds": 0.00037566712126135826,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table.md]"
+      ],
+      "estimated_seconds": 0.00037191715091466904,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Installation.md]"
+      ],
+      "estimated_seconds": 0.0003708750009536743,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Componentization.md]"
+      ],
+      "estimated_seconds": 0.0003707499708980322,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-pre-teacher-baseline.md]"
+      ],
+      "estimated_seconds": 0.00036979210563004017,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/QueryPhases.md]"
+      ],
+      "estimated_seconds": 0.00034149992279708385,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/Ergodic.md]"
+      ],
+      "estimated_seconds": 0.0003377909306436777,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-head/table.md]"
+      ],
+      "estimated_seconds": 0.0003377092070877552,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-teacher-reconstruction-b24.md]"
+      ],
+      "estimated_seconds": 0.0003358330577611923,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/reviewed-spec.md]"
+      ],
+      "estimated_seconds": 0.00033237505704164505,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-candidate/table.md]"
+      ],
+      "estimated_seconds": 0.00033183302730321884,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/PROTOCOL.md]"
+      ],
+      "estimated_seconds": 0.0003300001844763756,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-head/table.md]"
+      ],
+      "estimated_seconds": 0.0003290839958935976,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-candidate/table.md]"
+      ],
+      "estimated_seconds": 0.0003238329663872719,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/review.md]"
+      ],
+      "estimated_seconds": 0.00032233307138085365,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-candidate/table.md]"
+      ],
+      "estimated_seconds": 0.00032049999572336674,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/reviewed-spec.md]"
+      ],
+      "estimated_seconds": 0.0003196659963577986,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-head/table.md]"
+      ],
+      "estimated_seconds": 0.0003120419569313526,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/NanoChatGrammarPilot.md]"
+      ],
+      "estimated_seconds": 0.00031041703186929226,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/PROTOCOL.md]"
+      ],
+      "estimated_seconds": 0.00030304095707833767,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final3-xor-candidate/table.md]"
+      ],
+      "estimated_seconds": 0.0003029580693691969,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-candidate/table.md]"
+      ],
+      "estimated_seconds": 0.00030270894058048725,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-head/table.md]"
+      ],
+      "estimated_seconds": 0.0002971659414470196,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/erosion-table.md]"
+      ],
+      "estimated_seconds": 0.0002935419324785471,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/spec.md]"
+      ],
+      "estimated_seconds": 0.0002863749396055937,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-candidate/table.md]"
+      ],
+      "estimated_seconds": 0.00027637509629130363,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/PROTOCOL.md]"
+      ],
+      "estimated_seconds": 0.00025883386842906475,
+      "reserved_bytes": 2721978683.2000003
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/comparison.md]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/findings.md]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

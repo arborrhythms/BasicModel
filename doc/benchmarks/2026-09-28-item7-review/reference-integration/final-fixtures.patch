@@ -1,0 +1,45 @@
+--- a/test/test_category_em_smoke.py
++++ b/test/test_category_em_smoke.py
+@@ -75,10 +75,12 @@
+     dat = TheXMLConfig.data.get("architecture", {}).get("data", {})
+     Models.TheData.load("inline", dat=dat)
+     model, _ = Models.BasicModel.from_config(path)
+-    # This fixture measures role learning from an untrained reader. It does
+-    # not provision relation truths or claim that its arbitrary parses have
+-    # trained native references suitable for durable LTM rows.
++    # This is a role-observation mechanism fixture with an explicitly
++    # supplied absolute reading. It does not measure learned English parsing
++    # or provision durable relation truths from an untrained reader.
+     model.conceptualSpace._ltm_consolidation = False
++    from reading_fixtures import force_absolute_reading
++    force_absolute_reading(model)
+     return model
+ 
+ 
+--- a/test/test_unified_thought_controller.py
++++ b/test/test_unified_thought_controller.py
+@@ -142,6 +142,7 @@
+ 
+ 
+ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch):
++    from dataclasses import replace
+     from test_output_walk import _model, _capture_program_probe
+     from What import What
+     model = _model()
+@@ -158,7 +159,15 @@
+         ref = ('sym', owner.new_concept())
+         owner._csw_concept_row(0, ref[1])
+         query = registry.form('equal', ref, ref)
+-        monkeypatch.setattr(model.languageSpace, 'program_meaning', lambda *_a: query)
++        capture = model._capture_understanding
++        def supplied_query(*args, **kwargs):
++            # Supply this controller mechanism's question on the completed
++            # fields. The test makes no claim about learned interrogative
++            # parsing; a completed row no longer carries a compose program.
++            understanding = capture(*args, **kwargs)
++            return replace(understanding, sentence_states=tuple(
++                replace(field, query=query) for field in understanding.sentence_states))
++        monkeypatch.setattr(model, '_capture_understanding', supplied_query)
+         model.selected_thought_policy_weight = 1
+         model.selected_thought_budget = 64
+         observed = []

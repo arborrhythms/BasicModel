@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]"
+  ],
+  "completed": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25930724991485476,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

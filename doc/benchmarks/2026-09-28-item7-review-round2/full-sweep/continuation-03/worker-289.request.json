@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_noisy_input_converges_in_one_cycle",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_at_prototype_slab_is_fixed_point_cycle0",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_perslot_roundtrip_is_fixed_point"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-289.recycle.json"
+}

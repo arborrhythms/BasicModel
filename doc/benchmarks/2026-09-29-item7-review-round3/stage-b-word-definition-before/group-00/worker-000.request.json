@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-word-definition-before/group-00/worker-000.recycle.json"
+}

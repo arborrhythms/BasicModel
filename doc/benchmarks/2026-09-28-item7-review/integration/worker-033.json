@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+    "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "completed": [
+    "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+    "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027898340485990047,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002790750004351139,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00605937500949949,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013788340147584677,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001303749973885715,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

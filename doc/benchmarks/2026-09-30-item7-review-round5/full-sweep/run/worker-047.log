@@ -1,0 +1,16 @@
+...........sssssss.ssss.......s.......................ss...........      [100%]
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13593: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+53 passed, 14 skipped, 3 warnings in 7.07s

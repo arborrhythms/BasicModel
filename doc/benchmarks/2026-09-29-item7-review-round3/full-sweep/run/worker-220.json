@@ -1,0 +1,193 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_attribute_exists",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_is_an_int",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_value_is_non_negative",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_order_above_one_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_parallel_override_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_serial_override_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_negative_value_raises",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_non_integer_raises",
+    "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_exists",
+    "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_is_bool",
+    "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_false_skips_per_word_body",
+    "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_true_dispatches_to_per_word_body",
+    "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_parallel_mode_implies_per_word_enabled_false",
+    "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_serial_mode_implies_per_word_enabled_true",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_one_defaults_serial",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_two_defaults_serial_for_legacy_configs",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_zero_defaults_parallel",
+    "test/test_two_mode_dispatch.py::TestConfigsHaveExplicitOrder::test_grammar_config_default_derives_serial"
+  ],
+  "completed": [
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_attribute_exists",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_is_an_int",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_value_is_non_negative",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_order_above_one_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_parallel_override_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_serial_override_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_negative_value_raises",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_non_integer_raises",
+    "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_exists",
+    "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_is_bool",
+    "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_false_skips_per_word_body",
+    "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_true_dispatches_to_per_word_body",
+    "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_parallel_mode_implies_per_word_enabled_false",
+    "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_serial_mode_implies_per_word_enabled_true",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_one_defaults_serial",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_two_defaults_serial_for_legacy_configs",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_zero_defaults_parallel",
+    "test/test_two_mode_dispatch.py::TestConfigsHaveExplicitOrder::test_grammar_config_default_derives_serial"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_attribute_exists",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03006254183128476,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_is_an_int",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014477707911282778,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_value_is_non_negative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014431624906137586,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_order_above_one_sticks",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027401250088587403,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_parallel_override_sticks",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025140374898910522,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_serial_override_sticks",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025949958013370633,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_negative_value_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011222250061109662,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_non_integer_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010579082882031798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_exists",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01582004106603563,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_is_bool",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01489674998447299,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_false_skips_per_word_body",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04906020895577967,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_true_dispatches_to_per_word_body",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029054499929770827,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_parallel_mode_implies_per_word_enabled_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02568800002336502,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_serial_mode_implies_per_word_enabled_true",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025438582990318537,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_one_defaults_serial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02463058289140463,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_two_defaults_serial_for_legacy_configs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025856457883492112,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_zero_defaults_parallel",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02522816602140665,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::TestConfigsHaveExplicitOrder::test_grammar_config_default_derives_serial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015452458057552576,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

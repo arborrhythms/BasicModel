@@ -15,6 +15,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 import torch
+from definition_fixtures import with_definitions
 import pytest
 
 import Spaces
@@ -34,7 +35,7 @@ def _cs(nS=64, order=3):
     cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
-    return cs
+    return with_definitions(cs)
 
 
 def _evidence(positive, negative=None):

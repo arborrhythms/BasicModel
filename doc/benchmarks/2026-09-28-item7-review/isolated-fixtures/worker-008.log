@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_consumer_drives_seed_on_shape_match ___________________
+test/test_idea_decode_d3.py:68: in test_consumer_drives_seed_on_shape_match
+    m = _forward(_build("MM_mereology_serial.xml"))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_idea_decode_d3.py:28: in _build
+    m, _ = Models.BasicModel.from_config(p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17302: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)
+=========================== short test summary info ============================
+FAILED test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match
+1 failed in 6.98s

@@ -1,0 +1,7 @@
+{
+  "outcome": "passed",
+  "actual": [
+    "read(HERE / 'final-xor-candidate/summary.json')"
+  ],
+  "initial_summary_preserved": "doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/summary.json"
+}

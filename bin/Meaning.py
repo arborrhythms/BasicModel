@@ -14,7 +14,7 @@ from torch.nn import functional as F
 
 @torch.no_grad()
 def negative_image(observed, estimate, presence, *, gain=1., object_mask=None):
-    """Seal-time subtraction, detached from all reading and policy choices.
+    """Closing-time subtraction, detached from all reading and policy choices.
 
     These are derived serial values, never writes to a presence field or a
     third memory record. The predictor is trained separately against the
@@ -135,6 +135,7 @@ class ConceptualMeaning:
     bindings: Any = ()
     scope: Any = ()
     constituents: tuple = field(default=(), repr=False)
+    sentence_kind: str | None = None
 
     def __post_init__(self):
         if not torch.is_tensor(self.roles) or self.roles.ndim != 2 or self.roles.shape[0] != 3:
@@ -145,6 +146,8 @@ class ConceptualMeaning:
             raise ValueError("a conceptual meaning requires an occupied role")
         if self.mode not in ("assertive", "interrogative", "unspecified"):
             raise ValueError(f"unknown grammatical mode {self.mode!r}")
+        if self.sentence_kind not in (None, 'idea', 'relation'):
+            raise ValueError('sentence kind must be idea, relation or unspecified')
         refs = _freeze_metadata(self.role_refs)
         if not isinstance(refs, tuple) or len(refs) != 3:
             raise ValueError("role references must contain three canonical entries")
@@ -191,7 +194,8 @@ class ConceptualMeaning:
     def metadata(self):
         """Tensor-free checkpoint metadata; roles remain in the existing store."""
         return {"mode": self.mode, "polarity": self.polarity,
-                "role_refs": self.role_refs, "bindings": self.bindings, "scope": self.scope}
+                "role_refs": self.role_refs, "bindings": self.bindings, "scope": self.scope,
+                "sentence_kind": self.sentence_kind}
 
     def detached(self):
         return type(self)(self.roles.detach(), self.role_mask, **self.metadata(),

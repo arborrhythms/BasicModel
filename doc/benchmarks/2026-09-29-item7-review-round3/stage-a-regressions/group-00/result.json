@@ -1,0 +1,142 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+    "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+  ],
+  "completed": [
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+    "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-00/worker-000.json"
+      ],
+      "pid": 6358,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 459245320,
+      "elapsed_seconds": 18.18274624994956,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+        "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+      ],
+      "completed": [
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+        "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.93587591603864,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 0; 1.3s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.9795614579925314,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 1; 1.3s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.9801463339244947,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 1; 1.3s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.6596566250082105,
+          "message": "",
+          "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016532919835299253,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-00",
+  "elapsed_seconds": 19.706850124988705,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 459245320,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-00/collect.json"
+    ],
+    "pid": 6352,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 47759936,
+    "elapsed_seconds": 1.2998498750384897,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+        "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+        "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

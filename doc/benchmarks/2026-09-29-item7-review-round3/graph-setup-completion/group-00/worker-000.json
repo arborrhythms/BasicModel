@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.7027230829698965,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

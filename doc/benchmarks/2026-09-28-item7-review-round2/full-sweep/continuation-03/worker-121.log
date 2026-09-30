@@ -1,0 +1,12 @@
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+test/test_word_buffer_flush.py::test_buffer_starts_empty
+test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree
+test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick
+test/test_word_buffer_flush.py::test_buffer_lazy_resize
+test/test_word_buffer_flush.py::test_legacy_scalar_path_unaffected_by_buffer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 5 warnings in 2.60s

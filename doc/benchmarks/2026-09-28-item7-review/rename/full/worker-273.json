@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item11c_perception.py::test_part_synthesis_needs_no_fold_layer",
+    "test/test_item11c_perception.py::test_native_towers_have_no_learned_fold_layers",
+    "test/test_item11c_perception.py::test_old_subsymbolic_noop_spelling_is_rejected"
+  ],
+  "completed": [
+    "test/test_item11c_perception.py::test_part_synthesis_needs_no_fold_layer",
+    "test/test_item11c_perception.py::test_native_towers_have_no_learned_fold_layers",
+    "test/test_item11c_perception.py::test_old_subsymbolic_noop_spelling_is_rejected"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item11c_perception.py::test_part_synthesis_needs_no_fold_layer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012631332967430353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_perception.py::test_native_towers_have_no_learned_fold_layers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0469700830290094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_perception.py::test_old_subsymbolic_noop_spelling_is_rejected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010204709018580616,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -96,6 +96,8 @@
     <start name="relative_truth">part_O1</start>
     <start name="relative_truth">whole_O1</start>
     <start name="relative_truth">equal_O1</start>
+    <start name="relative_truth">implies_O1</start>
+    <start name="relative_truth">operator_O1</start>
 
     <compose>
       <rule>interpret_O1 = interpret.forward(interpret_I1)</rule>
@@ -108,12 +110,15 @@
       <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
       <rule family="part" permutation="I2,I1">whole_O1 = whole.forward(whole_I1, whole_I2)</rule>
       <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
+      <rule clause="implies">implies_O1 = implies.forward(implies_I1, implies_I2)</rule>
 
       <!-- Pure existence composition. The numerical wrapper roots the
            grammatical unary relation without an LTM read. Its selected thought
            face checks the full description's referent against accepted facts;
            merely composing it cannot establish truth. -->
-      <rule>exist_O1 = exist.forward(exist_I1)</rule>
+      <rule clause="S">exist_O1 = exist.forward(exist_I1)</rule>
+      <rule reference="I1:generic" head="I1">generic_O1 = generic.forward(generic_I1)</rule>
+      <rule>true_O1 = true.forward(true_I1)</rule>
 
       <!-- Boundary-capable thought operations still have ordinary structural
            faces.  These carriers are pure: they preserve the completed
@@ -150,15 +155,15 @@
       <!-- Composition / projection. verb = VP spectral operator; adverb =
            VP eigenmodifier; lift remains the generic order-raising fold;
            lower = DET. -->
-      <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
-      <rule>verb_O1 = verb.forward(verb_I1, verb_I2)</rule>
+      <rule clause="S">lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
+      <rule clause="VP">verb_O1 = verb.forward(verb_I1, verb_I2)</rule>
       <rule>adverb_O1 = adverb.forward(adverb_I1, adverb_I2)</rule>
-      <rule reference="I2:particular">lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+      <rule reference="I2:particular" head="I2">lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
 
       <!-- Preposition (PP): refines the NP or VP via a .where relation.
            Bind: contextual missing/controlled-NP resolution (control/raising). -->
       <rule>preposition_O1 = preposition.forward(preposition_I1, preposition_I2)</rule>
-      <rule reference="I2:pronoun">bind_O1 = bind.forward(bind_I1, bind_I2)</rule>
+      <rule reference="I2:pronoun" head="I2">bind_O1 = bind.forward(bind_I1, bind_I2)</rule>
 
       <!-- .when / surface ops: tense (phase rotation of the .when key);
            morphology (surface inflection -> .when). aspect is REPURPOSED as
@@ -169,7 +174,7 @@
       <!-- A selected surface attachment preserves its complete right-hand
            meaning while retaining both operands in the numerical carrier.
            Which spans are markers is learned by the ordinary grammar MLP. -->
-      <rule>surface_O1 = surface.forward(surface_I1, surface_I2)</rule>
+      <rule head="I2">surface_O1 = surface.forward(surface_I1, surface_I2)</rule>
     </compose>
 
     <!-- Explicit boundary allow-list. Structural declarations alone never
@@ -181,6 +186,7 @@
       <rule family="part" permutation="I2,I1">whole_O1 = whole.thought(whole_I1, whole_I2)</rule>
       <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
       <rule>exist_O1 = exist.thought(exist_I1)</rule>
+      <rule>true_O1 = true.thought(true_I1)</rule>
       <rule>lookup_O1 = lookup.thought(lookup_I1, lookup_I2)</rule>
       <rule>quantize_O1 = quantize.thought(quantize_I1)</rule>
       <rule>arma_O1 = arma.thought(arma_I1)</rule>
@@ -193,8 +199,11 @@
       <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
       <rule family="part" permutation="I2,I1">whole_I1, whole_I2 = whole.reverse(whole_O1)</rule>
       <rule>equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
+      <rule>implies_I1, implies_I2 = implies.reverse(implies_O1)</rule>
+      <rule>generic_I1 = generic.reverse(generic_O1)</rule>
 
       <rule>exist_I1 = exist.reverse(exist_O1)</rule>
+      <rule>true_I1 = true.reverse(true_O1)</rule>
 
       <rule>quantize_I1 = quantize.reverse(quantize_O1)</rule>
       <rule>arma_I1 = arma.reverse(arma_O1)</rule>

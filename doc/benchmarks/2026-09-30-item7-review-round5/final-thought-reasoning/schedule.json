@@ -1,0 +1,921 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/result.json": "0e9e6007d8898e5bbdad47490cf94c33b952d543dde1e6eb7c09ebb20797349a",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-00/result.json": "247d1e37e2927e7077e28870299b4080063e2670aa3f6ee6c0f07efd6e4bd262",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-01/result.json": "b64e7f15e75dcf55193e03beaf0847b3fad11a27436ba9a2d6fd67ca61110c68",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-02/result.json": "b4b0468e876b54c8b6442ca54173c8a4c4701fa7fdb0d0a4610722f7c3f239c6",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-03/result.json": "2ab8fb4842ec2ef5459fc78da57e331141657eea87dd2d9338a1ba922685e4df",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-04/result.json": "dae38016b3a019a6f82232e87a8d1f86951384b261c19f0b8757981a2ae38a22",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-05/result.json": "adcffb32828f7c4d6d17b74e2ece3dbdfee07a5c6c28de59eb314fac86214b49",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-06/result.json": "048f6f78f70e9836b3fda02a5d93060c7936e075e2ed125e1d0985a4833827ca",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-07/result.json": "04b23548409b8f147c80f76c8aa2bb8a38d00d844c6d253c99cac035ec5b1b1e",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-08/result.json": "4a0d2e1d4de28bb7697b464e1a91ace13bd31226d873c3fab871c2435434bde2",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-09/result.json": "7febf119c683cb6c4bbe64746c69fdd8c21963c92fc5cd04fa6646ddb1f0690f",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-10/result.json": "eca2cbbb97fcd624f9309013f76884097b7979c4923dd7307391a97800ed4d0e",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-11/result.json": "39a90850cf1a817429998b579484fa173c06e41d581c21688cbef2af745f6eab",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-12/result.json": "c56483bbaca81b19683021c6353b1b3c167c127238e8bd90eff26eae43e16fc0",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-13/result.json": "d055b9ee6d7a1439248546dfdb967df360a789678d21f16463460d9452777f55",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-14/result.json": "3ff0d06141f36ccafcba5e873563fbbb18ad59d6fa9515f36eb77fc358abbfd8",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-15/result.json": "030d29ddd015f6bbfceb4e52189e6957464b7a551ad5616829f597b962ca4314",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-16/result.json": "cec6a9ca392eddb67fee9c9ba9fc1e0cff8a521b3ef5d1c1bc5e71713d6fffd9",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-17/result.json": "6660883fa5ab5d2f98db84ce7c590d6ef57c0a2939c56d4e74bc5e54f648ad66",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18/result.json": "7d76b3730ee8fd610eddf8b99ac0a2f0a7a425498247eb1abcd94f8e73ba7777",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19/result.json": "93fe7104b666350b07d3d881b55a2afd3554cd8d42c009aefbc0ee06ac252a64",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-20/result.json": "2f5b8f78d7723560167d221ce25e9272df0850edada1e100edde30942e29cbfd",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-21/result.json": "0b6962b40a497e45703e1204026c7e76006e610f7aed6f9913c8d85c9a475be5",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-22/result.json": "3c278cf42805be79b6087ceb7cabd28a01052bdf5f1f2f301f4ef7b5a0636ea7",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-23/result.json": "6dc839baf8c9451716e2e539334ff25e85baf4889bc6659be9bc2cdb5a653022",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-24/result.json": "896c9b4aeeffb4fb363f047abe337c917016fcb9411ee1b21c1362c1dd18df1d",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-25/result.json": "d5af1189150f20d3ab0f29f4a611bbff96313c8cd531b76b0d505e5d4dc57866",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-26/result.json": "c0b81c058c49c2f23a3f2a467a7830a683644dd88bc4cf91bd13b52a27514352",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-27/result.json": "546beeeb7dec1b5bfb8e905c06b2f33ce7739948d343f2e946addc9a9ca9febe",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-28/result.json": "b6957036f4b99cefcacc2b3d2fc0a6c6a8700a256d215bb55883c49f58d10d1b",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-29/result.json": "76af413cdb30cacb5813ec215f83425acbc874610de2c85a8456b0f8d704d81d",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-30/result.json": "bc91599b1647ccaf8654d12f2fd5e9a3d49300da3efac35f3678668af071fc5e",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-31/result.json": "74b33b0ddd62bd265dd83014a3e89179c31cd0da23f976beffa950af1873140b",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-32/result.json": "996b0fc89a1145fb4b738cd4f009c63155b921bb2d37299783fc67302952ff4f",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-33/result.json": "5d7bd4c4c5963e1356dc220fad6f9db8ac239ac862302c4a5e8c9068a9c35e42",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34/result.json": "d9d9404fee9e07314739ee753b5fa93c7cd57b9c9ae1075066f1485ae0386bb3",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-00/result.json": "71554674610b2b04875b394a2870b9420aaf7ac2f0cdf074b5475ce694bc545e",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-01/result.json": "03af8f2f4328a11460618a0de6d9377627aeebffa8821ee4ec5f18b8af642bf8",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-02/result.json": "79359c359279f0e8b64ab73f7c7cdbd3e0aaf4f7cdf6500a69090932e46655a2",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-03/result.json": "28588d2cd62d6faa49fee531b5f29d2962d8c3c4d7cc014d254ab6f39583eef8",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-04/result.json": "3e9e10241baa884263cbaa085d12a62d0c28cc09d5e80f5c01d664a13bc572f8",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-05/result.json": "3ec9a4b1bd0eb3290d023c26f1a816e564a25d92189c3b7b03acd66d57394f0a",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-06/result.json": "7949495e0a37fef2cb69b663230568766131bfc0e8e2cd3e15274297616c2f4a",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-07/result.json": "ab33fe166de07bd3e8ff2694f340d5a66beb378bbaaea8b066bb2efa7c2d7f81",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-08/result.json": "241a3dca8673b477789fb9bab7164281fa4cc738e90774bb474a42eaf8fda8bb",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-09/result.json": "4f37642ca13ae63dbc83e742ee8b3a331bef6f518214729bcdd5c593fe51392b",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-10/result.json": "9839a241aaf346983bfd475c4c74102a7fc68a1d29c04c5d9eafe2bca0fa3074",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-11/result.json": "0edc5810d81237cb028fd2c2944e40bf4fe83fd175cbaf258f4957c66594e7d1",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12/result.json": "2163f365c084d67527fb77ac954c6dbd1980accc415b60010375579a5316c0fe",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13/result.json": "dcbb0c3db3f14a3310fa3d77fa01745c8d3778660d1836de8c967f43e60dc983",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-14/result.json": "36a5ade8ed1fae44da50ca895d79b186b9b22b03c10ce6f954765e44f31ef6d3",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-15/result.json": "e0e1a8ac04fe8ff5280840168f75b1634c2fdfea560cac47b3e0781369cb948f",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-16/result.json": "ada60dfa6c3fabaeaa4efbf7ae996270331a966b376ef01cee74ad691824b6b5",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-17/result.json": "a9a2f0684a2c73a79639682ee07be015a5dd88e035d55cf8ed656027e45a5c26",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-18/result.json": "d246d353e0484859ff1078d74f525c4b506761f853bf8d04db4bff06f5e21d9b",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-19/result.json": "5c02ee3bfbde9123416dababc28a9ca7603393d3b8bc977be10966743a63ff80",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-20/result.json": "bcf25d444bd6efa433cdfdc59c6c48e1ba76adc7224259c994757e811c40412b",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-21/result.json": "aceed806a7c9c541aacf5d0acd55b110d3b35b53d4c152884b90b5148af1c5bb",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-22/result.json": "700da3f289359b30ed78a8306ecb2a18729f5937c4c948ce90a3e581747ded2d",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-23/result.json": "1fcdaf5f711becf517192fc0149a8802cafde1768abf5c5b3f082af7546634c8",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-24/result.json": "addf9f323d3a4d1e8a545de7387c54100887bb4872275e342affcd851fc18254",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-25/result.json": "3667f8a0a05a3b267134d4b146838759ccf01f1cc91fd7e22fc6a17874b74708",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-26/result.json": "18df762e96898da4e70b66329ee853c2a03789c666f4fd5efc07abdb19c9d875",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-27/result.json": "1dc7c2a2b34f5ce024d454ddc768908113c038de4bfc30525c8e30bb269ab46e",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-28/result.json": "abeff9469e97d8e688bac81ee8c39f09c449b372bc5b6f7ee117e1d037c4e5fd",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-29/result.json": "de0aaf9c4dee25c405b1e0170e19648aa0fcf78a1257166a682355a6e507cd0c",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-30/result.json": "2c773073a3c1b1c7993a2c7b31a4860d31cc5aacde0a53da9650687c0db776cb",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-31/result.json": "8ad0794de74553083d215848b3fe3a7af942f203f8584eef99dac6b77fb30704",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-32/result.json": "6c57f03a3405c6da7e4435a797e15989927a6e7432d29f7318430fff96d993c1",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-33/result.json": "bdd741f552cb7aff58ff301225f206fffff72ad6d848596de31e1a9c37b91752"
+  },
+  "aggregate_bytes": 8589934592,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 320,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "estimated_seconds": 999.3187487500254,
+      "reserved_bytes": 7116625532.0
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition"
+      ],
+      "estimated_seconds": 299.6362171669025,
+      "reserved_bytes": 2985045601.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[True]"
+      ],
+      "estimated_seconds": 290.7693916251883,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging"
+      ],
+      "estimated_seconds": 265.1058842090424,
+      "reserved_bytes": 3095759529.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]"
+      ],
+      "estimated_seconds": 253.2460016249679,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "estimated_seconds": 63.888902708888054,
+      "reserved_bytes": 2460126911.2000003
+    },
+    {
+      "nodes": [
+        "test/test_serve_thinking.py::test_thinking_payload_is_attached_for_a_thinking_model",
+        "test/test_serve_thinking.py::test_thought_free_request_opens_no_dialogue",
+        "test/test_serve_thinking.py::test_non_thinking_model_has_no_payload",
+        "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+        "test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference",
+        "test/test_thought_answer_adapters.py::test_open_relation_answer_preserves_every_member_without_another_reader",
+        "test/test_thought_answer_adapters.py::test_subgoal_carries_the_typed_child_result_into_the_answer",
+        "test/test_thought_answer_adapters.py::test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer",
+        "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]",
+        "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]",
+        "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]",
+        "test/test_thought_checkpoint_credit.py::test_checkpoint_question_prompt_is_detached_without_cutting_live_credit",
+        "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
+        "test/test_thought_checkpoint_credit.py::test_episode_end_releases_question_and_trace_credit_together",
+        "test/test_thought_history_boundaries.py::test_integrated_checkpoint_retains_the_one_memory_owner_and_active_history",
+        "test/test_thought_history_boundaries.py::test_integrated_checkpoint_restores_a_typed_checked_result",
+        "test/test_thought_history_boundaries.py::test_typed_result_checkpoint_rehydrates_nested_meaning_evidence",
+        "test/test_thought_history_boundaries.py::test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field",
+        "test/test_thought_history_boundaries.py::test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result",
+        "test/test_thought_history_boundaries.py::test_restored_active_episode_keeps_new_computations_live_until_optimizer_boundary",
+        "test/test_thought_history_boundaries.py::test_credit_boundary_cannot_detach_an_unfinished_thought_episode",
+        "test/test_thought_history_boundaries.py::test_nested_meaning_cannot_silently_change_concept_width",
+        "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[skip_level]",
+        "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[duplicate_id]",
+        "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[extra_budget]",
+        "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[bad_namespace]",
+        "test/test_thought_history_boundaries.py::test_occurrence_reads_are_row_local_and_keep_live_payloads",
+        "test/test_thought_history_boundaries.py::test_trim_cannot_remove_an_occurrence_referenced_by_the_active_root",
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+        "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+        "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+        "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+        "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+        "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition",
+        "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+        "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+        "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+        "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+        "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+        "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+        "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+        "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+        "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+        "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+        "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+        "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+        "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+        "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+        "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+        "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+        "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+        "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+        "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+        "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+        "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+        "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+        "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+        "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+        "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+        "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+        "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+        "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+        "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+        "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+        "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+        "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+        "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+        "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+        "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+        "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+        "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]",
+        "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_open_variable",
+        "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_surface_normalization",
+        "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_unknown_surface_raises",
+        "test/test_truth_grounded_reasoning.py::TestIsTrue::test_absent_idea_is_unknown",
+        "test/test_truth_grounded_reasoning.py::TestIsTrue::test_activation_without_fact_evidence_remains_unknown",
+        "test/test_truth_grounded_reasoning.py::TestIsTrue::test_negative_trust_single_idea",
+        "test/test_truth_grounded_reasoning.py::TestIsTrue::test_positive_trust_single_idea",
+        "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_distinct_is_unknown",
+        "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_shared_parts_and_wholes",
+        "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_direct_true",
+        "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_unknown",
+        "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_false",
+        "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_true",
+        "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_unknown",
+        "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_equal_isomorphic_vs_norm",
+        "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_exist_is_isTrue",
+        "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_noop_without_store",
+        "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_snaps_to_nearest_idea",
+        "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+        "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+        "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+        "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+        "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+        "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+        "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys"
+      ],
+      "estimated_seconds": 3.7942548762075603,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+      ],
+      "estimated_seconds": 3.1267580420244485,
+      "reserved_bytes": 4591751783.2
+    },
+    {
+      "nodes": [
+        "test/test_levelled_thought_history.py::test_multiple_ordinary_thoughts_at_root_do_not_finish_or_make_qa_pairs",
+        "test/test_levelled_thought_history.py::test_nested_and_sibling_returns_restore_parent_scope_and_pending_roles",
+        "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[0]",
+        "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[1]",
+        "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[2]",
+        "test/test_levelled_thought_history.py::test_return_underflow_and_new_episode_do_not_corrupt_history",
+        "test/test_levelled_thought_history.py::test_replay_and_checkpoint_preserve_active_contexts_and_row_isolation",
+        "test/test_levelled_thought_history.py::test_episode_gradients_reach_earlier_roles_then_detach_after_step",
+        "test/test_levelled_thought_history.py::test_active_history_cannot_be_trimmed_or_silently_reinterpreted_as_parity",
+        "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+        "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+        "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+        "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode",
+        "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+        "test/test_math_thinking_training.py::test_primitives_knob_is_retired",
+        "test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax",
+        "test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax",
+        "test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb",
+        "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+        "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+        "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+        "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+        "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+        "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+        "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+        "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+        "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+        "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+        "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+        "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+        "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+        "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+        "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+        "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+        "test/test_normal_thought_controller.py::test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner",
+        "test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot",
+        "test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row",
+        "test/test_query_contract_boundaries.py::test_exist_executor_limits_native_fact_reads_and_reports_incompleteness",
+        "test/test_query_contract_boundaries.py::test_zero_quantize_budget_does_not_fetch_a_named_concept_payload",
+        "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+        "test/test_query_contract_boundaries.py::test_distinct_lookup_returns_complete_record_and_does_not_admit_observation",
+        "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+        "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+        "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+        "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+        "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles",
+        "test/test_query_executors.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources",
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_query_executors.py::test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping",
+        "test/test_query_executors.py::test_what_preserves_the_complete_question_and_schedules_same_controller",
+        "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+        "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+        "test/test_query_executors.py::test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction",
+        "test/test_query_grammar_copy.py::test_copied_grammar_keeps_its_immutable_structural_thought_catalogue",
+        "test/test_query_grammar_loader.py::test_order_expansion_preserves_non_rule_lists_and_expands_only_rule_bodies",
+        "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[complete.grammar]",
+        "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[ladder.grammar]",
+        "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[default.grammar]",
+        "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[shamatha.grammar]"
+      ],
+      "estimated_seconds": 0.9052649613004178,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully"
+      ],
+      "estimated_seconds": 0.5620347908698022,
+      "reserved_bytes": 4591751783.2
+    },
+    {
+      "nodes": [
+        "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[compose]",
+        "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[reconstruct]",
+        "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[generate]",
+        "test/test_query_phase_permissions.py::test_checked_execution_requires_a_completed_answer_boundary",
+        "test/test_query_phase_permissions.py::test_resolution_opens_only_completed_rows_and_closes_after_return",
+        "test/test_query_phase_permissions.py::test_resolution_exception_cannot_leave_permission_open",
+        "test/test_query_phase_permissions.py::test_nested_resolution_cannot_override_an_active_sentence_phase",
+        "test/test_query_phase_permissions.py::test_tied_input_reconstruction_must_finish_before_opening_query_boundary",
+        "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[answer_query]",
+        "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[reason_about]",
+        "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[think_about]",
+        "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[explicit_state]",
+        "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[understand_executor]",
+        "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[what_executor]",
+        "test/test_query_phase_permissions.py::test_operand_occurrence_reads_require_permission_before_preparation",
+        "test/test_query_phase_permissions.py::test_reconstruction_completion_keeps_query_executors_masked",
+        "test/test_query_phase_permissions.py::test_nested_boundary_can_narrow_but_not_widen_completed_rows",
+        "test/test_query_phase_permissions.py::test_nested_sentence_restores_the_outer_completed_boundary",
+        "test/test_query_phase_permissions.py::test_held_completed_understanding_owns_its_readiness_after_later_staging",
+        "test/test_query_phase_permissions.py::test_uncommitted_or_empty_program_rows_do_not_open_queries",
+        "test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[False]",
+        "test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[True]",
+        "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[unimplementedTool(X)]",
+        "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X)]",
+        "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y, Z)]",
+        "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isTrue()]",
+        "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[query(X)]",
+        "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[tense(X)]",
+        "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y) trailing]",
+        "test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal",
+        "test/test_query_registry.py::test_checked_operations_share_grammar_owned_identity_and_explicit_roles",
+        "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+        "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+        "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+        "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+        "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+        "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+        "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+        "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown",
+        "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+        "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+        "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+        "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+        "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+        "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+        "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures",
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "estimated_seconds": 0.3951958348043263,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestWriteMask::test_partition_isolation"
+      ],
+      "estimated_seconds": 0.38017429201863706,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+        "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+        "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+        "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+        "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+        "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+        "test/test_grammatical_query_vps.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence",
+        "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation",
+        "test/test_ispart_query_dispatch.py::test_part_layer_registered",
+        "test/test_ispart_query_dispatch.py::test_part_structural_forward_passes_parent",
+        "test/test_ispart_query_dispatch.py::test_part_dispatches_its_declared_pure_structural_face",
+        "test/test_ispart_query_dispatch.py::test_retired_rule_query_attribute_fails_loudly"
+      ],
+      "estimated_seconds": 0.22213971032761037,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestReason::test_forward_with_no_target"
+      ],
+      "estimated_seconds": 0.1753568749409169,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestIsConsistent::test_consistent_truths"
+      ],
+      "estimated_seconds": 0.16677508293651044,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths"
+      ],
+      "estimated_seconds": 0.13118170900270343,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+        "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+        "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one"
+      ],
+      "estimated_seconds": 0.10287950094789267,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestReason::test_reverse_with_no_target"
+      ],
+      "estimated_seconds": 0.10110675008036196,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero"
+      ],
+      "estimated_seconds": 0.09612487512640655,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent"
+      ],
+      "estimated_seconds": 0.08737641596235335,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives"
+      ],
+      "estimated_seconds": 0.07492720801383257,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded"
+      ],
+      "estimated_seconds": 0.06851229211315513,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty"
+      ],
+      "estimated_seconds": 0.06831929204054177,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect"
+      ],
+      "estimated_seconds": 0.06630791700445116,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded"
+      ],
+      "estimated_seconds": 0.0662689998280257,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-part-order0]"
+      ],
+      "estimated_seconds": 0.019441625103354454,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "estimated_seconds": 0.016970459138974547,
+      "reserved_bytes": 2966217015.2000003
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable"
+      ],
+      "estimated_seconds": 0.016403499990701675,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice"
+      ],
+      "estimated_seconds": 0.01624900009483099,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]"
+      ],
+      "estimated_seconds": 0.016122542088851333,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]"
+      ],
+      "estimated_seconds": 0.016060790978372097,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]"
+      ],
+      "estimated_seconds": 0.015553541947156191,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+      ],
+      "estimated_seconds": 0.014045874821022153,
+      "reserved_bytes": 2966217015.2000003
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs"
+      ],
+      "estimated_seconds": 0.013495499966666102,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch"
+      ],
+      "estimated_seconds": 0.011972458101809025,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]"
+      ],
+      "estimated_seconds": 0.011792000150308013,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result"
+      ],
+      "estimated_seconds": 0.011674166889861226,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]"
+      ],
+      "estimated_seconds": 0.011595374904572964,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]"
+      ],
+      "estimated_seconds": 0.011242583859711885,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices"
+      ],
+      "estimated_seconds": 0.010380584048107266,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[equal-roles0]",
+        "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[what-roles1]",
+        "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[exist-roles2]"
+      ],
+      "estimated_seconds": 0.010137417120859027,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture"
+      ],
+      "estimated_seconds": 0.009684249991551042,
+      "reserved_bytes": 4591751783.2
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]"
+      ],
+      "estimated_seconds": 0.009576417040079832,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]"
+      ],
+      "estimated_seconds": 0.009044791804626584,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]"
+      ],
+      "estimated_seconds": 0.00902991695329547,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]"
+      ],
+      "estimated_seconds": 0.008990291971713305,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent"
+      ],
+      "estimated_seconds": 0.008735666051506996,
+      "reserved_bytes": 3084811740.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]"
+      ],
+      "estimated_seconds": 0.00840045791119337,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]"
+      ],
+      "estimated_seconds": 0.008349458919838071,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+      ],
+      "estimated_seconds": 0.007662583142518997,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_native_addresses_do_not_become_semantic_operand_values"
+      ],
+      "estimated_seconds": 0.006917707854881883,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]"
+      ],
+      "estimated_seconds": 0.006835208041593432,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_selected_query_compose.py::test_thought_capable_rule_dispatches_the_same_pure_compose_face[part]",
+        "test/test_selected_query_compose.py::test_thought_capable_rule_dispatches_the_same_pure_compose_face[equal]",
+        "test/test_selected_query_compose.py::test_language_owns_rule_meaning_for_each_local_compose_action"
+      ],
+      "estimated_seconds": 0.006086750654503703,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[equal]"
+      ],
+      "estimated_seconds": 0.005720334127545357,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[non-False]"
+      ],
+      "estimated_seconds": 0.005445084068924189,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_unreduced_lexical_converse_uses_its_anchored_grammar_form"
+      ],
+      "estimated_seconds": 0.004999666009098291,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity"
+      ],
+      "estimated_seconds": 0.004993791924789548,
+      "reserved_bytes": 2966217015.2000003
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-equal-order2]"
+      ],
+      "estimated_seconds": 0.004939458100125194,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-whole-order1]"
+      ],
+      "estimated_seconds": 0.004723000107333064,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-equal-order2]"
+      ],
+      "estimated_seconds": 0.004722709069028497,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[part]"
+      ],
+      "estimated_seconds": 0.004707500105723739,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-whole-order1]"
+      ],
+      "estimated_seconds": 0.004699999932199717,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-part-order0]"
+      ],
+      "estimated_seconds": 0.004434332950040698,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_owned_local_rule_meaning_survives_global_grammar_reconfiguration"
+      ],
+      "estimated_seconds": 0.004338042112067342,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[not-False]"
+      ],
+      "estimated_seconds": 0.004315082915127277,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_changed_part_operand_remains_distinguishable_when_folded_root_is_identical"
+      ],
+      "estimated_seconds": 0.0043145830277353525,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode"
+      ],
+      "estimated_seconds": 0.003963999915868044,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_selected_unary_description_operation_does_not_invent_an_occurrence"
+      ],
+      "estimated_seconds": 0.003881291951984167,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored"
+      ],
+      "estimated_seconds": 0.0038328750524669886,
+      "reserved_bytes": 6761461028.8
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind"
+      ],
+      "estimated_seconds": 0.003029458923265338,
+      "reserved_bytes": 2966217015.2000003
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct"
+      ],
+      "estimated_seconds": 0.002265375107526779,
+      "reserved_bytes": 2966217015.2000003
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates"
+      ],
+      "estimated_seconds": 0.0021572080440819263,
+      "reserved_bytes": 2966217015.2000003
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty"
+      ],
+      "estimated_seconds": 0.00046737492084503174,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty"
+      ],
+      "estimated_seconds": 0.00045045814476907253,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty"
+      ],
+      "estimated_seconds": 0.00039695901796221733,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids"
+      ],
+      "estimated_seconds": 0.0003851659130305052,
+      "reserved_bytes": 3084811740.8
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestOrderPartitions::test_activation_order"
+      ],
+      "estimated_seconds": 0.00036762491799890995,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows"
+      ],
+      "estimated_seconds": 0.00029699993319809437,
+      "reserved_bytes": 4591751783.2
+    },
+    {
+      "nodes": [
+        "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+      ],
+      "estimated_seconds": 0.0002271248959004879,
+      "reserved_bytes": 3084811740.8
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty"
+      ],
+      "estimated_seconds": 0.00022604200057685375,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_capture_reads_anchored_form_from_retained_word_rows"
+      ],
+      "estimated_seconds": 0.00015300000086426735,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim"
+      ],
+      "estimated_seconds": 0.00014862488023936749,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay"
+      ],
+      "estimated_seconds": 0.00012158299796283245,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning.py::TestOrderPartitions::test_single_order"
+      ],
+      "estimated_seconds": 0.00011858297511935234,
+      "reserved_bytes": 4808258120.0
+    },
+    {
+      "nodes": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on"
+      ],
+      "estimated_seconds": 0.00011641695164144039,
+      "reserved_bytes": 4591751783.2
+    },
+    {
+      "nodes": [
+        "test/test_selected_relation_meaning.py::test_capture_does_not_invent_anchoring_for_an_unresolved_word"
+      ],
+      "estimated_seconds": 0.00010566599667072296,
+      "reserved_bytes": 3865662273.6
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api"
+      ],
+      "estimated_seconds": 9.237485937774181e-05,
+      "reserved_bytes": 2966217015.2000003
+    }
+  ]
+}

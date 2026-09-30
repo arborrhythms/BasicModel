@@ -1,0 +1,53 @@
+{
+  "doc/Params.md": {
+    "sha256": "79b59a1c4d2b2c71190ce4d7eb3eea8489d7d9160ec2ad77daa688952a96070b",
+    "stale_contract": [
+      {
+        "line": 54,
+        "text": "| `conceptBinding` | string | `\"mixing\"` | PS/WS concept-formation mode. `aligned` preserves location and fuses every non-raw cumulative fold from both towers; BasicModel uses order 4, hence three PS plus three WS sources. Exact ordered paths and actual concept order ride on the concept and persist on minted META concepts. `mixing` retains the learned `ConceptualCombine` matrix as a parallel-path alternative; BasicModel's serial path is aligned. |"
+      },
+      {
+        "line": 348,
+        "text": "| `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns concepts, META relations, and taxonomy. Aligned property-basis stages share one table; order is metadata, not a row partition. This value is independent of `WholeSpace.nVectors`, PartSpace's physical capacity, live `nOutput`, SymbolSpace references, and STM capacity. |"
+      }
+    ]
+  },
+  "doc/Training.md": {
+    "sha256": "7f653ae404b864e4fd60c6a21e2540067dfa1a77f121435323a7f9fc04d541a8",
+    "stale_contract": [
+      {
+        "line": 691,
+        "text": "UTF-8 bytes in its ConceptualSpace owner's `_row_surfaces`; an OBJECT owns"
+      },
+      {
+        "line": 693,
+        "text": "current `word_concept_of_object()` association to the WORD row. Changing an"
+      },
+      {
+        "line": 702,
+        "text": "under `concept_word_surfaces`, including stage 0 when it owns the shared"
+      }
+    ]
+  },
+  "doc/Spaces.md": {
+    "sha256": "9fdb3989a37d4ea4132324ebbd7c2827715997ac3fa8d652dd6cc8f4615a4085",
+    "stale_contract": [
+      {
+        "line": 1198,
+        "text": "`torch.compile(fullgraph=True)`) must carry **zero graph breaks**. Concept/META"
+      },
+      {
+        "line": 1221,
+        "text": "`insert_meta` / `record_lbg_pull`) are gated behind `util.MODEL_DEBUG` --- a"
+      },
+      {
+        "line": 1329,
+        "text": "WholeSpace does **not** own word meanings, concepts, META relations, taxonomy,"
+      },
+      {
+        "line": 1331,
+        "text": "ConceptualSpace (concepts/META/taxonomy) and SymbolSpace (downstream references"
+      }
+    ]
+  }
+}

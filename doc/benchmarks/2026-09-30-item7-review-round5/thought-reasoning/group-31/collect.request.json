@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_thought_review.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

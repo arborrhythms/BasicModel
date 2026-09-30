@@ -11,11 +11,10 @@ documented ``store_truths`` path
      supplied". FIX: runtime shares the normal data-driven loop with the eval
      splits (training=False); ``data_loader`` maps ``runtime`` -> the
      ``train_input`` that ``runtime_batch`` stages.
-  2. With (1) fixed, ``store_truths`` (which sets ``truthCriterion=0`` to record
-     every gold truth) reached the WS truth-recording path, where the
-     EVENT-width activation was handed to the CONTENT-width ``TruthLayer`` and
-     size-mismatched ``_pending_truths``. FIX: conform the recorded vector to
-     the TruthLayer width (slice the where/when tail) at the record site.
+  2. The former recorder mixed event-width and content-width tensors. The
+     common sentence closing now writes the actual conceptual end state;
+     provenance supplies trust without deciding its grammatical kind.
+
 
 Run on CPU; MM_grammar is serial (sentenceProtocol ON), so store_truths
 exercises the §6c prelude recording path that crashed.
@@ -58,6 +57,10 @@ def _model():
             m, _ = Models.BasicModel.from_config(
                 os.path.join(_DATA, "MM_grammar.xml"))
         Models.TheData.load("xor")
+        # This tests ingestion and external provenance. Its untrained chooser
+        # receives an explicit absolute reading; parsing quality is separate.
+        from reading_fixtures import force_absolute_reading
+        force_absolute_reading(m)
         _CACHE.append((m, Models))
     return _CACHE[0]
 
@@ -82,23 +85,35 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
             self.assertEqual(loader.dataset.num_streams, 3)
 
     def test_store_truths_records_truths(self):
-        # Bug 2: the WS event-width activation size-mismatched the
-        # content-width TruthLayer; store_truths now records end-to-end.
+        # Mechanism only: an untrained reading stores provenance, without
+        # claiming learned meaning or manufacturing either evidence pole.
         m, Models = _model()
-        tl = m.symbolSpace.truth_layer
+        store = m.symbolSpace.ltm_store
         m.store_truths([{"content": "hello world", "trust": 0.9},
                         {"content": "loving there", "trust": 0.4}])
-        self.assertGreater(int(tl.count.item()), 0)
+        rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+        self.assertEqual(rows.numel(), 2)
+        torch.testing.assert_close(store.trust[rows], torch.tensor([.9, .4]))
+        torch.testing.assert_close(store.c_plus[rows], torch.zeros(2))
+        torch.testing.assert_close(store.c_minus[rows], torch.zeros(2))
 
     def test_store_truths_idempotent_clear_then_record(self):
-        # store_truths clears + repopulates; a second call is independent.
+        # Mechanism only: replacement clears user provenance and records the
+        # new supplied trust. Neither row claims learned evidence.
         m, Models = _model()
-        tl = m.symbolSpace.truth_layer
+        store = m.symbolSpace.ltm_store
         m.store_truths([{"content": "hello world", "trust": 0.8}])
-        first = int(tl.count.item())
+        rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+        self.assertEqual(rows.numel(), 1)
+        torch.testing.assert_close(store.trust[rows], torch.tensor([.8]))
+        torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))
+        torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
         m.store_truths([{"content": "loving world", "trust": 0.6}])
-        self.assertGreater(int(tl.count.item()), 0)
-        self.assertGreater(first, 0)
+        rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+        self.assertEqual(rows.numel(), 1)
+        torch.testing.assert_close(store.trust[rows], torch.tensor([.6]))
+        torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))
+        torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
 
 
 if __name__ == "__main__":

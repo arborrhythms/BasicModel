@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: passed</h1><p>Exit 0; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.659055249998346</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8850/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8850/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] optimizer checkpoint remapped by parameter name: restored 16 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)
+batch = 0 (warm-up, 50.00%)
+batch = 2 (Δ=0.021s, 84.85%)
+batch = 4 (Δ=0.020s, 100.00%)
+</pre></td></tr></table></body></html>

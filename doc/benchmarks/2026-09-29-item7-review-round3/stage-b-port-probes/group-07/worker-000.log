@@ -1,0 +1,164 @@
+..........FF.FFFFFF......F..F.F.                                         [100%]
+=================================== FAILURES ===================================
+________________________ test_interpret_word_structure _________________________
+test/test_cs_symbol_table.py:157: in test_interpret_word_structure
+    A, B, C = cs.interpret_word([65, 66, 67], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+______________ test_meta_membership_persists_identity_resolution _______________
+test/test_cs_symbol_table.py:171: in test_meta_membership_persists_identity_resolution
+    A, B, C = cs.interpret_word([65, 66], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+__________________ test_singleton_populates_one_untyped_edge ___________________
+test/test_cs_symbol_table.py:198: in test_singleton_populates_one_untyped_edge
+    A, _B, _C = cs.interpret_word([1], 2, key="w")   # order-0 sym
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+________________ test_meta_word_object_recovers_by_intersection ________________
+test/test_cs_symbol_table.py:210: in test_meta_word_object_recovers_by_intersection
+    A, B, C = cs.interpret_word([65, 66], WORD, key="w")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+____________________ test_interpret_word_idempotent_per_key ____________________
+test/test_cs_symbol_table.py:217: in test_interpret_word_idempotent_per_key
+    A1, B1, C1 = cs.interpret_word([65, 66], WORD, key="ab")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+__________________ test_interpret_word_accumulates_word_parts __________________
+test/test_cs_symbol_table.py:230: in test_interpret_word_accumulates_word_parts
+    A, _, _ = cs.interpret_word([65], WORD, key="grows")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+_______________ test_object_symbol_is_refinable_not_yet_identity _______________
+test/test_cs_symbol_table.py:239: in test_object_symbol_is_refinable_not_yet_identity
+    _, B, _ = cs.interpret_word([65, 66, 67], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+_________ test_resolve_identities_does_not_collapse_unspecified_object _________
+test/test_cs_symbol_table.py:249: in test_resolve_identities_does_not_collapse_unspecified_object
+    A, B, C = cs.interpret_word([65, 66, 67], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+______________ test_prune_removes_bias_edge_of_dropped_everything ______________
+test/test_cs_symbol_table.py:350: in test_prune_removes_bias_edge_of_dropped_everything
+    A, _B, _C = cs.interpret_word([1], 2, key="w")   # A: order-0 sym
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+___________ test_assert_relation_replaces_poles_and_enters_embedding ___________
+test/test_cs_symbol_table.py:395: in test_assert_relation_replaces_poles_and_enters_embedding
+    A, B, C = cs.interpret_word([1], 2, key="cat")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+________________ test_assert_relation_sym_weight_lands_on_edge _________________
+test/test_cs_symbol_table.py:426: in test_assert_relation_sym_weight_lands_on_edge
+    A, _B, _C = cs.interpret_word([1], 2, key="w")   # order-0 sym
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_new_symbol_starts_empty
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_cs_symbol_table.py::test_interpret_word_structure - RuntimeE...
+FAILED test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution
+FAILED test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge
+FAILED test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection
+FAILED test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key
+FAILED test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts
+FAILED test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity
+FAILED test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object
+FAILED test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything
+FAILED test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding
+FAILED test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge
+11 failed, 21 passed, 1 warning in 4.29s

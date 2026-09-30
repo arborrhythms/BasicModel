@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 4/4 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>233.89733320800588</pre></td><td><pre>test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program
+    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
+E   AssertionError: (1, 0) root: Tensor-likes are not close!
+E   
+E   Mismatched elements: 136 / 408 (33.3%)
+E   Greatest absolute difference: 0.3198815882205963 at index (0, 75) (up to 1e-06 allowed)
+E   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=133.360s)
+batch = 0 (Δ=0.964s)
+batch = 1 (Δ=0.929s)
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>230.71461525000632</pre></td><td><pre>test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program
+    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
+E   AssertionError: (1, 0) root: Tensor-likes are not close!
+E   
+E   Mismatched elements: 136 / 408 (33.3%)
+E   Greatest absolute difference: 0.2525632381439209 at index (0, 113) (up to 1e-06 allowed)
+E   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)</pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=129.336s)
+batch = 0 (Δ=0.943s)
+batch = 1 (Δ=0.923s)
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>231.88147862500045</pre></td><td><pre>test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program
+    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
+E   AssertionError: (1, 0) root: Tensor-likes are not close!
+E   
+E   Mismatched elements: 96 / 408 (23.5%)
+E   Greatest absolute difference: 1.0618056058883667 at index (0, 0) (up to 1e-06 allowed)
+E   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=131.275s)
+batch = 0 (Δ=0.942s)
+batch = 1 (Δ=0.927s)
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0017312091076746583</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

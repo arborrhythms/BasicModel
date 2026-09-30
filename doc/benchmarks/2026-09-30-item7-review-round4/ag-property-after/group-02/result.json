@@ -1,0 +1,259 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+    "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+    "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+    "test/test_primitive_properties.py::test_complement_requires_an_observation",
+    "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+    "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+    "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+    "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+    "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+    "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+    "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+    "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+    "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+    "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions"
+  ],
+  "completed": [
+    "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+    "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+    "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+    "test/test_primitive_properties.py::test_complement_requires_an_observation",
+    "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+    "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+    "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+    "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+    "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+    "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+    "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+    "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+    "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+    "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-after/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-after/group-02/worker-000.json"
+      ],
+      "pid": 74114,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 452347272,
+      "elapsed_seconds": 6.841762125026435,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-after/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+        "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+        "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+        "test/test_primitive_properties.py::test_complement_requires_an_observation",
+        "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+        "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+        "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+        "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+        "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+        "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+        "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+        "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+        "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+        "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions"
+      ],
+      "completed": [
+        "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+        "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+        "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+        "test/test_primitive_properties.py::test_complement_requires_an_observation",
+        "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+        "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+        "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+        "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+        "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+        "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+        "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+        "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+        "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+        "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03234350006096065,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0627143329475075,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.021795541048049927,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_complement_requires_an_observation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0022240839898586273,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010283328592777252,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0012596671003848314,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04915583319962025,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.07370416703633964,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04574008285999298,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0508884999435395,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06209537503309548,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0020273751579225063,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.13427245803177357,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0033496671821922064,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-after/group-02",
+  "elapsed_seconds": 13.535101917106658,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 452347272,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-after/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-after/group-02/collect.json"
+    ],
+    "pid": 74106,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 444040440,
+    "elapsed_seconds": 6.38844429096207,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-property-after/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+        "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+        "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+        "test/test_primitive_properties.py::test_complement_requires_an_observation",
+        "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+        "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+        "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+        "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+        "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+        "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+        "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+        "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+        "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+        "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

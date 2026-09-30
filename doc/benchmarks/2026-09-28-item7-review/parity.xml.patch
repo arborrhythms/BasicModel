@@ -1,0 +1,10 @@
+--- doc/benchmarks/2026-09-26-item7-5/parity.xml
++++ doc/benchmarks/2026-09-28-item7-review/parity.xml
+@@ -115,7 +115,6 @@
+ 
+   
+   <WholeSpace>
+-    <propertyBasis>true</propertyBasis>
+     <digitWholes>true</digitWholes>
+     <whitespaceUnits>true</whitespaceUnits>
+     <analysis>meronomy</analysis>

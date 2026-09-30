@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time"
+  ],
+  "completed": [
+    "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016749999485909939,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

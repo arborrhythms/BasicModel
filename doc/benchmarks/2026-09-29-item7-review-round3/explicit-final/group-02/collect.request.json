@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

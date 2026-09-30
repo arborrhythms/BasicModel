@@ -1,0 +1,19 @@
+{
+  "files": {
+    "bin/Layers.py": {
+      "before": "8cd13be6a0f82cb6b9b23b323b2970cf760db2b5d7de0177da96f23104d1f2ed",
+      "after": "14ffa4f9fb52c3b391b6f07f8243eb45453d10a329be37c8aace2d8701036839"
+    },
+    "test/test_lexical_reference_orders.py": {
+      "before": "e5908219ed68c50eb6b6b6284047032f20db834105aec2b47c7438b34f9ba80d",
+      "after": "38723e6772f18c2725b97e0f8b884f94e31704a84642e40ae700dd4488214ff5"
+    },
+    "test/test_output_walk.py": {
+      "before": "fd3adda1f337ddcb07c45de5146281883928d0f9a04818b4950ea74ba618a7bc",
+      "after": "10f8b062d908027e9f6e34642794140edd870c3eec97f927704d852b35ac43ca"
+    }
+  },
+  "assertions_unchanged": true,
+  "status": "integrated after all measurements and native component checks completed",
+  "runtime_ast_unchanged": true
+}

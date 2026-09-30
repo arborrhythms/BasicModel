@@ -154,64 +154,29 @@ def test_radix_multibyte_percept_stamps_sigma():
     assert int(cb.fold_sequence(chunk)[0]) == Codebook.FOLD_SIGMA
 
 
-def test_forward_stamps_stage0_analysis_pi():
-    # The stage-0 unity snap names its analysis descriptors: the selected
-    # analysis_store rows carry FOLD_PI at pass slot 0 after a forward.
+def test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary():
     m = _model()
-    ws0 = m.wholeSpaces[0]
-    an = ws0.analysis_store
-    assert isinstance(an, Codebook) and an.ramsification is not None
-    x = _batch(m)
+    ws = m.wholeSpaces[0]
+    basis = ws.subspace.what
+    assert isinstance(basis, Codebook) and basis.ramsification is not None
+    before = basis.getW().detach().clone()
     with torch.no_grad():
-        m.forward(x)
-    idx = getattr(ws0, "_stage0_indices", None)
-    assert idx is not None, "fixture must exercise the stage-0 unity snap"
-    rows = idx.detach().reshape(-1).long().cpu()
-    seq = an.ramsification[rows]                       # [n, max_order]
-    assert bool((seq[:, 0] == Codebook.FOLD_PI).all())
-    for r in rows.tolist():
-        assert an.abstraction_order(r) >= 1
+        m.forward(_batch(m))
+    assert not hasattr(ws, 'analysis_store')
+    assert ws._stage0_indices is None
+    torch.testing.assert_close(basis.getW(), before, rtol=0, atol=0)
 
 
-def test_forward_stamps_symbolic_emission_winner_at_pass_slot():
-    # At t>0 the symbolic iteration emits ONE winner row per stream; the
-    # winner is stamped FOLD_PI at ITS pump pass slot.
+def test_property_passes_never_mint_symbolic_word_winners():
     m = _model()
-    x = _batch(m)
+    assert len(m.wholeSpaces) > 1
+    before = [ws.subspace.what.getW().detach().clone() for ws in m.wholeSpaces]
     with torch.no_grad():
-        m.forward(x)
-    stamped_any = False
-    for t, ws in enumerate(m.wholeSpaces):
-        if t == 0:
-            continue
-        em = getattr(ws, "_symbolic_emission", None)
-        if em is None:
-            continue
-        _win, wrow = em
-        cb = ws.subspace.what
-        assert isinstance(cb, Codebook) and cb.ramsification is not None
-        for r in wrow.reshape(-1).tolist():
-            assert int(cb.fold_sequence(int(r))[t]) == Codebook.FOLD_PI
-            stamped_any = True
-    assert stamped_any, ("no t>0 symbolic emission fired -- the fixture "
-                         "must exercise the multi-pass pump")
-
-
-def test_default_autobind_meta_is_order_one():
-    # NO flag, NO manual enable: the default insert_meta path stamps the
-    # META one sigma fold above its order-0 constituents -- provenance as
-    # a normal consequence of processing.
-    ws = _whole_space()
-    cb = ws.subspace.what
-    assert cb.ramsification is not None                # canonical allocation
-    ps_pos = ws.ensure_ps_position(7)
-    ws_pos = ws.insert_whole(init_vec=torch.randn(_D))
-    meta = ws.insert_meta(ps_pos, ws_pos, fused_vec=torch.randn(_D))
-    ws_row = ws._ws_pos_to_row[ws_pos]
-    meta_row = ws._ws_pos_to_row[meta]
-    assert cb.abstraction_order(int(ws_row)) == 0
-    assert cb.abstraction_order(int(meta_row)) == 1
-    assert int(cb.fold_sequence(int(meta_row))[0]) == Codebook.FOLD_SIGMA
+        m.forward(_batch(m))
+    for ws, original in zip(m.wholeSpaces, before):
+        assert not hasattr(ws, '_symbolic_emission')
+        assert not hasattr(ws, '_ws_pos_to_row')
+        torch.testing.assert_close(ws.subspace.what.getW(), original, rtol=0, atol=0)
 
 
 def test_lbg_split_inherits_fold_provenance():
@@ -295,19 +260,6 @@ def test_codebook_extras_roundtrip():
     assert cb2.abstraction_order(4) == 2               # derived, stable
 
 
-def test_ws_vocab_extras_roundtrip_preserves_orders():
-    ws = _whole_space()
-    ps_pos = ws.ensure_ps_position(7)
-    ws_pos = ws.insert_whole(init_vec=torch.randn(_D))
-    meta = ws.insert_meta(ps_pos, ws_pos, fused_vec=torch.randn(_D))
-    meta_row = int(ws._ws_pos_to_row[meta])
-    blob = ws.vocab_extras()
-    assert "ramsification" in blob
-    ws2 = _whole_space()
-    ws2.load_vocab_extras(blob)
-    cb2 = ws2.subspace.what
-    assert cb2.abstraction_order(meta_row) == 1
-    assert int(cb2.fold_sequence(meta_row)[0]) == Codebook.FOLD_SIGMA
 
 
 def test_model_blob_carries_ps_ramsification():
@@ -361,29 +313,8 @@ def test_constraint_updates_high_order_preserves_low():
     assert torch.equal(cb.getW()[0], low_before)
 
 
-def test_ws_constraint_targets_the_right_rung():
-    # The WS entry resolves the target layer from the percept's ladder
-    # (fold counts), defaulting to the highest-order rung.
-    ws = _whole_space()
-    cb = ws.subspace.what
-    ps_pos = ws.ensure_ps_position(3)
-    ws_pos = ws.insert_whole(init_vec=torch.randn(_D))
-    meta = ws.insert_meta(ps_pos, ws_pos, fused_vec=torch.randn(_D))
-    meta_row = int(ws._ws_pos_to_row[meta])
-    ws_row = int(ws._ws_pos_to_row[ws_pos])
-    ladder = ws.order_ladder(ps_pos)
-    assert (1, meta, meta_row) in ladder
-    sigma = _trained_sigma(_D, seed=13)
-    low_before = cb.getW()[ws_row].detach().clone()
-    torch.manual_seed(14)
-    new_def = (torch.randn(1, 1, _D) * 0.6).tanh()
-    hit = ws.apply_definition_constraint(ps_pos, new_def, sigma=sigma)
-    assert hit == (meta, meta_row)
-    assert torch.allclose(
-        cb.getW()[meta_row],
-        sigma.forward(new_def).reshape(-1)[:_D], atol=1e-4)
-    # the order-0 word row (and every other row) is untouched.
-    assert torch.equal(cb.getW()[ws_row], low_before)
-    # targeting a rung the ladder does not have resolves to None.
-    assert ws.apply_definition_constraint(
-        ps_pos, new_def, target_order=5, sigma=sigma) is None
+
+
+def test_retired_wholespace_taxonomy_writer_is_absent():
+    from Spaces import WholeSpace
+    assert not hasattr(WholeSpace, "insert_meta")

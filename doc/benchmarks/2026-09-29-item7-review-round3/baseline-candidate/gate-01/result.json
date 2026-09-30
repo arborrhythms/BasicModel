@@ -1,0 +1,116 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+  ],
+  "completed": [
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-01/worker-000.json"
+      ],
+      "pid": 4540,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 450495832,
+      "elapsed_seconds": 8.05324625002686,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+      ],
+      "completed": [
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.5106750420527533,
+          "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.4596545830136165,
+          "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.4623842919245362,
+          "message": "test/test_concept_output.py:120: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse\n    assert len(cases) == 4\nE   assert 11 == 4\nE    +  where 11 = len([2, 3, 4, 5, 6, 7, ...])",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-01",
+  "elapsed_seconds": 11.773064250010066,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 450495832,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-01/collect.json"
+    ],
+    "pid": 4531,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 422184112,
+    "elapsed_seconds": 3.501592500018887,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

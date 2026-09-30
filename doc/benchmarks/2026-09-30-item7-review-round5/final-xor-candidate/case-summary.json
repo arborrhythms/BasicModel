@@ -1,0 +1,42 @@
+{
+  "reason": "failed",
+  "attempts": 49,
+  "pytest_outcomes": {
+    "passed": 44,
+    "failed": 5
+  },
+  "missing": [],
+  "failures": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "phase": "call",
+      "message": "test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-05/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "phase": "call",
+      "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', '  \\x00'), ('hello there', '  \\x00')]",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-06/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "call",
+      "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=1721880159, epochs=160, wall_s_per_epoch=0.5863860144379472, output_loss=....5874410409014672, 0.5856005840469152, 0.586981541942805, 0.5863163338508457, 0.5875006669666618, 0.5870700418017805]}).exact_match_rate",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-22/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "call",
+      "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=1114691336, epochs=160, wall_s_per_epoch=0.5870231548778174, output_loss=...5871323752216995, 0.5898863750044256, 0.5893919579684734, 0.5910649590659887, 0.5932872910052538, 0.5911008748225868]}).exact_match_rate",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-23/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "call",
+      "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.25 == 1.0\nE    +  where 0.25 = RunRecord(config='data/MM_20M_xor.xml', seed=225162328, epochs=160, wall_s_per_epoch=0.5880494853423076, output_loss=0...5917877911124378, 0.5918474579229951, 0.5917760001029819, 0.5870129999238998, 0.5897746249102056, 0.5904434169642627]}).exact_match_rate",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-24/worker-000.log"
+    }
+  ],
+  "diagnostic_only": []
+}

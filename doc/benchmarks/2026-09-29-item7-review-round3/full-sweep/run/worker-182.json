@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
+    "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
+    "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+    "test/test_hierarchical.py::TestLevelShapes::test_two_levels",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_encoding",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
+    "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+    "test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds"
+  ],
+  "completed": [
+    "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
+    "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
+    "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+    "test/test_hierarchical.py::TestLevelShapes::test_two_levels",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_encoding",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
+    "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+    "test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011895899660885334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010320893488824368,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.570806287229061e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_two_levels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.570806287229061e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestWordEncoding::test_7tuple_encoding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018262513913214207,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014316686429083347,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013058306649327278,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.35172266606241465,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.30929416604340076,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06507062492892146,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17196670803241432,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

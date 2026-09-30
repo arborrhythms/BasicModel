@@ -1,0 +1,38 @@
+[
+  {
+    "path": "bin/ReferenceContext.py",
+    "ast_identical": true,
+    "before": "6df16975c3bc5947fc000c1c79fb194f61d993da6d78ee885a7e2cda992472aa",
+    "after": "e4ef72afc2869def1d7b5498ef4520b51330fc30b2fce93a826baf96d4c107cd"
+  },
+  {
+    "path": "bin/ClauseJournal.py",
+    "ast_identical": true,
+    "before": "896c10c1be006216cacce9e272d1b6e62df689e6bb598dc470adcb866b02bfc1",
+    "after": "f9fb4f21a61850f58e8337ae1aa4761a3336fb86cff60a66bb5dda510765fa39"
+  },
+  {
+    "path": "bin/ClauseScope.py",
+    "ast_identical": true,
+    "before": "818ca8f3c679145c3ce333952fa676ceb7a7e96cd42521934de396a3fed608cb",
+    "after": "211b705da9e277067792e9fc22e0f8b138683383408adf4b77130788300c4bc2"
+  },
+  {
+    "path": "test/test_live_references.py",
+    "ast_identical": true,
+    "before": "aa68315b7c5d70d4f7804559f3f555ba44a0fed2107b84d81b4dab4e5b7670ff",
+    "after": "6d3b7a80c8f1513e406be1cf1dc834bbeffea60ab330b643608e85c41e966ff1"
+  },
+  {
+    "path": "bin/Models.py",
+    "ast_identical": true,
+    "before": "f4a55a548e50021bb3c00e8fb535fabd0b579f3e6a6206da1b7232e2c3d30c2f",
+    "after": "6b4760374668a6cc49e9859e762cbc7e60b582eb45118d76757f466836a6bf84"
+  },
+  {
+    "path": "bin/Language.py",
+    "ast_identical": true,
+    "before": "75794c0ba4839980c466a2e0be61d8c9b4a622626bfb29e0f69811fcff366498",
+    "after": "55bf0446a1953407859a804aca0f1fa212b70546f9a65ae8abc90c5b81b60e98"
+  }
+]

@@ -1,0 +1,41 @@
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Models.py:7946: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/data/matrix/MM_20M_grammar_wordstore.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py:18575: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py:18575: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py:18575: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py:18575: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py:18575: RuntimeWarning: CS relation pool exhausted (2 rows): concept 16 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py:18575: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 9 warnings in 9.83s

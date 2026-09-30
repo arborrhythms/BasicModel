@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect_components.py",
+    "--mode",
+    "journal-detached",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/journal-detached/baseline.json"
+  ],
+  "pid": 43643,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 7810030816,
+  "elapsed_seconds": 931.1619302090257,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/journal-detached/run.log"
+}

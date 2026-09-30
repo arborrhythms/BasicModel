@@ -1,0 +1,83 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_data_no_byte_loss.py::test_concat_per_tick_slabs_equals_original_doc_bytes",
+    "test/test_data_no_byte_loss.py::test_short_doc_one_tick_eos",
+    "test/test_data_no_byte_loss.py::test_long_doc_multi_tick_only_last_is_eos",
+    "test/test_data_no_byte_loss.py::test_all_done_after_window_exhausted",
+    "test/test_data_no_byte_loss.py::test_reset_cursor_restarts_from_beginning",
+    "test/test_data_no_byte_loss.py::test_trial_cursor_yields_one_trial_per_tick",
+    "test/test_data_no_byte_loss.py::test_trial_cursor_reset_rewinds_step"
+  ],
+  "completed": [
+    "test/test_data_no_byte_loss.py::test_concat_per_tick_slabs_equals_original_doc_bytes",
+    "test/test_data_no_byte_loss.py::test_short_doc_one_tick_eos",
+    "test/test_data_no_byte_loss.py::test_long_doc_multi_tick_only_last_is_eos",
+    "test/test_data_no_byte_loss.py::test_all_done_after_window_exhausted",
+    "test/test_data_no_byte_loss.py::test_reset_cursor_restarts_from_beginning",
+    "test/test_data_no_byte_loss.py::test_trial_cursor_yields_one_trial_per_tick",
+    "test/test_data_no_byte_loss.py::test_trial_cursor_reset_rewinds_step"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_data_no_byte_loss.py::test_concat_per_tick_slabs_equals_original_doc_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020766661036759615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_data_no_byte_loss.py::test_short_doc_one_tick_eos",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012062513269484043,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_data_no_byte_loss.py::test_long_doc_multi_tick_only_last_is_eos",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002157080452889204,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_data_no_byte_loss.py::test_all_done_after_window_exhausted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.41671896725893e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_data_no_byte_loss.py::test_reset_cursor_restarts_from_beginning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010875007137656212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_data_no_byte_loss.py::test_trial_cursor_yields_one_trial_per_tick",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.666685946285725e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_data_no_byte_loss.py::test_trial_cursor_reset_rewinds_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.200000204145908e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

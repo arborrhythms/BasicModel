@@ -1,0 +1,10 @@
+[collect] 3 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.3s; peak 0.40 GiB
+[worker-000] 2 selectors; limit 1796s, 8.0 GiB
+[worker-001] 3 selectors; limit 1796s, 8.0 GiB
+[worker-002] 6 selectors; limit 1796s, 8.0 GiB
+[worker-000] exit 0; 4.4s; peak 0.40 GiB
+[worker-001] exit 0; 5.3s; peak 0.45 GiB
+[worker-002] exit 0; 6.3s; peak 0.40 GiB
+Result: passed, exit 0; 11/11 cases completed.
+output/tests/20260927-item7-clause-program/result.json

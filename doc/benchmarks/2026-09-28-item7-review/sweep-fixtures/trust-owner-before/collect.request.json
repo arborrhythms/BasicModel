@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_truth_criterion_gates_learning.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

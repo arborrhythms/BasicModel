@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_explicit_ordered_stm.py::test_ordered_taxonomy_preserves_np3_np4_orders",
+    "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np3_lift_to_s4",
+    "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np4_lift_to_s5"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-523.recycle.json"
+}

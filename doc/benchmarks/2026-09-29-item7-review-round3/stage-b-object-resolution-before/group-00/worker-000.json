@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.5253203749889508,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_index_owners_v2.py:40: in test_object_resolution_does_not_treat_its_word_as_a_second_object\n    assert cs.resolve_word_concept('hello', order=0) == obj\nE   AssertionError: assert None == 2\nE    +  where None = resolve_word_concept('hello', order=0)\nE    +    where resolve_word_concept = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).resolve_word_concept",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

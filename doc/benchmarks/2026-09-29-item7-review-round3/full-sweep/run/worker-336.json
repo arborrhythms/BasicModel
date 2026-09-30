@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_within_whole_division.py::test_unattested_punct_run_divides_into_attested_parts",
+    "test/test_within_whole_division.py::test_attested_whole_preferred_over_parts",
+    "test/test_within_whole_division.py::test_no_complete_tiling_keeps_byte_fallback",
+    "test/test_within_whole_division.py::test_attested_run_is_never_divided",
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole"
+  ],
+  "completed": [
+    "test/test_within_whole_division.py::test_unattested_punct_run_divides_into_attested_parts",
+    "test/test_within_whole_division.py::test_attested_whole_preferred_over_parts",
+    "test/test_within_whole_division.py::test_no_complete_tiling_keeps_byte_fallback",
+    "test/test_within_whole_division.py::test_attested_run_is_never_divided",
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_within_whole_division.py::test_unattested_punct_run_divides_into_attested_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028295000083744526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_attested_whole_preferred_over_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028675002977252007,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_no_complete_tiling_keeps_byte_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008542500436306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_attested_run_is_never_divided",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020004203543066978,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018264333019033074,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009268582798540592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00907804211601615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00447920779697597,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0047015000600367785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_store_is_inert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003878291929140687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00020145904272794724,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_within_whole_division.py', 242, 'Skipped: lxml not installed')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

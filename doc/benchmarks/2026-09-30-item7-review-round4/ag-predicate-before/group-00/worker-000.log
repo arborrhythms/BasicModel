@@ -1,0 +1,34 @@
+FFF...                                                                   [100%]
+=================================== FAILURES ===================================
+______ test_compact_predicates_preserve_spans_and_global_columns[normal] _______
+/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py:47: in test_compact_predicates_preserve_spans_and_global_columns
+    assert torch.equal(columns, present), (columns, present)
+E   AssertionError: (tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,
+E              14,  15,  16,  17,  18,  19,  ...251,
+E             252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10c1e53a0>(tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\n         14,  15,  16,  17,  18,  19,  2... 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,\n        252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))
+E    +    where <built-in method equal of type object at 0x10c1e53a0> = torch.equal
+_______ test_compact_predicates_preserve_spans_and_global_columns[cold] ________
+/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py:47: in test_compact_predicates_preserve_spans_and_global_columns
+    assert torch.equal(columns, present), (columns, present)
+E   AssertionError: (tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,
+E              14,  15,  16,  17,  18,  19,  ...251,
+E             252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10c1e53a0>(tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\n         14,  15,  16,  17,  18,  19,  2... 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,\n        252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))
+E    +    where <built-in method equal of type object at 0x10c1e53a0> = torch.equal
+______ test_compact_predicates_preserve_spans_and_global_columns[absent] _______
+/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-tiling-x_45s3a_/doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py:47: in test_compact_predicates_preserve_spans_and_global_columns
+    assert torch.equal(columns, present), (columns, present)
+E   AssertionError: (tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,
+E              14,  15,  16,  17,  18,  19,  ...251,
+E             252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10c1e53a0>(tensor([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,\n         14,  15,  16,  17,  18,  19,  2... 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,\n        252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263]), tensor([  0,  32,  65,  66,  67, 257, 261]))
+E    +    where <built-in method equal of type object at 0x10c1e53a0> = torch.equal
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probe_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]
+3 failed, 3 passed in 2.81s

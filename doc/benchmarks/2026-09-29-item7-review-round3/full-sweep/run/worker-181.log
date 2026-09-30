@@ -1,0 +1,26 @@
+................s.F.                                                     [100%]
+=================================== FAILURES ===================================
+_________ test_real_provisioning_is_not_an_external_prediction_stream __________
+test/test_sentence_expectation.py:257: in test_real_provisioning_is_not_an_external_prediction_stream
+    assert len(model.symbolSpace.ltm_store) == 3
+E   assert 7 == 3
+E    +  where 7 = len(TernaryTruthStore())
+E    +    where TernaryTruthStore() = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ding()\n    (wordEncoding): WordEncoding()\n  )\n  (languageSpace): LanguageSpace(\n    (clause_scope): ClauseScope()\n  )\n).ltm_store
+E    +      where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ding()\n    (wordEncoding): WordEncoding()\n  )\n  (languageSpace): LanguageSpace(\n    (clause_scope): ClauseScope()\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-2): 3 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n).symbolSpace
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13589: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+1 failed, 18 passed, 1 skipped, 3 warnings in 3.21s

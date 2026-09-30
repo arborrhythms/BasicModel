@@ -1,0 +1,517 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+  ],
+  "completed": [
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-000.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-000.json"
+      ],
+      "pid": 31707,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4272411376,
+      "elapsed_seconds": 803.4209747499553,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "completed": [
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 790.7185127909761,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n[BasicModel] Activated aligned codebook prefix 32 -> 64 rows (physical capacity 64; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-001.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-001.json"
+      ],
+      "pid": 33242,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3541553304,
+      "elapsed_seconds": 256.9361701250309,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]"
+      ],
+      "completed": [
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 248.67835116700735,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\ngeneration-gradient-evidence {\"output_loop\": false, \"initialization\": \"ambient RNG\", \"output_loss\": 0.046949829906225204, \"stepped_shared_groups\": [], \"conclusion_gradient\": 0}\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-002.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-002.json"
+      ],
+      "pid": 33534,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3243905008,
+      "elapsed_seconds": 221.25869220797904,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+      ],
+      "completed": [
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 214.3737524159951,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\ngeneration-gradient-evidence {\"output_loop\": true, \"initialization\": \"ambient RNG\", \"output_loss\": 0.057887326925992966, \"stepped_shared_groups\": [], \"conclusion_gradient\": 0}\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-003.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-003.json"
+      ],
+      "pid": 34089,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2651885096,
+      "elapsed_seconds": 210.22528845793568,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "completed": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 204.11173633404542,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-004.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-004.json"
+      ],
+      "pid": 34774,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2836991816,
+      "elapsed_seconds": 218.38154266693164,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]"
+      ],
+      "completed": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 212.08752487495076,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-005.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-005.json"
+      ],
+      "pid": 35500,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1832356864,
+      "elapsed_seconds": 169.2407301249914,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 163.62996983306948,
+          "message": "test/test_unified_thought_controller.py:158: in test_runbatch_credits_each_controller_row_from_its_own_answer\n    query = registry.form('equal', ref, ref)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:2087: in form\n    value = self._payload(argument, work=work)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:1992: in _payload\n    row = _existing_row(self.space, reference)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:490: in _existing_row\n    raise ValueError('query concept has no allocated payload row')\nE   ValueError: query concept has no allocated payload row",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-006.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-006.json"
+      ],
+      "pid": 36278,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3176926352,
+      "elapsed_seconds": 8.665098750032485,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 4.585832000011578,
+          "message": "test/test_idea_decode_d3.py:47: in test_idea_decode_defaults_off\n    m = _build(\"MM_mereology.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_idea_decode_d3.py:28: in _build\n    m, _ = Models.BasicModel.from_config(p)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17302: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-007.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-007.json"
+      ],
+      "pid": 36321,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3175910496,
+      "elapsed_seconds": 8.613622792065144,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 4.5544717910233885,
+          "message": "test/test_idea_decode_d3.py:54: in test_grammar_decode_runs_from_the_completed_field\n    m = _forward(_build(\"MM_mereology_serial.xml\"))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_idea_decode_d3.py:28: in _build\n    m, _ = Models.BasicModel.from_config(p)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17302: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-008.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-008.json"
+      ],
+      "pid": 36360,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3174583440,
+      "elapsed_seconds": 8.606717040995136,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 4.558154208003543,
+          "message": "test/test_idea_decode_d3.py:68: in test_consumer_drives_seed_on_shape_match\n    m = _forward(_build(\"MM_mereology_serial.xml\"))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_idea_decode_d3.py:28: in _build\n    m, _ = Models.BasicModel.from_config(p)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17302: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-009.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-009.json"
+      ],
+      "pid": 36405,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3175730344,
+      "elapsed_seconds": 8.646335583995096,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 4.56175270897802,
+          "message": "test/test_idea_decode_d3.py:84: in test_consumer_falls_back_on_width_mismatch\n    m = _forward(_build(\"MM_mereology_serial.xml\"))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_idea_decode_d3.py:28: in _build\n    m, _ = Models.BasicModel.from_config(p)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17302: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-010.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-010.json"
+      ],
+      "pid": 36444,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3175402616,
+      "elapsed_seconds": 8.604205790907145,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+      ],
+      "completed": [
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 4.546049040975049,
+          "message": "test/test_idea_decode_d3.py:99: in test_reverse_off_path_unchanged\n    m = _forward(_build(\"MM_mereology.xml\"))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_idea_decode_d3.py:28: in _build\n    m, _ = Models.BasicModel.from_config(p)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17302: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-011.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-011.json"
+      ],
+      "pid": 36447,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434898264,
+      "elapsed_seconds": 3.624885750003159,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier"
+      ],
+      "completed": [
+        "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008402499370276928,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+        "/private/tmp/item7-isolated-fixtures/worker-012.request.json",
+        "/private/tmp/item7-isolated-fixtures/worker-012.json"
+      ],
+      "pid": 36449,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435012928,
+      "elapsed_seconds": 3.6009032919537276,
+      "log": "/private/tmp/item7-isolated-fixtures/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+      ],
+      "completed": [
+        "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.26250359043479e-05,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 7200,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg",
+  "run_dir": "/private/tmp/item7-isolated-fixtures",
+  "elapsed_seconds": 1935.2020066250116,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 4272411376,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+      "/private/tmp/item7-isolated-fixtures/collect.request.json",
+      "/private/tmp/item7-isolated-fixtures/collect.json"
+    ],
+    "pid": 31696,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 438027536,
+    "elapsed_seconds": 4.469662583083846,
+    "log": "/private/tmp/item7-isolated-fixtures/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+        "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+        "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+        "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+        "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+        "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+        "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

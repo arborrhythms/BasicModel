@@ -1,0 +1,38 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_seal_uses_the_ordered_object_parent_and_deduplicates_it _________
+
+    def test_seal_uses_the_ordered_object_parent_and_deduplicates_it():
+        from types import SimpleNamespace
+        import torch
+        from ClauseSeal import Clause, attach_clause_index
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+        cs, interpret = _operator()
+        first = interpret.forward(interpret.lookup_word([7], [1], form='cat'))
+        second = interpret.forward(interpret.lookup_word([8], [1], form='animal'))
+        predicate = interpret.forward(interpret.lookup_word([9], [1], form='part'))
+        store = TernaryTruthStore(8, capacity=16)
+        model = SimpleNamespace()
+        attach_clause_index(model, store, cs)
+        source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
+                        relation='part', refs=(first, predicate, second))
+        row = store.seal_clause(source)
+        parent = int(store.refs[row, 2])
+>       assert cs._concept_source_order(parent) == cs._concept_source_order(first) + 1
+E       assert 1 == (1 + 1)
+E        +  where 1 = _concept_source_order(5)
+E        +    where _concept_source_order = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n)._concept_source_order
+E        +  and   1 = _concept_source_order(2)
+E        +    where _concept_source_order = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n)._concept_source_order
+
+test/test_item7_taxonomy.py:87: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_taxonomy.py::test_seal_uses_the_ordered_object_parent_and_deduplicates_it
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_taxonomy.py::test_seal_uses_the_ordered_object_parent_and_deduplicates_it
+1 failed, 1 passed, 1 warning in 2.05s

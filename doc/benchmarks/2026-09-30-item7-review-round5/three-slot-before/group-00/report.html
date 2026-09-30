@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 4/4 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.014817292103543878</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence
+    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:334: in finish_clause
+    raise ValueError(&#x27;three slots have no selected relative clause&#x27;)
+E   ValueError: three slots have no selected relative clause</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-implies]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.010316082974895835</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence
+    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:334: in finish_clause
+    raise ValueError(&#x27;three slots have no selected relative clause&#x27;)
+E   ValueError: three slots have no selected relative clause</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-part]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.009673916036263108</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:27: in test_first_three_slot_predicate_occurrence
+    row = f.store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:225: in point_of_row
+    raise ValueError(f&#x27;unavailable shared row {reference}&#x27;)
+E   ValueError: unavailable shared row 4010033338316264258</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-implies]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01223333296366036</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence
+    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/reading_fixtures.py:97: in finish_reading
+    return finish_clause(language, entry, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:334: in finish_clause
+    raise ValueError(&#x27;three slots have no selected relative clause&#x27;)
+E   ValueError: three slots have no selected relative clause</pre></td><td><pre></pre></td></tr></table></body></html>

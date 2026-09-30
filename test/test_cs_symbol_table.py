@@ -19,6 +19,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 import torch
+from definition_fixtures import with_definitions
 
 import Spaces
 from Layers import WORD, UNIVERSE, ATOM, NOTHING, EVERYTHING
@@ -35,7 +36,7 @@ def _cs(nS=64):
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    return Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
+    return with_definitions(Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D]))
 
 
 def test_new_symbol_starts_empty():
@@ -153,34 +154,16 @@ def test_populate_then_resolve_identities_live_lifecycle():
 
 def test_interpret_word_structure():
     cs = _cs()
-    # PS gives the word-parts (pids 65,66,67); WS gives the word-whole (WORD).
-    A, B, C = cs.interpret_word([65, 66, 67], WORD)
-    # A = WORD-symbol: parts = the word-parts, whole = the word-whole.
+    A, B = cs.interpret_word([65, 66, 67], WORD)
     assert set(cs.concept_parts(A)) == {65, 66, 67}
     assert cs.concept_wholes(A) == [WORD]
-    # B = OBJECT-symbol: maximally unspecified -- ATOM <= UNIVERSE, to be refined.
-    assert cs.concept_parts(B) == [("sym", A)]
-    assert cs.concept_wholes(B) == []
-    # C = META-concept (P2 flip, sec 4c): the ORDERED PAIR
-    # [whole=word-symbol, part=object-symbol] -- roles are positional slots
-    # of an ordered pair, not containment claims.
-    assert cs.concept_parts(C) == [("sym", B)]
-    assert cs.concept_wholes(C) == [("sym", A)]
+    assert set(cs.concept_parts(B)) == {65, 66, 67}
+    assert cs.concept_wholes(B) == [WORD]
+    assert cs._csw_row_of(A) is None
+    assert cs._csw_row_of(B) is not None
+    assert cs.definitions.deref(A) == B
 
 
-def test_meta_pair_is_discretizable_and_persists_resolve():
-    """The META is the sec-4c ordered pair: its discrete reading is exact
-    ([whole=A, part=B]) and -- per the SINGLETON principle (a sym-sym 1:1
-    row is unit-set/pair STRUCTURE, not an id-of-indiscernibles tie) -- it
-    survives resolve_identities."""
-    cs = _cs()
-    A, B, C = cs.interpret_word([65, 66], WORD)
-    alloc = cs._concept_allocator
-    assert alloc.store_of(C).discretize_row(C) == (("sym", A), ("sym", B))
-    resolved = cs.resolve_identities()
-    assert C not in resolved
-    assert cs.concept_parts(C) == [("sym", B)]       # pair persists
-    assert cs.concept_wholes(C) == [("sym", A)]
 
 
 def test_singleton_concept_is_idempotent_unit_set():
@@ -203,48 +186,40 @@ def test_singleton_populates_one_untyped_edge():
     """Min-support exemption: the singleton's weighted reading is its ONE
     untyped edge onto the constituent's global row (v3)."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.interpret_word([1], 2, key="w")   # order-0 sym
+    _word, A = cs.interpret_word([1], 2, key="w")   # order-0 sym
     S = cs.singleton_concept(A)
     assert cs._concept_source_order(S) == 1
     row = cs._csw_rows[(1, S)]
     assert cs.concept_weights(row) == [(cs._csw_rows[(0, A)], 1.0)]
 
 
-def test_meta_word_object_recovers_by_intersection():
-    """Typed intersection read-out (Alec 2026-07-02): (word, object) come
-    from intersecting the meta's sym constituents with the word-symbol
-    class, not from slot order."""
-    cs = _cs()
-    A, B, C = cs.interpret_word([65, 66], WORD, key="w")
-    assert cs.meta_word_object(C) == (A, B)
-    assert cs.meta_word_object(A) is None            # not a two-sym meta
 
 
 def test_interpret_word_idempotent_per_key():
     cs = _cs()
-    A1, B1, C1 = cs.interpret_word([65, 66], WORD, key="ab")
-    A2, B2, C2 = cs.interpret_word([65, 66], WORD, key="ab")
-    assert (A1, B1, C1) == (A2, B2, C2)              # same word -> same triple
+    A1, B1 = cs.interpret_word([65, 66], WORD, key="ab")
+    A2, B2 = cs.interpret_word([65, 66], WORD, key="ab")
+    assert (A1, B1) == (A2, B2)              # same word -> same triple
     # a different surface text mints a fresh triple
-    A3, _, _ = cs.interpret_word([67], WORD, key="c")
+    A3, _ = cs.interpret_word([67], WORD, key="c")
     assert A3 != A1
     # no key -> always fresh
-    A4, _, _ = cs.interpret_word([65, 66], WORD)
+    A4, _ = cs.interpret_word([65, 66], WORD)
     assert A4 == A1  # native ordered parts resolve without a surface cache
 
 
 def test_interpret_word_accumulates_word_parts():
     cs = _cs()
-    A, _, _ = cs.interpret_word([65], WORD, key="grows")
+    A, _ = cs.interpret_word([65], WORD, key="grows")
     # the same word re-presented with a new spelled-out part accrues it onto A.
-    A2, _, _ = cs.interpret_word([66], WORD, key="grows")
+    A2, _ = cs.interpret_word([66], WORD, key="grows")
     assert A2 == A
     assert set(cs.concept_parts(A)) == {65, 66}
 
 
 def test_object_symbol_is_refinable_not_yet_identity():
     cs = _cs()
-    _, B, _ = cs.interpret_word([65, 66, 67], WORD)
+    _, B = cs.interpret_word([65, 66, 67], WORD)
     # B starts as a 1-part/1-whole tie (ATOM <= UNIVERSE) -- structurally an
     # identity SHAPE, but it is the unspecified poles awaiting refinement, so it
     # is still in the active set until the lifecycle specializes it.
@@ -254,14 +229,14 @@ def test_object_symbol_is_refinable_not_yet_identity():
 
 def test_resolve_identities_does_not_collapse_unspecified_object():
     cs = _cs()
-    A, B, C = cs.interpret_word([65, 66, 67], WORD)
+    A, B = cs.interpret_word([65, 66, 67], WORD)
     resolved = cs.resolve_identities()
     # B (ATOM <= UNIVERSE) is the unspecified object -> NOT collapsed; it stays
     # active for refinement and is not recorded as a resolved identity.
     assert B not in resolved
     assert cs.symbol_identity(B) is None
     assert B in cs.symbols_needing_processing()
-    assert cs.concept_parts(B) == [("sym", A)] and cs.concept_wholes(B) == []
+    assert set(cs.concept_parts(B)) == {65, 66, 67} and cs.concept_wholes(B) == [WORD]
     # once refined to a CONCRETE part + whole, it DOES resolve to an identity.
     cs._concept_parts[B] = {65}
     cs._concept_wholes[B] = {WORD}
@@ -297,7 +272,7 @@ def _cs_sparse_active(nS=64, order=1):
     cs = _cs(nS=nS)
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
-    return cs
+    return with_definitions(cs)
 
 
 # -- .when consistency at the tie site (2026-07-02 plan, Task 7) ---------------
@@ -355,7 +330,7 @@ def test_prune_removes_bias_edge_of_dropped_everything():
     physical edge pruning can retire is the EVERYTHING bias -- global
     (row, nVectors) -- of a pool concept once a tighter whole is linked."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.interpret_word([1], 2, key="w")   # A: order-0 sym
+    _word, A = cs.interpret_word([1], 2, key="w")   # A: order-0 sym
     c = cs.new_concept()
     cs.add_part(c, ("sym", A))                       # order 1
     cs.add_whole(c, EVERYTHING)
@@ -400,9 +375,9 @@ def test_refine_over_collected_runs_pruning_round():
 
 def test_assert_relation_replaces_poles_and_enters_embedding():
     cs = _cs_sparse_active()
-    A, B, C = cs.interpret_word([1], 2, key="cat")
-    assert set(cs.concept_parts(B)) == {("sym", A)}
-    assert set(cs.concept_wholes(B)) == set()
+    A, B = cs.interpret_word([1], 2, key="cat")
+    assert set(cs.concept_parts(B)) == {1}
+    assert set(cs.concept_wholes(B)) == {2}
     # "a cat has whiskers" (whiskers-object = another concept, id 9):
     cs.assert_concept_relation(B, sym_part=9)
     assert ATOM not in cs.concept_parts(B)           # pole replaced
@@ -431,7 +406,7 @@ def test_assert_relation_sym_weight_lands_on_edge():
     (relation_row, constituent_row) (no_grad evidence, not a backprop
     target)."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.interpret_word([1], 2, key="w")   # order-0 sym
+    _word, A = cs.interpret_word([1], 2, key="w")   # order-0 sym
     c = cs.new_concept()
     cs.assert_concept_relation(c, sym_part=A, whole=7, weight=0.5)
     order = cs._concept_source_order(c)
@@ -453,12 +428,6 @@ def test_pole_rename_aliases_hold():
     assert ATOM == NOTHING and UNIVERSE == EVERYTHING
 
 
-def test_fresh_object_concept_reads_its_naming_word_at_order1():
-    cs = _cs_sparse_active()
-    A, B, _ = cs.interpret_word([1, 2], 3, key="cat")
-    assert cs._concept_source_order(B) == 1
-    row = cs._csw_row_of(B)
-    assert cs.concept_weights(row) == [(cs._csw_row_of(A), 1.)]
 
 
 def test_assert_concrete_whole_retires_everything_bias_edge():
@@ -466,7 +435,7 @@ def test_assert_concrete_whole_retires_everything_bias_edge():
     edge when a concrete whole replaces the pole (the wide-open object
     narrows)."""
     cs = _cs_sparse_active()
-    A, _B, _C = cs.interpret_word([1, 2], 3, key="cat")
+    _word, A = cs.interpret_word([1, 2], 3, key="cat")
     c = cs.new_concept()
     cs.add_part(c, ("sym", A))                       # order 1
     cs.add_whole(c, EVERYTHING)
@@ -496,40 +465,13 @@ def test_prune_drops_everything_when_other_whole_linked():
 
 def test_word_object_testimony_participation_strengthens_on_reoccurrence():
     cs = _cs_sparse_active()
-    A, B, C = cs.interpret_word([1, 2], 3, key="cat", occurrence=(0, 0))
+    A, B = cs.interpret_word([1, 2], 3, key="cat", occurrence=(0, 0))
     row = cs._csw_row_of(B)
     store = cs._concept_allocator.layer()
+    # Exercise re-use after the ordinary value decay, not an already saturated gate.
+    store.participation[row] = .25
     before = float(store.participation[row])
-    assert cs.concept_weights(row) == [(cs._csw_row_of(A), 1.)]
-    assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B, C)
+    assert cs._csw_row_of(A) is None and cs.definitions.deref(A) == B
+    assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
     assert before < float(store.participation[row]) <= 1.
-    assert cs.concept_weights(row) == [(cs._csw_row_of(A), 1.)]
-
-
-def test_joint_concept_is_bias_bounded_chain():
-    """The joint (P2 decision 6) is the ordered Gallistel CHAIN over the
-    word-symbols: each link the pair [whole=current, part=rest] bounded by
-    the EVERYTHING bias -- a proper hidden unit over untyped edges (v3:
-    direction lives in the records/nesting, not in typed columns)."""
-    cs = _cs_sparse_active()
-    A1, _B1, _C1 = cs.interpret_word([1], 2, key="w1")
-    A2, _B2, _C2 = cs.interpret_word([3], 4, key="w2")
-    J = cs.create_joint_concept([A1, A2], key=("w1", "w2"))
-    assert cs._concept_source_order(J) == 1
-    # The head link is the ordered pair [whole=A1 (current), part=A2 (rest)].
-    assert cs.concept_parts(J) == [("sym", A2)]
-    assert ("sym", A1) in cs.concept_wholes(J)
-    assert EVERYTHING in cs.concept_wholes(J)            # bias-bounded
-    row = cs._csw_rows[(1, J)]
-    got = dict(cs.concept_weights(row))
-    cols = list(got)
-    assert int(cs.nVectors) in cols                      # the bias edge
-    assert cs._csw_rows[(0, A1)] in cols                 # whole = current word
-    assert cs._csw_rows[(0, A2)] in cols                 # part = the rest
-    # ORDERED: the reversed sentence is a DIFFERENT chain head.
-    assert cs.create_joint_concept([A2, A1], key=("w2", "w1")) != J
-    # Idempotent per key; re-occurrence strengthens Hebbianly.
-    before = dict(cs.concept_weights(row))
-    assert cs.create_joint_concept([A1, A2], key=("w1", "w2")) == J
-    after = dict(cs.concept_weights(row))
-    assert any(after[c] > before[c] for c in before)
+    assert cs._csw_row_of(A) is None and cs.definitions.deref(A) == B

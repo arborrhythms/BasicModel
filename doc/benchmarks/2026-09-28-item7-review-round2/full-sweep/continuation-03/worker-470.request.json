@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_partition_symbolicspace_state.py::test_chunk_static_modes_smoke"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-470.recycle.json"
+}

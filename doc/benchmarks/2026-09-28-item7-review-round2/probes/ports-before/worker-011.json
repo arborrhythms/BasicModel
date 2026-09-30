@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend"
+  ],
+  "completed": [
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0037821249570697546,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:99: in test_phase2_end_to_end_round_trip\n    assert isinstance(ws.references, nn.Parameter)\n                      ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0014742499915882945,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_phase2_end_to_end.py:213: in test_phase2_end_to_end_reattach_after_extend\n    refs_param_id_1 = id(ws.references)\n                         ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

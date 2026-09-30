@@ -18,6 +18,7 @@ if _BIN not in sys.path:
 
 import pytest
 import torch
+from definition_fixtures import with_definitions
 
 import Spaces
 from test_cs_sparse_weights import _evidence
@@ -39,7 +40,7 @@ def _cs(nS=64, order=3, promote=True):
     object.__setattr__(cs, "_serial", False)
     if promote:
         object.__setattr__(cs, "_promotion_enabled", True)
-    return cs
+    return with_definitions(cs)
 
 
 def _mint_order0(cs, n):
@@ -148,16 +149,15 @@ def test_nonrecurring_row_decays_and_is_recycled():
     assert cs.concept_id_at_row(old) is None
 
 
-def test_objects_never_acquire_witnessed_kinds():
+def test_interpretation_replaces_the_word_row_without_inventing_a_kind():
     cs, _ = _fixture()
-    word, obj, meta = cs.interpret_word([1], 2, key='cat')
-    ly = Spaces._concept_alloc_of(cs).layer()
-    assert cs._csw_row_of(word) in cs._witnessed_rows()
-    assert cs._csw_row_of(obj) not in cs._witnessed_rows()
-    assert cs._csw_row_of(meta) not in cs._witnessed_rows()
-    a, b = cs._csw_row_of(obj), cs._csw_row_of(word)
-    _observe(cs, {a: 1., b: 1.})
-    assert not bool(ly.witnessed[a])
+    before = len(cs._concept_allocator.layer()._tensor_rows)
+    word, obj = cs.interpret_word([1], 2, key='cat')
+    assert cs._csw_row_of(word) is None
+    row = cs._csw_row_of(obj)
+    assert row in cs._witnessed_rows()
+    assert len(cs._concept_allocator.layer()._tensor_rows) == before + 1
+    assert cs.taxonomy_parents(obj) == []
 
 
 def test_pool_parameter_controls_reservation_and_gate_off_is_inert():

@@ -2,14 +2,14 @@
 PartSpace.
 
 After Task G the cross-space PS<->SS allocation that previously lived on
-``PartSpace._maybe_autobind_meta`` (and called from
-``_embed_radix``) moved to ``ConceptualSpace._maybe_autobind_meta``
+``PartSpace._maybe_autobind_words`` (and called from
+``_embed_radix``) moved to ``ConceptualSpace._maybe_autobind_words``
 (called from ``cs.forward`` at stage 0). Verify:
 
   * PartSpace no longer holds a back-ref to WholeSpace
     (``wholeSpace_ref`` attribute absent).
-  * PartSpace no longer defines ``_maybe_autobind_meta``.
-  * ConceptualSpace defines ``_maybe_autobind_meta``.
+  * PartSpace no longer defines ``_maybe_autobind_words``.
+  * ConceptualSpace defines ``_maybe_autobind_words``.
   * Each per-stage ConceptualSpace has a ``perceptualSpace_ref`` and a
     ``terminalSymbolSpace_ref`` after BasicModel construction.
   * The autobind on CS at stage 0 fires when invoked with a synthetic
@@ -55,7 +55,7 @@ def _make_radix_model():
 
 
 class TestAutobindMovedFromPSToCS(unittest.TestCase):
-    """``_maybe_autobind_meta`` lives on ConceptualSpace, not
+    """``_maybe_autobind_words`` lives on ConceptualSpace, not
     PartSpace."""
 
     def test_perceptualspace_has_no_symbolicspace_ref(self):
@@ -71,16 +71,16 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
     def test_perceptualspace_does_not_define_autobind(self):
         from Spaces import PartSpace
         self.assertFalse(
-            hasattr(PartSpace, '_maybe_autobind_meta'),
-            "PartSpace must NOT define _maybe_autobind_meta after "
+            hasattr(PartSpace, '_maybe_autobind_words'),
+            "PartSpace must NOT define _maybe_autobind_words after "
             "Task G; the body moved to ConceptualSpace.",
         )
 
     def test_conceptualspace_defines_autobind(self):
         from Spaces import ConceptualSpace
         self.assertTrue(
-            hasattr(ConceptualSpace, '_maybe_autobind_meta'),
-            "ConceptualSpace must define _maybe_autobind_meta after "
+            hasattr(ConceptualSpace, '_maybe_autobind_words'),
+            "ConceptualSpace must define _maybe_autobind_words after "
             "Task G.",
         )
 
@@ -108,18 +108,18 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
 
 
 class TestAutobindFiresFromCS(unittest.TestCase):
-    """Calling ``cs._maybe_autobind_meta`` directly creates an SS row +
+    """Calling ``cs._maybe_autobind_words`` directly creates an SS row +
     META taxonomy entry for the supplied percept ids."""
 
     def test_autobind_creates_meta_taxonomy_entry(self):
         m = _make_radix_model()
         ps = m.perceptualSpace
         ps_store = ps.percept_store
-        ws = m.wholeSpace
+        ws = m._concept_owner()
         # Use the FIRST conceptualSpace stage (stage_idx == 0) where the
         # production autobind fires. NB: since the 2026-06-03 fullgraph
         # refactor it fires from cs.Reset (sentence boundary), not mid-
-        # forward; this test calls _maybe_autobind_meta directly, so it is
+        # forward; this test calls _maybe_autobind_words directly, so it is
         # unaffected by that relocation.
         cs = m.conceptualSpaces[0]
         # Insert a fresh percept on the PS store and grab its vector.
@@ -131,15 +131,18 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         pid_grid = torch.tensor([[pid]], dtype=torch.long)
         vec_event = seed.view(1, 1, -1)
         # Snapshot the SS taxonomy size before the call.
-        size_before = len(ws.taxonomy)
-        cs._maybe_autobind_meta(pid_grid, vec_event)
-        size_after = len(ws.taxonomy)
+        size_before = len(cs.definitions.word_ids)
+        extent = len(ps_store.bytes_for(pid))
+        cs.wholeSpace_ref._staged_analysis_spans = torch.tensor([[[0, extent]]])
+        cs._maybe_autobind_words(pid_grid, vec_event,
+            tile_spans=[[(0, extent)]], percept_store=ps_store)
+        size_after = len(cs.definitions.word_ids)
         self.assertGreater(
             size_after, size_before,
-            "autobind from CS should have grown the SS META taxonomy",
+            "autobind from CS should have admitted a native word concept",
         )
         # The autobind set on CS should track the pid.
-        bound = getattr(cs, '_autobound_percept_ids', None)
+        bound = set(getattr(cs, '_recognized_words', {}).values())
         self.assertIsNotNone(bound)
         self.assertIn(pid, bound,
                       "autobind set on CS should track the newly-bound "
@@ -152,10 +155,10 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         D = int(m.perceptualSpace.percept_store.dim)
         pid_grid = torch.tensor([[-1, -1]], dtype=torch.long)
         vec_event = torch.zeros(1, 2, D)
-        ws = m.wholeSpace
-        size_before = len(ws.taxonomy)
-        cs._maybe_autobind_meta(pid_grid, vec_event)
-        size_after = len(ws.taxonomy)
+        ws = m._concept_owner()
+        size_before = len(cs.definitions.word_ids)
+        cs._maybe_autobind_words(pid_grid, vec_event)
+        size_after = len(cs.definitions.word_ids)
         self.assertEqual(size_before, size_after,
                          "all-sentinel pid grid should be a no-op")
 

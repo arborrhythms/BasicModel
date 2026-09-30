@@ -1,0 +1,79 @@
+{
+  "exit_code": 137,
+  "reason": "memory",
+  "selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+  ],
+  "completed": [],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/gate-09/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/gate-09/worker-000.json"
+      ],
+      "pid": 63963,
+      "exit_code": 137,
+      "reason": "memory",
+      "peak_memory_bytes": 8842009728,
+      "elapsed_seconds": 10.902234584093094,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/gate-09/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/gate-09",
+  "elapsed_seconds": 13.200555792078376,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 8091277912,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/gate-09/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/gate-09/collect.json"
+    ],
+    "pid": 63955,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181142320,
+    "elapsed_seconds": 2.0607873329427093,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/gate-09/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

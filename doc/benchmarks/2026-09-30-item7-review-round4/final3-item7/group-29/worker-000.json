@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+  ],
+  "completed": [
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016792919486761093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002125666942447424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004604170098900795,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+    "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+    "test/test_sentence_protocol.py::test_protocol_off_by_default_in_parallel",
+    "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+    "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+    "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition"
+  ],
+  "completed": [
+    "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+    "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+    "test/test_sentence_protocol.py::test_protocol_off_by_default_in_parallel",
+    "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+    "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+    "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06492875004187226,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09553799987770617,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_off_by_default_in_parallel",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0376221660990268,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04436041694134474,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.043010958936065435,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04267608397640288,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,129 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+    "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+    "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+    "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots"
+  ],
+  "completed": [
+    "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+    "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+    "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+    "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-10/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-10/worker-000.json"
+      ],
+      "pid": 20925,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 492897648,
+      "elapsed_seconds": 4.031520250020549,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-10/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+        "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+        "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+        "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots"
+      ],
+      "completed": [
+        "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+        "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+        "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+        "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0032301251776516438,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0015712911263108253,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4102892919909209,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011712750187143683,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-10",
+  "elapsed_seconds": 7.794470333959907,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 492897648,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-10/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-10/collect.json"
+    ],
+    "pid": 20917,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 427377864,
+    "elapsed_seconds": 3.5258822911418974,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-10/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+        "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+        "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+        "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

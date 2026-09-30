@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+  ],
+  "completed": [
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1881068330258131,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

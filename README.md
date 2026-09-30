@@ -42,7 +42,7 @@ BasicModel is a parameterized neural architecture that answers the question "wha
 Model configurations are specified in XML. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
 
 Compose fires one operation per round from a joint operation/location softmax.
-At each sentence seal, exploit and explore take separate optimizer steps from
+At each sentence closing, exploit and explore take separate optimizer steps from
 the same cached word vectors. Each row retains the strictly lower sentence
 loss, with ties to exploit, before the next sentence begins. Batch-end answer
 loss keeps its own backward and does not choose the sentence winner.

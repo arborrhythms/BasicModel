@@ -13,7 +13,7 @@
 
 The unified LTM store (`TernaryTruthStore`, `symbolSpace.ltm_store`) is
 append-only to a fixed capacity (`<ltmCapacity>`, default 1024). Under the
-two-truths contract every sealed S writes a row, so the capacity is
+two-truths contract every ended S writes a row, so the capacity is
 reached in ordinary training and the store then refuses writes. Something
 must be forgotten, and what is forgotten must be chosen by value, not by
 age alone.
@@ -99,6 +99,19 @@ Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
    (default: provisioned and user) are never deleted; they are supplied
    truths with their own replace-on-resubmit and re-provision rules. If
    protected rows alone exceed the target, the pass logs and does nothing.
+   *Noted (Alec, 2026-09-29).* A definition row, `REL_DEF`, ties a word
+   concept to its object concept
+   ([two truths §17](2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29)).
+   It is **not** protected: "I don't see any need to keep it out of
+   recency or forgetting, but perhaps the forgetting algorithm can be
+   altered so that it biases forgetting or relative/ultimate truth." An
+   earlier answer of the same day, "forgetting should probably not
+   forget definitions", is replaced by this one. *Claude's reading, to
+   confirm when item 5 is taken up:* the bias is a weight in `V` (§3) by
+   the kind of truth, relative rows against ideas, with definitions
+   among the relative; a definition's use, each reading of its word, is
+   counted in its utility; and step 7 rebuilds the definitions table
+   after compaction, since the rows it indexes have moved.
 3. **Value.** Compute `V` for every unprotected row (§3).
 4. **Selection.** Delete the lowest-`V` unprotected rows until
    `count ≤ <forgetLowWater> · capacity`. Ties break oldest first.
@@ -122,26 +135,19 @@ Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
 
 ## 4a. Detail before rows (Alec, 2026-09-20)
 
-**Decided.** Dropping detail under forgetting pressure is the precursor to
-deleting rows, and it is gradual: a memory loses detail over successive
-passes before it is lost entirely. This promotes the lossy reconstruction
-trace of [FutureWork.md §3](../FutureWork.md#3-lossy-reconstruction-trace-inversion-as-learning)
-("derivations decay; fused points persist") from a separate future item to
-the first stage of this pass, on the same schedule. *The order and the
-coarsening rule below are proposed detail for review; the ruling is the
-paragraph above.*
+**Decision revised (Alec, 2026-09-28).** Detail can be lost before a row is
+deleted, but [two truths §11.1](2026-09-16-two-truths-ideas-and-relations.md#111-a-row-holds-structure-never-a-derivation-decided)
+removes the proposed derivation-decay stage: a row never stores a derivation.
+The open reading's operation record is discarded at its closing, and the
+retrieval index is built immediately by unfolding the row with semantic
+priming. No later re-indexing transition from a trace is needed.
 
-What is detail, in the order it goes (wording before clauses before gist:
-Sachs 1967; Reyna & Brainerd 1995):
+The remaining proposed order is wording before clauses before gist
+(Sachs 1967; Reyna & Brainerd 1995):
 
-1. **Wording.** The row's source text, then its derivation trace — leaf
-   activations and leaf identities, then the operations. Before the trace
-   goes, the row is re-indexed by the codes its **fused point alone
-   regenerates** (generativity,
-   [accessible-mind spec §2.0](2026-09-20-accessible-mind-subsystems.md)):
-   a memory stays cueable by its gist and stops being cueable by details it
-   can no longer produce. This frees sidecar memory, not store rows, and it
-   is what gives the reconstruction objective something to learn.
+1. **Wording.** Drop retained provenance source text, where present. The row
+   already regenerates from its stored structure and remains cueable through
+   terms obtained by unfolding. This frees sidecar memory, not store rows.
 2. **Subordinate rows.** A row that survives only as an operand of another
    row — a clause under `NP → S` or `NP → REF(S)`, a link in a chained
    episode — goes before the row that refers to it. This frees store rows
@@ -162,8 +168,8 @@ its trust and its `surprise` are unchanged by stages 1 and 2.
 
 **Profiles.** Pressure-driven detail-dropping applies under both profiles,
 because the capacity wall does. Age-driven decay with no pressure remains
-`human` only (§3's `A(i)`); under `optimal` a derivation is kept losslessly
-until a pass needs the room.
+`human` only (§3's `A(i)`). Neither profile retains a derivation after the
+sentence ends.
 
 ## 5. What is not forgotten and what is not done
 
@@ -172,10 +178,9 @@ until a pass needs the room.
   concept row if any surviving row or binding references it; otherwise
   the concept row's release is the codebook's own business and out of
   scope here.
-- Derivation decay (dropping parts of a surviving row's reconstruction
-  trace) is now the first stage of this pass (§4a). What FutureWork.md §3
-  still owns is the learning side: how the reconstruction loss is weighted
-  between a full trace and none.
+- Derivation decay is vacuous under the September 28 row contract (§4a).
+  Learning experiments during an open sentence are outside this forgetting
+  pass; [FutureWork.md §3](../FutureWork.md#3-lossy-reconstruction-trace-inversion-as-learning) records the revised decision.
 - No merging of near-duplicate rows into a coarser row. A row is coarsened
   only by losing its own detail (§4a), never by being merged with another.
 - No forgetting inside a request in stateless serving; the pass runs in

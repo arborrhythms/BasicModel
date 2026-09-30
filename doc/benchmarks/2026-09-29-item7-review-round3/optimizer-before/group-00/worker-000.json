@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+  ],
+  "completed": [
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.47743108309805393,
+      "message": "bin/Models.py:3113: in getOptimizer\n    remapped = remap_optimizer_state_by_name(\nbin/checkpoint_migrations.py:739: in remap_optimizer_state_by_name\n    raise ValueError(\"optimizer parameter-group layout differs\")\nE   ValueError: optimizer parameter-group layout differs\n\nThe above exception was the direct cause of the following exception:\ntest/test_fineweb_preflight.py:146: in test_checkpoint_restores_optimizer_counters_and_rng\n    opt = restored.getOptimizer(lr=1e-4)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:3129: in getOptimizer\n    raise ValueError(message) from exc\nE   ValueError: [BasicModel] Optimizer checkpoint was not restored: optimizer parameter-group layout differs",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8485/test_checkpoint_restores_optim0/resume.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8485/test_checkpoint_restores_optim0/resume.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

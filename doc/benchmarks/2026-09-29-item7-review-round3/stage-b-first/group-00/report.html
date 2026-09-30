@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 11/11 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.6314964999910444</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:23: in test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+    alloc = cs._concept_allocator
+            ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;ConceptualSpace&#x27; object has no attribute &#x27;_concept_allocator&#x27;</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.025535832974128425</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0240533750038594</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:69: in test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index
+    with pytest.raises(ValueError, match=&#x27;ambiguous|selection&#x27;):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.1726345409406349</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:81: in test_26_full_store_refuses_the_whole_word_transaction
+    alloc = cs._concept_allocator
+            ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;ConceptualSpace&#x27; object has no attribute &#x27;_concept_allocator&#x27;</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.025479458970949054</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:100: in test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append
+    assert int(store.recent(1)[0]) != r0
+E   assert 0 != 0
+E    +  where 0 = int(tensor(0))</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.024731875048018992</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.04527050000615418</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.21540054201614112</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.1645831250352785</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.08993195800576359</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.007114584092050791</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

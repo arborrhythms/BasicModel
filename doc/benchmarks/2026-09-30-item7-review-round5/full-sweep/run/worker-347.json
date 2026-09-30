@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_hierarchical.py::TestLevelShapes::test_single_order"
+  ],
+  "completed": [
+    "test/test_hierarchical.py::TestLevelShapes::test_single_order"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011295895092189312,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

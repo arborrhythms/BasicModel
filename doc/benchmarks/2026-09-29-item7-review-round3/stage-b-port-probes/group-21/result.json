@@ -1,0 +1,212 @@
+{
+  "exit_code": 137,
+  "reason": "memory",
+  "selected": [
+    "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+    "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+    "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+    "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+    "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+    "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "completed": [
+    "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+    "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+    "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+    "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-21/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-21/worker-000.json"
+      ],
+      "pid": 8394,
+      "exit_code": 137,
+      "reason": "memory",
+      "peak_memory_bytes": 8743099496,
+      "elapsed_seconds": 13.26507520803716,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-21/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+        "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+        "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+        "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+        "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+      ],
+      "completed": [
+        "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+        "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+        "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+        "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.002212833031080663,
+          "message": "test/test_sparse_concept_e2e.py:65: in test_word_symbol_defines_order0_native_features_and_object_stays_unwritten\n    A, B, C = cs.interpret_word([1, 2], WORD, key=\"cat\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0018907079938799143,
+          "message": "test/test_sparse_concept_e2e.py:83: in test_meta_is_a_sigma_generalization_over_named_word_and_object_members\n    A, B, C = cs.interpret_word([1, 2], WORD, key=\"cat\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0021170000545680523,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0020010409643873572,
+          "message": "test/test_sparse_concept_e2e.py:107: in test_population_inactive_is_noop\n    cs.interpret_word([1, 2], WORD, key=\"cat\")\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0020045420387759805,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00945474999025464,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016609999584034085,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.511044207960367,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-21",
+  "elapsed_seconds": 17.000973333022557,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 8199068368,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-21/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-21/collect.json"
+    ],
+    "pid": 8386,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432833784,
+    "elapsed_seconds": 3.504490999970585,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-21/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+        "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+        "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+        "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+        "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

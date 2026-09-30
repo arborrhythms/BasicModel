@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_on_syntactic_ws",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-537.recycle.json"
+}

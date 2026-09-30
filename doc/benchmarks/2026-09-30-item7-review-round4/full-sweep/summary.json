@@ -1,0 +1,218 @@
+{
+  "reason": "test_failure",
+  "exit_code": 1,
+  "selected": 5100,
+  "completed": 5100,
+  "pytest_outcomes": {
+    "passed": 4774,
+    "skipped": 322,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "complete_unique_coverage": true,
+  "missing": [],
+  "duplicate_completed": {},
+  "resource_stops": [],
+  "diagnostic_only": [],
+  "elapsed_seconds": 9282.19544204208,
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "peak_worker_memory_bytes": 7773428288,
+  "peak_aggregate_memory_bytes": 12095043576,
+  "compile_cache_retries": [],
+  "source_files": 711,
+  "source_matches_current_and_explicit_gates": true,
+  "source_digest": "7c39afedbecb75dbc4b1541aa3462c2b51af37c0963c74e9787b93b65d8c5312",
+  "changed_outcomes": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+      "before": "failed",
+      "after": "passed"
+    }
+  ],
+  "failures": [
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.009044791804626584,
+      "message": "test/test_selected_relation_meaning.py:427: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert stored.role_refs == registry.form(\"part\", _a, _b).role_refs\nE   AssertionError: assert (('sym', 11),..., ('sym', 12)) == (('sym', 11),..., ('sym', 12))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-110.log"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.007662583142518997,
+      "message": "test/test_selected_relation_meaning.py:427: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert stored.role_refs == registry.form(\"part\", _a, _b).role_refs\nE   AssertionError: assert (('sym', 11),..., ('sym', 12)) == (('sym', 11),..., ('sym', 12))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-110.log"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012832749867811799,
+      "message": "test/test_item9b_interpret.py:158: in test_selected_generic_grammar_ends_the_interpreted_kinds\n    assert store.row(row)['meaning'].role_refs == meaning.role_refs\nE   AssertionError: assert (('sym', 17),..., ('sym', 18)) == (('sym', 17),..., ('sym', 18))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-123.log"
+    }
+  ],
+  "round3_thirteen_failures": {
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]": "passed",
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths": "passed",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root": "passed",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model": "passed",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration": "passed",
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence": "passed",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation": "passed",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream": "passed",
+    "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes": "passed",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode": "passed",
+    "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero": "passed",
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng": "passed",
+    "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field": "passed"
+  },
+  "new_selectors": {
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/README.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-reconstruction-table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-xor-head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final3-xor-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/memory-owners.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/review-map.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ae-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-af-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ah-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ai-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-baseline-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-final-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-z-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-mm-grammar-table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-29-item-6-9-xor-grammar.md]": "passed",
+    "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record": "passed",
+    "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization": "passed",
+    "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row": "passed",
+    "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory": "passed",
+    "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row": "passed",
+    "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate": "passed",
+    "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference": "passed",
+    "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows": "passed",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]": "passed",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]": "passed",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]": "passed",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]": "passed",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]": "passed",
+    "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]": "passed",
+    "test/test_item7_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end": "passed",
+    "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph": "passed",
+    "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product": "passed",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]": "passed",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]": "passed",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]": "passed",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]": "passed",
+    "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read": "passed",
+    "test/test_item7_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]": "passed",
+    "test/test_item7_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]": "passed"
+  },
+  "removed_selectors": {
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]": "passed",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]": "passed"
+  }
+}

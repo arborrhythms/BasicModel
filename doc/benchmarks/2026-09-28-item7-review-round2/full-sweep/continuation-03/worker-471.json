@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_svo_end_to_end.py::test_svo_extraction_on_real_sentence"
+  ],
+  "completed": [
+    "test/test_svo_end_to_end.py::test_svo_extraction_on_real_sentence"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_svo_end_to_end.py::test_svo_extraction_on_real_sentence",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010191695764660835,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_svo_end_to_end.py', 48, 'Skipped: requires a trained integrated data/LM_5M.ckpt')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

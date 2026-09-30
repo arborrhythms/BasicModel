@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection"
+  ],
+  "completed": [
+    "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012516500079073012,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013731583021581173,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008967416943050921,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008909957949072123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006483374978415668,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007478166953660548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008180291042663157,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00953608297277242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008079375023953617,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006662708008661866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0057402499951422215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013255333062261343,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008517542039044201,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

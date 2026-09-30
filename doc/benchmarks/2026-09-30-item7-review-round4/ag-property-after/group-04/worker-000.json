@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+    "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+    "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+    "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+    "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+    "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+    "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+    "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+    "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+    "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+    "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only"
+  ],
+  "completed": [
+    "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+    "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+    "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+    "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+    "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+    "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+    "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+    "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+    "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+    "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+    "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.034804082941263914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.053095333045348525,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004992667119950056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.043116666143760085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02484799991361797,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027907625073567033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006240000948309898,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013720083050429821,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026847499888390303,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005004625068977475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003466250142082572,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07153391698375344,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11523375008255243,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

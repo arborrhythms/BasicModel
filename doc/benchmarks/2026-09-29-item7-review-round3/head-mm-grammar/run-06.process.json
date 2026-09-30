@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_mm_grammar.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-mm-grammar/run-06.json"
+  ],
+  "pid": 19322,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 8204114640,
+  "elapsed_seconds": 212.55521762510762,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-mm-grammar/run-06.log"
+}

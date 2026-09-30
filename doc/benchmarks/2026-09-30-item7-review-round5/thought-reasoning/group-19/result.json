@@ -1,0 +1,155 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+  ],
+  "completed": [
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19/worker-000.json"
+      ],
+      "pid": 12921,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434799960,
+      "elapsed_seconds": 4.406379708088934,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "completed": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003267791122198105,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0026927089784294367,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002271832898259163,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003955000080168247,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0028883330523967743,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001532081514596939,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19",
+  "elapsed_seconds": 9.168033458059654,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 434799960,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19/collect.json"
+    ],
+    "pid": 12909,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431015136,
+    "elapsed_seconds": 4.456534208962694,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-19/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

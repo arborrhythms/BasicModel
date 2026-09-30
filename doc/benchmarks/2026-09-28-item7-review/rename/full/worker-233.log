@@ -1,0 +1,24 @@
+........                                                                 [100%]
+=============================== warnings summary ===============================
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:335: UserWarning: Space ownership migration: removed 233 duplicate alias checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:335: UserWarning: Space ownership migration: rewrote 21 legacy Space.subspace Basis/Encoding checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:335: UserWarning: Codebook ownership migration: removed 5 duplicate VQ Parameter checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:5672: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 15 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 5 warnings in 2.35s

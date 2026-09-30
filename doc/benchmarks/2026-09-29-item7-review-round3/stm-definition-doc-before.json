@@ -1,0 +1,5 @@
+{
+  "path": "doc/STM.md",
+  "sha256": "8a8fe7f90365d4d65b1b891dc25fb71e794b3c4d7903881507a50cc4ca22d0c6",
+  "missing_contract": "REL_DEF rows, their writer, recency and migration are absent from the current LTM contract"
+}

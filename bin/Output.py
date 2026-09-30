@@ -1,7 +1,7 @@
 """Answer derivation and construction values for ``Model.reverseOutput()``.
 
 Question resolution produces an ``AnswerDerivation`` with owned conceptual
-ideas, the selected row program, target-free question context, and named
+ideas, the selected row sentence_states, target-free question context, and named
 synthesis references. Thinking transforms these ideas before realization
 through the answer path. ``answer_symbol`` remains the dense compatibility
 seed for topologies without indexed programs. Neither value carries a
@@ -147,7 +147,7 @@ class AnswerDerivation:
     row_sources: Tuple[str, ...] = field(default_factory=tuple)
     step: Tuple[Optional[StepChoice], ...] = field(default_factory=tuple)
     exact_steps: Tuple[Any, ...] = field(default_factory=tuple)
-    program: Tuple[Any, ...] = field(default_factory=tuple, repr=False, compare=False)
+    sentence_states: Tuple[Any, ...] = field(default_factory=tuple, repr=False, compare=False)
     conditioning_context: Any = field(default=None, repr=False, compare=False)
     conceptual_answer: Any = field(default=None, repr=False, compare=False)
     # Presentation metadata is owned before realization. It carries no target
@@ -172,7 +172,7 @@ class AnswerDerivation:
         object.__setattr__(self, "row_sources", tuple(self.row_sources))
         object.__setattr__(self, "step", tuple(self.step))
         object.__setattr__(self, "exact_steps", tuple(self.exact_steps))
-        object.__setattr__(self, "program", tuple(self.program))
+        object.__setattr__(self, "sentence_states", tuple(self.sentence_states))
         object.__setattr__(self, "questions", tuple(self.questions))
         object.__setattr__(self, "selected_thoughts", tuple(self.selected_thoughts))
         object.__setattr__(self, "answer_meanings", tuple(

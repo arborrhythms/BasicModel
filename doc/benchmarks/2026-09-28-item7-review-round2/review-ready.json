@@ -1,0 +1,22 @@
+{
+  "status": "Stopped for Claude review; unaccepted and uncommitted.",
+  "source_matches_final_gates_and_full_sweep": true,
+  "source_digest": "0d42ea689e6f5021024e84c69be1e5b5dbb78515870665146413041147d15e46",
+  "coverage": {
+    "passed": 4678,
+    "skipped": 322,
+    "failed": 22,
+    "xfailed": 1
+  },
+  "resource_limited_cases": 3,
+  "item7": {
+    "passed": 134
+  },
+  "documentation_links_passed": 119,
+  "todo_links_checked": 81,
+  "basicmodel_head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "basicmodel_staged": [],
+  "wikioracle_head": "850798fc0f4b1be5d115f5322dcc83d198b0bd0a",
+  "wikioracle_staged": [],
+  "nanochat_status": []
+}

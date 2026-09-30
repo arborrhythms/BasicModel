@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_input_word_cursor.py::test_bpe_word_mask_is_the_validity_signal_when_present"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-317.recycle.json"
+}

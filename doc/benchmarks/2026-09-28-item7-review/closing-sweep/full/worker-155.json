@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted"
+  ],
+  "completed": [
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.644989375025034,
+      "message": "test/test_compose_pair_driver.py:91: in test_pair_trains_twice_and_commits_once\n    torch.testing.assert_close(m._reconstruction_stack()._choice_actions, chosen)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 63 / 608 (10.4%)\nE   Greatest absolute difference: 5 at index (0, 0)\nE   Greatest relative difference: inf at index (0, 3)",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2865485829534009,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.127s)\r\n"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013341603334993124,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

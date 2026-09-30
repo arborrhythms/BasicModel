@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-original-api-22iucyu5/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-001.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-001.json"
+  ],
+  "pid": 53790,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 433947968,
+  "elapsed_seconds": 3.8504224580246955,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-001.log"
+}

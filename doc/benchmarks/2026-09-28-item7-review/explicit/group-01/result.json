@@ -1,0 +1,106 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+  ],
+  "completed": [
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/explicit/group-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/explicit/group-01/worker-000.json"
+      ],
+      "pid": 45174,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4760506760,
+      "elapsed_seconds": 110.28507704194635,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/explicit/group-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "completed": [
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 10.200695584062487,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 94.99878066696692,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2000,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/explicit/group-01",
+  "elapsed_seconds": 113.99974858399946,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 4760506760,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/explicit/group-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/explicit/group-01/collect.json"
+    ],
+    "pid": 45134,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428786912,
+    "elapsed_seconds": 3.5222884999820963,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/explicit/group-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_svo_end_to_end.py::test_svo_extraction_on_real_sentence"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-471.recycle.json"
+}

@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_compose_review.py::test_zero_temperature_is_valid_and_keeps_the_chooser_gradient",
+    "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+    "test/test_compose_review.py::test_zero_temperature_explore_is_identical_until_the_forced_round",
+    "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+    "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+    "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+    "test/test_compose_review.py::test_zero_temperature_prefix_uses_execution_order_for_packed_ends",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-322.recycle.json"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "completed": [
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002053207950666547,
+      "message": "test/test_item7_reduction_deadline.py:18: in test_shared_stack_contract_allows_unary_until_the_deadline\n    test_shared_operation_writes_the_caller_owned_stack(_xor_model)\n/Users/arogers/github/WikiOracle/basicmodel/test/test_subspace_what_stm_contract.py:1312: in test_shared_operation_writes_the_caller_owned_stack\n    assert out[1].tolist() == [1]\nE   assert [2] == [1]\nE     \nE     At index 0 diff: 2 != 1\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

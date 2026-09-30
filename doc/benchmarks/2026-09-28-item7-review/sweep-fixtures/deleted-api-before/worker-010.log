@@ -1,0 +1,58 @@
+...FFFFFF..                                                              [100%]
+=================================== FAILURES ===================================
+___________________ test_shift_pushes_the_semantic_referent ____________________
+test/test_serial_stm_split.py:140: in test_shift_pushes_the_semantic_referent
+    ws = _bound_ss(rows)
+         ^^^^^^^^^^^^^^^
+test/test_serial_stm_split.py:131: in _bound_ss
+    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+________________ test_unknown_word_shifts_ignorance_placeholder ________________
+test/test_serial_stm_split.py:157: in test_unknown_word_shifts_ignorance_placeholder
+    d = ws.shift_word(ss, 0, 99, rows, licensed=False)
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'shift_word'
+_______________ test_marker_word_binds_router_and_shifts_nothing _______________
+test/test_serial_stm_split.py:173: in test_marker_word_binds_router_and_shifts_nothing
+    d = ws.shift_word(ss, 0, 5, rows, marker=True)
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'shift_word'
+__________________ test_mention_shifts_the_word_code_verbatim __________________
+test/test_serial_stm_split.py:192: in test_mention_shifts_the_word_code_verbatim
+    d = ws.shift_word(ss, 0, 7, rows, mention=True, word_vec=code)
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'shift_word'
+______________________ test_one_move_one_workspace_write _______________________
+test/test_serial_stm_split.py:211: in test_one_move_one_workspace_write
+    ws = _bound_ss(rows)
+         ^^^^^^^^^^^^^^^
+test/test_serial_stm_split.py:131: in _bound_ss
+    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+____________________ test_deref_round_trip_preserves_extent ____________________
+test/test_serial_stm_split.py:239: in test_deref_round_trip_preserves_extent
+    ws.interpret_word(7, licensed=True, object_id=1, extent=ext)
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+=========================== short test summary info ============================
+FAILED test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent
+FAILED test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder
+FAILED test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing
+FAILED test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim
+FAILED test/test_serial_stm_split.py::test_one_move_one_workspace_write - Att...
+FAILED test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent
+6 failed, 5 passed in 2.07s

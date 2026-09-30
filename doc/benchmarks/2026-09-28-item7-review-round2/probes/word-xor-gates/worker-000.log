@@ -1,0 +1,162 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ TestXorGrammarLearnsXor.test_xor_class_accuracy ________________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:247: in test_xor_class_accuracy
+    model = _run_xor_grammar_in_process()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process
+    results = ModelFactory.run("data/XOR_grammar.xml")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24998: in run
+    return ModelFactory._run_hydrated(config_path, arch, dat, trn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:25105: in _run_hydrated
+    m.run(_t("numTrials", 1),
+bin/Models.py:3887: in run
+    acc[trial, :] = self.runTrial(
+bin/Models.py:11044: in runTrial
+    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split="train")
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16256: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15530: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16655: in _autobind_property_concepts
+    formed = ConceptualSpace.interpret_word(self, parts, prop_rows, key=key)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19172: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key, reserve=3)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:53: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes))
+bin/Spaces.py:18220: in _populate_concept_weights
+    self.add_concept_edge(c_row, target, 1.)
+bin/Spaces.py:17299: in add_concept_edge
+    source0 = self._order0_inventory_row(int(col))
+                                         ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+_____ TestXorGrammarReconstruction.test_piecewise_overall_at_least_50_pct ______
+/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct
+    model = _run_xor_grammar_in_process()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process
+    results = ModelFactory.run("data/XOR_grammar.xml")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24998: in run
+    return ModelFactory._run_hydrated(config_path, arch, dat, trn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:25105: in _run_hydrated
+    m.run(_t("numTrials", 1),
+bin/Models.py:3887: in run
+    acc[trial, :] = self.runTrial(
+bin/Models.py:11044: in runTrial
+    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split="train")
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16256: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15530: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16655: in _autobind_property_concepts
+    formed = ConceptualSpace.interpret_word(self, parts, prop_rows, key=key)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19172: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key, reserve=3)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:53: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes))
+bin/Spaces.py:18220: in _populate_concept_weights
+    self.add_concept_edge(c_row, target, 1.)
+bin/Spaces.py:17299: in add_concept_edge
+    source0 = self._order0_inventory_row(int(col))
+                                         ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+batch = 0 (warm-up, 100.00%)
+=============================== warnings summary ===============================
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (6 rows): concept 8 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 10 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 9 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (6 rows): concept 11 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+FAILED test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+2 failed, 14 warnings in 5.04s

@@ -74,9 +74,11 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
     first, second = world(0, ('one', 'two')), world(11, ('cedar', 'birch'))
     x = first[1].form('part', first[2], first[3])
     y = second[1].form('part', second[2], second[3])
-    assert all(a != b for a, b in zip(x.role_refs, y.role_refs))
+    assert all(x.role_refs[slot] != y.role_refs[slot] for slot in (0, 2))
+    assert x.role_refs[1] == y.role_refs[1]
     with torch.no_grad():
-        for value, ref in zip(x.roles, y.role_refs):
+        for slot in (0, 2):
+            value, ref = x.roles[slot], y.role_refs[slot]
             row = second[0]._csw_concept_row(0, ref[1])
             second[0].similarity_codebook.getW()[row].copy_(value)
     y = second[1].form('part', second[2], second[3])
@@ -102,7 +104,7 @@ def test_numeric_and_renamed_sentence_paths_keep_oracles_out(tmp_path, monkeypat
             reconstructed = model.reverseReconstruct(understood)
             resolved = model.resolveAnswer(understood, (What.supervised(0), What.supervised(1)))
             answer = model.reverseOutput(understood, resolved)
-        assert all(p is not None for p in understood.answer_program)
+        assert all(p is not None for p in understood.sentence_states)
         assert bool(torch.isfinite(answer.actual).all())
         assert not torch.equal(answer.concepts[0], answer.concepts[1])
         assert reconstructed is not None

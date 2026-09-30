@@ -1,0 +1,92 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+  ],
+  "completed": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-05/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-05/worker-000.json"
+      ],
+      "pid": 4395,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 446268736,
+      "elapsed_seconds": 3.7394098750082776,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-05/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.032569415983743966,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-05",
+  "elapsed_seconds": 7.479125875048339,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 446268736,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-05/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-05/collect.json"
+    ],
+    "pid": 4383,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 436421832,
+    "elapsed_seconds": 3.5440512499772012,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-05/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

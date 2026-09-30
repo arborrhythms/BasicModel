@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.28368870820850134,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

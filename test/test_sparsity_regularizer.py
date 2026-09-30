@@ -35,10 +35,3 @@ def test_preserves_grad():
     # Soft threshold is piecewise identity-or-zero; for |x| > lambda grads pass through.
     assert x.grad is not None
     assert torch.allclose(x.grad, torch.tensor([1.0, 1.0]))
-
-
-def test_symbolic_space_uses_sparsity_regularizer():
-    """WholeSpace.l1_proximal delegates to SparsityRegLayer."""
-    from Spaces import WholeSpace
-    assert hasattr(WholeSpace, "_build_sparsity_regularizer"), \
-        "WholeSpace should expose a factory for its regularizer"

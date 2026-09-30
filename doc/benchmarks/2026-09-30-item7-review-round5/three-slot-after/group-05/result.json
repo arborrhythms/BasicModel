@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-after/group-05/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-after/group-05/worker-000.json"
+      ],
+      "pid": 15534,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 432309568,
+      "elapsed_seconds": 3.578964415937662,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-after/group-05/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+      ],
+      "completed": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011086791986599565,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-after/group-05",
+  "elapsed_seconds": 7.402769958134741,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 432309568,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-after/group-05/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-after/group-05/collect.json"
+    ],
+    "pid": 15525,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428442872,
+    "elapsed_seconds": 3.508045749971643,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-after/group-05/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

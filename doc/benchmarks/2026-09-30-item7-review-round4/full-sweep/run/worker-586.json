@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_thought_checkpoint_credit.py::test_checkpoint_question_prompt_is_detached_without_cutting_live_credit",
+    "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
+    "test/test_thought_checkpoint_credit.py::test_episode_end_releases_question_and_trace_credit_together"
+  ],
+  "completed": [
+    "test/test_thought_checkpoint_credit.py::test_checkpoint_question_prompt_is_detached_without_cutting_live_credit",
+    "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
+    "test/test_thought_checkpoint_credit.py::test_episode_end_releases_question_and_trace_credit_together"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_thought_checkpoint_credit.py::test_checkpoint_question_prompt_is_detached_without_cutting_live_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047829211689531803,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025141704827547073,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_checkpoint_credit.py::test_episode_end_releases_question_and_trace_credit_together",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020445790141820908,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

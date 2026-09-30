@@ -1,0 +1,161 @@
+{
+  "status": "isolated, not applied to main",
+  "scratch": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg",
+  "checks": {
+    "live-reference-public": [
+      "/tmp/item7-reference-probe-r2.log",
+      "1 passed"
+    ],
+    "live-reference-reconstruction": [
+      "/tmp/item7-reference-reconstruction.log",
+      "1 passed"
+    ],
+    "live-reference-consolidated": [
+      "/tmp/item7-reference-consolidated.log",
+      "39 passed"
+    ],
+    "idea-decode-before": [
+      "/tmp/item7-idea-decode-before.log",
+      "2 failed"
+    ],
+    "output-owner-r1": [
+      "/tmp/item7-output-owner-r1.log",
+      "2 failed, 3 passed"
+    ],
+    "shared-grammar-owner": [
+      "/tmp/item7-shared-grammar-owner.log",
+      "3 failed, 48 passed"
+    ],
+    "shared-grammar-owner-r2": [
+      "/tmp/item7-shared-grammar-owner-r2.log",
+      "51 passed"
+    ],
+    "compiled-packed-and-live-references": [
+      "item7-reference-real-order.log",
+      "9 passed, 594.53 seconds"
+    ],
+    "typed-order-probes-before": [
+      "item7-reference-order-before.log",
+      "2 failed"
+    ],
+    "typed-order-probes-after": [
+      "item7-reference-order-r1.log",
+      "31 passed"
+    ],
+    "unknown-composite-probe-before": [
+      "item7-reference-unknown-before.log",
+      "1 failed"
+    ],
+    "output-owner-r2": [
+      "item7-output-owner-r2.log",
+      "3 passed"
+    ],
+    "lesson-context-before": [
+      "item7-lesson-context-before.log",
+      "1 failed"
+    ]
+  },
+  "changes": [
+    {
+      "path": "bin/ClauseJournal.py",
+      "main": "72f1b8b3ecabb63ab50af7dabf665a9573cfda2682e86c1b877273a0b270c496",
+      "scratch": "896c10c1be006216cacce9e272d1b6e62df689e6bb598dc470adcb866b02bfc1"
+    },
+    {
+      "path": "bin/ClauseScope.py",
+      "main": "77284dc96590fa99f80b9996917debbfb267502a122cb65eb0aeb90a114166c7",
+      "scratch": "818ca8f3c679145c3ce333952fa676ceb7a7e96cd42521934de396a3fed608cb"
+    },
+    {
+      "path": "bin/GrammarLessons.py",
+      "main": "3bcb722b1f9b477fa714d0a2f7311693453d88996ad9f5d69fe2271ecfc85497",
+      "scratch": "6becc02225a7debaaaf06e6082fcca13b977640dc35435a9a39fa101158ab375"
+    },
+    {
+      "path": "bin/Interpret.py",
+      "main": "716f442dfd60501292872e854bf756ca9c8bbde773ace23998c6cb62af05d9c9",
+      "scratch": "6d12012058e5747308cebf08b5ab10fda2f7d4b4faeea4c7cf65a9976bc1f3f3"
+    },
+    {
+      "path": "bin/Language.py",
+      "main": "f966d20b08b46b47d638f2f052f20b902dc49144a597311dd879c62f20eea74c",
+      "scratch": "75794c0ba4839980c466a2e0be61d8c9b4a622626bfb29e0f69811fcff366498"
+    },
+    {
+      "path": "bin/Models.py",
+      "main": "ba55e7b1ce49870a1e8bad439027cb3164449aaf93d1935b54e35ede0b74018a",
+      "scratch": "9d02ec508b3cd5f3da9ee30bab425ccb586f7f38034fa5cb25fc3459afd7969c"
+    },
+    {
+      "path": "bin/ReferenceContext.py",
+      "main": "c94d23fad1433ab295d2f6554997720eb8452790d57fce6112a952173e9c4dfe",
+      "scratch": "6df16975c3bc5947fc000c1c79fb194f61d993da6d78ee885a7e2cda992472aa"
+    },
+    {
+      "path": "bin/Understanding.py",
+      "main": "ba5518734060419f3a3b5c07ca287699e2d8de84ae14999daf362e4dc4152e07",
+      "scratch": "d2ca22df0cc36fd815ca77e19f80f76d07511a0897146e37e64ee13dc1bae0a7"
+    },
+    {
+      "path": "data/model.xsd",
+      "main": "923cf82f3436f104cb4b9d9813897502901ccffc1aba6ba52917b1f00859dd21",
+      "scratch": "f206f8facc8b883b9bbdc8cc259f4e623e7b14bebe7269cd988bfbd816ce7cc4"
+    },
+    {
+      "path": "test/reading_fixtures.py",
+      "main": "7edd76f06993c2e0fb8699ad37eb5602445c2f916ded0e08e6426d196f16a6db",
+      "scratch": "e64553c4618b0d95c84cbc8ce4bdc8e141ec9413a61702483b00714ad870ae6b"
+    },
+    {
+      "path": "test/test_generation_catalog.py",
+      "main": "e4aefc40d08f6c9f316de34a0b380b02ec4ec8d3dc25777ffe2425b67fe20ae8",
+      "scratch": "2604efba7ccbee59ea5f733c3f35027223e253a4ab084d468b6a38ac43bd6986"
+    },
+    {
+      "path": "test/test_grammar_lesson_context.py",
+      "main": null,
+      "scratch": "8c05458ac936763b0f89ddfdf49dbdefdbdef1a596fff54a477190af58bd3aa5"
+    },
+    {
+      "path": "test/test_idea_decode_d3.py",
+      "main": "3a15d8e350a44fc81527d202fd6776481916d6013627c79263c62a251b3bc8d7",
+      "scratch": "9dacd2b80ac977ea9315bdd330493516c1d6b2ef2ddc0cc3115bcb5b1a9fc8a0"
+    },
+    {
+      "path": "test/test_idea_decode_owner.py",
+      "main": null,
+      "scratch": "c3c19d2c462c42d5f3ff61e7baaf098d972637543f6272489af4db185deb6548"
+    },
+    {
+      "path": "test/test_item7_references.py",
+      "main": "7675428c286ea6e13d4d3b3a9df85f675b8e6cb155b81af4ab4473042c924d72",
+      "scratch": "43570b02eafaa04575ff830729cff4575d6c71de29ebeb136a5e5818bee04cc3"
+    },
+    {
+      "path": "test/test_live_references.py",
+      "main": null,
+      "scratch": "aa68315b7c5d70d4f7804559f3f555ba44a0fed2107b84d81b4dab4e5b7670ff"
+    },
+    {
+      "path": "test/test_output_walk.py",
+      "main": "97a58694769defd06a2b89626fad9562f059c1ea63bcc77b7435525d0e987ee2",
+      "scratch": "fd3adda1f337ddcb07c45de5146281883928d0f9a04818b4950ea74ba618a7bc"
+    },
+    {
+      "path": "test/test_subspace_what_stm_contract.py",
+      "main": "8e06dd76245ad3d856ac38bdfb8904eff4e0078b7952368d747346a9ec8ea3d5",
+      "scratch": "f4321a1cda4482c2c66f4d1f71915abd4e2fb62ec851b5609280e2f88ea4ccd1"
+    },
+    {
+      "path": "test/test_surface_grammar.py",
+      "main": "a37b0cfab565f4a2a63c701ab789b7f3a17ad9c8e4f7443dd83120f4a37497dd",
+      "scratch": "af241d1edff9d5e38d18c0d6e48ef2b288d564667e193fae2642ba3acef57888"
+    },
+    {
+      "path": "test/test_unified_thought_controller.py",
+      "main": "e6621d2e50d7433353af0b681f5e3a72da8e5cbea75ed70157ffa7ad71530957",
+      "scratch": "6cf18de039d7e494727f2cda12cdcb262991ee013fa5c6e3de1c5cad500e91f3"
+    }
+  ],
+  "pending": "Isolated fixture rerun active; main affected-file run active. No source changes copied to main."
+}

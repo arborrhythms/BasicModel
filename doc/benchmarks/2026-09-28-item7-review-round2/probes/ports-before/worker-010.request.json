@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-010.recycle.json"
+}

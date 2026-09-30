@@ -1,0 +1,72 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_thinking_kernel.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_category_em_smoke.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "selector": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    },
+    {
+      "selector": "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-07/result.json"
+    },
+    {
+      "selector": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-08/result.json"
+    },
+    {
+      "selector": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-09/result.json"
+    },
+    {
+      "selector": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-10/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

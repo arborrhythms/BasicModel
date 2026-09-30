@@ -1,0 +1,5 @@
+
+no tests collected in 3.80s
+ERROR: not found: /Users/arogers/github/WikiOracle/basicmodel/test/test_reduction_pressure.py::test_native_sentence_closing_reduces_unary_biased_readings
+(no match in any of [<Module test_reduction_pressure.py>])
+

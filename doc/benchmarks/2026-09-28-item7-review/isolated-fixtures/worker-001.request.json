@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]"
+  ],
+  "collect": false,
+  "recycle_file": "/private/tmp/item7-isolated-fixtures/worker-001.recycle.json"
+}

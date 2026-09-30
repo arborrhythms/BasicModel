@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots",
+    "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time",
+    "test/test_item9b_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+    "test/test_item9b_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock",
+    "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "completed": [
+    "test/test_item9b_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots",
+    "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time",
+    "test/test_item9b_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+    "test/test_item9b_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock",
+    "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004284169990569353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016040420159697533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 95.21259475010447,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 88.35560291598085,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009929159423336387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006742500700056553,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008162499871104956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008708749664947391,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

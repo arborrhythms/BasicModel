@@ -1,0 +1,73 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+  ],
+  "completed": [
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+    "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001865419326350093,
+      "message": "test/test_autobind_from_cs.py:81: in test_conceptualspace_defines_autobind\n    self.assertTrue(\nE   AssertionError: False is not true : ConceptualSpace must define _maybe_autobind_meta after Task G.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.045664082979783416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.716697968542576e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.022757000057026744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02246716700028628,
+      "message": "test/test_autobind_from_cs.py:137: in test_autobind_creates_meta_taxonomy_entry\n    cs._maybe_autobind_meta(pid_grid, vec_event,\n    ^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02319508302025497,
+      "message": "test/test_autobind_from_cs.py:160: in test_autobind_skips_negative_pids\n    cs._maybe_autobind_meta(pid_grid, vec_event)\n    ^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.4036747079808265,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

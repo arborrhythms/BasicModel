@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_explicit_ordered_stm.py::test_ordered_taxonomy_preserves_np3_np4_orders",
+    "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np3_lift_to_s4",
+    "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np4_lift_to_s5"
+  ],
+  "completed": [
+    "test/test_explicit_ordered_stm.py::test_ordered_taxonomy_preserves_np3_np4_orders",
+    "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np3_lift_to_s4",
+    "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np4_lift_to_s5"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_explicit_ordered_stm.py::test_ordered_taxonomy_preserves_np3_np4_orders",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006469169165939093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np3_lift_to_s4",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00011204183101654053,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_ordered_stm.py', 84, 'Skipped: STM shift-reduce parser retired in Stage 3')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_explicit_ordered_stm.py::test_stm_parses_explicit_np4_lift_to_s5",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 9.433296509087086e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_ordered_stm.py', 90, 'Skipped: STM shift-reduce parser retired in Stage 3')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

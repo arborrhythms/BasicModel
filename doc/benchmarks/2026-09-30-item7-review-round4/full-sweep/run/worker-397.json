@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_detached_reverse_objective.py::test_reverse_construction_loss_stops_at_sentence_idea",
+    "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout",
+    "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+    "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective"
+  ],
+  "completed": [
+    "test/test_detached_reverse_objective.py::test_reverse_construction_loss_stops_at_sentence_idea",
+    "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout",
+    "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+    "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_detached_reverse_objective.py::test_reverse_construction_loss_stops_at_sentence_idea",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013905875151976943,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003392833052203059,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003027908969670534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000858791870996356,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

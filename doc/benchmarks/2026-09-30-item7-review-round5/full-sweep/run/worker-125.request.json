@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-125.recycle.json"
+}

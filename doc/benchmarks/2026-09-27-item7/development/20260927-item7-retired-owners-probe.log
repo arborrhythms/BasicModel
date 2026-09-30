@@ -1,0 +1,1883 @@
+....FF...FFFFFF.FFFFFFFFF..FFFFFFFFFFFFFFFF..F......................s... [ 96%]
+...                                                                      [100%]
+=================================== FAILURES ===================================
+______ TestAutobindFiresFromCS.test_autobind_creates_meta_taxonomy_entry _______
+
+self = <test_autobind_from_cs.TestAutobindFiresFromCS testMethod=test_autobind_creates_meta_taxonomy_entry>
+
+    def test_autobind_creates_meta_taxonomy_entry(self):
+        m = _make_radix_model()
+        ps = m.perceptualSpace
+        ps_store = ps.percept_store
+        ws = m.wholeSpace
+        # Use the FIRST conceptualSpace stage (stage_idx == 0) where the
+        # production autobind fires. NB: since the 2026-06-03 fullgraph
+        # refactor it fires from cs.Reset (sentence boundary), not mid-
+        # forward; this test calls _maybe_autobind_meta directly, so it is
+        # unaffected by that relocation.
+        cs = m.conceptualSpaces[0]
+        # Insert a fresh percept on the PS store and grab its vector.
+        D = int(ps_store.dim)
+        seed = torch.zeros(D)
+        seed[0] = 0.7
+        pid = ps_store.insert(b"taskg_unique", init_vector=seed)
+        # Synthesize a [B=1, N=1] pid grid + [B=1, N=1, D] vec tensor.
+        pid_grid = torch.tensor([[pid]], dtype=torch.long)
+        vec_event = seed.view(1, 1, -1)
+        # Snapshot the SS taxonomy size before the call.
+>       size_before = len(ws.taxonomy)
+                          ^^^^^^^^^^^
+
+test/test_autobind_from_cs.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'taxonomy'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'taxonomy'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ TestAutobindFiresFromCS.test_autobind_skips_negative_pids ___________
+
+self = <test_autobind_from_cs.TestAutobindFiresFromCS testMethod=test_autobind_skips_negative_pids>
+
+    def test_autobind_skips_negative_pids(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpaces[0]
+        # All-sentinel pid grid should be a no-op (no SS rows added).
+        D = int(m.perceptualSpace.percept_store.dim)
+        pid_grid = torch.tensor([[-1, -1]], dtype=torch.long)
+        vec_event = torch.zeros(1, 2, D)
+        ws = m.wholeSpace
+>       size_before = len(ws.taxonomy)
+                          ^^^^^^^^^^^
+
+test/test_autobind_from_cs.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'taxonomy'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'taxonomy'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ TestInsertMeta.test_insert_meta_basic_creates_taxonomy_entry _________
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMeta testMethod=test_insert_meta_basic_creates_taxonomy_entry>
+
+    def test_insert_meta_basic_creates_taxonomy_entry(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"meta_a")
+        ws_pos = ws.insert_whole()
+>       meta_pos = ws.insert_meta(ps_pos, ws_pos)
+                   ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:181: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ TestInsertMeta.test_insert_meta_default_fused_vec_is_average _________
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMeta testMethod=test_insert_meta_default_fused_vec_is_average>
+
+    def test_insert_meta_default_fused_vec_is_average(self):
+        """When fused_vec is None, the META row defaults to the average of
+        the PS-row vector and SS-row vector for the bound positions."""
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps = m.perceptualSpace.percept_store
+        ps_pos = ws.insert_percept(b"meta_b")
+        ps_row = _ps_row_from_pos(ws, ps_pos)
+        # Pin PS row to a known value so we can predict the average.
+        with torch.no_grad():
+            ps.codebook.data[ps_row, :].zero_()
+            ps.codebook.data[ps_row, 0] = 1.0
+        sym_init = torch.zeros(int(ws.nDim))
+        sym_init[1] = 1.0
+        ws_pos = ws.insert_whole(init_vec=sym_init)
+        ws_row_of_input = _ws_row_from_pos(ws, ws_pos)
+    
+>       meta_pos = ws.insert_meta(ps_pos, ws_pos)
+                   ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:220: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ TestInsertMeta.test_insert_meta_is_idempotent_with_ema_update _________
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMeta testMethod=test_insert_meta_is_idempotent_with_ema_update>
+
+    def test_insert_meta_is_idempotent_with_ema_update(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"meta_c")
+        ws_pos = ws.insert_whole()
+        # First insert with an explicit fused_vec.
+        fused1 = torch.zeros(int(ws.nDim))
+        fused1[0] = 1.0
+>       meta_pos_1 = ws.insert_meta(ps_pos, ws_pos, fused_vec=fused1)
+                     ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:241: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestReverseDecodeStructural.test_reverse_decode_walks_meta_taxonomy_to_bytes _
+
+self = <test_two_codebook_meta_taxonomy.TestReverseDecodeStructural testMethod=test_reverse_decode_walks_meta_taxonomy_to_bytes>
+
+    def test_reverse_decode_walks_meta_taxonomy_to_bytes(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps = m.perceptualSpace.percept_store
+        # Insert three (word, symbol, meta) bundles. Pin the META rows
+        # so we can synthesize a terminal CS state that is closest to
+        # one of them.
+        words = [b"alpha", b"beta", b"gamma"]
+        meta_idxs = []
+        for w in words:
+            pid = ws.insert_percept(w)
+            sid = ws.insert_whole()
+>           mid = ws.insert_meta(pid, sid)
+                  ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestStructuralReverseDecodeIntegration.test_decode_reconstructed_inputs_uses_structural_path _
+
+self = <test_two_codebook_meta_taxonomy.TestStructuralReverseDecodeIntegration testMethod=test_decode_reconstructed_inputs_uses_structural_path>
+
+    def test_decode_reconstructed_inputs_uses_structural_path(self):
+        """Build a small synthetic META taxonomy, hand the matching SS
+        codebook vectors to ``_decode_reconstructed_inputs`` as the
+        "reconstructed input", and assert it returns the registered
+        surface bytes.
+        """
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps = m.perceptualSpace.percept_store
+        words = [b"hello", b"world", b"foo"]
+        meta_idxs = []
+        for w in words:
+            pid = ws.insert_percept(w)
+            sid = ws.insert_whole()
+>           mid = ws.insert_meta(pid, sid)
+                  ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:339: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____ TestPersistenceRoundtrip.test_taxonomy_survives_vocab_extras_roundtrip ____
+
+self = <test_two_codebook_meta_taxonomy.TestPersistenceRoundtrip testMethod=test_taxonomy_survives_vocab_extras_roundtrip>
+
+    def test_taxonomy_survives_vocab_extras_roundtrip(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        # Insert a few META nodes.
+        pid_a = ws.insert_percept(b"persist_a")
+        pid_b = ws.insert_percept(b"persist_b")
+        sid_a = ws.insert_whole()
+        sid_b = ws.insert_whole()
+>       mid_a = ws.insert_meta(pid_a, sid_a)
+                ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:390: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ TestReverseDecodeGuards.test_reverse_decode_raises_on_inf_input ________
+
+self = <test_two_codebook_meta_taxonomy.TestReverseDecodeGuards testMethod=test_reverse_decode_raises_on_inf_input>
+
+    def test_reverse_decode_raises_on_inf_input(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        _pid = ws.insert_percept(b"y")
+        _sid = ws.insert_whole()
+>       _mid = ws.insert_meta(_pid, _sid)
+               ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:464: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ TestReverseDecodeGuards.test_reverse_decode_raises_on_nan_input ________
+
+self = <test_two_codebook_meta_taxonomy.TestReverseDecodeGuards testMethod=test_reverse_decode_raises_on_nan_input>
+
+    def test_reverse_decode_raises_on_nan_input(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        # Ensure W has at least one row so the NaN check is reached
+        # before the empty-codebook short-circuit.
+        _pid = ws.insert_percept(b"x")
+        _sid = ws.insert_whole()
+>       _mid = ws.insert_meta(_pid, _sid)
+               ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:452: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ TestInsertMetaGuards.test_insert_meta_rejects_ema_above_one __________
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMetaGuards testMethod=test_insert_meta_rejects_ema_above_one>
+
+    def test_insert_meta_rejects_ema_above_one(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"big_ema")
+        sid = ws.insert_whole()
+        D = int(ws.nDim)
+        v = torch.zeros(D)
+>       ws.insert_meta(pid, sid, fused_vec=v)
+        ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:525: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestInsertMetaGuards.test_insert_meta_rejects_inf_fused_vec_on_first_insert __
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMetaGuards testMethod=test_insert_meta_rejects_inf_fused_vec_on_first_insert>
+
+    def test_insert_meta_rejects_inf_fused_vec_on_first_insert(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"inf_first")
+        sid = ws.insert_whole()
+        D = int(ws.nDim)
+        bad = torch.zeros(D)
+        bad[0] = float("inf")
+        with self.assertRaises(RuntimeError):
+>           ws.insert_meta(pid, sid, fused_vec=bad)
+            ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:549: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__ TestInsertMetaGuards.test_insert_meta_rejects_nan_fused_vec_on_ema_update ___
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMetaGuards testMethod=test_insert_meta_rejects_nan_fused_vec_on_ema_update>
+
+    def test_insert_meta_rejects_nan_fused_vec_on_ema_update(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"nan_update")
+        sid = ws.insert_whole()
+        D = int(ws.nDim)
+        good = torch.zeros(D)
+>       ws.insert_meta(pid, sid, fused_vec=good)
+        ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:558: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestInsertMetaGuards.test_insert_meta_rejects_nan_fused_vec_on_first_insert __
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMetaGuards testMethod=test_insert_meta_rejects_nan_fused_vec_on_first_insert>
+
+    def test_insert_meta_rejects_nan_fused_vec_on_first_insert(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"nan_first")
+        sid = ws.insert_whole()
+        D = int(ws.nDim)
+        bad = torch.full((D,), float("nan"))
+        with self.assertRaises(RuntimeError) as ctx:
+>           ws.insert_meta(pid, sid, fused_vec=bad)
+            ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:537: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ TestInsertMetaGuards.test_insert_meta_rejects_negative_ema __________
+
+self = <test_two_codebook_meta_taxonomy.TestInsertMetaGuards testMethod=test_insert_meta_rejects_negative_ema>
+
+    def test_insert_meta_rejects_negative_ema(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"neg_ema")
+        sid = ws.insert_whole()
+        # First insert with valid args, so the second call hits the
+        # EMA-update branch.
+        D = int(ws.nDim)
+        v = torch.zeros(D)
+>       ws.insert_meta(pid, sid, fused_vec=v)
+        ^^^^^^^^^^^^^^
+
+test/test_two_codebook_meta_taxonomy.py:513: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____ TestInsertReturnsPositiveInt.test_insert_meta_rejects_zero_or_negative ____
+
+self = <test_positive_int_taxonomy.TestInsertReturnsPositiveInt testMethod=test_insert_meta_rejects_zero_or_negative>
+
+    def test_insert_meta_rejects_zero_or_negative(self):
+        """Position 0 is the anchor; negative inputs are not legal under
+        the new convention."""
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        with self.assertRaises((ValueError, AssertionError)):
+>           ws.insert_meta(0, 0)
+            ^^^^^^^^^^^^^^
+
+test/test_positive_int_taxonomy.py:129: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestInsertReturnsPositiveInt.test_insert_meta_returns_positive_position_and_keys_pair _
+
+self = <test_positive_int_taxonomy.TestInsertReturnsPositiveInt testMethod=test_insert_meta_returns_positive_position_and_keys_pair>
+
+    def test_insert_meta_returns_positive_position_and_keys_pair(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"beta")
+        ws_pos = ws.insert_whole()
+>       meta_pos = ws.insert_meta(ps_pos, ws_pos)
+                   ^^^^^^^^^^^^^^
+
+test/test_positive_int_taxonomy.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestTaxonomyStoragePositiveInt.test_taxonomy_children_and_parent_use_positions _
+
+self = <test_positive_int_taxonomy.TestTaxonomyStoragePositiveInt testMethod=test_taxonomy_children_and_parent_use_positions>
+
+    def test_taxonomy_children_and_parent_use_positions(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"gamma")
+        ws_pos = ws.insert_whole()
+>       meta_pos = ws.insert_meta(ps_pos, ws_pos)
+                   ^^^^^^^^^^^^^^
+
+test/test_positive_int_taxonomy.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___ TestVocabExtrasPositiveInt.test_legacy_signed_int_blob_migrates_on_load ____
+
+self = <test_positive_int_taxonomy.TestVocabExtrasPositiveInt testMethod=test_legacy_signed_int_blob_migrates_on_load>
+
+    def test_legacy_signed_int_blob_migrates_on_load(self):
+        """A pre-Stage-3 ``vocab_extras`` blob with signed-int keys
+        rekeys to positive ints on load."""
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        # Hand-construct a legacy blob: positive PS keys, negative SS / META keys.
+        legacy_blob = {
+            "well_known_atoms": {},
+            "paired_orth_to_sem": {},
+            "paired_next_row": -1,
+            # taxonomy: meta_signed (negative) -> [ps_signed (positive),
+            #                                       ws_signed (negative)]
+            "taxonomy": {
+                -3: [0, -1],  # META at signed -3 binds PS row 0 + SS row 0
+            },
+            "taxonomy_parent": {
+                0: -3,    # PS row 0's parent is META -3
+                -1: -3,   # SS row 0's parent is META -3
+            },
+            "meta_pair_to_idx": {
+                "0,-1": -3,   # (ps_row=0, ws_signed=-1) -> meta_signed=-3
+            },
+        }
+        ws.load_vocab_extras(legacy_blob)
+        # After load every taxonomy key is positive.
+>       for k in ws.taxonomy.keys():
+                 ^^^^^^^^^^^
+
+test/test_positive_int_taxonomy.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'taxonomy'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'taxonomy'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____ TestVocabExtrasPositiveInt.test_roundtrip_preserves_positive_int_keys _____
+
+self = <test_positive_int_taxonomy.TestVocabExtrasPositiveInt testMethod=test_roundtrip_preserves_positive_int_keys>
+
+    def test_roundtrip_preserves_positive_int_keys(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"delta")
+        ws_pos = ws.insert_whole()
+>       meta_pos = ws.insert_meta(ps_pos, ws_pos)
+                   ^^^^^^^^^^^^^^
+
+test/test_positive_int_taxonomy.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ TestRecordLbgPullPositions.test_record_pull_on_ps_position_is_a_noop _____
+
+self = <test_lbg_positive_int.TestRecordLbgPullPositions testMethod=test_record_pull_on_ps_position_is_a_noop>
+
+    def test_record_pull_on_ps_position_is_a_noop(self):
+        """PS positions don't get split; LBG should ignore them silently."""
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"lbg_ps")
+        D = int(ws.nDim)
+        vec = torch.zeros(D)
+        vec[0] = 1.0
+>       ws.record_lbg_pull(ps_pos, vec)
+        ^^^^^^^^^^^^^^^^^^
+
+test/test_lbg_positive_int.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'record_lbg_pull'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'record_lbg_pull'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____ TestRecordLbgPullPositions.test_record_pull_on_ws_position_accumulates ____
+
+self = <test_lbg_positive_int.TestRecordLbgPullPositions testMethod=test_record_pull_on_ws_position_accumulates>
+
+    def test_record_pull_on_ws_position_accumulates(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ws_pos = ws.insert_whole()
+        D = int(ws.nDim)
+        vec = torch.zeros(D)
+        vec[0] = 1.0
+        # First pull seeds the accumulators.
+>       ws.record_lbg_pull(ws_pos, vec)
+        ^^^^^^^^^^^^^^^^^^
+
+test/test_lbg_positive_int.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'record_lbg_pull'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'record_lbg_pull'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ TestRecordLbgPullPositions.test_record_pull_raises_on_nan ___________
+
+self = <test_lbg_positive_int.TestRecordLbgPullPositions testMethod=test_record_pull_raises_on_nan>
+
+    def test_record_pull_raises_on_nan(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ws_pos = ws.insert_whole()
+        D = int(ws.nDim)
+        bad = torch.full((D,), float("nan"))
+        with self.assertRaises(RuntimeError) as ctx:
+>           ws.record_lbg_pull(ws_pos, bad)
+            ^^^^^^^^^^^^^^^^^^
+
+test/test_lbg_positive_int.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'record_lbg_pull'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________ TestMaybeSplitLbgPositions.test_no_split_below_threshold ___________
+
+self = <test_lbg_positive_int.TestMaybeSplitLbgPositions testMethod=test_no_split_below_threshold>
+
+    def test_no_split_below_threshold(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ws_pos = ws.insert_whole()
+        # No data, no split.
+>       result = ws.maybe_split_lbg(ws_pos)
+                 ^^^^^^^^^^^^^^^^^^
+
+test/test_lbg_positive_int.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'maybe_split_lbg'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'maybe_split_lbg'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ TestMaybeSplitLbgPositions.test_split_allocates_fresh_position ________
+
+self = <test_lbg_positive_int.TestMaybeSplitLbgPositions testMethod=test_split_allocates_fresh_position>
+
+    def test_split_allocates_fresh_position(self):
+        """Forcing the variance state past the threshold triggers a split
+        and returns a new positive-int position."""
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ws_pos = ws.insert_whole()
+        # Force enough pulls + high variance to trip the split.
+        D = int(ws.nDim)
+        # Alternate +1 and -1 to drive variance up while keeping the
+        # mean direction non-zero.
+        plus = torch.zeros(D)
+        plus[0] = 5.0
+        minus = torch.zeros(D)
+        minus[0] = -5.0
+        # Need at least _lbg_min_count pulls.
+        n = max(int(ws._lbg_min_count) + 2, 12)
+        for i in range(n):
+>           ws.record_lbg_pull(ws_pos, plus if i % 2 == 0 else minus)
+            ^^^^^^^^^^^^^^^^^^
+
+test/test_lbg_positive_int.py:125: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'record_lbg_pull'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'record_lbg_pull'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ TestMaybeSplitLbgPositions.test_split_inherits_meta_binding_to_new_position __
+
+self = <test_lbg_positive_int.TestMaybeSplitLbgPositions testMethod=test_split_inherits_meta_binding_to_new_position>
+
+    def test_split_inherits_meta_binding_to_new_position(self):
+        """If the original SS row was bound under a META, the split-off
+        gets its own META edge so reverse decode can still reach it."""
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"lbg_split_meta")
+        ws_pos = ws.insert_whole()
+>       meta_pos = ws.insert_meta(ps_pos, ws_pos)
+                   ^^^^^^^^^^^^^^
+
+test/test_lbg_positive_int.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ TestChildrenInCodebookFactor.test_known_children_score_one __________
+
+self = <test_learn_score_components.TestChildrenInCodebookFactor testMethod=test_known_children_score_one>
+
+    def test_known_children_score_one(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        ws = cs.terminalSymbolSpace_ref
+        D = int(cs.nDim)
+        idea1 = torch.zeros(D)
+        idea1[0] = 0.9
+        idea2 = torch.zeros(D)
+        idea2[1] = -0.7
+        # Seed both ideas as known SS rows so nearest-row distance == 0.
+        _seed_known_concept(ws, idea1)
+        _seed_known_concept(ws, idea2)
+>       score = cs._learn_score_children_in_codebook(idea1, idea2)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_learn_score_components.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (syntacticLayer): SyntacticLayer(
+    (layers): ModuleList()
+  )
+)
+name = '_learn_score_children_in_codebook'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_learn_score_children_in_codebook'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______ TestChildrenInCodebookFactor.test_one_known_one_unknown_score_half ______
+
+self = <test_learn_score_components.TestChildrenInCodebookFactor testMethod=test_one_known_one_unknown_score_half>
+
+    def test_one_known_one_unknown_score_half(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        ws = cs.terminalSymbolSpace_ref
+        D = int(cs.nDim)
+        # Tight threshold so a far-away idea is unambiguously "unknown".
+        cs._learn_children_dist_threshold = 1e-3
+        known = torch.zeros(D)
+        known[0] = 0.5
+        _seed_known_concept(ws, known)
+        far = torch.full((D,), 999.0)
+>       score = cs._learn_score_children_in_codebook(known, far)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_learn_score_components.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (syntacticLayer): SyntacticLayer(
+    (layers): ModuleList()
+  )
+)
+name = '_learn_score_children_in_codebook'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_learn_score_children_in_codebook'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ TestChildrenInCodebookFactor.test_unknown_children_score_zero _________
+
+self = <test_learn_score_components.TestChildrenInCodebookFactor testMethod=test_unknown_children_score_zero>
+
+    def test_unknown_children_score_zero(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        D = int(cs.nDim)
+        cs._learn_children_dist_threshold = 1e-3
+        far1 = torch.full((D,), 999.0)
+        far2 = torch.full((D,), -999.0)
+>       score = cs._learn_score_children_in_codebook(far1, far2)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_learn_score_components.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (syntacticLayer): SyntacticLayer(
+    (layers): ModuleList()
+  )
+)
+name = '_learn_score_children_in_codebook'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_learn_score_children_in_codebook'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ TestIsTruthObviousFactor.test_agreeing_truthset_scores_one __________
+
+self = <test_learn_score_components.TestIsTruthObviousFactor testMethod=test_agreeing_truthset_scores_one>
+
+    def test_agreeing_truthset_scores_one(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        tl = cs.symbolSpace.truth_layer
+        tl.clear()
+        D = int(tl.truths.shape[-1])
+        # Two strongly-affirming truths -> assess()["support"] == 1.0.
+        tl.record(torch.ones(D), 1.0)
+        tl.record(torch.ones(D), 1.0)
+        self.assertEqual(tl.assess()["support"], 1.0)
+        relation = torch.ones(int(cs.nDim))
+>       score = cs._learn_score_is_truth_obvious(relation)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_learn_score_components.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (syntacticLayer): SyntacticLayer(
+    (layers): ModuleList()
+  )
+)
+name = '_learn_score_is_truth_obvious'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_learn_score_is_truth_obvious'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________ TestIsTruthObviousFactor.test_empty_truthset_scores_zero ___________
+
+self = <test_learn_score_components.TestIsTruthObviousFactor testMethod=test_empty_truthset_scores_zero>
+
+    def test_empty_truthset_scores_zero(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        tl = cs.symbolSpace.truth_layer
+        tl.clear()
+        # Empty -> support 0 -> nothing to agree with.
+>       score = cs._learn_score_is_truth_obvious(torch.ones(int(cs.nDim)))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_learn_score_components.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (syntacticLayer): SyntacticLayer(
+    (layers): ModuleList()
+  )
+)
+name = '_learn_score_is_truth_obvious'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_learn_score_is_truth_obvious'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ TestResolvesContradictionFactor.test_consistent_truthset_scores_zero _____
+
+self = <test_learn_score_components.TestResolvesContradictionFactor testMethod=test_consistent_truthset_scores_zero>
+
+    def test_consistent_truthset_scores_zero(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        tl = cs.symbolSpace.truth_layer
+        tl.clear()
+        D = int(tl.truths.shape[-1])
+        # All-agreeing -> conflict 0 -> nothing to resolve.
+        tl.record(torch.ones(D), 1.0)
+        tl.record(torch.ones(D), 1.0)
+        self.assertEqual(tl.assess()["conflict"], 0.0)
+>       score = cs._learn_score_resolves_contradiction(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            torch.ones(int(cs.nDim)))
+
+test/test_learn_score_components.py:180: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (syntacticLayer): SyntacticLayer(
+    (layers): ModuleList()
+  )
+)
+name = '_learn_score_resolves_contradiction'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_learn_score_resolves_contradiction'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ TestResolvesContradictionFactor.test_contradicting_truths_score_one ______
+
+self = <test_learn_score_components.TestResolvesContradictionFactor testMethod=test_contradicting_truths_score_one>
+
+    def test_contradicting_truths_score_one(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        tl = cs.symbolSpace.truth_layer
+        tl.clear()
+        D = int(tl.truths.shape[-1])
+        # Affirm AND deny the same concept -> assess()["conflict"] == 1.0.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            tl.record(torch.ones(D), 1.0)
+            tl.record(torch.ones(D), -1.0)
+        self.assertEqual(tl.assess()["conflict"], 1.0)
+        relation = torch.ones(int(cs.nDim))
+>       score = cs._learn_score_resolves_contradiction(relation)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_learn_score_components.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+  (syntacticLayer): SyntacticLayer(
+    (layers): ModuleList()
+  )
+)
+name = '_learn_score_resolves_contradiction'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_learn_score_resolves_contradiction'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__ TestRadixLayerReverseWithSS.test_ws_walk_recovers_bytes_via_meta_taxonomy ___
+
+self = <test_radix_layer_reverse.TestRadixLayerReverseWithSS testMethod=test_ws_walk_recovers_bytes_via_meta_taxonomy>
+
+    def test_ws_walk_recovers_bytes_via_meta_taxonomy(self):
+        m = _make_radix_model()
+        ws = m.wholeSpace
+        ps = m.perceptualSpace.percept_store
+        words = [b"alpha", b"beta", b"gamma"]
+        meta_idxs = []
+        for w in words:
+            pid = ws.insert_percept(w)
+            sid = ws.insert_whole()
+>           mid = ws.insert_meta(pid, sid)
+                  ^^^^^^^^^^^^^^
+
+test/test_radix_layer_reverse.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WholeSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook(
+      (...t(
+      (0): InterpretLayer()
+      (1): NotLayer()
+      (2): IntersectionLayer()
+      (3): UnionLayer()
+    )
+  )
+)
+name = 'insert_meta'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'WholeSpace' object has no attribute 'insert_meta'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_positive_int_taxonomy.py::TestVocabExtrasPositiveInt::test_legacy_signed_int_blob_migrates_on_load
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:24581: UserWarning: Dropped retired WholeSpace META taxonomy.
+    warnings.warn('Dropped retired WholeSpace META taxonomy.', UserWarning)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMeta::test_insert_meta_basic_creates_taxonomy_entry
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMeta::test_insert_meta_default_fused_vec_is_average
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMeta::test_insert_meta_is_idempotent_with_ema_update
+FAILED test/test_two_codebook_meta_taxonomy.py::TestReverseDecodeStructural::test_reverse_decode_walks_meta_taxonomy_to_bytes
+FAILED test/test_two_codebook_meta_taxonomy.py::TestStructuralReverseDecodeIntegration::test_decode_reconstructed_inputs_uses_structural_path
+FAILED test/test_two_codebook_meta_taxonomy.py::TestPersistenceRoundtrip::test_taxonomy_survives_vocab_extras_roundtrip
+FAILED test/test_two_codebook_meta_taxonomy.py::TestReverseDecodeGuards::test_reverse_decode_raises_on_inf_input
+FAILED test/test_two_codebook_meta_taxonomy.py::TestReverseDecodeGuards::test_reverse_decode_raises_on_nan_input
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMetaGuards::test_insert_meta_rejects_ema_above_one
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMetaGuards::test_insert_meta_rejects_inf_fused_vec_on_first_insert
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMetaGuards::test_insert_meta_rejects_nan_fused_vec_on_ema_update
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMetaGuards::test_insert_meta_rejects_nan_fused_vec_on_first_insert
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertMetaGuards::test_insert_meta_rejects_negative_ema
+FAILED test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_meta_rejects_zero_or_negative
+FAILED test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_meta_returns_positive_position_and_keys_pair
+FAILED test/test_positive_int_taxonomy.py::TestTaxonomyStoragePositiveInt::test_taxonomy_children_and_parent_use_positions
+FAILED test/test_positive_int_taxonomy.py::TestVocabExtrasPositiveInt::test_legacy_signed_int_blob_migrates_on_load
+FAILED test/test_positive_int_taxonomy.py::TestVocabExtrasPositiveInt::test_roundtrip_preserves_positive_int_keys
+FAILED test/test_lbg_positive_int.py::TestRecordLbgPullPositions::test_record_pull_on_ps_position_is_a_noop
+FAILED test/test_lbg_positive_int.py::TestRecordLbgPullPositions::test_record_pull_on_ws_position_accumulates
+FAILED test/test_lbg_positive_int.py::TestRecordLbgPullPositions::test_record_pull_raises_on_nan
+FAILED test/test_lbg_positive_int.py::TestMaybeSplitLbgPositions::test_no_split_below_threshold
+FAILED test/test_lbg_positive_int.py::TestMaybeSplitLbgPositions::test_split_allocates_fresh_position
+FAILED test/test_lbg_positive_int.py::TestMaybeSplitLbgPositions::test_split_inherits_meta_binding_to_new_position
+FAILED test/test_learn_score_components.py::TestChildrenInCodebookFactor::test_known_children_score_one
+FAILED test/test_learn_score_components.py::TestChildrenInCodebookFactor::test_one_known_one_unknown_score_half
+FAILED test/test_learn_score_components.py::TestChildrenInCodebookFactor::test_unknown_children_score_zero
+FAILED test/test_learn_score_components.py::TestIsTruthObviousFactor::test_agreeing_truthset_scores_one
+FAILED test/test_learn_score_components.py::TestIsTruthObviousFactor::test_empty_truthset_scores_zero
+FAILED test/test_learn_score_components.py::TestResolvesContradictionFactor::test_consistent_truthset_scores_zero
+FAILED test/test_learn_score_components.py::TestResolvesContradictionFactor::test_contradicting_truths_score_one
+FAILED test/test_radix_layer_reverse.py::TestRadixLayerReverseWithSS::test_ws_walk_recovers_bytes_via_meta_taxonomy
+34 failed, 40 passed, 1 skipped, 33 warnings in 4.61s

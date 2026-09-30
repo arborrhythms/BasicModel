@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+    "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+    "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+  ],
+  "completed": [
+    "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+    "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+    "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3877882089000195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043287500739097595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2985279170097783,
+      "message": "",
+      "stdout": "[BasicModel] checkpoint schema migration reset 12 obsolete WholeSpace dense tensor(s) (28.0 MiB); live property rows retain deterministic initialization\r\n[BasicModel] checkpoint schema migration dropped legacy WholeSpace word/META structure (\u00a711.4): vocab_extras.well_known_atoms, vocab_extras.ws_taxonomy_extras, structural_extras.whole_spaces\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8058/test_dictionary_checkpoint_war0/dictionary.ckpt\n  Keys in model but missing from file: 12 (initialized fresh)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8058/test_dictionary_checkpoint_war0/dictionary.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

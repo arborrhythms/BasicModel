@@ -1,0 +1,15 @@
+............................                                             [100%]
+=============================== warnings summary ===============================
+test/test_type_run_spans.py::test_live_ws_has_type_subspace_with_four_tagged_rows
+test/test_type_run_spans.py::test_type_subspace_is_idempotent_on_rebuild
+test/test_type_run_spans.py::test_byte_mode_builds_no_type_subspace
+test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_tags_and_cut
+test/test_type_run_spans.py::test_type_subspace_is_not_a_parameter_and_survives_a_backward
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+28 passed, 8 warnings in 2.44s

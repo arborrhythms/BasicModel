@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_grammar_rewrite.py::test_grammar_has_no_marker_helper_rules",
+    "test/test_grammar_rewrite.py::test_pp_modifies_vp_via_lower",
+    "test/test_grammar_rewrite.py::test_per_operator_position_categories_present"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-528.recycle.json"
+}

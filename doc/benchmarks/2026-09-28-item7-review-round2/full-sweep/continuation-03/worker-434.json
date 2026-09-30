@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_chunk_static_analyse.py::test_analyse_cold_is_byte_level_within_words",
+    "test/test_chunk_static_analyse.py::test_analyse_learned_merges_recover_words",
+    "test/test_chunk_static_analyse.py::test_analyse_converges_to_lexicon",
+    "test/test_chunk_static_analyse.py::test_analyse_never_merges_across_whitespace",
+    "test/test_chunk_static_analyse.py::test_analyse_iterates_merges_to_multibyte_words",
+    "test/test_chunk_static_analyse.py::test_existing_modes_unchanged"
+  ],
+  "completed": [
+    "test/test_chunk_static_analyse.py::test_analyse_cold_is_byte_level_within_words",
+    "test/test_chunk_static_analyse.py::test_analyse_learned_merges_recover_words",
+    "test/test_chunk_static_analyse.py::test_analyse_converges_to_lexicon",
+    "test/test_chunk_static_analyse.py::test_analyse_never_merges_across_whitespace",
+    "test/test_chunk_static_analyse.py::test_analyse_iterates_merges_to_multibyte_words",
+    "test/test_chunk_static_analyse.py::test_existing_modes_unchanged"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_chunk_static_analyse.py::test_analyse_cold_is_byte_level_within_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014637503772974014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chunk_static_analyse.py::test_analyse_learned_merges_recover_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001052499283105135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chunk_static_analyse.py::test_analyse_converges_to_lexicon",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.487499482929707e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chunk_static_analyse.py::test_analyse_never_merges_across_whitespace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.187508840113878e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chunk_static_analyse.py::test_analyse_iterates_merges_to_multibyte_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.070895612239838e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chunk_static_analyse.py::test_existing_modes_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010933296289294958,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

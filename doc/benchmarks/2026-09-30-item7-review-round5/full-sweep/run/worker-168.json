@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width"
+  ],
+  "completed": [
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.165961374994367,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

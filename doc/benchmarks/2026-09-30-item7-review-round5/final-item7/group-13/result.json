@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows"
+  ],
+  "completed": [
+    "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13/worker-000.json"
+      ],
+      "pid": 16046,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 433653056,
+      "elapsed_seconds": 4.347596582956612,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows"
+      ],
+      "completed": [
+        "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010321208974346519,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13",
+  "elapsed_seconds": 8.865322041790932,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 433653056,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13/collect.json"
+    ],
+    "pid": 16038,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433079544,
+    "elapsed_seconds": 4.2129277910571545,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-13/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

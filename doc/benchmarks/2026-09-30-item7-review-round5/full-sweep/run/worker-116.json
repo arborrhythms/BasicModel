@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_item9b_followup.py::test_fixed_discrimination_metric_keeps_all_probes_without_training"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_item9b_followup.py::test_fixed_discrimination_metric_keeps_all_probes_without_training"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042983400635421276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010569579899311066,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,4 +1,4 @@
-"""Packing must preserve each sentence's sealed state and tied inverse.
+"""Packing must preserve each sentence's ended state and tied inverse.
 
 The native probe uses ambient model initialization. Vocabulary is admitted
 once before either layout; no optimizer or dictionary rotation occurs.
@@ -62,14 +62,19 @@ def measure_layout(model, rows, *, packed):
     """Read roots at the inverse boundary, before output clears transient STM."""
     from What import What
 
+    from reading_fixtures import capture_readings
     records = {}
     reconstruct = model._reconstruct_sentences
     captured = {}
 
-    def capture(S, reference, roots, depths=None, end=None, end_depth=None):
-        captured.update(roots=roots.detach().clone(), end=end.detach().clone(),
-                        depth=depths.detach().clone(), end_depth=end_depth.detach().clone())
-        return reconstruct(S, reference, roots, depths, end, end_depth)
+    def capture(S, reference, roots, depths=None, end=None, end_depth=None, sentence_slot=None):
+        # Reconstruction is scored once per sentence. A later sentence can
+        # be absent from a shorter batch row, so it cannot overwrite that
+        # row's last live sentence with its own empty end-state slot.
+        captured[int(sentence_slot)] = dict(
+            roots=roots.detach().clone(), end=end.detach().clone(),
+            depth=depths.detach().clone(), end_depth=end_depth.detach().clone())
+        return reconstruct(S, reference, roots, depths, end, end_depth, sentence_slot)
 
     model.__dict__.pop("_reconstruct_compiled", None)
     model._reconstruct_sentences = capture
@@ -80,7 +85,8 @@ def measure_layout(model, rows, *, packed):
         for step, samples in enumerate(steps):
             raw = (model.inputSpace.prepPackedInput(samples) if packed
                    else model.inputSpace.prepInput(samples))
-            with torch.no_grad():
+            captured.clear()
+            with capture_readings(model) as readings, torch.no_grad():
                 model.runBatch(
                     train=False, batchNum=step, batchSize=len(rows), split="validation",
                     batch_override=(raw, torch.empty(len(rows), 0)),
@@ -94,10 +100,10 @@ def measure_layout(model, rows, *, packed):
                     slot = sentence if packed else 0
                     mask = active[b] & (ids[b] == slot)
                     last = sentence == len(row) - 1 if packed else True
-                    root = (captured["end"][b] if last
-                            else captured["roots"][b, slot].reshape(3, -1))
-                    program = (understood.sentence_programs[slot][b] if packed
-                               else understood.answer_program[b])
+                    captured_sentence = captured[slot]
+                    root = (captured_sentence["end"][b] if last
+                            else captured_sentence["roots"][b, slot].reshape(3, -1))
+                    program = readings[slot][b]
                     records[b, sentence] = {
                         "root": root.clone(),
                         "program_root": program.end_state.detach().clone(),

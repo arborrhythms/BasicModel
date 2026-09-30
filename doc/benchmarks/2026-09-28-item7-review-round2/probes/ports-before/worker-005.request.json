@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-005.recycle.json"
+}

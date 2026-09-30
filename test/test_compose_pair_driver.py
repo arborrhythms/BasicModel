@@ -66,6 +66,14 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
     steps0 = int(getattr(m, '_training_step_count', 0))
     observed = []
     constraints = []
+    commits = []
+    commit = m._commit_sentence
+    def capture_commit(state, *args, **kwargs):
+        selected = state[0][0].detach().clone()
+        result = commit(state, *args, **kwargs)
+        commits.append((selected, result[0][0].detach().clone(), result[0][1].clone()))
+        return result
+    monkeypatch.setattr(m, '_commit_sentence', capture_commit)
     backward = m._backward_training_loss
     def capture(total, *args, **kwargs):
         if getattr(m, '_sentence_backward', False):
@@ -87,8 +95,14 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
         assert all(torch.isfinite(torch.tensor(row[3])) for row in observed)
         assert m.present() - clock0 == 1
         assert m._training_step_count - steps0 == 1
-        chosen = torch.where(m._sentence_winners[0][:, None], observed[1][1], observed[0][1])
-        torch.testing.assert_close(m._reconstruction_stack()._choice_actions, chosen)
+        assert len(commits) == 1
+        chosen = torch.where(m._sentence_winners[0][:, None, None], observed[1][2], observed[0][2])
+        selected, committed, depths = commits[0]
+        torch.testing.assert_close(selected, chosen)
+        for b, depth in enumerate(depths.tolist()):
+            torch.testing.assert_close(committed[b, :depth], chosen[b, :depth])
+        assert (m._reconstruction_stack()._choice_actions == -1).all()
+        assert not m._reconstruction_stack()._choice_mask.any()
         assert (observed[0][1] != observed[1][1]).any(-1).all()
         prefix, forced = constraints[0]
         assert torch.equal(observed[0][1][prefix], observed[1][1][prefix])

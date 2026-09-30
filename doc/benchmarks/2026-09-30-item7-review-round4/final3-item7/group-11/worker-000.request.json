@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-item7/group-11/worker-000.recycle.json"
+}

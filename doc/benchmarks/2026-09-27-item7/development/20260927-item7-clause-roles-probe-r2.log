@@ -1,0 +1,76 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+________ test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122e22d20>
+
+    def test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('lift', ('lower', 'the', 'cat'), ('verb', 'chased', ('lower', 'the', 'mouse'))))
+        row = f.store.seal_clause(clause, trust=.7)
+        assert len(f.store) == 1 and f.store.rel_type[row] == f.store.REL_NONE
+>       assert f.store.refs[row, 0] == f.noun('cat')
+E       AssertionError: assert tensor(-1) == 14
+E        +  where 14 = noun('cat')
+E        +    where noun = <test_item7_acceptance.SentenceFixture object at 0x12287c3b0>.noun
+
+test/test_item7_acceptance.py:87: AssertionError
+________ test_04_absolute_clauses_seal_bottom_up_without_relation_rows _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122ec80e0>
+
+    def test_04_absolute_clauses_seal_bottom_up_without_relation_rows(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        inner = ('lift', 'it', ('verb', 'is', ('surface', 'so', 'beautiful')))
+        middle = ('lift', 'she', ('verb', 'said', inner))
+        clause = f.clause(('lift', 'he', ('verb', 'said', middle)))
+        row = f.store.seal_clause(clause, trust=.8)
+>       assert row == 2 and f.store.ideas().tolist() == [0, 1, 2]
+E       assert (0 == 2)
+
+test/test_item7_acceptance.py:98: AssertionError
+_______ test_05_embedded_part_is_unasserted_and_propagates_operator_kind _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122f106e0>
+
+    def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        inner = ('part', 'cats', 'animals')
+        clause = f.clause(('lift', 'he', ('verb', 'said', inner)))
+        row = f.store.seal_clause(clause, trust=.6)
+        assert row == 1 and f.store.rel_type[:2].tolist() == [f.store.REL_PARTOF, f.store.REL_OPERATOR]
+        assert f.store.refs[row, 2] == f.store.row_ids[0]
+        assert not bool(f.store.slots[row, 2].any())
+>       assert f.store.trust[:2].tolist() == [0., .6]
+E       assert [0.0, 0.6000000238418579] == [0.0, 0.6]
+E         
+E         At index 1 diff: 0.6000000238418579 != 0.6
+E         Use -v to get more diff
+
+test/test_item7_acceptance.py:111: AssertionError
+_________ test_12_generic_subject_is_a_relation_with_either_predicate __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122f431d0>
+
+    def test_12_generic_subject_is_a_relation_with_either_predicate(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        for predicate in ('breathe', ('verb', 'are', 'animals')):
+            relative = f.clause(('lift', ('generic', 'cats'), predicate))
+            absolute = f.clause(('lift', ('lower', 'this', 'cat'), predicate))
+>           assert relative.relation == 'part' and absolute.relation is None
+E           AssertionError: assert (None == 'part')
+E            +  where None = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(),...gs=(), scope=(), sentence_kind='idea'), relation=None, refs=(11, -1, -1), children=(), eternal=False),), eternal=False).relation
+
+test/test_item7_acceptance.py:119: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+FAILED test/test_item7_acceptance.py::test_04_absolute_clauses_seal_bottom_up_without_relation_rows
+FAILED test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind
+FAILED test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate
+4 failed, 1 warning in 2.03s

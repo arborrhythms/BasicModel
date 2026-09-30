@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity"
+  ],
+  "completed": [
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023312517441809177,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -49,10 +49,7 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     alloc.layer().embed_pair(
         meta, whole_ref=("sym", word), part_ref=("sym", obj))
     alloc.settle(meta)
-    alloc.word_obj_meta["cat"] = (word, obj, meta)
-    alloc.joint[("cat", "sat")] = meta
     alloc.relate_idx[(7, 41)] = word
-    alloc.chain_idx[("chain", (word, obj))] = meta
     alloc.raised.add(meta)
     alloc.singletons.add(obj)
     alloc.identity[word] = (7, 41)
@@ -92,10 +89,11 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     source.save_weights(path)
 
     saved = torch.load(path, map_location="cpu", weights_only=False)
-    assert saved["structural_extras"]["version"] == 1
+    assert saved["structural_extras"]["version"] == 2
     # Count-based WS raising is deleted; even a stale source attribute must
     # not be saved beside the live concept-id and refinement state.
-    assert "_mereology_raised" not in saved["structural_extras"]["whole_spaces"][0]["attributes"]
+    assert "whole_spaces" not in saved["structural_extras"]
+    assert "_mereology_raised" not in saved["structural_extras"]["whole_properties"][0]["attributes"]
 
     restored_alloc = _allocator()
     restored_cs = types.SimpleNamespace(_concept_allocator=restored_alloc)
@@ -103,8 +101,7 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     target = _model_with(restored_cs, restored_ws)
     assert target.load_weights(path)
 
-    assert restored_alloc.word_obj_meta["cat"] == (word, obj, meta)
-    assert restored_alloc.joint[("cat", "sat")] == meta
+    assert not hasattr(restored_alloc, "joint")
     assert restored_alloc.records(meta) == [
         ("whole", ("sym", word)), ("part", ("sym", obj))]
     assert restored_alloc.layer()._tensor_rows == layer._tensor_rows
@@ -114,22 +111,18 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     assert restored_alloc.layer()._cols == [2]
     torch.testing.assert_close(
         restored_alloc.layer().values.detach(), torch.tensor([0.625]))
-    assert restored_cs._word_obj_meta is restored_alloc.word_obj_meta
-    assert restored_cs._joint_concepts is restored_alloc.joint
-    assert restored_cs._percept_word_concept[7] == (word, obj)
+    assert not hasattr(restored_cs, "_joint_concepts")
+    assert not hasattr(restored_cs, "_percept_word_concept")
     assert restored_cs._recognized_words == {"cat": 7}
     assert restored_cs._concept_admission_drops == {"word/object/META": 2}
 
-    assert restored_ws._word_whole_ss == {"cat": 41}
-    assert not hasattr(restored_ws, "_mereology_raised")
-    assert restored_ws._property_class_whole == {(1, 3): 44}
-    assert restored_ws._anchored_pids == {7: "operator"}
-    torch.testing.assert_close(
-        restored_ws._lbg_disp_sum[41], torch.tensor([1.0, 2.0]))
+    for retired in ('_word_whole_ss', '_mereology_raised', '_property_class_whole',
+                    '_anchored_pids', '_lbg_disp_sum'):
+        assert not hasattr(restored_ws, retired)
+    assert restored_ws._standalone_run_bytes == {ord('c')}
 
     # The monotonic allocator resumes above every restored id. A repeat lookup
     # therefore reuses the checkpoint's identity instead of colliding/reminting.
-    assert restored_alloc.word_obj_meta["cat"] == (word, obj, meta)
     assert restored_alloc.new_concept() > meta
 
 

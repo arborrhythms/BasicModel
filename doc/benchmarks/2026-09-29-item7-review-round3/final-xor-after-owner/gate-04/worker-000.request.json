@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/final-xor-after-owner/gate-04/worker-000.recycle.json"
+}

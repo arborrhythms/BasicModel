@@ -110,26 +110,3 @@ def test_init_scale_keeps_folds_linear():
     assert small < 0.02, f"small-init fold should stay near-linear, got {small}"
     assert big > 0.2, f"unit-scale fold should saturate, got {big}"
     assert big > 10 * small, "small init must reduce fold saturation sharply"
-
-
-def test_whole_space_init_scale_wiring():
-    # End-to-end: <WholeSpace><initScale> must reach BOTH WS codebooks so
-    # their prefill rows land at the small operating point.
-    import Models
-    import Language
-    from util import init_config
-
-    cfg = os.path.join(_DATA, "MM_init_scale.xml")
-    init_config(path=cfg, defaults_path=os.path.join(_DATA, "model.xml"))
-    Language.TheGrammar._configured = False
-    m, _ = Models.BasicModel.from_config(cfg)
-    ws = m.wholeSpace
-
-    what = ws.subspace.what
-    assert isinstance(what, Codebook), "fixture must give WS a Codebook .what"
-    assert what.init_scale == pytest.approx(0.02)
-    assert ws.analysis_store.init_scale == pytest.approx(0.02)
-    # The freshly-built .what prototypes sit at the small scale (mean row norm
-    # well under the unit / hypercube default).
-    mean_norm = float(_row_norms(what).mean())
-    assert mean_norm < 0.1, f"WS .what rows not small-init: mean |row|={mean_norm}"

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00/worker-000.recycle.json"
+}

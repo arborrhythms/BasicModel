@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-065.recycle.json"
+}

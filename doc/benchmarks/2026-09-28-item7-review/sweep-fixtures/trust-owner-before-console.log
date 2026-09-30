@@ -1,0 +1,5 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.1s; peak 0.40 GiB
+[worker-000] 13 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 4.3s; peak 0.40 GiB
+{"reason": "test_failure", "exit_code": 1, "selected": 13, "completed": 13}

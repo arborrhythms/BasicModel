@@ -1,0 +1,210 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_acceptance.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_item7_byte_columns.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_item7_clause_program.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_item7_clause_state.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_item7_closing_identities.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_item7_context.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "selector": "test/test_item7_definition_integrity.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-07/result.json"
+    },
+    {
+      "selector": "test/test_item7_end_state_storage.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-08/result.json"
+    },
+    {
+      "selector": "test/test_item7_expectation.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-09/result.json"
+    },
+    {
+      "selector": "test/test_item7_grammar.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-10/result.json"
+    },
+    {
+      "selector": "test/test_item7_lesson_gradients.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-11/result.json"
+    },
+    {
+      "selector": "test/test_item7_nested_references.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-12/result.json"
+    },
+    {
+      "selector": "test/test_item7_point_owners.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-13/result.json"
+    },
+    {
+      "selector": "test/test_item7_predicate_identity.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-14/result.json"
+    },
+    {
+      "selector": "test/test_item7_predicate_storage.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-15/result.json"
+    },
+    {
+      "selector": "test/test_item7_property_cache_release.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-16/result.json"
+    },
+    {
+      "selector": "test/test_item7_property_only.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-17/result.json"
+    },
+    {
+      "selector": "test/test_item7_property_read_storage.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-18/result.json"
+    },
+    {
+      "selector": "test/test_item7_provenance.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-19/result.json"
+    },
+    {
+      "selector": "test/test_item7_reduction_deadline.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-20/result.json"
+    },
+    {
+      "selector": "test/test_item7_references.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-21/result.json"
+    },
+    {
+      "selector": "test/test_item7_retention.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-22/result.json"
+    },
+    {
+      "selector": "test/test_item7_row_schema.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-23/result.json"
+    },
+    {
+      "selector": "test/test_item7_selected_property_rows.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-24/result.json"
+    },
+    {
+      "selector": "test/test_item7_sentence_boundary.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-25/result.json"
+    },
+    {
+      "selector": "test/test_item7_sentence_gradients.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-26/result.json"
+    },
+    {
+      "selector": "test/test_item7_storage.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-27/result.json"
+    },
+    {
+      "selector": "test/test_item7_taxonomy.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-28/result.json"
+    },
+    {
+      "selector": "test/test_item7_truth_text.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-29/result.json"
+    },
+    {
+      "selector": "test/test_item7_unfold_index.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-30/result.json"
+    },
+    {
+      "selector": "test/test_item7_unindexed_relations.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-31/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-32/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_interpretation.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-33/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

@@ -1,0 +1,26 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+__ TestInsertReturnsPositiveInt.test_insert_percept_returns_positive_position __
+test/test_positive_int_taxonomy.py:52: in test_insert_percept_returns_positive_position
+    pos = ws.insert_percept(b"alpha")
+          ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'
+___ TestInsertReturnsPositiveInt.test_insert_whole_returns_positive_position ___
+test/test_positive_int_taxonomy.py:70: in test_insert_whole_returns_positive_position
+    pos = ws.insert_whole(init_vec=init)
+          ^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_whole'
+=============================== warnings summary ===============================
+test/test_positive_int_taxonomy.py::test_meta_members_are_positive_native_concept_ids
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_percept_returns_positive_position
+FAILED test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_whole_returns_positive_position
+2 failed, 1 passed, 1 warning in 2.53s

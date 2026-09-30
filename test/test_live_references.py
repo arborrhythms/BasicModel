@@ -1,0 +1,198 @@
+import torch
+from ReferenceContext import ReferenceBank, resolve_operand
+
+
+def test_grammar_order_resolution_survives_the_numerical_journal():
+    from dataclasses import replace
+    from ClauseJournal import finish_clause
+    from reading_fixtures import record_reading
+    from test_item7_references import language_and_program
+    language, entry = language_and_program()
+    language._compose_binary_rules[0].reference_orders = (('I1', 2),)
+    language._compose_binary_rules[0].reference_kinds = (('I1', 'generic'),)
+    entry = record_reading(language, entry)
+    entry = replace(entry, reference_ids=torch.tensor([7, 3]),
+                    reference_orders=torch.tensor([2, -1]))
+    field = finish_clause(language, entry)
+    assert field.refs[0] == 7
+
+
+def test_existing_kind_point_is_resolved_before_the_operator():
+    from types import SimpleNamespace
+    from ReferenceContext import prepare_operands
+    value = torch.tensor([[[1., 0., 0., 0.]]])
+    kind = torch.tensor([.2, .3, .4, .5])
+    types = SimpleNamespace(sources=torch.tensor([[1]]),
+                            orders=torch.tensor([2]), identities=torch.tensor([[[7]]]),
+                            values=kind.reshape(1, 1, 1, 4))
+    bank = SimpleNamespace(types=types)
+    rule = SimpleNamespace(reference_orders=(('I1', 2),),
+                           reference_kinds=(('I1', 'generic'),))
+    result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
+                              torch.tensor([[0]]), rules=(), unary_rules=(rule,), bank=bank, live=None,
+                              active=torch.tensor([[True]]))
+    torch.testing.assert_close(result['unary'][0, 0, 0], kind, rtol=0, atol=0)
+    assert result['unary_refs'][0, 0, 0, 0] == 7
+
+
+def test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind():
+    from ReferenceContext import ReferenceTypes, resolve_order
+    value = torch.tensor([[[1., 0., 0., 0.]]])
+    types = ReferenceTypes(torch.tensor([[1]]), torch.tensor([1, 2]),
+                           torch.tensor([[[-1, 7]]]), torch.zeros(1, 1, 2, 4))
+    point, identity = resolve_order(value, torch.tensor([[-1]]), 2, types)
+    torch.testing.assert_close(point, value, rtol=0, atol=0)
+    assert identity.item() == -1
+
+
+def test_occurrence_is_operand_and_predictor_gradient_is_live():
+    value = torch.tensor([[[1., 0., 0., 0.]]])
+    earlier = torch.tensor([[[.2, .3, .4, .5]]])
+    query = torch.nn.Parameter(earlier[:, 0].clone())
+    bank = ReferenceBank(torch.tensor([[5]]), earlier, torch.tensor([[True]]),
+                         torch.tensor([[False]]), query, torch.tensor([True]))
+    live = (value, torch.tensor([[1]]), torch.tensor([[1]]),
+            torch.tensor([[False]]), torch.tensor([[0]]))
+    resolved, ref, relation, available = resolve_operand(value, torch.tensor([[1]]), torch.tensor([[0]]),
+                                                         mode='particular', bank=bank, live=live, active=torch.tensor([[True]]))
+    torch.testing.assert_close(resolved, earlier, rtol=0, atol=0)
+    assert ref.item() == 5 and available.item() and not relation.item()
+    resolved.sum().backward()
+    assert query.grad is not None and query.grad.any()
+
+
+def test_cold_reference_is_exact_and_pronoun_proposal_is_maskable():
+    value = torch.tensor([[[1., 0., 0., 0.]]])
+    bank = ReferenceBank(torch.tensor([[-1]]), torch.zeros_like(value), torch.tensor([[False]]),
+                         torch.tensor([[False]]), value[:, 0], torch.tensor([False]))
+    live = (value, torch.tensor([[1]]), torch.tensor([[1]]),
+            torch.tensor([[False]]), torch.tensor([[0]]))
+    for mode in ('particular', 'pronoun'):
+        result = resolve_operand(value, torch.tensor([[1]]), torch.tensor([[0]]), mode=mode,
+                                 bank=bank, live=live, active=torch.tensor([[True]]))
+        assert result[-1].item() == (mode == 'particular')
+        torch.testing.assert_close(result[0], value, rtol=0, atol=0)
+
+
+def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
+    from types import SimpleNamespace
+    from Language import OperationSelectionLayer, LanguageSpace
+
+    class Sum(torch.nn.Module):
+        def forward(self, left, right): return left+right
+    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),), chooser='mlp')
+    first = torch.tensor([1., 0., 0., 0.])
+    second = torch.tensor([0., 0., 1., 0.])
+    prior = torch.tensor([.2, .3, .4, .5])
+    query = torch.nn.Parameter(prior.clone())
+    owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
+                            _compose_binary_rules=(SimpleNamespace(reference_orders=(
+                                ('I1', 1),), reference_kinds=(('I1', 'particular'),)),),
+                            _compose_unary_rules=(), _structural_context=lambda **kw: None,
+                            _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
+                                                          torch.tensor([[False]]), query[None], torch.tensor([True])))
+    buffer = torch.stack((second, first, torch.zeros_like(first)))[None]
+    state = (buffer, torch.tensor([2]), torch.tensor([[1, 1, -1]]), torch.zeros(1, 3, dtype=torch.long),
+             torch.tensor([[2, 0, -1]]), torch.ones(1, 3))
+    scope = torch.tensor([[[0, 3], [0, 1], [0, -1]]])
+
+    def choose(state, scope):
+        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope)
+    eager = choose(state, scope)
+    compiled = torch.compile(choose, backend='eager', fullgraph=True)(state, scope)
+    for result in (eager, compiled):
+        choice, refs, relations, operands, offsets = result
+        torch.testing.assert_close(choice.candidate[0], prior+second, rtol=0, atol=0)
+        assert refs.tolist() == [[5, 3]]
+        torch.testing.assert_close(operands[0, 0], prior, rtol=0, atol=0)
+        torch.testing.assert_close(operands-offsets, torch.stack((first, second))[None])
+        assert not relations.any()
+    eager[0].candidate.sum().backward()
+    assert query.grad is not None and query.grad.any()
+
+
+def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, monkeypatch):
+    from test_meronomy_ladder import _build_ladder_variant
+    from ReferenceContext import ReferenceBank
+    import util
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    model = _build_ladder_variant(tmp_path, 'live_identity', [
+        ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>')])
+    model._tensor_peer_while_eager = True
+    model._chart_compose_per_word = lambda: None
+    model._install_unit_span_fn()
+    model.reconstruct_in_loop = True
+    model.loss.reconstruction_scale = 1.
+    model.reconstruction_placement = 'eager'
+
+    def eager_while(condition, body, values):
+        while bool(condition(*values)):
+            values = body(*values)
+        return values
+    monkeypatch.setattr(torch, 'while_loop', eager_while)
+    language = model.languageSpace
+    rules = list(language._compose_binary_rules)
+    op = next(i for i, r in enumerate(rules) if r.method_name == 'lift')
+    rules[op] = rules[op]._replace(reference_orders=(
+        ('I1', 1),), reference_kinds=(('I1', 'particular'),))
+    language._compose_binary_rules = tuple(rules)
+    layer = language._tree_layer(2)
+    original = layer.forward
+
+    def forced(x, **kwargs):
+        stop = (x.shape[1]-1)*layer.r_reduce+x.shape[1]*layer.r_apply
+        kwargs['replay_action'] = torch.where(kwargs['depth'] >= 2, op, stop)
+        return original(x, **kwargs)
+    monkeypatch.setattr(layer, 'forward', forced)
+    width = model.conceptualSpace.stm.concept_dim
+    prior = torch.nn.functional.normalize(torch.arange(1, width+1, dtype=torch.float32), dim=0)
+    query = torch.nn.Parameter(prior.clone())
+    from ClauseRow import Clause
+    from Meaning import ConceptualMeaning
+    store = model.symbolSpace.ltm_store
+    from ClauseRow import attach_clause_index
+    attach_clause_index(model, store, model._concept_owner())
+    index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior))
+    cid = int(store.row_ids[index])
+
+    def held(active, like):
+        B = active.shape[0]
+        return ReferenceBank(torch.full((B, 1), cid, dtype=torch.long), prior[None, None].expand(B, 1, width),
+                             torch.ones(B, 1, dtype=torch.bool), torch.zeros(
+                                 B, 1, dtype=torch.bool),
+                             query[None].expand(B, width), torch.ones(B, dtype=torch.bool))
+    monkeypatch.setattr(model, '_sentence_reference_bank', held)
+    observed = []
+    observation = model._sentence_observation
+
+    def capture(*a, **kw):
+        view = observation(*a, **kw)
+        if not kw.get('admit', False):
+            observed.append(view)
+        return view
+    monkeypatch.setattr(model, '_sentence_observation', capture)
+    try:
+        model(model.inputSpace.prepInput(['alpha beta']))
+        view = observed[-1]
+        entry = view['entries'][0]
+        clause = view['clauses'][0]
+        actions = entry.actions[:, 0] == 1
+        assert int(actions.sum()) == len(entry.leaves)-1
+        frame = entry.operation_values[actions][-1]
+        torch.testing.assert_close(frame[0], prior, rtol=0, atol=0)
+        torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=0, atol=0)
+        assert entry.operation_refs[actions][-1, 0].item() == cid
+        assert clause.refs[0] == cid
+        torch.testing.assert_close(clause.point, frame[2], rtol=0, atol=0)
+        torch.testing.assert_close(
+            model._sentence_fields[0][0].end_state[0], frame[2], rtol=0, atol=0)
+        assert not torch.equal(entry.leaves[0], prior)
+        active = model.inputSpace._word_active_mask
+        assert not model._recon_truncated.any()
+        torch.testing.assert_close(model._recon_ideas[active], entry.leaves, rtol=1e-4, atol=1e-4)
+        clause.point.sum().backward()
+        assert query.grad is not None and query.grad.any()
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
+        torch._dynamo.reset()

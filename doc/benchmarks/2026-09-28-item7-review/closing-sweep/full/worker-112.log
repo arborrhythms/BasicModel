@@ -1,0 +1,27 @@
+............F.............                                               [100%]
+=================================== FAILURES ===================================
+___ test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only ___
+test/test_output_synthesis.py:339: in test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+    assert not torch.allclose(first.actual, out_after)        # answer path moved
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert not True
+E    +  where True = <built-in method allclose of type object at 0x10b1193a0>(tensor([[[0.]],\n\n        [[0.]]]), tensor([[[0.]],\n\n        [[0.]]]))
+E    +    where <built-in method allclose of type object at 0x10b1193a0> = torch.allclose
+E    +    and   tensor([[[0.]],\n\n        [[0.]]]) = AnswerConstruction(actual=tensor([[[0.]],\n\n        [[0.]]]), derivation=AnswerDerivation(answer_symbol=tensor([[[0., 0...ceptual', 'shape': (2, 8, 14), 'selections': ()}, {'operation': 'output:from_percepts', 'shape': (2, 1, 1)}), texts=()).actual
+=============================== warnings summary ===============================
+test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8127/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_model_trains_with_teacher_detached
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+1 failed, 25 passed, 3 warnings in 4.58s

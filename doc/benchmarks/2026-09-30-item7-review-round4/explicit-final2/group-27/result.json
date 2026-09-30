@@ -1,0 +1,246 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+    "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+    "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+    "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+    "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+    "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "completed": [
+    "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+    "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+    "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+    "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+    "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+    "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27/worker-000.json"
+      ],
+      "pid": 82963,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 598771176,
+      "elapsed_seconds": 5.713536374969408,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+        "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+        "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+        "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+        "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+        "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+        "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+        "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+        "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+        "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+        "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+        "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+        "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+      ],
+      "completed": [
+        "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+        "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+        "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+        "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+        "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+        "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+        "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+        "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+        "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+        "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+        "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+        "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+        "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0021268329583108425,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018407918978482485,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00167991709895432,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0019494157750159502,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017777078319340944,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.028849249938502908,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009741249959915876,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006834589876234531,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017122500576078892,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004994170740246773,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0011045420542359352,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0012980829924345016,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.9405431661289185,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27",
+  "elapsed_seconds": 8.882773875026032,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 598771176,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27/collect.json"
+    ],
+    "pid": 82947,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263488400,
+    "elapsed_seconds": 2.8976204169448465,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+        "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+        "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+        "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+        "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+        "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+        "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+        "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+        "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+        "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+        "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+        "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+        "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

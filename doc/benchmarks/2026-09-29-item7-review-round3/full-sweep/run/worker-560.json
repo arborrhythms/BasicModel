@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+    "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+    "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name",
+    "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback"
+  ],
+  "completed": [
+    "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+    "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+    "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name",
+    "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001799999736249447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006674160249531269,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032670795917510986,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003083338961005211,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026345904916524887,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

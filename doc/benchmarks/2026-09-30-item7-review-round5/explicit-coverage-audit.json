@@ -1,0 +1,47 @@
+{
+  "final_source_sha256": "e8faf905cfe40c76e064a52bcf61e4063034a21f619d13b0a6e777e05569fdf1",
+  "explicit_counts": {
+    "passed": 562,
+    "skipped": 5,
+    "failed": 5
+  },
+  "explicit_attempts": 572,
+  "no_missing_explicit_cases": true,
+  "thought_skip_set_unchanged": true,
+  "thought_skips": [
+    "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+    "test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax",
+    "test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax",
+    "test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows"
+  ],
+  "sweep_collection": {
+    "selected": 5122,
+    "added": [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/comparison.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/findings-in-progress.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/table.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-table.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/validation-runtime.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/table.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-comparison.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-30-occurrence-tense-aspect.md]",
+      "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+      "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+      "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+      "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+      "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+      "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+      "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]",
+      "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+      "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+      "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies"
+    ],
+    "removed": []
+  },
+  "scope": "Explicit measurements and collection only; full sweep is still running."
+}

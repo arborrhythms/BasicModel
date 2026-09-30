@@ -1,0 +1,1386 @@
+{
+  "runs": {
+    "affected": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 210,
+      "completed": 210,
+      "counts": {
+        "passed": 208,
+        "skipped": 2
+      },
+      "seconds": 58.779614708037116,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 7200,
+        "batch_size": 16,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 920880832,
+      "peak_aggregate_memory_bytes": 1780453624,
+      "compile_cache_retries": []
+    },
+    "explicit": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 7,
+      "completed": 7,
+      "counts": {
+        "skipped": 7
+      },
+      "seconds": 16.068386416998692,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 7200,
+        "batch_size": 1,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 431916280,
+      "peak_aggregate_memory_bytes": 1294880416,
+      "compile_cache_retries": []
+    },
+    "explicit-verified": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 7,
+      "completed": 7,
+      "counts": {
+        "passed": 3,
+        "failed": 4
+      },
+      "seconds": 240.5045831660973,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800,
+        "suite_seconds": 5400,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+          "phase": "call",
+          "message": "test/test_word_store.py:892: in test_two_epoch_training_severs_cross_batch_graph\n    m.runEpoch(optimizer=opt, batchSize=batch_size, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0"
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', '  there'), ('hello there', '  there')]"
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "call",
+          "message": "test/test_mm_xor.py:187: in test_mm_grammar_learns_xor_signal\n    self._fit_xor(os.path.join(_PROJECT, \"data\", \"MM_grammar.xml\"),\ntest/test_mm_xor.py:162: in _fit_xor\n    _, _, output, _ = m.forward(inp)\n                      ^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        }
+      ],
+      "peak_worker_bytes": 6410180080,
+      "peak_aggregate_memory_bytes": 6410180080,
+      "compile_cache_retries": []
+    },
+    "full": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 5016,
+      "completed": 5016,
+      "counts": {
+        "passed": 4611,
+        "skipped": 320,
+        "failed": 84,
+        "xfailed": 1
+      },
+      "seconds": 5873.1676703330595,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 10800,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [
+        {
+          "nodeid": "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+          "phase": "call",
+          "message": "test/test_item9b_corrections.py:16: in test_default_interpret_reuses_existing_kind_without_minting\n    assert interpret.forward(word, order=1) == kind\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:104: in forward\n    raise ValueError('requested grammar order has no unambiguous source')\nE   ValueError: requested grammar order has no unambiguous source"
+        },
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+          "phase": "call",
+          "message": "test/test_compiled_word_chunk.py:308: in test_chunk_views_keep_one_graph_across_part_and_bucket_widths\n    assert len(graphs) == 1\nE   assert 2 == 1\nE    +  where 2 = len([GraphModule(), GraphModule()])"
+        },
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+          "phase": "call",
+          "message": "test/test_compiled_word_chunk.py:937: in test_tiny_canonical_detached_reverse_stops_at_root\n    model.forward(input_tensor)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+          "phase": "call",
+          "message": "test/test_query_native_ids.py:27: in test_real_sentence_capture_owns_native_object_ids_across_later_staging\n    assert bool((program.concept_ids[known] != program.rows[known]).any())\nE   assert False\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method any of Tensor object at 0x14931db30>()\nE    +      where <built-in method any of Tensor object at 0x14931db30> = tensor([ 5,  8, 11,  8, 14]) != tensor([ 5,  8, 11,  8, 14]).any"
+        },
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+          "phase": "call",
+          "message": "test/test_reasoning_cde_model.py:51: in test_answer_query_degrades_gracefully\n    self.assertIsNone(self.m.answer_query('hello there'))\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23255: in answer_query\n    understanding = self.understand(inputs)\n                    ^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9199: in understand\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9195: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+          "phase": "call",
+          "message": "test/test_reasoning_cde_model.py:44: in test_training_step_uses_the_normal_policy_configuration\n    self.m.runEpoch(optimizer=opt, batchSize=6, split='train',\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16314: in runEpoch\n    self.provision_ltm()\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7691: in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\nbin/Models.py:7722: in _ltm_ingest_truth_texts\n    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',\nbin/Models.py:14466: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14607: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14986: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9495: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10989: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9195: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22238: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21784: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21095: in _run_sealed_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20981: in _commit_sentence\n    row = _append_observed_meaning(store, payload, view['depths'][b],\nbin/Models.py:173: in _append_observed_meaning\n    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseSeal.py:532: in seal_clause\n    raise ValueError('TruthSet kind disagrees with the selected grammatical clause')\nE   ValueError: TruthSet kind disagrees with the selected grammatical clause"
+        },
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+          "phase": "call",
+          "message": "test/test_reasoning_cde_model.py:34: in test_truthset_provisions_source_rows\n    self.m.provision_ltm()\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7691: in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\nbin/Models.py:7722: in _ltm_ingest_truth_texts\n    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',\nbin/Models.py:14466: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14607: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14986: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9495: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10989: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9195: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22238: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21784: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21095: in _run_sealed_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20981: in _commit_sentence\n    row = _append_observed_meaning(store, payload, view['depths'][b],\nbin/Models.py:173: in _append_observed_meaning\n    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseSeal.py:532: in seal_clause\n    raise ValueError('TruthSet kind disagrees with the selected grammatical clause')\nE   ValueError: TruthSet kind disagrees with the selected grammatical clause"
+        },
+        {
+          "nodeid": "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+          "phase": "call",
+          "message": "test/test_thinking_kernel.py:46: in test_first_trained_read_reaches_depth3_end_state\n    m.provision_ltm()          # anchors register at the boundaries\n    ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7691: in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\nbin/Models.py:7722: in _ltm_ingest_truth_texts\n    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',\nbin/Models.py:14466: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14607: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14986: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9495: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10989: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9195: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22238: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21784: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21095: in _run_sealed_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20981: in _commit_sentence\n    row = _append_observed_meaning(store, payload, view['depths'][b],\nbin/Models.py:173: in _append_observed_meaning\n    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseSeal.py:532: in seal_clause\n    raise ValueError('TruthSet kind disagrees with the selected grammatical clause')\nE   ValueError: TruthSet kind disagrees with the selected grammatical clause"
+        },
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+          "phase": "call",
+          "message": "test/test_category_em_smoke.py:130: in test_codebook_enables_and_em_populates_on_real_model\n    fired = _run_forwards(model)\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_category_em_smoke.py:106: in _run_forwards\n    model.forward(ipt)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+          "phase": "call",
+          "message": "test/test_category_em_smoke.py:169: in test_mlp_chooser_sized_and_context_built\n    _run_forwards(model)\ntest/test_category_em_smoke.py:106: in _run_forwards\n    model.forward(ipt)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+          "phase": "call",
+          "message": "test/test_output_synthesis.py:686: in test_model_trains_with_teacher_detached\n    m.runEpoch(optimizer=opt, batchSize=2, split=\"train\", max_batches=2)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+          "phase": "call",
+          "message": "test/test_hierarchical.py:146: in test_mentalmodel_compaction_overflow_regression\n    result = self._mentalmodel_forward()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_hierarchical.py:120: in _mentalmodel_forward\n    return model.forward(x)\n           ^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+          "phase": "call",
+          "message": "test/test_hierarchical.py:129: in test_mentalmodel_unchanged\n    result = self._mentalmodel_forward()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_hierarchical.py:120: in _mentalmodel_forward\n    return model.forward(x)\n           ^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+          "phase": "call",
+          "message": "test/test_reasoning.py:313: in test_partition_isolation\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules",
+          "phase": "call",
+          "message": "test/test_stm_relative_sentence_end_state.py:249: in test_relative_mask_sees_cs_role_rules\n    assert not bool(m.any())\nE   assert not True\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method any of Tensor object at 0x12a2eb5c0>()\nE    +      where <built-in method any of Tensor object at 0x12a2eb5c0> = tensor([ True, False,  True]).any"
+        },
+        {
+          "nodeid": "test/test_stm_relative_sentence_end_state.py::test_absolute_sentence_still_collapses_to_depth_one",
+          "phase": "call",
+          "message": "test/test_stm_relative_sentence_end_state.py:328: in test_absolute_sentence_still_collapses_to_depth_one\n    assert post_depth.tolist() == [1, 1], (\nE   AssertionError: absolute rows must collapse to depth 1, got [3, 3]\nE   assert [3, 3] == [1, 1]\nE     \nE     At index 0 diff: 3 != 1\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse",
+          "phase": "call",
+          "message": "test/test_stm_relative_sentence_end_state.py:415: in test_actual_operation_trace_supplies_relative_capacity_without_a_reparse\n    assert model._sentence_relative_mask(1).tolist() == [False]\nE   assert [True] == [False]\nE     \nE     At index 0 diff: True != False\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_stm_relative_sentence_end_state.py::test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates",
+          "phase": "call",
+          "message": "test/test_stm_relative_sentence_end_state.py:427: in test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates\n    assert compiled(ids, valid, anchors).tolist() == [True, False, False]\nE   assert [True, False, True] == [True, False, False]\nE     \nE     At index 2 diff: True != False\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+          "phase": "call",
+          "message": "test/test_learning_readiness.py:182: in test_native_progress_and_trained_artifact_evaluation_path\n    report = read_validation(loaded, sentences=4, gain=0.)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/eval_fineweb_learning.py:100: in read_validation\n    model.runBatch(train=False, split='validation', batchSize=1,\nbin/Models.py:14466: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14607: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14986: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9495: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10989: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9195: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24271: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13831: in _lex_embed_stem\n    self._stage_serial_concept_rows()\nbin/Models.py:11855: in _stage_serial_concept_rows\n    triple = owner.interpret_word(\nbin/Spaces.py:19173: in interpret_word\n    obj = self.interpret.forward(word, occurrence=occurrence)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:112: in forward\n    raise ValueError('ambiguous word association requires a resolving grammar order')\nE   ValueError: ambiguous word association requires a resolving grammar order"
+        },
+        {
+          "nodeid": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+          "phase": "call",
+          "message": "test/test_space_equiv_selfcheck.py:25: in test_identity_candidate_passes\n    n = run_space_gate(Spaces.PartSpace, \"_embed_bpe\",\ntest/space_equiv.py:104: in run_space_gate\n    m.runEpoch(optimizer=opt, batchSize=batch_size, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16673: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14466: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14607: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14986: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9495: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10989: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9195: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22238: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21784: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sealed_word_bricks(\nbin/Models.py:21075: in _run_sealed_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21059: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20859: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20830: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:218: in _boundary_observation_view\n    clause = clause_from_program(language, entry, meaning=meaning,\nbin/ClauseSeal.py:140: in clause_from_program\n    raise ValueError('a sealed derivation must have one or three slots')\nE   ValueError: a sealed derivation must have one or three slots"
+        },
+        {
+          "nodeid": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+          "phase": "call",
+          "message": "test/test_nanochat_grammar_eval.py:148: in test_64_word_trace_reduces_online_in_stm8_without_part_truncation\n    trace = gate.trace_serial_grammar(model, text)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/eval_nanochat_grammar.py:564: in trace_serial_grammar\n    model.forward(model.inputSpace.prepInput([str(text)]))\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+          "phase": "call",
+          "message": "test/test_what_training.py:383: in test_curriculum_drives_question_families_through_run\n    m.runEpoch(optimizer=opt, batchSize=2, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once",
+          "phase": "call",
+          "message": "test/test_reconstruction_roundtrip.py:407: in test_silent_zero_sites_warn_once\n    model.runEpoch(optimizer=opt, batchSize=bs, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+          "phase": "call",
+          "message": "test/test_reset_at_batch_boundary.py:64: in test_reset_fires_every_ar_batch\n    model.runEpoch(optimizer=optimizer, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\ntest/test_reset_at_batch_boundary.py:61: in _spy\n    return _orig()\n           ^^^^^^^\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+          "phase": "call",
+          "message": "test/test_reset_at_batch_boundary.py:89: in test_per_row_state_clears_between_batches\n    model.runEpoch(optimizer=optimizer, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
+          "phase": "call",
+          "message": "test/test_reset_at_batch_boundary.py:119: in test_end_of_stream_reset_to_false\n    model.runEpoch(optimizer=optimizer, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+          "phase": "call",
+          "message": "test/test_router_fires_per_word.py:231: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:198: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+          "phase": "call",
+          "message": "test/test_router_fires_per_word.py:231: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:198: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+          "phase": "call",
+          "message": "test/test_router_fires_per_word.py:258: in test_router_wire_serial_boundary_no_serial_forward_compose\n    n_calls, _ = _count_compose_calls(model)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:151: in _count_compose_calls\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+          "phase": "call",
+          "message": "test/test_router_fires_per_word.py:272: in test_router_wire_serial_off_no_serial_forward_compose\n    n_calls, _ = _count_compose_calls(model)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:151: in _count_compose_calls\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+          "phase": "call",
+          "message": "test/test_router_fires_per_word.py:311: in test_boundary_generate_gated_by_router_wire_serial\n    assert _generate_fires(\"both\") >= 1, (\n           ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:296: in _generate_fires\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+          "phase": "call",
+          "message": "test/test_fineweb_preflight.py:165: in test_checkpoint_restores_optimizer_counters_and_rng\n    restored.runEpoch(optimizer=opt, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+          "phase": "call",
+          "message": "test/test_per_row_hard_reset.py:148: in test_runEpoch_dispatches_per_row_reset_per_batch\n    model.runEpoch(optimizer=optimizer, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\ntest/test_per_row_hard_reset.py:145: in _spy\n    return original(hard_eos)\n           ^^^^^^^^^^^^^^^^^^\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_cursor_universal.py::test_xor_runs_through_trial_cursor",
+          "phase": "call",
+          "message": "test/test_cursor_universal.py:57: in test_xor_runs_through_trial_cursor\n    model.runEpoch(optimizer=optimizer, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\ntest/test_cursor_universal.py:54: in _spy\n    return _orig(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_no_eos_sync.py::test_reset_fires_even_when_end_of_stream_is_all_false",
+          "phase": "call",
+          "message": "test/test_no_eos_sync.py:124: in test_reset_fires_even_when_end_of_stream_is_all_false\n    model.runEpoch(optimizer=optimizer, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\ntest/test_no_eos_sync.py:117: in _spy\n    return _orig()\n           ^^^^^^^\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_recon_bench.py::test_run_record_schema_smoke",
+          "phase": "call",
+          "message": "test/test_recon_bench.py:18: in test_run_record_schema_smoke\n    rec = run_config(\"data/MM_xor_fixture.xml\", epochs=1, seed=0,\nbin/recon_bench.py:213: in run_config\n    _epoch_loop()\nbin/recon_bench.py:197: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+          "phase": "call",
+          "message": "test/test_recon_bench.py:55: in test_decode_rows_align_with_last_eval_batch\n    rec = run_config(\"data/MM_xor_fixture.xml\", epochs=1, seed=0,\nbin/recon_bench.py:213: in run_config\n    _epoch_loop()\nbin/recon_bench.py:197: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+          "phase": "call",
+          "message": "test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode\n    assert memory.get_what_slots(b=0) == []\nE   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []\nE     \nE     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0000, 0.0000, 0.0000, 0.4015, 0.0000, 1.0000, 0.2129, 1.9925,\\n          0.4234, 1.9584, 0.04... 'iteration': 0, 'closure_pressure': 0.0, 'forced': False, 'temporal': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds",
+          "phase": "call",
+          "message": "test/test_where_encoding_period.py:105: in test_reconstruct_buffer_period_assert_holds\n    model.runEpoch(batchSize=4, split=\"test\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions"
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+          "phase": "call",
+          "message": "test/test_stm_recon_from_cleared_cache.py:256: in test_forward_produces_single_S_and_targets\n    S, fwd_idx = _run_forward(model)\n                 ^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+          "phase": "call",
+          "message": "test/test_stm_recon_from_cleared_cache.py:272: in test_cache_clears_and_chart_generate_rederives_from_stm\n    _run_forward(model)\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+          "phase": "call",
+          "message": "test/test_stm_recon_from_cleared_cache.py:309: in test_reverse_from_cleared_cache_is_drivable_and_decodable\n    S, _ = _run_forward(model)\n           ^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+          "phase": "call",
+          "message": "test/test_stm_recon_from_cleared_cache.py:328: in test_reverse_body_preserves_finiteness_on_finite_seed\n    _run_forward(model)\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+          "phase": "call",
+          "message": "test/test_stm_recon_from_cleared_cache.py:364: in test_forward_stm_idea_is_finite\n    out = model.forward(x)\n          ^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+          "phase": "call",
+          "message": "test/test_stm_recon_from_cleared_cache.py:395: in test_reverse_perceptual_preserves_finiteness_on_finite_seed\n    _run_forward(model)\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+          "phase": "call",
+          "message": "test/test_bounded_stm_fold.py:33: in test_stm_never_exceeds_cap_after_forward\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+          "phase": "call",
+          "message": "test/test_bounded_stm_fold.py:45: in test_sentence_end_reduces_toward_root\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_cs_cache_not_present_after_forward",
+          "phase": "call",
+          "message": "test/test_stage_caches_retired.py:114: in test_cs_cache_not_present_after_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_ws_cache_not_present_after_forward",
+          "phase": "call",
+          "message": "test/test_stage_caches_retired.py:102: in test_ws_cache_not_present_after_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_runBatch_reverse_path_does_not_depend_on_cs_cache",
+          "phase": "call",
+          "message": "test/test_stage_caches_retired.py:204: in test_runBatch_reverse_path_does_not_depend_on_cs_cache\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_terminal_stm_snapshot_available_after_forward",
+          "phase": "call",
+          "message": "test/test_stage_caches_retired.py:140: in test_terminal_stm_snapshot_available_after_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm",
+          "phase": "call",
+          "message": "test/test_stage_caches_retired.py:166: in testreverse_via_terminal_stm\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+          "phase": "call",
+          "message": "test/test_sentence_protocol.py:70: in test_protocol_on_by_default_in_serial\n    m.forward(_xor_input())\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+          "phase": "call",
+          "message": "test/test_sentence_protocol.py:80: in test_protocol_off_is_dark_when_disabled\n    m.forward(_xor_input())\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+          "phase": "call",
+          "message": "test/test_sentence_protocol.py:108: in test_protocol_runs_pump_zero_and_sets_intent\n    m.forward(_xor_input())\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+          "phase": "call",
+          "message": "test/test_sentence_protocol.py:144: in test_no_mid_sentence_reground_even_under_conflict\n    m.forward(_xor_input())\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition",
+          "phase": "call",
+          "message": "test/test_sentence_protocol.py:169: in test_protocol_word_learning_pumps_parallel_partition\n    m.forward(_xor_input())\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+          "phase": "call",
+          "message": "test/test_compile_static_loop.py:142: in test_per_word_accumulator_is_fixed_length_not_word_count\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_full_forward_runs_recurrent_cell",
+          "phase": "call",
+          "message": "test/test_perceptual_loopback.py:197: in test_full_forward_runs_recurrent_cell\n    out = m.forward(self._one_input())\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_terminal_conceptual_exposes_views",
+          "phase": "call",
+          "message": "test/test_perceptual_loopback.py:215: in test_terminal_conceptual_exposes_views\n    m.forward(self._one_input())\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+          "phase": "call",
+          "message": "test/test_normal_thought_controller.py:342: in test_completed_unary_concept_program_enters_the_normal_controller\n    assert [record.operation for record in result.records if record.kind == \"thought\"] == [\nE   AssertionError: assert ['quantize'] == ['quantize', 'conclude']\nE     \nE     Right contains one more item: 'conclude'\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+          "phase": "call",
+          "message": "test/test_intra_sentence_layer.py:370: in test_bias_fires_on_real_model\n    self._run_one_forward()\ntest/test_intra_sentence_layer.py:321: in _run_one_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_intra_routing_for_predict_returns_real_tensor",
+          "phase": "call",
+          "message": "test/test_intra_sentence_layer.py:355: in test_intra_routing_for_predict_returns_real_tensor\n    self._run_one_forward()\ntest/test_intra_sentence_layer.py:321: in _run_one_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_routing_state_built_with_rule_probs",
+          "phase": "call",
+          "message": "test/test_intra_sentence_layer.py:333: in test_routing_state_built_with_rule_probs\n    self._run_one_forward()\ntest/test_intra_sentence_layer.py:321: in _run_one_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_category_collapse.py::test_gated_off_by_default_stores_no_collapse",
+          "phase": "call",
+          "message": "test/test_category_collapse.py:70: in test_gated_off_by_default_stores_no_collapse\n    ws.enable_category_codebook(_load(_TRANSITIONAL))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_collapse.py::test_gated_on_runs_collapse_at_enable",
+          "phase": "call",
+          "message": "test/test_category_collapse.py:78: in test_gated_on_runs_collapse_at_enable\n    ws.enable_category_codebook(_load(_TRANSITIONAL))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+          "phase": "call",
+          "message": "test/test_autobind_from_cs.py:134: in test_autobind_creates_meta_taxonomy_entry\n    size_before = len(ws.taxonomy)\n                      ^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'taxonomy'"
+        },
+        {
+          "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids",
+          "phase": "call",
+          "message": "test/test_autobind_from_cs.py:156: in test_autobind_skips_negative_pids\n    size_before = len(ws.taxonomy)\n                      ^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'taxonomy'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:64: in test_enable_allocates_codebook_and_role_table\n    assert not ss.category_codebook_enabled()      # off until enabled\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'category_codebook_enabled'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_enable_noop_without_roles",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:78: in test_enable_noop_without_roles\n    assert ss.enable_category_codebook(_G([])) is False\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:84: in test_assign_returns_valid_centroid_indices\n    ss.enable_category_codebook(_grammar())\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:94: in test_role_vector_ema_moves_toward_target\n    ss.enable_category_codebook(_grammar())\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:110: in test_category_role_of_zeroes_negative_index\n    ss.enable_category_codebook(_grammar())\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:120: in test_disabled_methods_are_safe_noops\n    assert ss.assign_category(torch.randn(3, ss.nDim)) is None\n           ^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'assign_category'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:130: in test_pending_meta_symbol_commits_to_single_category\n    ss.enable_category_codebook(_grammar())\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:160: in test_category_vq_assign_is_pure_lookup\n    ss.enable_category_codebook(_grammar())\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:195: in test_checkpoint_prewarm_materializes_requested_category_codebook\n    assert ws._category_codebook_requested is True\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_category_codebook_requested'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:218: in test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe\n    source.enable_category_codebook(_grammar())\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys",
+          "phase": "call",
+          "message": "test/test_category_codebook.py:290: in test_category_learning_loads_legacy_vocab_extras_without_new_keys\n    restored.enable_category_codebook(_grammar())\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'"
+        },
+        {
+          "nodeid": "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+          "phase": "call",
+          "message": "test/test_thought_operation_catalog.py:544: in test_complete_grammar_exposes_its_declared_canonical_thought_operations\n    assert \"true\" not in registry.executable_operation_ids\nE   AssertionError: assert 'true' not in ('part', 'equal', 'exist', 'true', 'lookup', 'quantize', ...)\nE    +  where ('part', 'equal', 'exist', 'true', 'lookup', 'quantize', ...) = <Queries.GrammaticalThoughtRegistry object at 0x1076cd1f0>.executable_operation_ids"
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_symbol_history_projection",
+          "phase": "call",
+          "message": "test/test_relevance_bases.py:215: in test_symbol_history_projection\n    assert cs._csw_row_of(C1) is None\nE   assert 32 is None\nE    +  where 32 = _csw_row_of(3)\nE    +    where _csw_row_of = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n)._csw_row_of"
+        },
+        {
+          "nodeid": "test/test_role_collapsed_grammar.py::test_symbolicspace_owns_its_starts",
+          "phase": "call",
+          "message": "test/test_role_collapsed_grammar.py:90: in test_symbolicspace_owns_its_starts\n    assert g.ws_relative_starts == frozenset({\"part_O1\", \"whole_O1\", \"equal_O1\"})\nE   AssertionError: assert frozenset({'e..., 'whole_O1'}) == frozenset({'e..., 'whole_O1'})\nE     \nE     Extra items in the left set:\nE     'operator_O1'\nE     'implies_O1'\nE     Use -v to get more diff"
+        },
+        {
+          "nodeid": "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss",
+          "phase": "call",
+          "message": "test/test_prior_stm_symbol_peer.py:279: in test_seventh_source_is_location_masked_and_unbind_ignores_ss\n    assert WholeSpace._normalize_fold_support(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'WholeSpace' has no attribute '_normalize_fold_support'"
+        },
+        {
+          "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+          "phase": "call",
+          "message": "test/test_relative_rule_detection_collapsed.py:78: in test_relative_op_names_are_canonical_structural_forms\n    assert Grammar._RELATIVE_OP_NAMES == frozenset({\"equal\", \"part\", \"whole\"})\nE   AssertionError: assert frozenset({'e...rt', 'whole'}) == frozenset({'e...rt', 'whole'})\nE     \nE     Extra items in the left set:\nE     'implies'\nE     Use -v to get more diff"
+        }
+      ],
+      "peak_worker_bytes": 6797679072,
+      "peak_aggregate_memory_bytes": 15676341824,
+      "compile_cache_retries": []
+    },
+    "documentation": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 116,
+      "completed": 116,
+      "counts": {
+        "passed": 116
+      },
+      "seconds": 5.309534333064221,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 180.0,
+        "suite_seconds": 600.0,
+        "batch_size": 128,
+        "max_files": 1
+      },
+      "source_delta": {},
+      "failures": [],
+      "peak_worker_bytes": 427738432,
+      "peak_aggregate_memory_bytes": 427738432,
+      "compile_cache_retries": []
+    },
+    "documentation-precommit": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 115,
+      "completed": 115,
+      "counts": {
+        "passed": 115
+      },
+      "seconds": 11.630673708976246,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 1800.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/ClauseScope.py": {
+          "measured": null,
+          "current": "ea8ae68ba2d105ee4c3d462838654eae28f4cf44e653687ddff3b421ab03947c"
+        },
+        "bin/ClauseSeal.py": {
+          "measured": null,
+          "current": "cf5bca372dc6b8304752323b171461bf3dc61d90536e42e8674c8bab42d670be"
+        },
+        "bin/ConceptIndex.py": {
+          "measured": null,
+          "current": "590e9b7b45ed57bbe98f45fd5fc39eaa9583f7cec5574e6c56a3055ff2588155"
+        },
+        "bin/Interpret.py": {
+          "measured": "3d87fff8b51ba1bfdece63ae4a6480f5390157dcfee38897ea27e42c70f6feef",
+          "current": "391af56c3c159e3bea0ca8ce2b4bca53e865075ad0b916e6a1543733c885deb0"
+        },
+        "bin/Language.py": {
+          "measured": "c5f1775ba5a5a2e614f134cae32809841d531949bc34a8b1fb4e26f035c1b3cd",
+          "current": "89d848c41908e2e9651b78cba3a4eccb3f0086582ce52926b8f8f5f13f509be8"
+        },
+        "bin/Layers.py": {
+          "measured": "29ac8d9df6f15988e4dd1baa2869d61ddc22531ec012d4969c5ee50e8bc7abe3",
+          "current": "006a2c327ac72f0e1916cc62c5b91e68bcc413da1809bb46c8cd053a63763456"
+        },
+        "bin/Meaning.py": {
+          "measured": "f9a836251dddda72a6774754f6bd5f331847614b461bdcf6f8de1e327c6d2a15",
+          "current": "001885bf2cc5a1e6dc203ca0d941eeb1d8d486661e5e47b612aa31198fda4bd9"
+        },
+        "bin/MemoryIndex.py": {
+          "measured": "046fb2bb415519458d85a03c5cba110823918a6dd5e93fab23733b04fbd2a946",
+          "current": "afef36e35b2f2f192388981516f867a32288e079eac39eaa3aed77c4133f87f4"
+        },
+        "bin/Models.py": {
+          "measured": "8271112ae3eb4a733e7912fc672d67490be771a87a7a66b5f4b0cb6c1fdffb2d",
+          "current": "624aa8dd524ed4b49d8edb52e7333764d7d176eaecb0deb57f31edd691a43e3b"
+        },
+        "bin/Queries.py": {
+          "measured": "79751bb16c54a88e8d526b8ada054dd475fea0b2bd80c015552fc5609748fdbb",
+          "current": "32527174dd3a2c90076f4d82ff443f562829d3945e9a727564ee7d2a5f2663c1"
+        },
+        "bin/ReferenceContext.py": {
+          "measured": null,
+          "current": "c94d23fad1433ab295d2f6554997720eb8452790d57fce6112a952173e9c4dfe"
+        },
+        "bin/References.py": {
+          "measured": "aab971ce3d1335a413a5b36b87651840cc7cf6e26c9a1dca4817a3045fb8d606",
+          "current": "ffe73055f57d3794d2d173739614019d2ce7d7610475433d1ec39a5da0b918f8"
+        },
+        "bin/Spaces.py": {
+          "measured": "c010759f6ad7504a4d2c6f46d435f63f584088bd569552bc100bdc547aa5a26c",
+          "current": "6a5bcf89a8b2132ef049e887c6ad06152914ec6efae9365cdf918090501f90c3"
+        },
+        "bin/Understanding.py": {
+          "measured": "04f86f0cf46c6df487ccdb9f1b40ea7a6bc977fda2f2a4cb90aefb945d1fb562",
+          "current": "d6af323cdb1ea76f608a141d7e68bb450d5669b4cac2eedff4df4fc1c4a08273"
+        },
+        "bin/reasoning.py": {
+          "measured": "6c9f5b1168d06a1ab985a5796d8b0b4bf3f8ac082d984bb37790852ac899b55c",
+          "current": "f7a7a5aadc940c5e39908124ff0f7c77c3f7e4c5dc41426dae0681592883f140"
+        },
+        "data/MM_ltm_consolidation_serial_fixture.xml": {
+          "measured": "b8bc42a16a121bde775474127065d51abcb0f870a927682ab52de1c2f864ada5",
+          "current": "5682f454983e02ad64d90c576f25290492df9360a8a337d4a6d9718cd1d3c15d"
+        },
+        "data/complete.grammar": {
+          "measured": "dbdb51b22ee1c1415f8aebcee4053aa1004911bde3675178a2244ab4aea9ef08",
+          "current": "60251976dfe7dc7e5c596432a043ed12c79d20fb3c9cce99fbaec42edb901bfe"
+        },
+        "data/model.xml": {
+          "measured": "4a648f8080a836c0d4bac3458a1784baaf516ccff6f5c1bf86abf1406698d3ed",
+          "current": "fc9a8c88538d5ed36e62adc13e1dbe7c0ac2e2ba7c29142d83a0f228b214f08a"
+        },
+        "data/model.xsd": {
+          "measured": "3922bd00f37a9ce7c2c46a5040cd0d1d54ab27afa0cf27f28a98b264d806c759",
+          "current": "0c094a98f15664e2276658f5f539ad413fbfc905e27714d13e831f5f6c397930"
+        },
+        "test/meaning_fixtures.py": {
+          "measured": null,
+          "current": "f468e65e79786db74aa188f7b4191bd6a4c1ecb6a3c663173875ef52116b40f1"
+        },
+        "test/test_abstraction_order_canonical.py": {
+          "measured": "5986f77bed4f0c3300473e41d07618317aca6242e08d228ba95af4d4b4180748",
+          "current": "b8b9a7bad1ae7cea276c0061ccf84512d09fc0dd7371c1cbb0e7014d54e8f66f"
+        },
+        "test/test_active_decode_candidates.py": {
+          "measured": "225f838b3287ee7965c3716be153d5d60d6cb4eab0afbce467dbdbf19e04fa0a",
+          "current": "5616f597912ce6bb92499f08d5bc5f1a50cd2399154ba01500ca1a8ee900b978"
+        },
+        "test/test_aligned_fold_binding.py": {
+          "measured": "84999f618e786262c5599f16e34d17e757acbf852a148a9d1479f3050ce14e77",
+          "current": "be5656cdbcbe82cb846e314b7847e8f60999a0c917b66eb560f537093d9bf608"
+        },
+        "test/test_concept_capacity_policy.py": {
+          "measured": "1649d56349ba57b1c818e0f87a2d70d6b245de7efa1cf24dfed49b24804daec6",
+          "current": "bed06ba21aed97cd9c6669d37b0629387aaae67c6f2bd91ea3e9f82aa63ec1cc"
+        },
+        "test/test_conceptualize.py": {
+          "measured": "557e7b03cb1c7ef1039d78fb156583ea38f9a095e672df32368d01e3472cbac6",
+          "current": "2cf50b90945f6731d9d12d0a3875606f50970e5437619e860c49e6d01b14a482"
+        },
+        "test/test_cs_symbol_table.py": {
+          "measured": "c9e31003bcb52ae507829cbb9c0a94e5378cffc0e609ec9ecd7e51301b80b243",
+          "current": "ea06fd48d234f3d02982190e52f74810ebe2fa2bd258a10e2e86400c3d56276d"
+        },
+        "test/test_existence_metadata.py": {
+          "measured": "33801533c32998395b1d6bb3edcafefc3c74a6839de5ca852f0af1aa79d7813f",
+          "current": "08165c04c362f86055c3ebe1f93ce1c70e175e74c95893260d6d71ec30fd1cf5"
+        },
+        "test/test_expectation_defaults.py": {
+          "measured": "40015d4e3c32c63db726b81815a89c887fa10aede9d80806c6f20b788302f89d",
+          "current": "4db1e65b7235b8d525db585c24d5eac4e3bddad90164ccbb3b057f610da319cb"
+        },
+        "test/test_expectation_retention.py": {
+          "measured": "e8a1cc34ad65206c4b26340eac2960067c05fe374bedee769ef12e39617a7ff9",
+          "current": "2e9aa4220f7a64f15b1f6202d277d88310f8918dcc8a8f4cd5ea3f9c4d78164f"
+        },
+        "test/test_gather_first_percept_reads.py": {
+          "measured": "74f1e32fe3b6e15a941b9d12908d36ec7ea6352822d84ed836c1514b07f767dc",
+          "current": "37cd801a80c182a168c736a8cda69974a68c87de9fd4d66eee23675f1c961c8f"
+        },
+        "test/test_item7_acceptance.py": {
+          "measured": null,
+          "current": "6b570d98c6bbb13924f5d5f1075860aa3189c757a5d2d70fe79925bf8685806b"
+        },
+        "test/test_item7_clause_program.py": {
+          "measured": null,
+          "current": "3f7a56c3aae4aa4def5669045381b2f2a299e78d1c4aa27f6d2cf46c73027f74"
+        },
+        "test/test_item7_clause_state.py": {
+          "measured": null,
+          "current": "f39af23bcca8a66f482a6d1c8b61d50fad851b085754d26d2136fb5d128d8747"
+        },
+        "test/test_item7_context.py": {
+          "measured": null,
+          "current": "e95ec18306264da88b73c4a5cdf4caf76b00d690b194e40399f9c8537dbad3e1"
+        },
+        "test/test_item7_expectation.py": {
+          "measured": null,
+          "current": "342b9e111e2a8ff42c8296485c8d2732cab8b760d517db2f1e21ad00bf219a62"
+        },
+        "test/test_item7_grammar.py": {
+          "measured": null,
+          "current": "9f7240e8c3a5dcf848b74de1a5ee88fb6d696c85c6c490cda9b64fa3a939f251"
+        },
+        "test/test_item7_provenance.py": {
+          "measured": null,
+          "current": "85cbed1c5c3b43c5fcda10e29f93994c94f04dfe11b3de4c8d4f3b208ff7581d"
+        },
+        "test/test_item7_references.py": {
+          "measured": null,
+          "current": "8b043e9dd91aa20105d7896205d3927abed1146fedc7957f71171f3a58221687"
+        },
+        "test/test_item7_retention.py": {
+          "measured": null,
+          "current": "83e4e34959b9cc577a1ce55907ab2356f22f1fa3451a8583e87fe01a3323e893"
+        },
+        "test/test_item7_storage.py": {
+          "measured": null,
+          "current": "aecd55a3e94a61a23d0a73da8de8132bc3f1d9e4574c689288db9f3cc59928de"
+        },
+        "test/test_item7_taxonomy.py": {
+          "measured": null,
+          "current": "6f19e06bdb4cc0f4a7d9be0eb5d8fddc10ca468d33fa1a06ada3e137081db01c"
+        },
+        "test/test_item9b_interpret.py": {
+          "measured": "7fe9db459bd0d2ed3f7870069bb8ae9e4896a5e8f43ec560cac667eb5bac4d1e",
+          "current": "1c09356568e895b2def6899d239872b4029e8955e172472255e6ebf2c065c5af"
+        },
+        "test/test_lbg_positive_int.py": {
+          "measured": "7f7089b6751e9dbf15f28f74307a4154791f60750d97cb5a8382e0e28fb874c2",
+          "current": "acaccdc6a558be662b0684332bc6590f31fe7384c79505fe5cd8d1bc8c1a6ec7"
+        },
+        "test/test_learn_score_components.py": {
+          "measured": "474e3fb2d60611a48a7f14dca7654f9ebe34be504db543316b74bee4aceaf1e8",
+          "current": "04b7e8d4639ecf994dce7a6f84d9b755a4aa83be343aa2a0656f517ff240062d"
+        },
+        "test/test_lies_can_be_learned.py": {
+          "measured": "825581c2b196fbca8450ce7597fad396cee41f76dfa2bcaa3f60e4312e65964f",
+          "current": "ec02435b9bb7881af74e82caa00d17b0091cd4b336d46b5ca507fb465913f12c"
+        },
+        "test/test_ltm_consolidation.py": {
+          "measured": "1238c7a4c221999b9096735d792daeeefffae0b1a01f47b276532f59a2745ffe",
+          "current": "c1992d883c21a32d7652c1b08162fc9832ea7cee51d294f81377c6a23689fbfc"
+        },
+        "test/test_mereology_raise.py": {
+          "measured": "a44cb0210dee5871af824641f017e11f13aee1989091e9d9b67900f9caeab992",
+          "current": "fc198019584cda19c0832456a2b8a666ee4381c2aa2f05dd33d2d10544d20c60"
+        },
+        "test/test_mereology_word_binding.py": {
+          "measured": "43e614d53d1beb579357139894bfb0393387a632f9c4f6a17ad4f89e7e2f5c67",
+          "current": "a0ba3d3cdb4991cfd30a267193d997b2f4577b0edfc201aacc68cbb52115bac2"
+        },
+        "test/test_negative_expectation.py": {
+          "measured": "02edab4988046de678512cda4e854d4d37d26cae3b0c442a6b22be82b0ba9ea4",
+          "current": "c8e5b0aeee324619bcce0597dd630217ab0bd2bb19961bbf7870853607d573bc"
+        },
+        "test/test_nested_retention_owners.py": {
+          "measured": "8c7e807f6d92762ddb978f1c9cd9486d332884de05f73b426ed70dd9c23fe461",
+          "current": "7d77415dd04405d659eacf3ff4e9ca0e548c4a4e3695c08f2775c394a48a3dda"
+        },
+        "test/test_positive_int_taxonomy.py": {
+          "measured": "113b9fefe15761a277a0bb184307de847be52826e413cfd42e481e3ee75ea2a1",
+          "current": "55a6a6bd02c963930e9eecd23b05c06de666c2396aaf7539c18fdd17a8123adb"
+        },
+        "test/test_property_tiling.py": {
+          "measured": "d6b71462c3a2f28cc0fcb8f4eae2dfc5762605e72149cf55b00096ea92c113de",
+          "current": "4971460569ee77e622683a4dd6e5d521d712a58f2780ab1829e4fa2de0f134d6"
+        },
+        "test/test_radix_layer_reverse.py": {
+          "measured": "4501779bf7696e0dcc807eb53d8e1f830bbcdde8072f39733aedcb068225522f",
+          "current": "d67c59af22edae41e0c730de57f959ab0b2b989d4e3e52c50e78ef96eefb01ec"
+        },
+        "test/test_reference_table.py": {
+          "measured": "67c9eaed17ccf7c69ab23b49b94a62c6c0de875c36a1aef3371fe2c776f269d9",
+          "current": "674f666521af4b492b57cb761ae801aaf11c542aec5e5e7171a380e573274afd"
+        },
+        "test/test_relative_sentence_codebook_insertion.py": {
+          "measured": "979039d4ef539d57e807c7d2a8e6ab79b241fec6d734273f6f509712400c8ed9",
+          "current": "422206d3b25255770548ca91becb84a869b08592a2bbe079f6c161c3c6be8035"
+        },
+        "test/test_selected_nested_meaning.py": {
+          "measured": "dc1466fbc5d871781cf9c462fad2e23234401953d73580e5b76c4a771dbf2adb",
+          "current": "f30a9c926ad10445030a1bdcc73eaef721b5a465f7e2e610bb1aafa732ec745b"
+        },
+        "test/test_sentence_compose.py": {
+          "measured": "5b64a94953ad2cbef511bdeef66406d55061b1eda9f23ef1fcd9c707088cbe5d",
+          "current": "0d0a98f4d4ff69c3c7387f6cc58d6b258f02a1ea0fc423a6175938db050bef45"
+        },
+        "test/test_sentence_expectation.py": {
+          "measured": "8ed836a83a0bd711824ecf88777678b4d78b1e18b9886e98fd991836cafb3565",
+          "current": "9dab37aa5588138f8765e44887d110ac488e8780093c91af1a4841e1f3eb23bc"
+        },
+        "test/test_sparse_concept_e2e.py": {
+          "measured": "d69bef7fe2b94b32ecdfa8ac460b159537b2a492be828fda07ce7ccd4ce0d1a8",
+          "current": "860fcdc976c8f0b366e395d8dd9656dd6066be5ed8684c18ce1f43138ac87565"
+        },
+        "test/test_structural_checkpoint.py": {
+          "measured": "71b3f3789ef9114870cb99bf0aab9b8a328091c30d65ec248353a5d4e9c177e7",
+          "current": "7557025711a3014e9c8fbaeeb3023af68e37a33d79aa5a2458d5506f3558aa7e"
+        },
+        "test/test_symbolize_layer.py": {
+          "measured": "c49f805f340790ee59fc0bb2f6d4f005d0da2c2e47c9b832ea7def5a2b504a63",
+          "current": "7ef0209f6442bf42c58f6f6b82766350defc33c8c98887a9681825b1613005f5"
+        },
+        "test/test_ternary_truth_store.py": {
+          "measured": "62e8112844a488df8cdf329c2d3a83149f63e96253fd72e2c7b17e95548b0d1c",
+          "current": "3598472f2fa85462bcd85896f54b43bbe6128ce93d35dacc4908daa46d1156c2"
+        },
+        "test/test_truth_criterion_gates_learning.py": {
+          "measured": "8e99ae2bb12e73b4c95582c0124404e23f95113dd5266a6a6337c7738949c9d3",
+          "current": "318250e09dee9c21e4df5bd236ced18b3f1442e516f827cfbd889e52341e5d84"
+        },
+        "test/test_truth_ideas_routing.py": {
+          "measured": "efd652322b2c546b1f53ed91eadd18ed63d6f4427f52b362ad5c15726eca948a",
+          "current": "79cd8ae71096d682c3c20716df1f791aaf69a9c98e60e518f17986780c270103"
+        },
+        "test/test_two_codebook_meta_taxonomy.py": {
+          "measured": "513dbd53e7ab48e398a31de0ff77712fb9fb5e282fc609bcd1d3fe8339bb7b24",
+          "current": "c19cf8a9610951c97f09781fb3eec3b0aa45d9729faa7a57d3856cfd73e118a9"
+        },
+        "test/test_two_truth_stores.py": {
+          "measured": "114924a2015e19b8e06391bcde232296fdafd0ac926ab427354912fff95b0f59",
+          "current": "6c7f1534d97e03da5b9b0e40981caa0eb64b8ce0837a5867b66b8636e89ed5a5"
+        },
+        "test/test_unified_lexicon_codebook.py": {
+          "measured": "d65df2b3c05dffcb4d72cf387c379ff63a7958efff8307fc82d8570b56b6db32",
+          "current": "69c1304ebcac6e8e4995090485f2038d33b7dad0e8841adda976c393028acc15"
+        },
+        "test/test_wholespace_property_migration.py": {
+          "measured": "68adbbb1ff8a15697136285ec65995bd6ba45d197b07c0ea0e3c6237c87ffc6b",
+          "current": "99df378367e9b1e75db3e2b0693cacbb4053ba827b86420d5ea701ae1426848d"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 430392664,
+      "peak_aggregate_memory_bytes": 1290850312,
+      "compile_cache_retries": []
+    },
+    "development-affected-r6": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 674,
+      "completed": 674,
+      "counts": {
+        "passed": 648,
+        "skipped": 16,
+        "failed": 10
+      },
+      "seconds": 1002.7018192500109,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 7200,
+        "batch_size": 16,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/ClauseSeal.py": {
+          "measured": "36945b613c41c70428cf6a2cd4a056e55cb259f91f2670c5aa49cd65561e802e",
+          "current": "cf5bca372dc6b8304752323b171461bf3dc61d90536e42e8674c8bab42d670be"
+        },
+        "bin/ConceptIndex.py": {
+          "measured": "dee7af799db92b5c92d7650b48794f18198064a25a710e3ad996ff9801db093f",
+          "current": "590e9b7b45ed57bbe98f45fd5fc39eaa9583f7cec5574e6c56a3055ff2588155"
+        },
+        "bin/Interpret.py": {
+          "measured": "2f32991704d0265cc1a936c65d962efbe5cd06b987ef95c41e739873950a7a02",
+          "current": "391af56c3c159e3bea0ca8ce2b4bca53e865075ad0b916e6a1543733c885deb0"
+        },
+        "bin/ReferenceContext.py": {
+          "measured": "2d63e4793291f1c5b82f2f16014e3b47fbc4ff381c2d0a084bebcdf8d3056c2e",
+          "current": "c94d23fad1433ab295d2f6554997720eb8452790d57fce6112a952173e9c4dfe"
+        },
+        "test/test_existence_metadata.py": {
+          "measured": "33801533c32998395b1d6bb3edcafefc3c74a6839de5ca852f0af1aa79d7813f",
+          "current": "08165c04c362f86055c3ebe1f93ce1c70e175e74c95893260d6d71ec30fd1cf5"
+        },
+        "test/test_expectation_defaults.py": {
+          "measured": "40015d4e3c32c63db726b81815a89c887fa10aede9d80806c6f20b788302f89d",
+          "current": "4db1e65b7235b8d525db585c24d5eac4e3bddad90164ccbb3b057f610da319cb"
+        },
+        "test/test_item7_acceptance.py": {
+          "measured": "346e5e9cde3a3f79c2bdcf5f265e3bf3c6bb099e70c53a6422db7a9e94de2481",
+          "current": "6b570d98c6bbb13924f5d5f1075860aa3189c757a5d2d70fe79925bf8685806b"
+        },
+        "test/test_item7_references.py": {
+          "measured": "cece354659ccfd5c033186d605368c3cd12bbb45120a16a1eda7ffb53b4e3bfe",
+          "current": "8b043e9dd91aa20105d7896205d3927abed1146fedc7957f71171f3a58221687"
+        },
+        "test/test_item7_taxonomy.py": {
+          "measured": "a22a9b538ba31a379e5e64a5d5308c316bef49821cefc78fe85d034166c7d3e1",
+          "current": "6f19e06bdb4cc0f4a7d9be0eb5d8fddc10ca468d33fa1a06ada3e137081db01c"
+        },
+        "test/test_mereology_raise.py": {
+          "measured": "fff85b930d1c9051ef8c8feb5242c0bb6b915c323a17270b15e9a192cad933be",
+          "current": "fc198019584cda19c0832456a2b8a666ee4381c2aa2f05dd33d2d10544d20c60"
+        },
+        "test/test_sentence_expectation.py": {
+          "measured": "8ed836a83a0bd711824ecf88777678b4d78b1e18b9886e98fd991836cafb3565",
+          "current": "9dab37aa5588138f8765e44887d110ac488e8780093c91af1a4841e1f3eb23bc"
+        },
+        "test/test_symbolize_layer.py": {
+          "measured": "c68bf329171774cccb62b8799fa15d8dfa29e71b8c876c18756a04f1da5a0422",
+          "current": "7ef0209f6442bf42c58f6f6b82766350defc33c8c98887a9681825b1613005f5"
+        },
+        "test/test_two_truth_stores.py": {
+          "measured": "d5ee0b6c0814c6907a1eb92f15dff8ab9ad4a8151640a1804fc8835052ecee12",
+          "current": "6c7f1534d97e03da5b9b0e40981caa0eb64b8ce0837a5867b66b8636e89ed5a5"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-1]",
+          "phase": "call",
+          "message": "test/test_existence_metadata.py:36: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    BasicModel._drain_pending_stm_end_state(model)\nbin/Models.py:14075: in _drain_pending_stm_end_state\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-2]",
+          "phase": "call",
+          "message": "test/test_existence_metadata.py:36: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    BasicModel._drain_pending_stm_end_state(model)\nbin/Models.py:14075: in _drain_pending_stm_end_state\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-3]",
+          "phase": "call",
+          "message": "test/test_existence_metadata.py:36: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    BasicModel._drain_pending_stm_end_state(model)\nbin/Models.py:14075: in _drain_pending_stm_end_state\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-1]",
+          "phase": "call",
+          "message": "test/test_existence_metadata.py:48: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    BasicModel._drain_packed_stm_end_states(model)\nbin/Models.py:14172: in _drain_packed_stm_end_states\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-2]",
+          "phase": "call",
+          "message": "test/test_existence_metadata.py:48: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    BasicModel._drain_packed_stm_end_states(model)\nbin/Models.py:14172: in _drain_packed_stm_end_states\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-3]",
+          "phase": "call",
+          "message": "test/test_existence_metadata.py:48: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    BasicModel._drain_packed_stm_end_states(model)\nbin/Models.py:14172: in _drain_packed_stm_end_states\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows",
+          "phase": "call",
+          "message": "test/test_existence_metadata.py:69: in test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows\n    assert result[\"support_true\"] == pytest.approx(.6)\nE   assert 0.0 == 0.6 \u00b1 6.0e-07\nE     \nE     comparison failed\nE     Obtained: 0.0\nE     Expected: 0.6 \u00b1 6.0e-07"
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+          "phase": "call",
+          "message": "test/test_sentence_expectation.py:126: in test_streaming_and_packed_boundary_use_same_full_roles\n    Model._drain_packed_stm_end_states(host)\nbin/Models.py:14172: in _drain_packed_stm_end_states\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+          "phase": "call",
+          "message": "test/test_expectation_defaults.py:233: in test_expectation_off_keeps_every_packed_observation_in_ltm\n    assert len(store) - before == 2\nE   assert (8 - 0) == 2\nE    +  where 8 = len(TernaryTruthStore())"
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+          "phase": "call",
+          "message": "test/test_expectation_defaults.py:259: in test_packed_ltm_ignores_masked_slots_even_with_retained_storage\n    BasicModel._drain_packed_stm_end_states(host)\nbin/Models.py:14172: in _drain_packed_stm_end_states\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index"
+        }
+      ],
+      "peak_worker_bytes": 5088285304,
+      "peak_aggregate_memory_bytes": 7649667560,
+      "compile_cache_retries": []
+    },
+    "development-before-form-affected": {
+      "exit_code": 1,
+      "reason": "test_failure",
+      "selected": 675,
+      "completed": 675,
+      "counts": {
+        "passed": 656,
+        "skipped": 16,
+        "failed": 3
+      },
+      "seconds": 998.9821264999919,
+      "limits": {
+        "memory_bytes": 25769803776,
+        "aggregate_memory_bytes": 25769803776,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 3,
+        "worker_seconds": 1800,
+        "suite_seconds": 7200,
+        "batch_size": 16,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/ConceptIndex.py": {
+          "measured": "a650446449d699617e957c94b8c03a5b8301069f64afedd22ef20a987d36df9b",
+          "current": "590e9b7b45ed57bbe98f45fd5fc39eaa9583f7cec5574e6c56a3055ff2588155"
+        },
+        "bin/ReferenceContext.py": {
+          "measured": "2d63e4793291f1c5b82f2f16014e3b47fbc4ff381c2d0a084bebcdf8d3056c2e",
+          "current": "c94d23fad1433ab295d2f6554997720eb8452790d57fce6112a952173e9c4dfe"
+        },
+        "test/test_item7_references.py": {
+          "measured": "cece354659ccfd5c033186d605368c3cd12bbb45120a16a1eda7ffb53b4e3bfe",
+          "current": "8b043e9dd91aa20105d7896205d3927abed1146fedc7957f71171f3a58221687"
+        },
+        "test/test_item7_taxonomy.py": {
+          "measured": "083614878689bbe4274044fb715d83820353a30631488428ab8420fdff68e4b1",
+          "current": "6f19e06bdb4cc0f4a7d9be0eb5d8fddc10ca468d33fa1a06ada3e137081db01c"
+        },
+        "test/test_symbolize_layer.py": {
+          "measured": "9999b5eb6a99e1f7d60bcb1bad71cd81acb994831e55eb011f02760b9efdff6a",
+          "current": "7ef0209f6442bf42c58f6f6b82766350defc33c8c98887a9681825b1613005f5"
+        }
+      },
+      "failures": [
+        {
+          "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward",
+          "phase": "call",
+          "message": "test/test_symbolize_layer.py:333: in test_compose_dispatches_to_forward\n    ps_row = _ps_row_from_pos(ws,ps_idx)\n             ^^^^^^^^^^^^^^^^\nE   NameError: name '_ps_row_from_pos' is not defined"
+        },
+        {
+          "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward",
+          "phase": "call",
+          "message": "test/test_symbolize_layer.py:540: in test_binary_op_adapter_routes_through_registered_meta_forward\n    ps_row = _ps_row_from_pos(ws,ps_idx)\n             ^^^^^^^^^^^^^^^^\nE   NameError: name '_ps_row_from_pos' is not defined"
+        },
+        {
+          "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward",
+          "phase": "call",
+          "message": "test/test_symbolize_layer.py:479: in test_registered_meta_layer_compose_dispatches_to_forward\n    ps_row = _ps_row_from_pos(ws,ps_idx)\n             ^^^^^^^^^^^^^^^^\nE   NameError: name '_ps_row_from_pos' is not defined"
+        }
+      ],
+      "peak_worker_bytes": 5089628792,
+      "peak_aggregate_memory_bytes": 7089809512,
+      "compile_cache_retries": []
+    },
+    "development-before-form-fixture-followup": {
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 16,
+      "completed": 16,
+      "counts": {
+        "passed": 16
+      },
+      "seconds": 5.719178542029113,
+      "limits": {
+        "memory_bytes": 8589934592,
+        "aggregate_memory_bytes": 8589934592,
+        "per_worker_memory_bytes": 8589934592,
+        "workers": 1,
+        "worker_seconds": 1800.0,
+        "suite_seconds": 1800.0,
+        "batch_size": 32,
+        "max_files": 1
+      },
+      "source_delta": {
+        "bin/ConceptIndex.py": {
+          "measured": "a650446449d699617e957c94b8c03a5b8301069f64afedd22ef20a987d36df9b",
+          "current": "590e9b7b45ed57bbe98f45fd5fc39eaa9583f7cec5574e6c56a3055ff2588155"
+        },
+        "bin/ReferenceContext.py": {
+          "measured": "2d63e4793291f1c5b82f2f16014e3b47fbc4ff381c2d0a084bebcdf8d3056c2e",
+          "current": "c94d23fad1433ab295d2f6554997720eb8452790d57fce6112a952173e9c4dfe"
+        },
+        "test/test_item7_references.py": {
+          "measured": "cece354659ccfd5c033186d605368c3cd12bbb45120a16a1eda7ffb53b4e3bfe",
+          "current": "8b043e9dd91aa20105d7896205d3927abed1146fedc7957f71171f3a58221687"
+        },
+        "test/test_item7_taxonomy.py": {
+          "measured": "083614878689bbe4274044fb715d83820353a30631488428ab8420fdff68e4b1",
+          "current": "6f19e06bdb4cc0f4a7d9be0eb5d8fddc10ca468d33fa1a06ada3e137081db01c"
+        }
+      },
+      "failures": [],
+      "peak_worker_bytes": 450446680,
+      "peak_aggregate_memory_bytes": 450446680,
+      "compile_cache_retries": []
+    }
+  },
+  "source_files": 687,
+  "source_sha256": "e0b217e0340c4dc11e65c1d3c51649af77b8242f7cbac324feaaf39ef65a9f41",
+  "measurements": {
+    "reviewed_baseline": {
+      "before_training": 0.10059066489338875,
+      "training": 0.09482414424419403,
+      "after_training": 0.09287650510668755
+    },
+    "preceding_7_5": {
+      "before_training": 0.11755186505615711,
+      "training": 0.10999541729688644,
+      "after_training": 0.09888161532580853
+    },
+    "current": {
+      "before_training": 0.12243161350488663,
+      "training": 0.1191720113158226,
+      "after_training": 0.12371796928346157
+    },
+    "rebaselined": false,
+    "training_sentences_per_second": 1.4530897228290676,
+    "parity": {
+      "initial_parameters_sha256": true,
+      "initial_dictionary_sha256": true,
+      "sentences": false,
+      "mean_sentence_byte_cost": false
+    },
+    "byte_cost": {
+      "reviewed": 0.6839025616645813,
+      "preceding_7_5": 0.18002260848879814,
+      "packed": 0.38411848741816357,
+      "single": 0.3841184933844488
+    },
+    "sentence_counts": {
+      "packed": 4,
+      "single": 4
+    },
+    "truncation": {
+      "packed": [
+        [
+          false,
+          false
+        ]
+      ],
+      "single": [
+        [
+          false,
+          false
+        ],
+        [
+          false,
+          false
+        ]
+      ]
+    },
+    "sentence_differences": [
+      {
+        "index": 3,
+        "differing_fields": [
+          "byte_cost"
+        ],
+        "packed_byte_cost": 0.0005294966977089643,
+        "single_byte_cost": 0.0005295205628499389,
+        "byte_cost_delta": 2.3865140974521637e-08
+      }
+    ]
+  },
+  "measurement_processes": {
+    "serial-baseline": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/profile_baseline.py",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/serial-baseline.json"
+      ],
+      "pid": 91865,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 6605429144,
+      "elapsed_seconds": 759.8900633329758,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/serial-baseline.log"
+    },
+    "packed": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+        "--config",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+        "--parity",
+        "packed",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/packed.json"
+      ],
+      "pid": 92397,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5313795400,
+      "elapsed_seconds": 293.7923590419814,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/packed.log"
+    },
+    "single": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-21-item10/probe.py",
+        "--config",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-26-item7-5/parity.xml",
+        "--parity",
+        "single",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/single.json"
+      ],
+      "pid": 92524,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5321266504,
+      "elapsed_seconds": 482.1310765000526,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-27-item7/measurements/single.log"
+    }
+  },
+  "identity": {
+    "protocol": "Two-truths \u00a77.15/21: bounded local predictor measurements, forced parses.\n\nThis isolates the existing predictor and clause/reference mechanisms. It is\nnot a claim about learned English parsing, identity selection, or full-model\ngeneralization. All conditions start from identical weights, use the same\nfixed corpus order and 240 updates. No outcome is asserted or selected.\n",
+    "seed": 42,
+    "updates_per_condition": 240,
+    "driver_sha256": "37e5fde5d9948814643ac2a15de66b2378c28995803a3d17e4e6c49f30f64d49",
+    "references_off": {
+      "before": {
+        "mean_role_mse": 0.13560978882014751,
+        "records": [
+          {
+            "label": "lion 1: runs \u2192 tired",
+            "role_mse": 0.12241240590810776,
+            "content_mse": 0.11365172266960144,
+            "relation_probability": 0.5
+          },
+          {
+            "label": "lion 1: rests \u2192 rested",
+            "role_mse": 0.1492205560207367,
+            "content_mse": 0.16458472609519958,
+            "relation_probability": 0.5
+          },
+          {
+            "label": "lion 2: runs \u2192 tired",
+            "role_mse": 0.12389764189720154,
+            "content_mse": 0.11002635210752487,
+            "relation_probability": 0.5
+          },
+          {
+            "label": "lion 2: rests \u2192 rested",
+            "role_mse": 0.14690855145454407,
+            "content_mse": 0.15244832634925842,
+            "relation_probability": 0.5
+          }
+        ],
+        "predicted_verb_effect_distance": 0.07831984013319016,
+        "wrong_identity_content_mse": 0.1213330402970314,
+        "correct_identity_content_mse": 0.11365172266960144,
+        "wrong_identity_content_rise": 0.007681317627429962
+      },
+      "after": {
+        "mean_role_mse": 0.00021547510914388113,
+        "records": [
+          {
+            "label": "lion 1: runs \u2192 tired",
+            "role_mse": 0.0003158569452352822,
+            "content_mse": 0.0005302206263877451,
+            "relation_probability": 0.00018414415535517037
+          },
+          {
+            "label": "lion 1: rests \u2192 rested",
+            "role_mse": 0.00035827301326207817,
+            "content_mse": 0.000628985115326941,
+            "relation_probability": 0.00018460018327459693
+          },
+          {
+            "label": "lion 2: runs \u2192 tired",
+            "role_mse": 0.00010044935334008187,
+            "content_mse": 0.0001039949493133463,
+            "relation_probability": 0.0001737212878651917
+          },
+          {
+            "label": "lion 2: rests \u2192 rested",
+            "role_mse": 8.732112473808229e-05,
+            "content_mse": 8.467510633636266e-05,
+            "relation_probability": 0.00017158086120616645
+          }
+        ],
+        "predicted_verb_effect_distance": 1.4085450172424316,
+        "wrong_identity_content_mse": 0.25077563524246216,
+        "correct_identity_content_mse": 0.0005302206263877451,
+        "wrong_identity_content_rise": 0.2502454146160744
+      }
+    },
+    "references_on": {
+      "before": {
+        "mean_role_mse": 0.1829218827188015,
+        "records": [
+          {
+            "label": "lion 1: runs \u2192 tired",
+            "role_mse": 0.17024070024490356,
+            "content_mse": 0.11365172266960144,
+            "relation_probability": 0.5
+          },
+          {
+            "label": "lion 1: rests \u2192 rested",
+            "role_mse": 0.19737672805786133,
+            "content_mse": 0.16458472609519958,
+            "relation_probability": 0.5
+          },
+          {
+            "label": "lion 2: runs \u2192 tired",
+            "role_mse": 0.16952495276927948,
+            "content_mse": 0.11002635210752487,
+            "relation_probability": 0.5
+          },
+          {
+            "label": "lion 2: rests \u2192 rested",
+            "role_mse": 0.19454514980316162,
+            "content_mse": 0.15244832634925842,
+            "relation_probability": 0.5
+          }
+        ],
+        "predicted_verb_effect_distance": 0.07831984013319016,
+        "wrong_identity_content_mse": 0.1213330402970314,
+        "correct_identity_content_mse": 0.11365172266960144,
+        "wrong_identity_content_rise": 0.007681317627429962
+      },
+      "after": {
+        "mean_role_mse": 9.32359034777619e-05,
+        "records": [
+          {
+            "label": "lion 1: runs \u2192 tired",
+            "role_mse": 0.00013263593427836895,
+            "content_mse": 6.299950473476201e-05,
+            "relation_probability": 0.0001636555971344933
+          },
+          {
+            "label": "lion 1: rests \u2192 rested",
+            "role_mse": 0.00011155853280797601,
+            "content_mse": 5.327365215634927e-05,
+            "relation_probability": 0.00016167755529750139
+          },
+          {
+            "label": "lion 2: runs \u2192 tired",
+            "role_mse": 5.8595156588125974e-05,
+            "content_mse": 1.8247503248858266e-05,
+            "relation_probability": 0.00019760963914450258
+          },
+          {
+            "label": "lion 2: rests \u2192 rested",
+            "role_mse": 7.015399023657665e-05,
+            "content_mse": 2.280224725836888e-05,
+            "relation_probability": 0.00019560269720386714
+          }
+        ],
+        "predicted_verb_effect_distance": 1.4092786312103271,
+        "wrong_identity_content_mse": 0.2507680356502533,
+        "correct_identity_content_mse": 6.299950473476201e-05,
+        "wrong_identity_content_rise": 0.25070503614551853
+      }
+    },
+    "mixed_kind": {
+      "before": {
+        "mean_bce": 0.6931471824645996,
+        "accuracy": 0.6666666666666666
+      },
+      "after": {
+        "mean_bce": 0.002267699766283234,
+        "accuracy": 1.0
+      },
+      "ideas": 4,
+      "relations": 2
+    }
+  },
+  "publication": "Uncommitted, incomplete item 7 candidate; stop for Claude review",
+  "documentation_pending": false,
+  "learned_utility": "Not established by forced mechanism tests or the small predictor measurement"
+}

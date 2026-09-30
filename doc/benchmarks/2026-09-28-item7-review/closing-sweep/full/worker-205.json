@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+    "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]"
+  ],
+  "completed": [
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+    "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006224169628694654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002940000267699361,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023541704285889864,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005009169690310955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013216701336205006,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005194999976083636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043720798566937447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.12917608302086592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08079683396499604,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "files": 687,
+  "source_digest": "3d455cfcdbc9b1d86535614afea92b08e102ae4fd0b398f3ce93dc75341e8110",
+  "archive_sha256": "1c76ac3fbb78480f7f749f8deddc668033cb8151d943c04bb43bfc7c691a177d",
+  "purpose": "Exact runtime source after the mechanical rename and before design changes, retained for the prescribed component bisect."
+}

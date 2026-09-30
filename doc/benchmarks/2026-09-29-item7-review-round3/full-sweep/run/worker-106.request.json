@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-106.recycle.json"
+}

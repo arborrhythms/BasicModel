@@ -1,0 +1,89 @@
+....FF.........F.............                                            [100%]
+=================================== FAILURES ===================================
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+
+mode = 'both'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode)
+        probe = _run_forward_spying_fold(model)
+        assert probe['compose'] == 0  # no second independently selected parse
+        assert probe['sweep'] == 1
+>       assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the closing
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 16 > (2 * 8)
+
+test/test_router_fires_per_word.py:242: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+
+mode = 'per-word'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode)
+        probe = _run_forward_spying_fold(model)
+        assert probe['compose'] == 0  # no second independently selected parse
+        assert probe['sweep'] == 1
+>       assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the closing
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 16 > (2 * 8)
+
+test/test_router_fires_per_word.py:242: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+______ test_64_word_trace_reduces_online_in_stm8_without_part_truncation _______
+
+    def test_64_word_trace_reduces_online_in_stm8_without_part_truncation():
+        data_dir = Path(__file__).resolve().parents[1] / "data"
+        model, _ = gate.build_eval_model(
+            data_dir / "MM_nanochat_grammar_gate.xml", autoload=False)
+        # This measures the grammar's online capacity and trace, with no trained
+        # native identities to provision the arbitrary spelling corpus into LTM.
+        model.conceptualSpace._ltm_consolidation = False
+        # First word is a 20-part cold spelling: deliberately wider than PS=8.
+        text = "abcdefghijklmnopqrst " + " ".join(
+            f"w{i}" for i in range(63))
+        trace = gate.trace_serial_grammar(model, text)
+    
+        assert trace["surface_words"] == trace["outer_word_capacity"] == 64
+        assert trace["part_field_width"] == 8
+        assert trace["whole_field_width"] == 8
+        assert trace["concept_field_width"] == 8
+        assert trace["stm_capacity"] == 8
+        assert trace["max_raw_parts_per_word"] == 20
+        assert trace["word_constituents_truncated"] is False
+        assert trace["sentence_truncated"] is False
+        # The operation budget is fixed. Random unary choices can leave an
+        # incomplete forest, which the diagnostic must report accurately.
+        assert trace['total_reductions'] == trace['online']['binary'] + trace['closing']['binary']
+        assert 1 <= trace['final_depth'] <= trace['stm_capacity']
+        assert trace['complete'] == bool((model._stm_post_depth > 0).all())
+        assert len(trace['timeline']) == sum(trace['online'].values()) + sum(trace['closing'].values())
+        assert all(step['arity'] in (0, 1, 2) for step in trace['timeline'])
+        if trace['complete']:
+            assert trace['total_reductions'] == 63
+>           assert trace['final_depth'] == 1
+E           assert 3 == 1
+
+test/test_nanochat_grammar_eval.py:170: AssertionError
+=============================== warnings summary ===============================
+test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+FAILED test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation
+3 failed, 26 passed, 2 warnings in 6.13s

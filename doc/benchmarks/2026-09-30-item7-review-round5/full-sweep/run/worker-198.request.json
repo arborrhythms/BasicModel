@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-198.recycle.json"
+}

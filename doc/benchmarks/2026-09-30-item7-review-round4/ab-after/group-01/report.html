@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.6078903330489993</pre></td><td><pre>test/test_model_time_when.py:306: in test_old_checkpoint_without_when_time_loads_at_zero
+    m2.load_weights(ckpt)
+bin/Models.py:5696: in load_weights
+    self._restore_structural_extras(
+bin/Models.py:4914: in _restore_structural_extras
+    layer = owner_space._concept_allocator.layer(0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;ConceptualSpace&#x27; object has no attribute &#x27;_concept_allocator&#x27;</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.028s)
+[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpb5md7uyu/weights.ckpt
+[BasicModel] Weight file partial -- /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpb5md7uyu/weights.ckpt
+  Keys in model but missing from file: 1 (initialized fresh)
+</pre></td></tr></table></body></html>

@@ -160,98 +160,24 @@ def test_property_spans_none_passthrough():
 
 # -- A4: record_property_meronomy (run-span instances -> class TYPE + raise) --
 
-def test_property_class_whole_minted_once():
-    ss = _whole_space()
-    a = ss.property_class_whole([LETTER])
-    assert ss.property_class_whole([LETTER]) == a       # same TYPE, minted once
-    assert ss.property_class_whole([DIGIT]) != a         # a different TYPE
-    # OR-union is its own type, keyed by the sorted class set.
-    assert ss.property_class_whole([LETTER, DIGIT]) == ss.property_class_whole([DIGIT, LETTER])
 
 
-def test_cross_tower_letters_bind_without_raising():
-    ss = _whole_space()
-    ss.subspace.what.enable_ramsification(2)
-    # 3 letter part-TYPES (pids) at positions inside ONE word-run span (0,3).
-    part_pids = torch.tensor([65, 66, 67])               # 'A','B','C' codes
-    part_where = torch.tensor([0, 1, 2])
-    whole_spans = torch.tensor([[0, 3]])                 # the "word" (letter-run)
-    whole = ss.record_cross_tower_meronomy(part_pids, part_where, whole_spans, [LETTER])
-    assert whole == ss.property_class_whole([LETTER])     # bound under the word-TYPE
-    # 3 letter-TYPES are parts of the word-type (set: ps_children doubles after
-    # a raise, per the documented wrinkle).
-    assert len(set(ss.ps_children_of_whole(whole))) == 3
-    assert not ss.part_chain
 
 
-def test_cross_tower_where_gates_the_edge():
-    # "sometimes yes, sometimes no, and we know by the .where": a letter whose
-    # .where is OUTSIDE the word span is NOT a part of the word.
-    ss = _whole_space()
-    part_pids = torch.tensor([65, 66])
-    part_where = torch.tensor([0, 9])                    # 2nd letter at pos 9
-    whole_spans = torch.tensor([[0, 3]])                 # word covers 0..2
-    whole = ss.record_cross_tower_meronomy(part_pids, part_where, whole_spans, [LETTER])
-    assert len(set(ss.ps_children_of_whole(whole))) == 1  # only the in-word letter
-    assert not ss.part_chain
 
 
-def test_lattice_part_belongs_to_multiple_wholes():
-    # The meronomy is a LATTICE: a part-type can belong to several wholes at
-    # once (letter A ⊑ "cat" AND ⊑ "word"). taxonomy_parents recovers BOTH,
-    # while taxonomy_parent (single view) keeps only the last-bound one.
-    ss = _whole_space()
-    ps = ss.ensure_ps_position(65)                    # letter 'A' part-type
-    cat = ss.property_class_whole([LETTER])           # two distinct whole-types
-    word = ss.property_class_whole([DIGIT])
-    seed = torch.zeros(_D)
-    m_cat = ss.insert_meta(ps, cat, fused_vec=seed)
-    m_word = ss.insert_meta(ps, word, fused_vec=seed)
-    parents = ss.taxonomy_parents(ps)
-    assert m_cat in parents and m_word in parents     # BOTH edges retained
-    assert ss.taxonomy_parent(ps) == m_word           # single view = last bound
-    assert ps in ss.ps_children_of_whole(cat)         # each whole sees the part
-    assert ps in ss.ps_children_of_whole(word)
 
 
-def test_taxonomy_parents_empty_for_unbound():
-    ss = _whole_space()
-    ps = ss.ensure_ps_position(99)
-    assert ss.taxonomy_parents(ps) == []              # no wholes yet
 
 
 # -- live cross-tower binding (reads subspace.where + WS whole spans) ----------
 
-def test_autobind_cross_tower_live_where_gated():
-    ss = _whole_space()
-    ss.subspace.what.enable_ramsification(2)
-    ss._staged_analysis_spans = torch.tensor([[[0, 3]]])   # B=1, one word span (0,3)
-    pid_2d = torch.tensor([[65, 66, 67, 68]])              # 4 percept-types
-    percept_where = torch.tensor([[0, 1, 2, 9]])           # last is OUTSIDE the span
-    cs = Spaces.ConceptualSpace([4, _D], [128, _D], [128, _D])   # self (CS owns the symbol table)
-    Spaces.ConceptualSpace._autobind_cross_tower(cs, pid_2d, percept_where, ss)
-    word = ss.property_class_whole([WORD])
-    assert len(set(ss.ps_children_of_whole(word))) == 3    # 65,66,67 in span; 68 out
-    assert not ss.part_chain
 
 
-def test_autobind_cross_tower_noop_without_spans():
-    ss = _whole_space()
-    # no _staged_analysis_spans -> no-op (inert until a config stages word spans)
-    Spaces.ConceptualSpace._autobind_cross_tower(
-        None, torch.tensor([[65, 66]]), torch.tensor([[0, 1]]), ss)
-    assert getattr(ss, '_property_class_whole', None) is None   # nothing minted
 
 
-def test_cross_tower_type_edge_idempotent_no_churn():
-    # the SAME part-type under the SAME whole-type -> the same edge, no new
-    # part (types + edges persist; per-instance .where is only the evidence).
-    ss = _whole_space()
-    spans = torch.tensor([[0, 3]])
-    whole = ss.record_cross_tower_meronomy(
-        torch.tensor([65]), torch.tensor([0]), spans, [LETTER])
-    n1 = len(set(ss.ps_children_of_whole(whole)))
-    ss.record_cross_tower_meronomy(
-        torch.tensor([65]), torch.tensor([1]), spans, [LETTER])   # new instance .where
-    n2 = len(set(ss.ps_children_of_whole(whole)))
-    assert n1 == n2 == 1                                  # no churn
+
+
+def test_retired_wholespace_taxonomy_writer_is_absent():
+    from Spaces import WholeSpace
+    assert not hasattr(WholeSpace, "insert_meta")

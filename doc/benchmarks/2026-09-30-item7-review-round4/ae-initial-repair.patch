@@ -1,0 +1,44 @@
+--- bin/Interpret.py (before AE)
++++ bin/Interpret.py (after AE)
+@@ -79,7 +79,18 @@
+             return word
+         # In the discovering field, interpretation names the case it admits.
+         # It never allocates a competing concept row for the same unit.
+-        if word_reading and cs._promotion_enabled and cs.conceptual_pi and cs._sparse_active():
++        discovering = word_reading and cs._promotion_enabled and cs.conceptual_pi and cs._sparse_active()
++        if discovering and getattr(ps, '_forward_input', None):
++            # An empty field has no object knowledge from which to discover
++            # a case. Temporary reading forcing then admits the definition
++            # normally. Existing word objects do not turn that admission into
++            # native discovery: identify them through the definition table.
++            # A field with witnessed objects still owns its case rows, so a
++            # word cannot occupy a competing row before its unit recurs.
++            lexical = set(index.word_ids) | set(index.object_ids)
++            discovering = any(cs.concept_id_at_row(row) not in lexical
++                              for row in cs._witnessed_rows())
++        if discovering:
+             features = alloc.layer()
+             case = next((row for (row, col) in features.features._index
+                          if len(parts) == 1 and col == 4 * parts[0] and bool(features.assigned[row])), None)
+--- test/test_order0_attended_field.py (before AE)
++++ test/test_order0_attended_field.py (after AE)
+@@ -133,7 +133,8 @@
+         raw = torch.zeros(1, 1, 8, dtype=torch.long)
+         raw[0, 0, :len(word)] = torch.tensor(list(word.encode()))
+         model.forward(raw)
+-        cid, = cs.word_concepts(word)
++        word_id = cs.definitions.word(form=word)
++        cid, = cs.definitions.objects(word_id)
+         carrier = model._combine_last_cs_sub
+         slot = (carrier._concept_ids == cid).nonzero().flatten()
+         assert len(slot) == 1, word
+@@ -150,7 +151,8 @@
+     carrier = model._combine_last_cs_sub
+     leg = model.symbolSpace.forward_concept_to_symbol(carrier)
+     for b, word in enumerate(words):
+-        cid, = cs.word_concepts(word)
++        word_id = cs.definitions.word(form=word)
++        cid, = cs.definitions.objects(word_id)
+         ids = carrier._concept_ids
+         ids = ids[:, b] if ids.ndim == 2 else ids
+         slot = (ids == cid).nonzero().flatten()

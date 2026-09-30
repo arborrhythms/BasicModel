@@ -1,0 +1,116 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+  ],
+  "completed": [
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-structural-pending-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-structural-pending-before/group-00/worker-000.json"
+      ],
+      "pid": 10708,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 543180072,
+      "elapsed_seconds": 3.869482500012964,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-structural-pending-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+      ],
+      "completed": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0033708750270307064,
+          "message": "test/test_structural_checkpoint.py:102: in test_integrated_checkpoint_restores_allocator_and_identity_caches\n    assert target.load_weights(path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5695: in load_weights\n    self._restore_structural_extras(\nbin/Models.py:4886: in _restore_structural_extras\n    cs.interpret._pending = _checkpoint_host_copy(pending.get('words', {}))\n    ^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'interpret'",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8477/test_integrated_checkpoint_res0/structure.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8477/test_integrated_checkpoint_res0/structure.ckpt has no embedding bundle; embeddings stay at random init.\r\n"
+        },
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00011945806909352541,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004093750612810254,
+          "message": "",
+          "stdout": "Training wall-clock cap armed: 15s (checked between completed batches).\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/3]\r\nTrain Loss: output=1.0000, reconstruction=2.0000\r\nTraining wall-clock cap reached; finishing normally for final reporting/checkpoint save.\r\nFinal Stats:\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-structural-pending-before/group-00",
+  "elapsed_seconds": 7.825304542086087,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 543180072,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-structural-pending-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-structural-pending-before/group-00/collect.json"
+    ],
+    "pid": 10696,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 498877736,
+    "elapsed_seconds": 3.7246787500334904,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-structural-pending-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

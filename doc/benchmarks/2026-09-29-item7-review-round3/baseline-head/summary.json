@@ -1,0 +1,289 @@
+[
+  {
+    "gate": "test/test_grounded_xor.py",
+    "outcome": "passed",
+    "measurements": [],
+    "reports": [
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 2.6804391250479966,
+        "message": "",
+        "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 4.50624266709201,
+        "message": "",
+        "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 2.6180398339638487,
+        "message": "",
+        "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 4.541560832993127,
+        "message": "",
+        "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 2.6624140000203624,
+        "message": "",
+        "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+      },
+      {
+        "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 4.569757374934852,
+        "message": "",
+        "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse",
+    "outcome": "passed",
+    "measurements": [],
+    "reports": [
+      {
+        "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 3.6296214170288295,
+        "message": "",
+        "stdout": "{'trial': 0, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+      },
+      {
+        "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 3.58502412494272,
+        "message": "",
+        "stdout": "{'trial': 1, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+      },
+      {
+        "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 3.600689291022718,
+        "message": "",
+        "stdout": "{'trial': 2, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "outcome": "test_failure",
+    "measurements": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+        "kind": "cli",
+        "config": "data/XOR_exact.xml",
+        "returncode": 1,
+        "mse": [
+          null,
+          0
+        ],
+        "reconstructed": [
+          0,
+          0
+        ]
+      },
+      {
+        "predictions": []
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 65.7233222090872,
+        "message": "test/test_explicit_dimensions.py:221: in test_output_mse_is_crisp\n    self.assertEqual(rc, 0, f\"CLI failed: stderr={stderr[-1000:]}\")\nE   AssertionError: 1 != 0 : CLI failed: stderr=g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 16700, in _autobind_property_concepts\nE       formed = (self.interpret.lookup_word(parts, prop_rows, form=key), None, None)\nE                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Interpret.py\", line 53, in lookup_word\nE       cs._populate_concept_weights(word, witness=(parts, wholes))\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 18668, in _populate_concept_weights\nE       self.add_concept_edge(c_row, target, 1.)\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 17748, in add_concept_edge\nE       source0 = self._order0_inventory_row(int(col))\nE                                            ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+        "stdout": ""
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "outcome": "test_failure",
+    "measurements": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+        "kind": "cli",
+        "config": "data/XOR_exact.xml",
+        "returncode": 1,
+        "mse": [
+          null,
+          0
+        ],
+        "reconstructed": [
+          0,
+          0
+        ]
+      },
+      {
+        "predictions": []
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 64.37381175009068,
+        "message": "test/test_explicit_dimensions.py:203: in test_at_least_50_pct_inputs_reconstruct\n    self.assertEqual(rc, 0, f\"CLI failed: stderr={stderr[-1000:]}\")\nE   AssertionError: 1 != 0 : CLI failed: stderr=g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 16700, in _autobind_property_concepts\nE       formed = (self.interpret.lookup_word(parts, prop_rows, form=key), None, None)\nE                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Interpret.py\", line 53, in lookup_word\nE       cs._populate_concept_weights(word, witness=(parts, wholes))\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 18668, in _populate_concept_weights\nE       self.add_concept_edge(c_row, target, 1.)\nE     File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py\", line 17748, in add_concept_edge\nE       source0 = self._order0_inventory_row(int(col))\nE                                            ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+        "stdout": ""
+      }
+    ]
+  },
+  {
+    "gate": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "outcome": "passed",
+    "measurements": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "kind": "mm",
+        "calls": 20,
+        "best": 0.1741477996110916,
+        "last": 0.1741477996110916,
+        "predictions": [
+          0.4473062753677368,
+          0.6233577728271484,
+          0.5970271229743958,
+          0.43847668170928955
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0.12287899991497397,
+        "message": "",
+        "stdout": ""
+      }
+    ]
+  },
+  {
+    "gate": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "outcome": "passed",
+    "measurements": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "kind": "mm",
+        "calls": 1,
+        "best": 0.25025421380996704,
+        "last": 0.25025421380996704,
+        "predictions": [
+          0.5139095187187195,
+          0.5140066742897034,
+          0.5136604309082031,
+          0.5140020251274109
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0.032569415983743966,
+        "message": "",
+        "stdout": ""
+      }
+    ]
+  },
+  {
+    "gate": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "outcome": "passed",
+    "measurements": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "kind": "mm",
+        "calls": 38,
+        "best": 0.19989114999771118,
+        "last": 0.19989114999771118,
+        "predictions": [
+          0.4367649555206299,
+          0.5352257490158081,
+          0.5318157076835632,
+          0.4166405200958252
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "reports": [
+      {
+        "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 7.251841124962084,
+        "message": "",
+        "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "outcome": "test_failure",
+    "measurements": [],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 0.46365225000772625,
+        "message": "test/test_explicit_dimensions.py:247: in test_xor_class_accuracy\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/xor_observer.py:30: in observed_grammar\n    model = grammar(*args, **kwargs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25513: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25620: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3933: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11395: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16785: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16050: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store.",
+        "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nDevice: cpu\r\nPeer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture\r\n\n\n==== BasicModel ====\r\n\nTrial [1/1]\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/400]\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\n"
+      }
+    ]
+  },
+  {
+    "gate": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+    "outcome": "test_failure",
+    "measurements": [],
+    "reports": [
+      {
+        "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 0.46160070900805295,
+        "message": "test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct\n    model = _run_xor_grammar_in_process()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/xor_observer.py:30: in observed_grammar\n    model = grammar(*args, **kwargs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process\n    results = ModelFactory.run(\"data/XOR_grammar.xml\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25513: in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:25620: in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\nbin/Models.py:3933: in run\n    acc[trial, :] = self.runTrial(\nbin/Models.py:11395: in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16785: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:16050: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16437: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16556: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16920: in _maybe_autobind_meta\n    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)\nbin/Spaces.py:25767: in insert_meta\n    meta_pos = self.insert_whole(init_vec=seed)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:24890: in insert_whole\n    raise RuntimeError(\nE   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store.",
+        "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nDevice: cpu\r\nPeer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture\r\n\n\n==== BasicModel ====\r\n\nTrial [1/1]\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/400]\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\n"
+      }
+    ]
+  }
+]

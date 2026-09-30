@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.885839625028893,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,11 +1,7 @@
-"""Idea-decode Stage D3 CONSUMER (doc/old/2026-06-20-idea-decoder.md): under
-<ideaDecode>, the grammar <generate> reverse runs on the SYNTACTIC WholeSpace
-(symbolSpace.wholeSpace, the one with the SyntacticLayer + a populated
-subspace -- NOT wholeSpaces[0]) and DRIVES the reverse seed, so the surface
-words come from the grammar. Shape-guarded: drives on an exact match (the
-symbol_dim==concept_dim invariant); compact-symbol configs fall back unchanged
-(they need a learned symbol->concept expander). Default off -> byte-identical
-(the reverse-roundtrip suite is the off-path witness).
+"""Idea-decode consumes the shared generate walk over the completed field.
+
+The optional reverse-seed consumer keeps its exact-shape guard. WholeSpace
+has no grammar decoder; the generate policy is owned by SymbolSpace.
 """
 
 import pytest
@@ -53,15 +49,11 @@ def test_idea_decode_defaults_off():
 
 
 @pytest.mark.slow
-def test_grammar_decode_runs_on_syntactic_ws():
-    """WS-reference fix: the grammar <generate> reverse uses the SYNTACTIC WS
-    (symbolSpace.wholeSpace), which has a live SyntacticLayer + populated
-    subspace -- so it returns a real [B,1,symbol_dim] decode (NOT None as it did
-    when seeded from the empty wholeSpaces[0])."""
+def test_grammar_decode_runs_from_the_completed_field():
+    """The declared generate grammar produces a real conceptual field."""
     m = _forward(_build("MM_mereology_serial.xml"))
-    ws = m._idea_decode_ws()
-    assert ws is m.symbolSpace.wholeSpace
-    assert type(getattr(ws, "syntacticLayer", None)).__name__ == "SyntacticLayer"
+    assert not hasattr(m.wholeSpace, "syntacticLayer")
+    assert type(m.symbolSpace.subspace.syntacticLayer).__name__ == "SyntacticLayer"
     with torch.no_grad():
         gen = m._run_idea_decode_generate()
     assert gen is not None

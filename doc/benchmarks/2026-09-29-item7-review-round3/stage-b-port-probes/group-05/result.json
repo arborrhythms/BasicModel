@@ -1,0 +1,155 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+  ],
+  "completed": [
+    "test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-05/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-05/worker-000.json"
+      ],
+      "pid": 7810,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 526271760,
+      "elapsed_seconds": 4.073790457914583,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-05/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic",
+        "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+        "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+        "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+        "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+        "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+      ],
+      "completed": [
+        "test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic",
+        "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+        "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+        "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+        "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+        "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.002629209076985717,
+          "message": "test/test_concept_capacity_policy.py:75: in test_explicit_word_triple_capacity_failure_is_atomic\n    before = _allocator_snapshot(cs)\n             ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_concept_capacity_policy.py:57: in _allocator_snapshot\n    \"word_obj_meta\": dict(alloc.word_obj_meta),\n                          ^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.001610749983228743,
+          "message": "test/test_concept_capacity_policy.py:88: in test_automatic_capacity_mode_reuses_known_identity_without_recycling\n    known = cs.interpret_word([10], (0,), key=\"known\")\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0018804579740390182,
+          "message": "test/test_concept_capacity_policy.py:116: in test_serial_property_autobind_does_not_persist_sentence_chain\n    cs._autobind_property_concepts(\nbin/Spaces.py:16665: in _autobind_property_concepts\n    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0023315410362556577,
+          "message": "test/test_concept_capacity_policy.py:137: in test_rejected_word_does_not_consume_location_fallback_rows\n    before = _allocator_snapshot(cs)\n             ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_concept_capacity_policy.py:57: in _allocator_snapshot\n    \"word_obj_meta\": dict(alloc.word_obj_meta),\n                          ^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0016516250325366855,
+          "message": "test/test_concept_capacity_policy.py:137: in test_rejected_word_does_not_consume_location_fallback_rows\n    before = _allocator_snapshot(cs)\n             ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_concept_capacity_policy.py:57: in _allocator_snapshot\n    \"word_obj_meta\": dict(alloc.word_obj_meta),\n                          ^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0015967079671099782,
+          "message": "test/test_concept_capacity_policy.py:160: in test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span\n    before = _allocator_snapshot(cs)\n             ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_concept_capacity_policy.py:57: in _allocator_snapshot\n    \"word_obj_meta\": dict(alloc.word_obj_meta),\n                          ^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-05",
+  "elapsed_seconds": 7.794073041994125,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 526271760,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-05/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-05/collect.json"
+    ],
+    "pid": 7802,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428606688,
+    "elapsed_seconds": 3.492481749970466,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-port-probes/group-05/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic",
+        "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+        "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+        "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+        "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+        "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

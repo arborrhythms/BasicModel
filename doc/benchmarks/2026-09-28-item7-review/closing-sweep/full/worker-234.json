@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_has_no_bare_sigma",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_no_sigma_percept",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_output_has_no_pilayer",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_output_linear_layer_when_nonlinear_output",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_symbolic_has_no_sigma",
+    "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_aliases_removed",
+    "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_conceptual_no_sigma_percept_forward",
+    "test/test_pi_sigma_ownership.py::TestConceptualSpaceSTMBookkeeping::test_cs_forward_uses_stm_not_fold"
+  ],
+  "completed": [
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_has_no_bare_sigma",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_no_sigma_percept",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_output_has_no_pilayer",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_output_linear_layer_when_nonlinear_output",
+    "test/test_pi_sigma_ownership.py::TestOwnership::test_symbolic_has_no_sigma",
+    "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_aliases_removed",
+    "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_conceptual_no_sigma_percept_forward",
+    "test/test_pi_sigma_ownership.py::TestConceptualSpaceSTMBookkeeping::test_cs_forward_uses_stm_not_fold"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_has_no_bare_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027351583004929125,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_no_sigma_percept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013226833078078926,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestOwnership::test_output_has_no_pilayer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013227125047706068,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestOwnership::test_output_linear_layer_when_nonlinear_output",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013161665992811322,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestOwnership::test_symbolic_has_no_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012899792054668069,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_aliases_removed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013035790994763374,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_conceptual_no_sigma_percept_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01289987494237721,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_pi_sigma_ownership.py::TestConceptualSpaceSTMBookkeeping::test_cs_forward_uses_stm_not_fold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015500957961194217,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

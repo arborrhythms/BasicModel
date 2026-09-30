@@ -1,0 +1,207 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+  ],
+  "completed": [
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-20/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-20/worker-000.json"
+      ],
+      "pid": 9707,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 450577776,
+      "elapsed_seconds": 3.8508018749998882,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-20/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+        "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+        "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+        "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+        "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+        "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+        "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+        "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+        "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+        "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+      ],
+      "completed": [
+        "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+        "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+        "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+        "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+        "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+        "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+        "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+        "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+        "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+        "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002840419765561819,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0331969999242574,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.028951916960068047,
+          "message": "",
+          "stdout": "[BasicModel] Activated aligned codebook prefix 4 -> 8 rows (physical capacity 16; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.028656041948124766,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.028401833027601242,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.030336834024637938,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.028939749929122627,
+          "message": "test/test_wholespace_property_migration.py:290: in test_property_model_category_vq_and_parser_context_are_cs_owned\n    cs._maybe_autobind_meta(None, None)\n    ^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02889708406291902,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000684124999679625,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001443750225007534,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-20",
+  "elapsed_seconds": 7.606195333995856,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 450577776,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-20/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-20/collect.json"
+    ],
+    "pid": 9686,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 427754696,
+    "elapsed_seconds": 3.5225150000769645,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-20/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+        "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+        "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+        "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+        "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+        "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+        "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+        "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+        "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+        "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

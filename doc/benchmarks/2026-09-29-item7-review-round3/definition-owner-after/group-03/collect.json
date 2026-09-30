@@ -1,0 +1,24 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,63 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sparsity_regularizer.py::test_identity_when_lambda_zero",
+    "test/test_sparsity_regularizer.py::test_soft_threshold_shrinks_small_values",
+    "test/test_sparsity_regularizer.py::test_gated_off_when_enabled_false",
+    "test/test_sparsity_regularizer.py::test_preserves_grad",
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer"
+  ],
+  "completed": [
+    "test/test_sparsity_regularizer.py::test_identity_when_lambda_zero",
+    "test/test_sparsity_regularizer.py::test_soft_threshold_shrinks_small_values",
+    "test/test_sparsity_regularizer.py::test_gated_off_when_enabled_false",
+    "test/test_sparsity_regularizer.py::test_preserves_grad",
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_identity_when_lambda_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003550840774551034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_soft_threshold_shrinks_small_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023499992676079273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_gated_off_when_enabled_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012245902325958014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_preserves_grad",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011989249964244664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00016070797573775053,
+      "message": "test/test_sparsity_regularizer.py:43: in test_symbolic_space_uses_sparsity_regularizer\n    assert hasattr(WholeSpace, \"_build_sparsity_regularizer\"), \\\nE   AssertionError: WholeSpace should expose a factory for its regularizer\nE   assert False\nE    +  where False = hasattr(<class 'Spaces.WholeSpace'>, '_build_sparsity_regularizer')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

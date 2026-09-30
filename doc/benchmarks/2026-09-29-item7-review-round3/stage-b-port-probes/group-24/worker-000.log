@@ -1,0 +1,48 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___________ test_word_spelling_is_ordered_and_binding_is_idempotent ____________
+test/test_mereology_word_binding.py:9: in test_word_spelling_is_ordered_and_binding_is_idempotent
+    word = interpret.lookup_word([10, 11, 12], [], form='abc')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+______________ test_one_word_object_meta_has_typed_native_members ______________
+test/test_mereology_word_binding.py:20: in test_one_word_object_meta_has_typed_native_members
+    word = interpret.lookup_word([10, 11, 12], [], form='abc')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+_______________ test_two_words_do_not_create_a_sentence_concept ________________
+test/test_mereology_word_binding.py:31: in test_two_words_do_not_create_a_sentence_concept
+    first = interpret.lookup_word([10, 11], [], form='ab')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+____ test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders ____
+test/test_mereology_word_binding.py:42: in test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders
+    word = interpret.lookup_word([10, 11], [], form='ab')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+=========================== short test summary info ============================
+FAILED test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent
+FAILED test/test_mereology_word_binding.py::test_one_word_object_meta_has_typed_native_members
+FAILED test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept
+FAILED test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders
+4 failed in 2.62s

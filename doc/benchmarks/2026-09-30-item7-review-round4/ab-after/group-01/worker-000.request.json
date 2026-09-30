@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-01/worker-000.recycle.json"
+}

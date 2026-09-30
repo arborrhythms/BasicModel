@@ -1,0 +1,58 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_retiring_one_testimony_object_preserves_its_shared_meta _________
+
+    def test_retiring_one_testimony_object_preserves_its_shared_meta():
+        cs, interpret = _operator()
+        word = interpret.lookup_word([7], [], form='bank')
+        first = interpret.forward(word, occurrence=(0, 0))
+        alloc = _concept_alloc_of(cs)
+        second = cs.new_concept()
+        alloc.reference_orders[second] = 1
+        meta = cs.bind_meta((word,), (first, second))
+        interpret.boundary()
+        interpret.boundary()
+        assert first in alloc.retired
+>       assert meta not in alloc.retired
+E       assert 3 not in {2, 3}
+E        +  where {2, 3} = <Layers.ConceptAllocator object at 0x122ffc800>.retired
+
+test/test_item7_taxonomy.py:127: AssertionError
+__ test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index ___
+
+    def test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index():
+        from Models import BaseModel
+        from test_structural_checkpoint import _model_with
+        from types import SimpleNamespace
+        cs, interpret = _operator()
+        model = _model_with(cs, SimpleNamespace())
+        word = interpret.lookup_word([7], [], form='wug')
+        obj = interpret.forward(word)
+        alloc = _concept_alloc_of(cs)
+        meta = alloc.interpretations[word, 1][1]
+        snapshot = model._collect_structural_extras()['conceptual_spaces'][0]['allocator']
+        # A pre-item-7 native META has its binary sigma definition and the owned
+        # word/object binding, but no n-ary membership tags yet.
+        for blob in snapshot['layers'].values():
+            for key, records in blob['constituents'].items():
+                blob['constituents'][key] = [record for record in records
+                                            if record[0] not in ('word', 'object')]
+        _ = cs.word_references
+        BaseModel._restore_allocator_extras(model, cs, snapshot)
+>       assert cs.meta_members(meta) == ((word,), (obj,))
+E       assert ((), ()) == ((1,), (2,))
+E         
+E         At index 0 diff: () != (1,)
+E         Use -v to get more diff
+
+test/test_item7_taxonomy.py:151: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta
+FAILED test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index
+2 failed, 7 deselected, 1 warning in 2.02s

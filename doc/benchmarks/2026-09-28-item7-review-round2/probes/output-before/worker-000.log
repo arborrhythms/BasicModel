@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_sentence_generation_lesson_keeps_its_weighted_output_gradient ______
+test/test_item7_lesson_gradients.py:30: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+    output = model._sentence_gradient_objectives['output']
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'output'
+=========================== short test summary info ============================
+FAILED test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+1 failed in 2.17s

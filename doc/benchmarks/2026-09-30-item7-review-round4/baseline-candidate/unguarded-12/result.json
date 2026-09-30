@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 15621402720,
+  "elapsed_seconds": 10.992167040938511
+}

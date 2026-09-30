@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+  ],
+  "collect": false,
+  "recycle_file": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/schema-affected/worker-008.recycle.json"
+}

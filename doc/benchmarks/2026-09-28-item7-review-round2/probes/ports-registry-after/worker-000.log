@@ -1,0 +1,11 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_____ TestShamathaInlineGrammar.test_dnf_stack_wired_into_conceptual_space _____
+test/test_shamatha_inline_grammar.py:63: in test_dnf_stack_wired_into_conceptual_space
+    self.assertIsInstance(
+E   AssertionError: None is not an instance of <class 'Language.NotLayer'>
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 8-dim embedding (words added at runtime)
+=========================== short test summary info ============================
+FAILED test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space
+1 failed, 1 passed in 2.23s

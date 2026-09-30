@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-008.recycle.json"
+}

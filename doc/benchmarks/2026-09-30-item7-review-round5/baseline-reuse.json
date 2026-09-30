@@ -1,0 +1,10 @@
+{
+  "authority": "Item 7 spec sections 21 and 22; HEAD 1678ee1f has not moved and round-4 HEAD measurements stand. Incoming candidate matches the final round-4 tested source exactly.",
+  "head_commit": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "head_xor": "../2026-09-30-item7-review-round4/final-xor-head",
+  "before_repair_xor": "../2026-09-30-item7-review-round4/final3-xor-candidate",
+  "head_mm_grammar": "../2026-09-30-item7-review-round4/final-mm-grammar-head",
+  "before_repair_mm_grammar": "../2026-09-30-item7-review-round4/final3-mm-grammar-candidate",
+  "reconstruction_prior_round": "../2026-09-30-item7-review-round4/final-reconstruction-table.md",
+  "candidate_source_matches_prior": true
+}

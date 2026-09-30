@@ -1,0 +1,216 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_eval_math_thinking.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_grammatical_query_vps.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_ispart_query_dispatch.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_item9b_interpret.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_levelled_thought_history.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_live_query_occurrences.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "selector": "test/test_math_thinking_training.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    },
+    {
+      "selector": "test/test_normal_thought_controller.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-07/result.json"
+    },
+    {
+      "selector": "test/test_query_contract_boundaries.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-08/result.json"
+    },
+    {
+      "selector": "test/test_query_executors.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-09/result.json"
+    },
+    {
+      "selector": "test/test_query_grammar_copy.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-10/result.json"
+    },
+    {
+      "selector": "test/test_query_grammar_loader.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-11/result.json"
+    },
+    {
+      "selector": "test/test_query_native_ids.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-12/result.json"
+    },
+    {
+      "selector": "test/test_query_owner_width.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-13/result.json"
+    },
+    {
+      "selector": "test/test_query_phase_fullgraph.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-14/result.json"
+    },
+    {
+      "selector": "test/test_query_phase_permissions.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-15/result.json"
+    },
+    {
+      "selector": "test/test_query_registry.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-16/result.json"
+    },
+    {
+      "selector": "test/test_query_vp_boundaries.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-17/result.json"
+    },
+    {
+      "selector": "test/test_query_work_boundaries.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-18/result.json"
+    },
+    {
+      "selector": "test/test_query_work_budget.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-19/result.json"
+    },
+    {
+      "selector": "test/test_reasoning.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-20/result.json"
+    },
+    {
+      "selector": "test/test_reasoning_cde_model.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-21/result.json"
+    },
+    {
+      "selector": "test/test_selected_query_compose.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-22/result.json"
+    },
+    {
+      "selector": "test/test_selected_relation_meaning.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-23/result.json"
+    },
+    {
+      "selector": "test/test_serve_thinking.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-24/result.json"
+    },
+    {
+      "selector": "test/test_thinking_kernel.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-25/result.json"
+    },
+    {
+      "selector": "test/test_thought_answer_adapters.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-26/result.json"
+    },
+    {
+      "selector": "test/test_thought_checkpoint_credit.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-27/result.json"
+    },
+    {
+      "selector": "test/test_thought_history_boundaries.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-28/result.json"
+    },
+    {
+      "selector": "test/test_thought_legacy_boundaries.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-29/result.json"
+    },
+    {
+      "selector": "test/test_thought_operation_catalog.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-30/result.json"
+    },
+    {
+      "selector": "test/test_thought_review.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-31/result.json"
+    },
+    {
+      "selector": "test/test_truth_grounded_reasoning.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-32/result.json"
+    },
+    {
+      "selector": "test/test_unified_thought_controller.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-33/result.json"
+    },
+    {
+      "selector": "test/test_what_thinking_episode.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-34/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

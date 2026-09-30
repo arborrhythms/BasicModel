@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00/worker-000.json"
+      ],
+      "pid": 12834,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3140586640,
+      "elapsed_seconds": 8.479836624930613,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.7027230829698965,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00",
+  "elapsed_seconds": 12.441000540973619,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 3140586640,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00/collect.json"
+    ],
+    "pid": 12814,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 436323528,
+    "elapsed_seconds": 3.773294249898754,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

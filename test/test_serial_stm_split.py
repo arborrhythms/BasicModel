@@ -1,15 +1,7 @@
-"""Stage 7 of doc/plans/MeronomyPlan.md: the serial-mode duals.
+"""Constituent-stack ownership and the serial/parallel sigma contract.
 
-MeronomySpec §6 (rev 2026-06-10c/11), §10.11. The two workspaces:
-the PS-side idea stack (existing ``_idea_*`` — structurally unchanged,
-semantic content) and the new SS-side constituent stack (symbolic codes
-under analysis). Moves: split (SS analysis, serial π form), shift (the
-callosum crossing at codebook words), reduce (PS synthesis, serial σ
-form, via the existing driver). Exactly one workspace write per move;
-shifted content is the semantic referent, never the word code (except
-stop... mention-shifts, which carry the form verbatim — the zero-band
-signature marks it); marker words bind the router and shift nothing;
-parallel mode leaves both serial stacks untouched.
+WholeSpace's retired word-dictionary SHIFT fixtures are dispositioned in the
+item-7 review receipt; these tests exercise the live SymbolSubSpace methods.
 """
 import os
 import sys
@@ -29,19 +21,11 @@ if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
 
 from Layers import SigmaLayer2
-from References import symbol_code
-from Spaces import WholeSpace
 
 D = 4
 CAP = 8
 
 
-def _knob(value):
-    from util import TheXMLConfig
-    if value is None:
-        TheXMLConfig._data.get("architecture", {}).pop("meronomy", None)
-    else:
-        TheXMLConfig.set("architecture.meronomy", value)
 
 
 def make_ws(batch=1, dim=D, cap=CAP):
@@ -58,29 +42,10 @@ def make_ws(batch=1, dim=D, cap=CAP):
     return ss
 
 
-def snapshot(ss):
-    """(idea, constituent) state snapshot for single-writer assertions."""
-    idea = (ss._idea_buffer.clone(), ss._idea_depth.clone())
-    cb = getattr(ss, '_constituent_buffer', None)
-    cons = (None if cb is None
-            else (cb.clone(), ss._constituent_depth.clone()))
-    return idea, cons
 
 
-def idea_changed(before, after):
-    (b_buf, b_dep), _ = before
-    (a_buf, a_dep), _ = after
-    return not (torch.equal(b_buf, a_buf) and torch.equal(b_dep, a_dep))
 
 
-def cons_changed(before, after):
-    _, b = before
-    _, a = after
-    if b is None and a is None:
-        return False
-    if b is None or a is None:
-        return a is not None and bool((a[1] != 0).any())
-    return not (torch.equal(b[0], a[0]) and torch.equal(b[1], a[1]))
 
 
 # ---------------------------------------------------------------------------
@@ -120,129 +85,6 @@ def test_split_replaces_whole_with_parts():
     assert torch.equal(ss.constituent_peek(0, 0), left), (
         "left-to-right analysis: left is newest")
     assert torch.equal(ss.constituent_peek(0, 1), right)
-
-
-# ---------------------------------------------------------------------------
-# The shift: semantic referents cross; forms only under mention.
-# ---------------------------------------------------------------------------
-
-def _bound_ss(rows):
-    ws = WholeSpace.__new__(WholeSpace)
-    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1
-    return ws
-
-
-def test_shift_pushes_the_semantic_referent():
-    rows = torch.rand(3, D)
-    ss = make_ws()
-    _knob("on")
-    try:
-        ws = _bound_ss(rows)
-        d = ws.shift_word(ss, 0, 7, rows)
-        assert d['action'] == 'use'
-        assert torch.equal(ss._idea_buffer[0, 0], rows[1]), (
-            "the dereferenced SEMANTIC row crosses -- the word is part "
-            "of the sentence; the referent is not")
-        assert int(ss._idea_depth[0].item()) == 1
-    finally:
-        _knob(None)
-
-
-def test_unknown_word_shifts_ignorance_placeholder():
-    rows = torch.rand(3, D)
-    ss = make_ws()
-    _knob("on")
-    try:
-        ws = WholeSpace.__new__(WholeSpace)
-        d = ws.shift_word(ss, 0, 99, rows, licensed=False)
-        assert d['action'] == 'placeholder'
-        assert (ss._idea_buffer[0, 0] == 0).all(), "a = 0 placeholder"
-        assert int(ss._idea_depth[0].item()) == 1, (
-            "the placeholder still occupies the word's position")
-    finally:
-        _knob(None)
-
-
-def test_marker_word_binds_router_and_shifts_nothing():
-    rows = torch.rand(3, D)
-    ss = make_ws()
-    _knob("on")
-    try:
-        ws = WholeSpace.__new__(WholeSpace)
-        before = snapshot(ss)
-        d = ws.shift_word(ss, 0, 5, rows, marker=True)
-        after = snapshot(ss)
-        assert d['action'] == 'marker-bind'
-        assert not idea_changed(before, after), "nothing shifts"
-        assert not cons_changed(before, after)
-        assert ws.gate_log[-1]['action'] == 'marker-bind', "logged"
-    finally:
-        _knob(None)
-
-
-def test_mention_shifts_the_word_code_verbatim():
-    rows = torch.rand(3, D)
-    ss = make_ws()
-    _knob("on")
-    try:
-        ws = WholeSpace.__new__(WholeSpace)
-        # A zero-banded word code (the signature that marks form
-        # content): what-part then zeroed where/when.
-        code = symbol_code(7, n_what=2, n_where=1, n_when=1)
-        d = ws.shift_word(ss, 0, 7, rows, mention=True, word_vec=code)
-        assert d['action'] == 'mention-shift'
-        assert torch.equal(ss._idea_buffer[0, 0], code), (
-            "quotation: the form itself crosses, no deref")
-        with pytest.raises(ValueError):
-            ws.shift_word(ss, 0, 7, rows, mention=True)   # needs the code
-    finally:
-        _knob(None)
-
-
-# ---------------------------------------------------------------------------
-# Single-writer mutex: each move writes exactly one workspace.
-# ---------------------------------------------------------------------------
-
-def test_one_move_one_workspace_write():
-    rows = torch.rand(3, D)
-    ss = make_ws()
-    _knob("on")
-    try:
-        ws = _bound_ss(rows)
-        # SPLIT writes the constituent stack only.
-        ss.constituent_push(0, torch.rand(D))
-        before = snapshot(ss)
-        ss.constituent_split(0, torch.rand(D), torch.rand(D))
-        after = snapshot(ss)
-        assert cons_changed(before, after) and not idea_changed(before, after)
-        # SHIFT writes the idea stack only.
-        before = snapshot(ss)
-        ws.shift_word(ss, 0, 7, rows)
-        after = snapshot(ss)
-        assert idea_changed(before, after) and not cons_changed(before, after)
-    finally:
-        _knob(None)
-
-
-# ---------------------------------------------------------------------------
-# Deref/decode round-trip; reduce-chain vs parallel extent; parallel
-# mode leaves the serial stacks untouched.
-# ---------------------------------------------------------------------------
-
-def test_deref_round_trip_preserves_extent():
-    rows = torch.rand(3, D)
-    ss = make_ws()
-    _knob("on")
-    try:
-        ws = WholeSpace.__new__(WholeSpace)
-        ext = torch.rand(D) * 0.5 + 0.2
-        ws.interpret_word(7, licensed=True, object_id=1, extent=ext)
-        ws.shift_word(ss, 0, 7, rows)
-        assert torch.equal(ss._idea_buffer[0, 0], rows[1]), (
-            "deref → decode lands the bound row exactly")
-        assert torch.equal(ws.reference_table.extent_of(7), ext)
-    finally:
-        _knob(None)
 
 
 def test_serial_reduce_chain_matches_parallel_sigma_extent():

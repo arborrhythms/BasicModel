@@ -1,0 +1,273 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained"
+  ],
+  "completed": [
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05814541701693088,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0430634580552578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027759707998484373,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04071116691920906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029024624964222312,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4826057500904426,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.028407291043549776,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07668091694358736,
+      "message": "",
+      "stdout": "uction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.0.routing_proj\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.0.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.4\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.5.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.6\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.6.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.perceptualSpace._percept_store.byte_fallback\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.0.analysis_store\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.1.analysis_store\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.2.analysis_store\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}}\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025689292000606656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07416650000959635,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.016s)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05638516694307327,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.013s)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026117125060409307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03227595891803503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0608669159701094,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.013s)\r\nbatch = 0 (\u0394=0.013s)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.041456000064499676,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11751437501516193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02288879209663719,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026031916961073875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04852387495338917,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.013s)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.16145933303050697,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.012s)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7860/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7860/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7860/test_synthesized_answer_checkp0/synth.ckpt\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06010287499520928,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.012s)\r\nbatch = 0 (\u0394=0.012s)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04820158297661692,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.012s)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027316750027239323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.059192416025325656,
+      "message": "test/test_output_synthesis.py:686: in test_model_trains_with_teacher_detached\n    m.runEpoch(optimizer=opt, batchSize=2, split=\"train\", max_batches=2)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.013s, 50.00%)\r\nbatch = 2 (\u0394=0.014s, 100.00%)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014971583033911884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07629524997901171,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

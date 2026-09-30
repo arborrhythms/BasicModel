@@ -1,0 +1,20 @@
+{
+  "parent_inherited": {
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "OPENBLAS_NUM_THREADS": null,
+    "VECLIB_MAXIMUM_THREADS": null,
+    "NUMEXPR_NUM_THREADS": null,
+    "TORCHINDUCTOR_COMPILE_THREADS": null
+  },
+  "guarded_worker": {
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "TORCHINDUCTOR_COMPILE_THREADS": "1"
+  },
+  "diagnostic_driver_sha256": "3a8c6cddb7f48c7b23c4e9c11f0bff3c730f153e4ec42c41fee63797ca03446a",
+  "finding": "The existing diagnostic repeats inherited the parent environment instead of the guarded worker environment. Historical repeats remain diagnostics and are not repeated."
+}

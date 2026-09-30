@@ -1,0 +1,3 @@
+test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow
+
+1 test collected in 1.03s

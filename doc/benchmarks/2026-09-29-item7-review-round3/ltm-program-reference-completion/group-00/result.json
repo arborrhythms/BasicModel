@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00/worker-000.json"
+      ],
+      "pid": 33376,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438994120,
+      "elapsed_seconds": 4.464077667100355,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06342500005848706,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00",
+  "elapsed_seconds": 9.094049750128761,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 438994120,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00/collect.json"
+    ],
+    "pid": 33341,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435438816,
+    "elapsed_seconds": 4.404536625137553,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

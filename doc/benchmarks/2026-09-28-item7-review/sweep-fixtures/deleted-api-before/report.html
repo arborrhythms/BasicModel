@@ -1,0 +1,267 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 55/55 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0001550830202177167</pre></td><td><pre>test/test_operator_codebook_shaping.py:50: in test_shape_operators_selects_correct_op_per_context
+    ws = _ws_with_ops(&quot;conjunction&quot;, &quot;disjunction&quot;)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_seed_operator_vector&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00010283291339874268</pre></td><td><pre>test/test_operator_codebook_shaping.py:65: in test_shape_operators_writes_back_to_codebook
+    ws = _ws_with_ops(&quot;conjunction&quot;, &quot;disjunction&quot;)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_seed_operator_vector&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>9.212503209710121e-05</pre></td><td><pre>test/test_operator_codebook_shaping.py:77: in test_shape_operators_weak_signal_still_shapes
+    ws = _ws_with_ops(&quot;conjunction&quot;, &quot;disjunction&quot;)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_seed_operator_vector&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>8.737493772059679e-05</pre></td><td><pre>test/test_operator_codebook_shaping.py:89: in test_shape_operators_handles_unary_and_binary_ops
+    ws = _ws_with_ops(&quot;exist&quot;, &quot;conjunction&quot;)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operator_codebook_shaping.py:36: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_seed_operator_vector&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.04824475001078099</pre></td><td><pre>test/test_topk_priming_codebook_growth.py:67: in test_stale_short_boosts_after_codebook_growth_no_crash
+    mask = ss._topk_priming_mask(act)
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02299358299933374</pre></td><td><pre>test/test_topk_priming_codebook_growth.py:81: in test_stale_long_boosts_truncated_no_crash
+    mask = ss._topk_priming_mask(act)
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02285845798905939</pre></td><td><pre>test/test_topk_priming_codebook_growth.py:90: in test_no_intent_is_byte_identical_noop
+    assert ss._topk_priming_mask(act) is None
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.022848083055578172</pre></td><td><pre>test/test_topk_priming_codebook_growth.py:98: in test_exact_length_boosts_unchanged
+    mask = ss._topk_priming_mask(act)
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.022903540986590087</pre></td><td><pre>test/test_topk_priming_codebook_growth.py:109: in test_n_equals_one_returns_none
+    assert ss._topk_priming_mask(act) is None
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.045838332967832685</pre></td><td><pre>test/test_ps_ss_binding.py:67: in test_ps_to_ws_null_before_binding
+    vec, pos, grounded = ws.resolve_ps_terminal(4242, promote_threshold=2)
+                         ^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;resolve_ps_terminal&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02254937496036291</pre></td><td><pre>test/test_ps_ss_binding.py:77: in test_ps_to_ws_binding_after_repetition
+    _, _, g1 = ws.resolve_ps_terminal(pid, promote_threshold=2)
+               ^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;resolve_ps_terminal&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.022389000048860908</pre></td><td><pre>test/test_ps_ss_binding.py:94: in test_byte_fallback_terminal_is_never_grounded
+    vec, pos, grounded = ws.resolve_ps_terminal(-1, promote_threshold=2)
+                         ^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;resolve_ps_terminal&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0009042910533025861</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_active_codebook_reads.py::test_standalone_default_remains_all_active</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00043699995148926973</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00030633294954895973</pre></td><td><pre>test/test_active_codebook_reads.py:85: in test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match
+    row, _distance = ws.nearest_ws_row(query)
+                     ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;nearest_ws_row&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00033416692167520523</pre></td><td><pre>test/test_active_codebook_reads.py:106: in test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation
+    ws.ensure_ws_position(3)
+    ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;ensure_ws_position&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.04147375002503395</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00030083395540714264</pre></td><td><pre>test/test_active_codebook_reads.py:136: in test_topk_priming_scores_only_active_rows
+    mask = ws._topk_priming_mask(act)
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00028799998108297586</pre></td><td><pre>test/test_active_codebook_reads.py:149: in test_semantic_arrangement_is_invariant_to_inactive_tail
+    first = ws.semantic_arrangement_loss(torch.tensor([0]))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;semantic_arrangement_loss&#x27;. Did you mean: &#x27;semantic_arrangement_weight&#x27;?</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_analysis_attention_gate.py::test_no_intent_is_a_noop</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00022495898883789778</pre></td><td><pre>test/test_analysis_attention_gate.py:41: in test_no_intent_is_a_noop
+    s = _stub(boosts=None)
+        ^^^^^^^^^^^^^^^^^^
+test/test_analysis_attention_gate.py:36: in _stub
+    WholeSpace._topk_priming_mask, s)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;WholeSpace&#x27; has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0027373749762773514</pre></td><td><pre>test/test_analysis_attention_gate.py:49: in test_mask_keeps_top_half_and_is_shape_safe
+    s = _stub(boosts=boosts)
+        ^^^^^^^^^^^^^^^^^^^^
+test/test_analysis_attention_gate.py:36: in _stub
+    WholeSpace._topk_priming_mask, s)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;WholeSpace&#x27; has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0003892079694196582</pre></td><td><pre>test/test_analysis_attention_gate.py:70: in test_priming_selects_the_aligned_positions
+    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;WholeSpace&#x27; has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>8.758297190070152e-05</pre></td><td><pre>test/test_analysis_attention_gate.py:87: in test_no_codebook_is_a_noop
+    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;WholeSpace&#x27; has no attribute &#x27;_topk_priming_mask&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0007738749263808131</pre></td><td><pre>test/test_semantic_categories_pipeline.py:42: in test_shape_then_recover_categorizes_by_operator_effect
+    ws = _ws_with_ops(&quot;conjunction&quot;, &quot;disjunction&quot;)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_semantic_categories_pipeline.py:33: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_seed_operator_vector&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0010789170628413558</pre></td><td><pre>test/test_semantic_categories_pipeline.py:75: in test_recovers_on_transitional_grammar_participation
+    g.load_from_grammar_file(os.path.join(
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f&quot;Grammar file not found: {path}&quot;)
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.002487374935299158</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003382499562576413</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.045770375058054924</pre></td><td><pre>test/test_operator_superposition.py:106: in test_operator_superposition_resolves_against_codebook
+    qv = ws.operation_vector(target)
+         ^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;operation_vector&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.046073334058746696</pre></td><td><pre>test/test_ss_codebook_operations.py:86: in test_operations_inserted_into_ws_codebook
+    pos_map = ws.insert_operations(g)
+              ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;insert_operations&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_ss_codebook_operations.py::test_build_auto_inserts_operations</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.023153375019319355</pre></td><td><pre>test/test_ss_codebook_operations.py:117: in test_build_auto_inserts_operations
+    assert ws.operation_position(op) is not None, (
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;operation_position&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02285804192069918</pre></td><td><pre>test/test_ss_codebook_operations.py:127: in test_insert_operations_is_idempotent
+    first = ws.insert_operations(g)
+            ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;insert_operations&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.023026666953228414</pre></td><td><pre>test/test_ss_codebook_operations.py:140: in test_operations_are_distinct_from_meaning_symbols
+    pos_map = ws.insert_operations(g)
+              ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;insert_operations&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0001787920482456684</pre></td><td><pre>test/test_merge_structural_not_operator.py:48: in test_merge_not_inserted_as_operator
+    ws, g = _ws_and_grammar()
+            ^^^^^^^^^^^^^^^^^
+test/test_merge_structural_not_operator.py:40: in _ws_and_grammar
+    g.load_from_grammar_file(grammar_file)
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f&quot;Grammar file not found: {path}&quot;)
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0001177499070763588</pre></td><td><pre>test/test_merge_structural_not_operator.py:60: in test_semantic_operators_still_inserted
+    ws, g = _ws_and_grammar()
+            ^^^^^^^^^^^^^^^^^
+test/test_merge_structural_not_operator.py:40: in _ws_and_grammar
+    g.load_from_grammar_file(grammar_file)
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f&quot;Grammar file not found: {path}&quot;)
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00011912500485777855</pre></td><td><pre>test/test_merge_structural_not_operator.py:69: in test_only_semantic_operators_in_codebook
+    ws, g = _ws_and_grammar()
+            ^^^^^^^^^^^^^^^^^
+test/test_merge_structural_not_operator.py:40: in _ws_and_grammar
+    g.load_from_grammar_file(grammar_file)
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f&quot;Grammar file not found: {path}&quot;)
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_search_then_mint.py::test_gate_requires_the_knob</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00012900005094707012</pre></td><td><pre>test/test_search_then_mint.py:49: in test_gate_requires_the_knob
+    ws.interpret_word(3)
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0001068750862032175</pre></td><td><pre>test/test_search_then_mint.py:60: in test_unlicensed_miss_is_a_placeholder_never_a_row
+    d = ws.interpret_word(7, licensed=False)
+        ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_search_then_mint.py::test_licensed_miss_mints_then_hits</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>8.804199751466513e-05</pre></td><td><pre>test/test_search_then_mint.py:73: in test_licensed_miss_mints_then_hits
+    d1 = ws.interpret_word(7, licensed=True, object_id=2)
+         ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>8.858297951519489e-05</pre></td><td><pre>test/test_search_then_mint.py:90: in test_licensed_miss_without_object_stays_placeholder
+    d = ws.interpret_word(9, licensed=True, object_id=None)
+        ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_search_then_mint.py::test_mint_gauge_orients_object_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00021404202561825514</pre></td><td><pre>test/test_search_then_mint.py:103: in test_mint_gauge_orients_object_row
+    d = ws.interpret_word(5, licensed=True, object_id=0,
+        ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00018641597125679255</pre></td><td><pre>test/test_search_then_mint.py:138: in test_mint_shift_pushes_the_oriented_row
+    d = ws.shift_word(ss, 0, 9, rows, licensed=True, object_id=1,
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;shift_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_search_then_mint.py::test_folds_never_create_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>8.533394429832697e-05</pre></td><td><pre>test/test_search_then_mint.py:157: in test_folds_never_create_rows
+    ws.interpret_word(1, licensed=True, object_id=0)
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_constituent_stack_mechanics</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.000325417029671371</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002633749973028898</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_split_replaces_whole_with_parts</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0001676660031080246</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00012695800978690386</pre></td><td><pre>test/test_serial_stm_split.py:140: in test_shift_pushes_the_semantic_referent
+    ws = _bound_ss(rows)
+         ^^^^^^^^^^^^^^^
+test/test_serial_stm_split.py:131: in _bound_ss
+    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -&gt; row 1
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00011987506877630949</pre></td><td><pre>test/test_serial_stm_split.py:157: in test_unknown_word_shifts_ignorance_placeholder
+    d = ws.shift_word(ss, 0, 99, rows, licensed=False)
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;shift_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00011691695544868708</pre></td><td><pre>test/test_serial_stm_split.py:173: in test_marker_word_binds_router_and_shifts_nothing
+    d = ws.shift_word(ss, 0, 5, rows, marker=True)
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;shift_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0002502909628674388</pre></td><td><pre>test/test_serial_stm_split.py:192: in test_mention_shifts_the_word_code_verbatim
+    d = ws.shift_word(ss, 0, 7, rows, mention=True, word_vec=code)
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;shift_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_one_move_one_workspace_write</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00010837498120963573</pre></td><td><pre>test/test_serial_stm_split.py:211: in test_one_move_one_workspace_write
+    ws = _bound_ss(rows)
+         ^^^^^^^^^^^^^^^
+test/test_serial_stm_split.py:131: in _bound_ss
+    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -&gt; row 1
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00014483300037682056</pre></td><td><pre>test/test_serial_stm_split.py:239: in test_deref_round_trip_preserves_extent
+    ws.interpret_word(7, licensed=True, object_id=1, extent=ext)
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;interpret_word&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015915840631350875</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0001231249189004302</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0024625000078231096</pre></td><td><pre>test/test_basicmodel.py:3086: in test_symbol_objective_residual_primary_l1_secondary
+    terms = sym._compute_symbol_terms(predicted, target=target)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_compute_symbol_terms&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018078749999403954</pre></td><td><pre>test/test_basicmodel.py:3127: in test_symbol_objective_uses_nearest_codebook_target
+    terms = sym._compute_symbol_terms(predicted, use_codebook_target=True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_compute_symbol_terms&#x27;</pre></td><td><pre></pre></td></tr></table></body></html>

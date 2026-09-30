@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-thought-reasoning/run/worker-010.recycle.json"
+}

@@ -1,0 +1,60 @@
+..F.................                                                     [100%]
+=================================== FAILURES ===================================
+_________ test_dictionary_checkpoint_warns_and_keeps_prior_properties __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7924/test_dictionary_checkpoint_war0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123453020>
+
+    def test_dictionary_checkpoint_warns_and_keeps_prior_properties(tmp_path, monkeypatch):
+        from test_meronomy_ladder import _build_ladder_variant
+        from checkpoint_migrations import is_legacy_wholespace_dense_key
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = _build_ladder_variant(tmp_path, 'old_dictionary_checkpoint', [])
+        try:
+            priors = [{name: value.detach().clone() for name, value in ws.subspace.what.state_dict().items()}
+                      for ws in model.wholeSpaces]
+            state = {name: value.detach().clone() for name, value in model.state_dict().items()}
+            for name, value in state.items():
+                if is_legacy_wholespace_dense_key(name):
+                    state[name] = torch.full_like(value, 71)
+            checkpoint = tmp_path / 'dictionary.ckpt'
+            torch.save({'state_dict': state,
+                        'vocab_extras': {'well_known_atoms': {'cat': 12},
+                                         'ws_taxonomy_extras': {'taxonomy': {7: [2, 3]}}},
+                        'structural_extras': {'version': 1, 'whole_spaces': {
+                            '0': {'attributes': {'_word_whole_ss': {'cat': 12}}}}}}, checkpoint)
+            with pytest.warns(UserWarning, match='11.4'):
+                assert model.load_weights(checkpoint)
+            for ws, prior in zip(model.wholeSpaces, priors):
+                assert not hasattr(ws, '_word_whole_ss')
+                assert not hasattr(ws, 'taxonomy')
+                assert not hasattr(ws, '_ws_pos_to_row')
+                for name, value in ws.subspace.what.state_dict().items():
+>                   torch.testing.assert_close(value, prior[name], rtol=0, atol=0)
+E                   AssertionError: Tensor-likes are not equal!
+E                   
+E                   Mismatched elements: 1766 / 1048576 (0.2%)
+E                   Greatest absolute difference: 1 at index (0, 0)
+E                   Greatest relative difference: 1.0 at index (0, 0)
+
+test/test_item7_property_only.py:68: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] checkpoint schema migration reset 12 obsolete WholeSpace dense tensor(s) (28.0 MiB); live property rows retain deterministic initialization
+[BasicModel] checkpoint schema migration dropped legacy WholeSpace word/META structure (§11.4): vocab_extras.well_known_atoms, vocab_extras.ws_taxonomy_extras, structural_extras.whole_spaces
+[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7924/test_dictionary_checkpoint_war0/dictionary.ckpt
+  Keys in model but missing from file: 12 (initialized fresh)
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7924/test_dictionary_checkpoint_war0/dictionary.ckpt
+=============================== warnings summary ===============================
+test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:5558: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 21 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties
+1 failed, 19 passed, 2 warnings in 5.19s

@@ -1,0 +1,18 @@
+doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_diagnosis.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read
+doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_diagnosis.py::test_repeated_sentences_record_their_actual_new_identities
+
+=============================== warnings summary ===============================
+test/test_mm_xor.py:171
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test/test_mm_xor.py:176
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test/test_mm_xor.py:182
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 tests collected in 1.95s

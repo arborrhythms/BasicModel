@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00/worker-000.json"
+      ],
+      "pid": 64253,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1895418784,
+      "elapsed_seconds": 309.6592139590066,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 303.2088787499815,
+          "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py:45: in test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer\n    torch.testing.assert_close(query[0, 0], expected)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 264 / 264 (100.0%)\nE   Greatest absolute difference: 0.2651802599430084 at index (204,) (up to 1e-05 allowed)\nE   Greatest relative difference: 1119.2398681640625 at index (69,) (up to 1.3e-06 allowed)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00",
+  "elapsed_seconds": 311.93614024994895,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1895418784,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00/collect.json"
+    ],
+    "pid": 64234,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180568928,
+    "elapsed_seconds": 2.035147374961525,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

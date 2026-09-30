@@ -1,0 +1,24 @@
+{
+  "groups": [
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_reduction_pressure.py::test_native_sentence_closing_reduces_unary_biased_readings",
+      "reason": "collection_exit",
+      "exit_code": 4,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-02/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

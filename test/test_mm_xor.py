@@ -106,16 +106,11 @@ class TestMMXorConvergence(unittest.TestCase):
     # test_forward_reverse_reconstructs_input_state retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_forward_keeps_continuous_symbols(self):
-        """The recurrent path should not collapse via symbol VQ.
+        """The forward's symbolic activation retains continuous variation.
 
-        Updated 2026-05-20: ``m.forward`` writes a reduced terminal
-        event ([B, 1, D]) into ``wholeSpace.subspace`` on its way
-        through the head — that final reduction is intentionally
-        sparse on an untrained model and isn't where VQ collapse would
-        show. Probe the per-stage symbolic activation directly (call
-        the symbol space on the percept stage's output) — that's the
-        signal that codebook-snap can collapse and the variance check
-        is meaningful there."""
+        WholeSpace is only the property basis. Read the model's published
+        symbolic state; its concept activations must not collapse via VQ.
+        """
         import torch
 
         m, _, _ = _fresh_model()
@@ -126,10 +121,7 @@ class TestMMXorConvergence(unittest.TestCase):
             inp_items, _ = next(iter(loader))
             inputTensor = m.inputSpace.prepInput(inp_items)
             with torch.no_grad():
-                in_sub, _ = m.inputSpace.forward(inputTensor)
-                ps_sub = m.perceptualSpace.forward(in_sub)
-                ws_sub = m.wholeSpace.forward(ps_sub)
-        symbols = ws_sub.materialize()
+                _, symbols, _, _ = m.forward(inputTensor)
         self.assertTrue(torch.isfinite(symbols).all())
         self.assertGreater(symbols.std().item(), 1e-6,
                            "Symbolic activation collapsed to a single VQ "

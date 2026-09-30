@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+  ],
+  "completed": [
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-04/worker-000.json"
+      ],
+      "pid": 66783,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 517342648,
+      "elapsed_seconds": 7.716007957933471,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+      ],
+      "completed": [
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.1325224158354104,
+          "message": "test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode\n    assert memory.get_what_slots(b=0) == []\nE   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []\nE     \nE     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0000, 0.0000, 0.8196, 0.0000, 0.7914, 0.6919, 0.2129, 1.9925,\\n          0.4234, 1.9584, 0.04... 'iteration': 0, 'closure_pressure': 0.0, 'forced': False, 'temporal': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))\nE     Use -v to get more diff",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-04",
+  "elapsed_seconds": 14.398873250000179,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 517342648,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-04/collect.json"
+    ],
+    "pid": 66740,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432112888,
+    "elapsed_seconds": 6.383662125095725,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-before/group-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

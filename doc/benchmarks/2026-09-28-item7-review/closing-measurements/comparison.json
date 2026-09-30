@@ -1,0 +1,35 @@
+{
+  "serial-baseline": {
+    "all_numeric_batch_results_exact": true,
+    "complete_parity_report_exact": true,
+    "reconstruction": [
+      {
+        "phase": "before_training",
+        "mean": 0.12243161350488663
+      },
+      {
+        "phase": "training",
+        "mean": 0.11974661648273469
+      },
+      {
+        "phase": "after_training",
+        "mean": 0.12279699929058552
+      }
+    ],
+    "mean_sentence_byte_cost": null
+  },
+  "packed": {
+    "all_numeric_batch_results_exact": true,
+    "complete_parity_report_exact": true,
+    "reconstruction": [],
+    "mean_sentence_byte_cost": 0.38411848741816357
+  },
+  "single": {
+    "all_numeric_batch_results_exact": true,
+    "complete_parity_report_exact": true,
+    "reconstruction": [],
+    "mean_sentence_byte_cost": 0.3841184933844488
+  },
+  "protocol": "The reviewed fixed seed and budgets are unchanged. Only timing and source metadata are excluded from the numerical comparison.",
+  "source_match": "review-source-equivalence.json"
+}

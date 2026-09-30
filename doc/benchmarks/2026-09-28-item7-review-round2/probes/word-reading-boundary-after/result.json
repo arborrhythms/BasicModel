@@ -1,0 +1,842 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+    "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+    "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+    "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+    "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+    "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+    "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+    "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+    "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+    "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+    "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-000.json"
+      ],
+      "pid": 78142,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 692258328,
+      "elapsed_seconds": 3.9784726249054074,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+      ],
+      "completed": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05833937495481223,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.19231454108376056,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.13950499997008592,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00025749998167157173,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-001.json"
+      ],
+      "pid": 78153,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 432932136,
+      "elapsed_seconds": 3.6224956249352545,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+        "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+        "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+        "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+        "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+      ],
+      "completed": [
+        "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+        "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+        "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+        "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+        "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00334341695997864,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002080707927234471,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017041249666363,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016974579775705934,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0015612500719726086,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009398416033945978,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002083832980133593,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 9.537499863654375e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 147, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 7.762503810226917e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 162, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018847089959308505,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017253750702366233,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 7.84589210525155e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 202, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00011583301238715649,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 221, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013131416984833777,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 9.14999982342124e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 279, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00014404195826500654,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 311, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-002.json"
+      ],
+      "pid": 78161,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 584304056,
+      "elapsed_seconds": 5.599618250038475,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05644679209217429,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0439800830790773,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03280262497719377,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04587370797526091,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.033497874974273145,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.39614262501709163,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03393958299420774,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08473958296235651,
+          "message": "",
+          "stdout": "eak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.0.routing_proj\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.0.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.4\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.5.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.6\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.6.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.perceptualSpace._percept_store.byte_fallback\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.0\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.1\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.2\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}}\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.031572834006510675,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.07357929192949086,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.015s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06349687499459833,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03097779199015349,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03681391605641693,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06886791693978012,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.015s)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04985012498218566,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03140333294868469,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.11207658390048891,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03440850006882101,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06065054202917963,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.016s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.1799980419455096,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.015s)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8214/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8214/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8214/test_synthesized_answer_checkp0/synth.ckpt\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.07233287498820573,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0601138329366222,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.035343124996870756,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08027883304748684,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.015s, 50.00%)\r\nbatch = 2 (\u0394=0.016s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=False).\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.014472540933638811,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08261475001927465,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-003.json"
+      ],
+      "pid": 78181,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 445760856,
+      "elapsed_seconds": 3.784131625085138,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00814741593785584,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 9.641691576689482e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 182, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03311341698281467,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.062490426003933e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 9.55420546233654e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 7.912504952400923e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 176, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.591706864535809e-05,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after",
+  "elapsed_seconds": 21.065455834032036,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 692258328,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/collect.json"
+    ],
+    "pid": 78125,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 494863608,
+    "elapsed_seconds": 3.682681915932335,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-reading-boundary-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+        "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+        "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+        "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+        "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+        "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+        "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

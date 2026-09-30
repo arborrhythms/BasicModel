@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_is_zero_on_the_atomic_cold_start"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_is_zero_on_the_atomic_cold_start"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_unit_fraction_is_zero_on_the_atomic_cold_start",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3251095418818295,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

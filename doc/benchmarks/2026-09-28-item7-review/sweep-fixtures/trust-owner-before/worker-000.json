@@ -1,0 +1,143 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_compute_learn_score]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_is_truth_obvious]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_resolves_contradiction]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_route_learned_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_maybe_learn_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[learn_relations_from_stm]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_relation_is_reducible]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_collapse_trust]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]"
+  ],
+  "completed": [
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_compute_learn_score]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_is_truth_obvious]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_resolves_contradiction]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_route_learned_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_maybe_learn_relation]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[learn_relations_from_stm]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_relation_is_reducible]",
+    "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_collapse_trust]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_compute_learn_score]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001307500060647726,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_children_in_codebook]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.787501767277718e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_is_truth_obvious]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.937506936490536e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_resolves_contradiction]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.808297570794821e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_route_learned_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.604205843061209e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_maybe_learn_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.666689973324537e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[learn_relations_from_stm]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.908298332244158e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_relation_is_reducible]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.941600728780031e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_collapse_trust]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.166693780571222e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021387499291449785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0012920410372316837,
+      "message": "test/test_truth_criterion_gates_learning.py:21: in test_registration_does_not_depend_on_testimony_trust\n    assert store.row(row)['evidence'] == pytest.approx((max(trust, 0.), max(-trust, 0.)))\nE   assert (0.0, 0.0) == approx((0.3 \u00b1....0 \u00b1 1.0e-12))\nE     \nE     comparison failed. Mismatched elements: 1 / 2:\nE     Max absolute difference: 0.3\nE     Max relative difference: inf\nE     Index | Obtained | Expected     \nE     0     | 0.0      | 0.3 \u00b1 3.0e-07",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0011893750634044409,
+      "message": "test/test_truth_criterion_gates_learning.py:21: in test_registration_does_not_depend_on_testimony_trust\n    assert store.row(row)['evidence'] == pytest.approx((max(trust, 0.), max(-trust, 0.)))\nE   assert (0.0, 0.0) == approx((1.0 \u00b1....0 \u00b1 1.0e-12))\nE     \nE     comparison failed. Mismatched elements: 1 / 2:\nE     Max absolute difference: 1.0\nE     Max relative difference: inf\nE     Index | Obtained | Expected     \nE     0     | 0.0      | 1.0 \u00b1 1.0e-06",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0012304580304771662,
+      "message": "test/test_truth_criterion_gates_learning.py:21: in test_registration_does_not_depend_on_testimony_trust\n    assert store.row(row)['evidence'] == pytest.approx((max(trust, 0.), max(-trust, 0.)))\nE   assert (0.0, 0.0) == approx((0.0 \u00b1....7 \u00b1 7.0e-07))\nE     \nE     comparison failed. Mismatched elements: 1 / 2:\nE     Max absolute difference: 0.7\nE     Max relative difference: inf\nE     Index | Obtained | Expected     \nE     1     | 0.0      | 0.7 \u00b1 7.0e-07",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,35 @@
+{
+  "configuration": "data/MM_grammar_wording.xml",
+  "seed": null,
+  "input": [
+    [
+      "hello world",
+      "loving there",
+      "hello there"
+    ]
+  ],
+  "new_estimates": [
+    {
+      "source_count": 1,
+      "resolved_count": 1,
+      "definition_count": 0,
+      "relation_kinds": [
+        0
+      ]
+    },
+    {
+      "source_count": 2,
+      "resolved_count": 2,
+      "definition_count": 0,
+      "relation_kinds": [
+        0,
+        0
+      ]
+    }
+  ],
+  "predictor_rows": 3,
+  "predictor_definitions": 0,
+  "definition_share": 0.0,
+  "store_rows": 9,
+  "definition_rows": 4
+}

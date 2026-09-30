@@ -28,6 +28,41 @@ The central collection hook skips them before fixture setup unless `RUN_SLOW=1`.
 A slow check keeps its assertions and any explicit expected-failure status;
 skipping it in the default run is not evidence that its learning gate passed.
 
+**Required XOR table (Alec, 2026-09-29).** Every receipt includes the six
+grounded cases in `test_grounded_xor.py`, the three curriculum cases in
+`test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse`,
+both `TestXorExactCliReconstruction` gates in `test_explicit_dimensions.py`,
+and all three slow `TestMMXorConvergence` cases in `test_mm_xor.py`
+(`test_convergence`, `test_learns_xor_signal`, and
+`test_mm_grammar_learns_xor_signal`). Run the slow gates explicitly with
+`RUN_SLOW=1`; the default sweep's skips do not supply these measurements.
+Also run and record `TestXorGrammarLearnsXor::test_xor_class_accuracy` and
+`TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`.
+XOR_grammar is a gate of the grammatical operators update, not of item 7.
+The [round-3 receipt](benchmarks/2026-09-29-item7-review-round3/README.md)
+records the baseline and each stage's complete table. Keep the predictions
+and errors, including failures; a loose signal threshold alone does not
+establish XOR learning. A case stopped by the unchanged 8 GiB guard runs
+once more without that guard as a separate diagnostic, never as a replacement
+passing gate. See [the decided work list](specs/2026-09-16-two-truths-ideas-and-relations.md#16-hand-off-to-codex-claude-2026-09-29-what-to-change-after-review-round-3).
+
+The September 29 implementation's [final explicit selection](benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/summary.json)
+accounts for 199 cases: 195 passed, two XOR_grammar failures, one depth-3
+skip for the missing mature checkpoint, and one graph-release memory stop.
+All 170 item 7 cases and all four strict parity checks pass. The category
+codebook and 64-word trace remain below 1 GiB. Reconstruction keeps all eight
+declared seeds per tree, including the candidate seed-2 memory stop and its
+separate diagnostic. The ten MM_grammar attempts complete 10/10 at HEAD and
+8/10 in the candidate; two clause-capacity failures remain visible. The
+receipt reports the incomplete predictor-context observation separately.
+The [one full sweep](benchmarks/2026-09-29-item7-review-round3/full-sweep/summary.json)
+matches that source and completes all 5,050 cases: **4,714 passed, 13 failed,
+322 skipped and one expected failure**. Six of those failures passed in
+round 2; fourteen of its sixteen regressions now pass. The sweep has no
+resource stops and peaks at 7.24 GiB per worker. The candidate remains
+unaccepted and uncommitted, stopped for Claude's review with every failure
+and the separate explicit resource failures recorded.
+
 ```sh
 make test_all TEST_ARGS='test/test_output_path_supervised.py -k memorizes --timeout 1800'
 ```
@@ -984,7 +1019,7 @@ todo reconciliation were added after validation; neither changes tested source.
 `test_reconstruction_priority.py` becomes `test_joint_objectives.py`. Its
 real packed prediction, exact reconstruction-family learning, shared ownership,
 independent heads, sparse updates, AMP, one-backward/one-step, truth scaling and
-seal-layout checks remain. The retired tests' dispositions are:
+closing-layout checks remain. The retired tests' dispositions are:
 
 | Old check | Disposition |
 |---|---|
@@ -1258,7 +1293,7 @@ source map.
 
 ## Negative-image expectation (September 21)
 
-Item 2 implements pure composition, the per-role signed image at the seal,
+Item 2 implements pure composition, the per-role signed image at the closing,
 all-role surprise, observation/estimate retention, grammatical object masks,
 and residual credit on the existing controller. The design, configuration and
 checkpoint migrations are in [ExpectationRetention](ExpectationRetention.md).
@@ -1269,7 +1304,7 @@ residuals on empty roles and missing durable surprise. Native exploration then
 exposed two integration defects: `what` could bind a declarative description,
 and a subsequent declarative input attempted to append a legacy parity slot to
 ordinary thought history. The catalogue now uses known question occurrences
-for `what`; sealed observations stay with their existing observation owner.
+for `what`; ended observations stay with their existing observation owner.
 The final generation smoke also caught raw text crossing the tensor input API.
 Packed native exploration exposed the new object-mask lookup's one-record
 limit: a later serial occurrence could not be read. It now scans the bounded
@@ -1568,7 +1603,7 @@ completes **247/247** cases: **219 passed, 28 skipped**, exit 0. The explicit
 unseeded zero-definition XOR gates retain MSE **.5** after 900 updates and
 the unchanged **< .1** learning bar. The expected-failure disposition is
 the September 23 review decision; item 11a owns the end-to-end learning gate.
-The paired LTM seal and object testimony remain item 7.
+The paired LTM closing and object testimony remain item 7.
 
 The final source-matched [full receipt](benchmarks/2026-09-23-item11/full-result.json.gz)
 completes **4,743/4,743** cases: **4,410 passed, 332 skipped and one existing
@@ -1908,11 +1943,11 @@ Final documentation-link verification: **84/84 passed**.
 ## Item 9 first landing: packed/single reconstruction parity (September 25)
 
 The [parity receipt](benchmarks/2026-09-25-item9-parity/README.md) diagnoses the
-current-tree gap before the expectation-learning experiment. Actual seals and
+current-tree gap before the expectation-learning experiment. Actual endings and
 leaves are identical on the declared four-sentence workload. Packed inverse
 search and byte scoring previously admitted neighboring sentences' candidates;
 saved programs also read an unfilled final root slot. Candidate ownership now
-follows sentence ids, and the final seal completes the saved-state bank.
+follows sentence ids, and the final closing completes the saved-state bank.
 
 Earlier packed-answer measurements, including the September 16 supplied-answer
 runs at batch size 2, reconstructed from zero-filled saved states instead of
@@ -1921,7 +1956,7 @@ and must not be cited.
 
 Parity uses atol 1e-6 and rtol 1e-5 for every sentence, with three ambient
 initializations in the regression and the historical seed 42 only for the
-measurement. Every measured seal, saved program root, retained/recovered leaf
+measurement. Every measured closing, saved program root, retained/recovered leaf
 and byte cost agrees exactly. Mean byte cost is **.6839025617** in both layouts;
 the native serial baseline remains **.0891618710** after seven updates.
 
@@ -1984,7 +2019,7 @@ latest plan including §4e. Serial and parallel passes share definitions and
 checkpoint identities. Native percept poles pool inside one field bracket
 before concept folds; events retain inverse attribution. The `interpret`
 operator runs before every serial word composes, owns provisional testimony
-and its reverse, and supplies grammar-selected references to the seal.
+and its reverse, and supplies grammar-selected references to the closing.
 The original schedule replayed N serial sentences in parallel and then applied
 label read-back. That order is superseded by the parallel-first follow-up;
 ordinary serial reading now supplies the symbolic processing. All perceptual codebooks have fixed physical
@@ -2071,7 +2106,7 @@ and symbol ranges, and captured programs carry that band. Its periods derive
 from total capacity; an integer address is decoded when needed. One shared
 `.when` ladder spans LTM capacity, and all percepts in a field share one time.
 The exact clock remains available. Concepts retain their full content width;
-the later item 7 seal still owns writing field coordinates into LTM rows.
+the later item 7 closing still owns writing field coordinates into LTM rows.
 Red probes and the review patch are preserved in the receipt.
 
 The source-matched serial seven-update baseline is **.1505906619 before,
@@ -2359,7 +2394,7 @@ records the shared zero-default sampling temperature, untempered model credit,
 raw-logit tie rule, deterministic exploit-only evaluation and forced-prefix
 replay under updated weights. This archived draft retained one whole batch
 using the existing scalar objective. Alec subsequently confirmed the amended
-per-sentence transaction; the [sentence-seal receipt](benchmarks/2026-09-27-item7-5-seals/README.md)
+per-sentence transaction; the [sentence-closing receipt](benchmarks/2026-09-27-item7-5-seals/README.md)
 supersedes this draft. Its measurements below remain historical evidence.
 
 Affected tests: **132 passed, 13 skipped**. The focused winner/ownership group
@@ -2388,9 +2423,9 @@ The reviewed source and every intermediate failure remain separately preserved.
 Nothing has been committed.
 
 
-## Item 7.5 sentence seals (September 27, reviewed baseline)
+## Item 7.5 sentence endings (September 27, reviewed baseline)
 
-The [sentence-seal receipt](benchmarks/2026-09-27-item7-5-seals/README.md)
+The [sentence-closing receipt](benchmarks/2026-09-27-item7-5-seals/README.md)
 implements the two closing sections of the amended spec. Each sentence index
 across rows has two optimizer updates from one cached perception: exploit,
 then explore under the updated parameters. Reconstruction and prediction stay
@@ -2401,7 +2436,7 @@ only; zero-temperature exploration replays the exploit prefix before the
 uniformly selected forced alternative. Model credit uses the untempered softmax.
 
 The final targeted selection completes **47 cases: 46 passed, one failed**.
-Sentence-seal, causal-context, gradient, temperature, tie, winner, ownership and
+Sentence-closing, causal-context, gradient, temperature, tie, winner, ownership and
 reconstruction mechanism checks pass. The remaining output-mode assertion sees
 a zero question-conditioner gradient and remains red. The seven explicit checks
 complete with **five passes and two unchanged XOR_grammar capacity failures**.
@@ -2449,11 +2484,11 @@ source. Work is stopped for Claude's review. Nothing is committed or pushed.
 The [pressure review receipt](benchmarks/2026-09-27-item7-5-pressure/README.md)
 implements review round 2 and decision 7. The declared default is
 `reducePressure=1.0`, adding `d/a + max(0,d-a)/r` to every binary logit, zero
-when empty. Online allowance reserves the next word's slot; seals use one
+when empty. Online allowance reserves the next word's slot; endings use one
 absolute slot or three relative slots. Hard deadlines mask unary and STOP
 when every remaining round must reduce. Overflow is an assertion.
 
-Per-seal reconstruction and prediction gradient vectors are captured before
+Per-closing reconstruction and prediction gradient vectors are captured before
 their graphs are released, including the exact cached-perception pullback,
 and aggregated into the batch operator report. Four obsolete evaluation call
 lists follow the amended exploit-only contract. The observation, conditioner,
@@ -2463,7 +2498,7 @@ tests and all red/green development attempts are retained in the receipt.
 The targeted selection completes **35 cases: 34 passed and the unchanged
 depth-three failure**, still `[1, 1, 1, 1]`. All three observation tests, both
 output-gradient modes, the operator-gradient report, all 16 interleave tests,
-nine sentence-seal tests and three pair-driver tests pass. The explicit
+nine sentence-closing tests and three pair-driver tests pass. The explicit
 selection has **five passes and two unchanged XOR CLI capacity failures**.
 MM passes this run; the historical **.21757** failure remains visible.
 
@@ -2535,3 +2570,30 @@ Implementation `6906727` contains all 671 frozen source files with every
 committed blob verified against the full-sweep manifest. The landing receipt
 records that verification; the deferred compose decisions remain in the task
 list, with item 7 the next implementation task.
+
+## Item 7 accepted landing (September 30)
+
+Claude's review §24 and hand-off §25, followed by Alec's publication request,
+authorize the three remaining fixture ports. A row-free part/implies predicate
+primes no inventory row and posts no inventory term; renamed vocabularies
+share that predicate while their operands retain independent identities.
+The [landing receipt](benchmarks/2026-09-30-item7-review-round5/landing/README.md)
+retains the complete old/new bodies and the six saved failing proofs.
+
+The six cases pass, their six complete files pass **59/59**, and all
+**202 item-7 cases pass**, without skips or resource stops. Documentation
+links are checked after the final prose. Production code, configurations and
+all other tests match the reviewed full sweep. Per §25, no new sweep is run:
+the original **4,793 passed, six failed, 322 skipped and one expected failure**
+remains intact, and the six test-fixture failures are closed by these checks.
+All sixteen failures carried from rounds 3 and 4 already pass in that sweep.
+
+The sweep took **89.6 minutes**, with unchanged 8 GiB per-worker / 24 GiB
+aggregate guards. Graph release passed at **7.631 GiB**. Both XOR_exact CLI
+gates pass; both XOR_grammar gates remain red and exact MM_20M_xor round trips
+pass **12/15**, with rates .75, .75 and .25 on the three failures. All ten
+MM_grammar runs complete, median ending MSE **.1066178977** against HEAD's
+**.0696157217**. The older eight-seed reconstruction campaign remains
+round-4 evidence, with no re-baseline, and the prior depth-three campaign
+remains red. Item 6.9 takes the XOR baseline and equal-trial comparison next;
+none of its runtime changes is included in this landing.

@@ -1,0 +1,143 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+    "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+    "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+    "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+    "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+    "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+    "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+    "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+    "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+    "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+    "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only"
+  ],
+  "completed": [
+    "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+    "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+    "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+    "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+    "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+    "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+    "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+    "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+    "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+    "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+    "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02245349995791912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02811212500091642,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002392709022387862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030140375019982457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015717625035904348,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019964125007390976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005127920303493738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007021583034656942,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01633362506981939,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029067920986562967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020740829640999436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.036559624946676195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_distributed_codes_follow_features_at_the_boundary_only",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.09358391689602286,
+      "message": "test/test_concept_memberships.py:224: in test_distributed_codes_follow_features_at_the_boundary_only\n    torch.testing.assert_close(cs._cs_last_a0, before, atol=0, rtol=0)\nE   AssertionError: The values for attribute 'shape' do not match: torch.Size([9, 4, 1, 2]) != torch.Size([8, 4, 1, 2]).",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

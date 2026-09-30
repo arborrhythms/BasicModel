@@ -1,0 +1,13 @@
+{
+  "reason": "Native ragged-packing capture overwrites the last end state for every sentence; preserves strict assertions while indexing the capture by sentence.",
+  "full_sweep_started": false,
+  "autostart_cancelled": true,
+  "isolated_copy": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "synced_files": [
+    "bin/Interpret.py",
+    "bin/Models.py",
+    "bin/Spaces.py",
+    "test/test_item7_byte_columns.py",
+    "test/test_item7_word_interpretation.py"
+  ]
+}

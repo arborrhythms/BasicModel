@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+  ],
+  "completed": [
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5404552498366684,
+      "message": "test/test_item7_provenance.py:11: in test_provisioning_retains_completed_fields_and_shared_row_ids\n    assert len(store) == 3\nE   assert 9 == 3\nE    +  where 9 = len(TernaryTruthStore())",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021790829487144947,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003447500057518482,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+    "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+    "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+    "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+    "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+    "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+    "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+    "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+    "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+    "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+    "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched"
+  ],
+  "completed": [
+    "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+    "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+    "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+    "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+    "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+    "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+    "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+    "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+    "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+    "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+    "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000409458065405488,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002797089982777834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017916702199727297,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001522499369457364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002656669821590185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012900005094707012,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002653340343385935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021779199596494436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019812502432614565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018548750085756183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014424999244511127,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

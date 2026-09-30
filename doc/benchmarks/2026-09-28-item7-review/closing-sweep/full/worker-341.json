@@ -1,0 +1,213 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+    "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+    "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors",
+    "test/test_xor_spaces.py::TestLoadInline::test_single_input_element_not_list",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_model_has_input_space",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+    "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+    "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction"
+  ],
+  "completed": [
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+    "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+    "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors",
+    "test/test_xor_spaces.py::TestLoadInline::test_single_input_element_not_list",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_model_has_input_space",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+    "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+    "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037395895924419165,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011529203038662672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010479101911187172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.858293924480677e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010354199912399054,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010312499944120646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028300005942583084,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015154201537370682,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestLoadInline::test_single_input_element_not_list",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001170419855043292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008821416995488107,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_model_has_input_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011083297431468964,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007017040974460542,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011108303442597389,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010887498501688242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005089791025966406,
+      "message": "",
+      "stdout": "Starting with dynamic 18-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004854583996348083,
+      "message": "",
+      "stdout": "Starting with dynamic 18-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001272079534828663,
+      "message": "",
+      "stdout": "Starting with dynamic 18-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013329205103218555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007004999788478017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006890830118209124,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

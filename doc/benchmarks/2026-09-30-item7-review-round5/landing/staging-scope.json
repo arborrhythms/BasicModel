@@ -1,0 +1,12 @@
+{
+  "files": 37119,
+  "by_directory": {
+    "README.md": 1,
+    "bin": 31,
+    "data": 21,
+    "doc": 36886,
+    "test": 179,
+    "todo.md": 1
+  },
+  "note": "Reviewed item-7 implementation, specifications, planning documents and all preserved review evidence. Landing checks and final prose are staged after validation."
+}

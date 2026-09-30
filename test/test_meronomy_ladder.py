@@ -6,7 +6,6 @@ the previous analysis cuts.
 """
 import os
 import sys
-import types
 from pathlib import Path
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -24,6 +23,7 @@ if str(_BIN) not in sys.path:
 
 from Spaces import WholeSpace  # noqa: E402
 import Legacy  # noqa: E402
+from property_fixtures import property_reader  # noqa: E402
 
 
 def _bytes(s):
@@ -44,22 +44,22 @@ def test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical():
 def test_word_and_grammatical_cuts_equal_the_meronomy_cut(surface):
     u = _bytes(surface)
     canonical = WholeSpace.stage_analysis_spans(
-        types.SimpleNamespace(analysis_mode="meronomy"), u)
+        property_reader(analysis_mode="meronomy"), u)
     for mode in ("word", "grammatical"):
         legacy = WholeSpace.stage_analysis_spans(
-            types.SimpleNamespace(analysis_mode=mode), u)
+            property_reader(analysis_mode=mode), u)
         assert torch.equal(legacy, canonical), (mode, legacy, canonical)
 
 
 @pytest.mark.parametrize("mode", ["byte", "raw", "sentence"])
 def test_undivided_legacy_modes_stage_no_spans(mode):
-    fake = types.SimpleNamespace(analysis_mode=mode)
+    fake = property_reader(analysis_mode=mode)
     assert WholeSpace.stage_analysis_spans(fake, _bytes("abc def")) is None
     assert fake._staged_property_signatures is None
 
 
 def test_meronomy_cut_with_no_unity_stages_nothing():
-    fake = types.SimpleNamespace(analysis_mode="meronomy")
+    fake = property_reader(analysis_mode="meronomy")
     assert WholeSpace.stage_analysis_spans(fake, None) is None
 
 
@@ -231,7 +231,7 @@ def test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse():
 # -- Phase 2, step 1: the descending tiling ladder (coarse over fine) -----------
 
 def test_tiling_ladder_nests_units_in_space_bounded_wholes():
-    fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=True)
+    fake = property_reader(analysis_mode="meronomy", digit_wholes=True)
     WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1, ok"))
     clause, coarse, fine = fake._staged_tiling_ladder
     assert [tuple(x) for x in clause[0].tolist() if x[1] > x[0]] == [(0, 9), (10, 13)]   # cut at the comma
@@ -242,11 +242,11 @@ def test_tiling_ladder_nests_units_in_space_bounded_wholes():
     assert fake._staged_unit_parent[0].tolist() == [0, 0, 1, 2, 2, 3]
     assert torch.equal(fake._staged_unit_spans, fine)
     # Letter/digit flips are not unit boundaries (contract 3 priors): one unit.
-    fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=False)
+    fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
     WholeSpace.stage_analysis_spans(fake, _bytes("w0 abc123"))
     assert [tuple(x) for x in fake._staged_unit_spans[0].tolist() if x[1] > x[0]] == [(0, 2), (3, 9)]
     # Without digit wholes the digit run is one unit under one coarse whole.
-    fake = types.SimpleNamespace(analysis_mode="meronomy", digit_wholes=False)
+    fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
     WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1"))
     assert fake._staged_unit_parent[0].tolist() == [0, 1, 2]
 

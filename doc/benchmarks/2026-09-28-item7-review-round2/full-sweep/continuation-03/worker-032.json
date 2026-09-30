@@ -1,0 +1,83 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud"
+  ],
+  "completed": [
+    "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030365708051249385,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0323294170666486,
+      "message": "test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:174: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23814: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13583: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:55: in lookup_word\n    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=word_reading)\nbin/Spaces.py:18228: in _populate_concept_weights\n    self.add_concept_edge(c_row, target, 1.)\nbin/Spaces.py:17304: in add_concept_edge\n    source0 = self._order0_inventory_row(int(col))\n                                         ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.03463845793157816,
+      "message": "test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:174: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23814: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13583: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:55: in lookup_word\n    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=word_reading)\nbin/Spaces.py:18228: in _populate_concept_weights\n    self.add_concept_edge(c_row, target, 1.)\nbin/Spaces.py:17304: in add_concept_edge\n    source0 = self._order0_inventory_row(int(col))\n                                         ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18507795792538673,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18393066595308483,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5842734159668908,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nStarting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nStarting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nStarting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011322208913043141,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+  ],
+  "completed": [
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022159579675644636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014837505295872688,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

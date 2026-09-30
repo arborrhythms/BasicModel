@@ -177,9 +177,11 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
     supervised_before = data.has_supervised_outputs
     data.has_supervised_outputs = False
     try:
-        result, _ = model.runBatch(
-            train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
-            batch_override=(inputs, torch.empty(2, 0)))
+        from reading_fixtures import capture_readings
+        with capture_readings(model) as readings:
+            result, _ = model.runBatch(
+                train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                batch_override=(inputs, torch.empty(2, 0)))
         assert result is not None
         changed = {name for name, value in chooser.named_parameters()
                    if not torch.equal(before[name], value.detach())}
@@ -190,8 +192,8 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
             assert sum(parameter is p for p in enlisted) == 1
         assert not hasattr(model, "forward_grammar_weight")
         understanding = model._last_understanding
-        assert len(understanding.answer_program) == len(words)
-        assert all(program.leaves.shape[0] >= 5 for program in understanding.answer_program)
+        assert len(understanding.sentence_states) == len(words)
+        assert all(program.leaves.shape[0] >= 5 for program in readings[0])
         assert understanding.input_reconstruction is not None
         assert bool(torch.isfinite(understanding.input_reconstruction.byte_cost).all())
         assert torch.is_tensor(model._output_policy_cost)

@@ -1,0 +1,537 @@
+....................F................................................... [ 66%]
+............s.FFFF...................                                    [100%]
+=================================== FAILURES ===================================
+____ test_provisioning_retains_real_selected_derivations_and_shared_row_ids ____
+
+    def test_provisioning_retains_real_selected_derivations_and_shared_row_ids():
+>       model = _make_model_provisioned(_SERIAL_CONFIG)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_provenance.py:9: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:93: in _make_model_provisioned
+    m.provision_ltm()
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7724: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7755: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:14497: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14638: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15017: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9528: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11022: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9228: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9040: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24251: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18253: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22187: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21733: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sealed_word_bricks(
+bin/Models.py:21047: in _run_sealed_word_bricks
+    self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+bin/Models.py:20938: in _commit_sentence
+    row = _append_observed_meaning(store, payload, view['depths'][b],
+bin/Models.py:185: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:748: in seal_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:742: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:706: in append
+    row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9909: in append_meaning
+    (self._checked_leaf_terms(leaf_codes), (True, True, True)))
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+terms = ((-1,), (), ())
+
+    @staticmethod
+    def _checked_leaf_terms(terms):
+        terms = tuple(tuple(values) for values in terms)
+        if len(terms) != 3 or any(type(code) is not int or code < 0
+                                  for values in terms for code in values):
+>           raise ValueError('leaf codes require three sequences of nonnegative code addresses')
+E           ValueError: leaf codes require three sequences of nonnegative code addresses
+
+bin/MemoryIndex.py:43: ValueError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_________ test_real_provisioning_is_not_an_external_prediction_stream __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12c0d0080>
+
+    def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch):
+        from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
+    
+        model = _make_model(_SERIAL_CONFIG)
+        discourse = model.symbolSpace.discourse
+        bound = []
+    
+        def forbid_external_binding(*args, **kwargs):
+            bound.append((args, kwargs))
+            raise AssertionError("provisioning is not an external observation")
+    
+        monkeypatch.setattr(discourse, "bind_observation_occurrence",
+                            forbid_external_binding)
+>       model.provision_ltm()
+
+test/test_sentence_expectation.py:256: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7724: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7755: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:14497: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14638: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15017: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9528: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11022: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9228: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9040: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24251: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18253: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22187: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21733: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sealed_word_bricks(
+bin/Models.py:21047: in _run_sealed_word_bricks
+    self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+bin/Models.py:20938: in _commit_sentence
+    row = _append_observed_meaning(store, payload, view['depths'][b],
+bin/Models.py:185: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:748: in seal_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:742: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:706: in append
+    row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9909: in append_meaning
+    (self._checked_leaf_terms(leaf_codes), (True, True, True)))
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+terms = ((-1,), (), ())
+
+    @staticmethod
+    def _checked_leaf_terms(terms):
+        terms = tuple(tuple(values) for values in terms)
+        if len(terms) != 3 or any(type(code) is not int or code < 0
+                                  for values in terms for code in values):
+>           raise ValueError('leaf codes require three sequences of nonnegative code addresses')
+E           ValueError: leaf codes require three sequences of nonnegative code addresses
+
+bin/MemoryIndex.py:43: ValueError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+_____ test_truth_ingestion_preserves_all_external_row_contexts_and_losses ______
+
+    def test_truth_ingestion_preserves_all_external_row_contexts_and_losses():
+        from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
+    
+        model = _make_model(_SERIAL_CONFIG)
+        disc = model.symbolSpace.discourse
+        disc.train()
+        disc.ensure_batch(2)
+        d = disc.concept_dim
+        for value in (0.2, 0.4):
+            disc.predict_and_observe_stm_end_state(
+                [1, 1], [torch.full((1, d), value), torch.full((1, d), -value)])
+        before = [disc.expect_next_meaning(b).roles.detach().clone() for b in range(2)]
+        loss_count = disc._inter_loss_count
+>       model.provision_ltm()
+
+test/test_sentence_expectation.py:276: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7724: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7755: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:14497: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14638: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15017: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9528: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11022: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9228: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9040: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24251: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18253: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22187: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21733: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sealed_word_bricks(
+bin/Models.py:21047: in _run_sealed_word_bricks
+    self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+bin/Models.py:20938: in _commit_sentence
+    row = _append_observed_meaning(store, payload, view['depths'][b],
+bin/Models.py:185: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:748: in seal_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:742: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:706: in append
+    row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9909: in append_meaning
+    (self._checked_leaf_terms(leaf_codes), (True, True, True)))
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+terms = ((-1,), (), ())
+
+    @staticmethod
+    def _checked_leaf_terms(terms):
+        terms = tuple(tuple(values) for values in terms)
+        if len(terms) != 3 or any(type(code) is not int or code < 0
+                                  for values in terms for code in values):
+>           raise ValueError('leaf codes require three sequences of nonnegative code addresses')
+E           ValueError: leaf codes require three sequences of nonnegative code addresses
+
+bin/MemoryIndex.py:43: ValueError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+___________________ test_pair_trains_twice_and_commits_once ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146a061b0>
+
+    def test_pair_trains_twice_and_commits_once(monkeypatch):
+        m = _build()
+        optimizer = torch.optim.SGD(m.parameters(), lr=0.0)
+        batch = _batch(m)
+        clock0 = m.present()
+        steps0 = int(getattr(m, '_training_step_count', 0))
+        observed = []
+        constraints = []
+        backward = m._backward_training_loss
+        def capture(total, *args, **kwargs):
+            if getattr(m, '_sentence_backward', False):
+                trace = m._reconstruction_stack()
+                alternative = m._sentence_trial == 'explore'
+                observed.append((alternative, trace._choice_actions.detach().clone(),
+                                 m.conceptualSpace.stm._buffer.detach().clone(),
+                                 float(total.detach())))
+                if alternative:
+                    constraints.append((m._compose_prefix_slots.detach().clone(),
+                                        m._compose_forced_slots.detach().clone()))
+            return backward(total, *args, **kwargs)
+        monkeypatch.setattr(m, '_backward_training_loss', capture)
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore')
+>               m.runBatch(train=True, batchSize=4, optimizer=optimizer, batch_override=batch)
+
+test/test_compose_pair_driver.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14497: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14638: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15017: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9528: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11022: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9228: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9040: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24251: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18253: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22187: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21733: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sealed_word_bricks(
+bin/Models.py:21027: in _run_sealed_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:139: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21011: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20889: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20860: in _sentence_observation
+    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
+bin/Models.py:254: in _boundary_observation_view
+    meaning = clause_from_program(language, entry, meaning=meaning,
+bin/ClauseSeal.py:398: in clause_from_program
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:282: in recover
+    left, left_ref = operand(operands[0])
+                     ^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:274: in operand
+    return value(item) if item['has_point'] else None, concept(item)
+                                                       ^^^^^^^^^^^^^
+bin/ClauseSeal.py:232: in concept
+    return ClauseConcept(value(node), ('clause-phrase', signature(node)), members)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:6: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ClauseConcept(key=('clause-phrase', ('S -> not(S)', ('S -> not(S)', ('S -> intersection(S, S)', ('S -> not(S)', ('S -> not(S)', ('S -> not(S)', ('sym', -1)))), ('sym', -1))))), members=())
+
+    def __post_init__(self):
+        if (not torch.is_tensor(self.point) or self.point.ndim != 1
+                or not bool(torch.isfinite(self.point).all())):
+            raise ValueError('a phrase concept requires one finite grammar value')
+        if ((not self.members and self.key[0] != 'grammar-predicate')
+                or any(type(cid) is not int or cid <= 0 for cid in self.members)):
+>           raise ValueError('phrase concepts require resolved native constituents')
+E           ValueError: phrase concepts require resolved native constituents
+
+bin/ClauseSeal.py:47: ValueError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+______ test_evaluation_repeats_the_same_program_without_an_explore_trial _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146b2b470>
+
+    def test_evaluation_repeats_the_same_program_without_an_explore_trial(monkeypatch):
+        m = _build('<composeTemperature>2</composeTemperature>')
+        batch = _batch(m)
+        original = m._run_batch_once
+        from functools import wraps
+        calls = []
+        @wraps(original)
+        def once(*args, **kwargs):
+            calls.append((kwargs['train'], kwargs['exploration_trial']))
+            return original(*args, **kwargs)
+        monkeypatch.setattr(m, '_run_batch_once', once)
+        def forbidden(*args, **kwargs):
+            raise AssertionError('evaluation attempted a backward')
+        monkeypatch.setattr(m, '_backward_training_loss', forbidden)
+        # The model normally stamps a new .when value on every public batch.
+        # Identical words at different times are different numerical inputs.
+        # Hold time fixed for this deterministic-choice probe; clock cadence is
+        # checked separately above.
+        monkeypatch.setattr(m, '_advance_when_time', lambda: None)
+        programs = []
+        try:
+            for _ in range(2):
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore')
+>                   m.runBatch(train=False, batchSize=4, batch_override=batch)
+
+test/test_compose_pair_driver.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14497: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14638: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_compose_pair_driver.py:113: in once
+    return original(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15017: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9528: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11022: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9228: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9040: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24251: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18253: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22187: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21733: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sealed_word_bricks(
+bin/Models.py:21027: in _run_sealed_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:139: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21011: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20889: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20860: in _sentence_observation
+    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
+bin/Models.py:254: in _boundary_observation_view
+    meaning = clause_from_program(language, entry, meaning=meaning,
+bin/ClauseSeal.py:398: in clause_from_program
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:282: in recover
+    left, left_ref = operand(operands[0])
+                     ^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:274: in operand
+    return value(item) if item['has_point'] else None, concept(item)
+                                                       ^^^^^^^^^^^^^
+bin/ClauseSeal.py:232: in concept
+    return ClauseConcept(value(node), ('clause-phrase', signature(node)), members)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:6: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ClauseConcept(key=('clause-phrase', ('S -> union(S, S)', ('sym', -1), ('sym', -1))), members=())
+
+    def __post_init__(self):
+        if (not torch.is_tensor(self.point) or self.point.ndim != 1
+                or not bool(torch.isfinite(self.point).all())):
+            raise ValueError('a phrase concept requires one finite grammar value')
+        if ((not self.members and self.key[0] != 'grammar-predicate')
+                or any(type(cid) is not int or cid <= 0 for cid in self.members)):
+>           raise ValueError('phrase concepts require resolved native constituents')
+E           ValueError: phrase concepts require resolved native constituents
+
+bin/ClauseSeal.py:47: ValueError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+FAILED test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+FAILED test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+FAILED test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once
+FAILED test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial
+5 failed, 103 passed, 1 skipped, 1 warning in 10.74s

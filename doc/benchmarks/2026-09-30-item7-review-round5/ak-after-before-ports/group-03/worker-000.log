@@ -1,0 +1,21 @@
+F.....F                                                                  [100%]
+=================================== FAILURES ===================================
+______ test_compose_query_and_converse_faces_share_the_same_canonical_vp _______
+test/test_grammatical_query_vps.py:44: in test_compose_query_and_converse_faces_share_the_same_canonical_vp
+    torch.testing.assert_close(question.roles[1], cs.similarity_codebook.getW()[cs._csw_row_of(vp[1])])
+E   AssertionError: The values for attribute 'shape' do not match: torch.Size([8]) != torch.Size([1, 64, 8]).
+_____ test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation _____
+test/test_grammatical_query_vps.py:137: in test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation
+    with pytest.raises(ValueError, match='unavailable|retired|VP'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp
+FAILED test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation
+2 failed, 5 passed, 1 warning in 2.02s

@@ -1,0 +1,52 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_copied_definition_index_is_owned_by_the_copied_store ___________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:13: in test_copied_definition_index_is_owned_by_the_copied_store
+    assert restored.definitions.deref(word) is None
+E   assert 2 is None
+E    +  where 2 = deref(1)
+E    +    where deref = <Definitions.DefinitionIndex object at 0x140c03d40>.deref
+E    +      where <Definitions.DefinitionIndex object at 0x140c03d40> = TernaryTruthStore().definitions
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+________ test_two_pending_words_cannot_overbook_the_last_definition_row ________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:23: in test_two_pending_words_cannot_overbook_the_last_definition_row
+    with pytest.raises(RuntimeError,match='capacity'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+___________ test_word_concepts_exist_before_grounded_case_discovery ____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:37: in test_word_concepts_exist_before_grounded_case_discovery
+    namespace['learn_grounded_xor'](tmp_path,4)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:word-first:54: in learn_grounded_xor
+    ???
+E   AssertionError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7636: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery
+3 failed, 5 warnings in 2.83s

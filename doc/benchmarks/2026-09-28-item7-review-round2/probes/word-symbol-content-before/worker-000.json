@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.06174020795151591,
+      "message": "test/test_item7_word_interpretation.py:38: in test_every_read_word_has_a_concept_and_symbol\n    assert evidence.any(), 'symbol bands cannot stand in for concept evidence'\nE   AssertionError: symbol bands cannot stand in for concept evidence\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method any of Tensor object at 0x128143890>()\nE    +    where <built-in method any of Tensor object at 0x128143890> = tensor([[[[0., 0.],\\n          [0., 0.]],\\n\\n         [[0., 0.],\\n          [0., 0.]],\\n\\n         [[0., 0.],\\n          [0.,...  [[0., 0.],\\n          [0., 0.]],\\n\\n         [[0., 0.],\\n          [0., 0.]],\\n\\n         [[0., 0.],\\n          [0., 0.]]]]).any",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.2057386670494452,
+      "message": "test/test_item7_word_interpretation.py:40: in test_every_read_word_has_a_concept_and_symbol\n    torch.testing.assert_close(symbols[..., :expected.shape[-1]], expected)\nE   AssertionError: The values for attribute 'shape' do not match: torch.Size([4, 8, 8]) != torch.Size([4, 8, 10]).",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08817624999210238,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

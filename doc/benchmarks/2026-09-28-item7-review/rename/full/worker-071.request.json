@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+    "test/test_item9b_followup.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_item9b_followup.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+    "test/test_item9b_followup.py::test_interleave_epoch_reads_a_short_final_group_once",
+    "test/test_item9b_followup.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+    "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+    "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher",
+    "test/test_item9b_followup.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+    "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-071.recycle.json"
+}

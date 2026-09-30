@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-290.recycle.json"
+}

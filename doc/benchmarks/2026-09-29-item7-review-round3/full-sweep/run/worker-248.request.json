@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
+    "test/test_item9b_field_contract.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]",
+    "test/test_item9b_field_contract.py::test_one_active_percept_reaches_every_referencing_concept",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket0-expected0]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket1-expected1]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+    "test/test_item9b_field_contract.py::test_observed_complement_is_pooled_inside_one_bracket[bracket3-expected3]",
+    "test/test_item9b_field_contract.py::test_padding_does_not_create_observed_complements",
+    "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[False]",
+    "test/test_item9b_field_contract.py::test_native_learning_updates_one_definition_for_both_modes[True]",
+    "test/test_item9b_field_contract.py::test_vector_head_selects_symbols_without_truncating_knowing"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-248.recycle.json"
+}

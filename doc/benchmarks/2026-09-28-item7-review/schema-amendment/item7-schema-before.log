@@ -1,0 +1,239 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+__________ test_source_trust_does_not_supply_identification_evidence ___________
+
+    def test_source_trust_does_not_supply_identification_evidence():
+        store, clause = store_and_clause()
+        row = store.write_clause(clause, trust=.8)
+        assert store.row(row)['trust'] == pytest.approx(.8)
+>       assert store.row(row)['evidence'] == (0., 0.)
+E       assert (0.800000011920929, 0.0) == (0.0, 0.0)
+E         
+E         At index 0 diff: 0.800000011920929 != 0.0
+E         Use -v to get more diff
+
+test/test_item7_row_schema.py:25: AssertionError
+____________ test_changing_source_trust_preserves_both_and_neither _____________
+
+    def test_changing_source_trust_preserves_both_and_neither():
+        store, clause = store_and_clause()
+        both = store.write_clause(clause, trust=.8, evidence=(.6, .6))
+        neither = store.write_clause(clause, trust=.8, evidence=(0., 0.))
+        store.set_trust(both, -.3)
+        store.set_trust(neither, -.3)
+>       assert store.row(both)['evidence'] == pytest.approx((.6, .6))
+E       assert (0.0, 0.30000001192092896) == approx((0.6 ±....6 ± 6.0e-07))
+E         
+E         comparison failed. Mismatched elements: 2 / 2:
+E         Max absolute difference: 0.6
+E         Max relative difference: inf
+E         Index | Obtained            | Expected     
+E         0     | 0.0                 | 0.6 ± 6.0e-07
+E         1     | 0.30000001192092896 | 0.6 ± 6.0e-07
+
+test/test_item7_row_schema.py:34: AssertionError
+_________ test_clause_order_and_evidence_are_stored_without_a_program __________
+
+    def test_clause_order_and_evidence_are_stored_without_a_program():
+        store, clause = store_and_clause()
+>       clause = replace(clause, order=3, evidence=(.75, .5))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_row_schema.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+obj = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(),...), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, eternal=False, factored_refs=None)
+changes = {'order': 3, 'evidence': (0.75, 0.5), 'meaning': ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), 'point': tensor([0.2000, 0.4000, 0.6000, 0.8000]), ...}
+
+    def replace(obj, /, **changes):
+        """Return a new object replacing specified fields with new values.
+    
+        This is especially useful for frozen classes.  Example usage::
+    
+          @dataclass(frozen=True)
+          class C:
+              x: int
+              y: int
+    
+          c = C(1, 2)
+          c1 = replace(c, x=3)
+          assert c1.x == 3 and c1.y == 2
+        """
+    
+        # We're going to mutate 'changes', but that's okay because it's a
+        # new dict, even if called with 'replace(obj, **my_changes)'.
+    
+        if not _is_dataclass_instance(obj):
+            raise TypeError("replace() should be called on dataclass instances")
+    
+        # It's an error to have init=False fields in 'changes'.
+        # If a field is not in 'changes', read its value from the provided obj.
+    
+        for f in getattr(obj, _FIELDS).values():
+            # Only consider normal fields or InitVars.
+            if f._field_type is _FIELD_CLASSVAR:
+                continue
+    
+            if not f.init:
+                # Error if this field is specified in changes.
+                if f.name in changes:
+                    raise ValueError(f'field {f.name} is declared with '
+                                     'init=False, it cannot be specified with '
+                                     'replace()')
+                continue
+    
+            if f.name not in changes:
+                if f._field_type is _FIELD_INITVAR and f.default is MISSING:
+                    raise ValueError(f"InitVar {f.name!r} "
+                                     'must be specified with replace()')
+                changes[f.name] = getattr(obj, f.name)
+    
+        # Create the new object, which calls __init__() and
+        # __post_init__() (if defined), using all of the init fields we've
+        # added and/or left in 'changes'.  If there are values supplied in
+        # changes that aren't fields, this will correctly raise a
+        # TypeError.
+>       return obj.__class__(**changes)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: Clause.__init__() got an unexpected keyword argument 'order'
+
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: TypeError
+______________ test_row_compaction_preserves_each_order_and_pole _______________
+
+    def test_row_compaction_preserves_each_order_and_pole():
+        store, clause = store_and_clause()
+>       first = store.write_clause(replace(clause, order=1, evidence=(.2, .1)), trust=.4)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_row_schema.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+obj = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(),...), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, eternal=False, factored_refs=None)
+changes = {'order': 1, 'evidence': (0.2, 0.1), 'meaning': ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), 'point': tensor([0.2000, 0.4000, 0.6000, 0.8000]), ...}
+
+    def replace(obj, /, **changes):
+        """Return a new object replacing specified fields with new values.
+    
+        This is especially useful for frozen classes.  Example usage::
+    
+          @dataclass(frozen=True)
+          class C:
+              x: int
+              y: int
+    
+          c = C(1, 2)
+          c1 = replace(c, x=3)
+          assert c1.x == 3 and c1.y == 2
+        """
+    
+        # We're going to mutate 'changes', but that's okay because it's a
+        # new dict, even if called with 'replace(obj, **my_changes)'.
+    
+        if not _is_dataclass_instance(obj):
+            raise TypeError("replace() should be called on dataclass instances")
+    
+        # It's an error to have init=False fields in 'changes'.
+        # If a field is not in 'changes', read its value from the provided obj.
+    
+        for f in getattr(obj, _FIELDS).values():
+            # Only consider normal fields or InitVars.
+            if f._field_type is _FIELD_CLASSVAR:
+                continue
+    
+            if not f.init:
+                # Error if this field is specified in changes.
+                if f.name in changes:
+                    raise ValueError(f'field {f.name} is declared with '
+                                     'init=False, it cannot be specified with '
+                                     'replace()')
+                continue
+    
+            if f.name not in changes:
+                if f._field_type is _FIELD_INITVAR and f.default is MISSING:
+                    raise ValueError(f"InitVar {f.name!r} "
+                                     'must be specified with replace()')
+                changes[f.name] = getattr(obj, f.name)
+    
+        # Create the new object, which calls __init__() and
+        # __post_init__() (if defined), using all of the init fields we've
+        # added and/or left in 'changes'.  If there are values supplied in
+        # changes that aren't fields, this will correctly raise a
+        # TypeError.
+>       return obj.__class__(**changes)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: Clause.__init__() got an unexpected keyword argument 'order'
+
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: TypeError
+_________ test_embedded_identification_does_not_grant_source_authority _________
+
+    def test_embedded_identification_does_not_grant_source_authority():
+        store, clause = store_and_clause()
+>       child = replace(clause, evidence=(.8, .4), order=2)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_row_schema.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+obj = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(),...), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, eternal=False, factored_refs=None)
+changes = {'evidence': (0.8, 0.4), 'order': 2, 'meaning': ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), 'point': tensor([0.2000, 0.4000, 0.6000, 0.8000]), ...}
+
+    def replace(obj, /, **changes):
+        """Return a new object replacing specified fields with new values.
+    
+        This is especially useful for frozen classes.  Example usage::
+    
+          @dataclass(frozen=True)
+          class C:
+              x: int
+              y: int
+    
+          c = C(1, 2)
+          c1 = replace(c, x=3)
+          assert c1.x == 3 and c1.y == 2
+        """
+    
+        # We're going to mutate 'changes', but that's okay because it's a
+        # new dict, even if called with 'replace(obj, **my_changes)'.
+    
+        if not _is_dataclass_instance(obj):
+            raise TypeError("replace() should be called on dataclass instances")
+    
+        # It's an error to have init=False fields in 'changes'.
+        # If a field is not in 'changes', read its value from the provided obj.
+    
+        for f in getattr(obj, _FIELDS).values():
+            # Only consider normal fields or InitVars.
+            if f._field_type is _FIELD_CLASSVAR:
+                continue
+    
+            if not f.init:
+                # Error if this field is specified in changes.
+                if f.name in changes:
+                    raise ValueError(f'field {f.name} is declared with '
+                                     'init=False, it cannot be specified with '
+                                     'replace()')
+                continue
+    
+            if f.name not in changes:
+                if f._field_type is _FIELD_INITVAR and f.default is MISSING:
+                    raise ValueError(f"InitVar {f.name!r} "
+                                     'must be specified with replace()')
+                changes[f.name] = getattr(obj, f.name)
+    
+        # Create the new object, which calls __init__() and
+        # __post_init__() (if defined), using all of the init fields we've
+        # added and/or left in 'changes'.  If there are values supplied in
+        # changes that aren't fields, this will correctly raise a
+        # TypeError.
+>       return obj.__class__(**changes)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: Clause.__init__() got an unexpected keyword argument 'evidence'
+
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: TypeError
+=========================== short test summary info ============================
+FAILED test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence
+FAILED test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither
+FAILED test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program
+FAILED test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole
+FAILED test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority
+5 failed in 2.44s

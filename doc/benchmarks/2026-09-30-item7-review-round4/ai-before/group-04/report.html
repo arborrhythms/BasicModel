@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.1325224158354104</pre></td><td><pre>test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+    assert memory.get_what_slots(b=0) == []
+E   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []
+E     
+E     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0000, 0.0000, 0.8196, 0.0000, 0.7914, 0.6919, 0.2129, 1.9925,\n          0.4234, 1.9584, 0.04... &#x27;iteration&#x27;: 0, &#x27;closure_pressure&#x27;: 0.0, &#x27;forced&#x27;: False, &#x27;temporal&#x27;: (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))
+E     Use -v to get more diff</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr></table></body></html>

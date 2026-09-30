@@ -1,0 +1,143 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+    "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+    "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot",
+    "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+    "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+    "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+    "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+    "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+    "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+    "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+    "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "completed": [
+    "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+    "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+    "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot",
+    "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+    "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+    "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+    "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+    "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+    "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+    "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+    "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000550250057131052,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04358995798975229,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002253329148516059,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00012704194523394108,
+      "message": "test/test_abstraction_order_canonical.py:162: in test_forward_stamps_stage0_analysis_pi\n    an = ws0.analysis_store\n         ^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02498666592873633,
+      "message": "test/test_abstraction_order_canonical.py:196: in test_forward_stamps_symbolic_emission_winner_at_pass_slot\n    assert stamped_any, (\"no t>0 symbolic emission fired -- the fixture \"\nE   AssertionError: no t>0 symbolic emission fired -- the fixture must exercise the multi-pass pump\nE   assert False",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036275002639740705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028966693207621574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004189159953966737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040562497451901436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046908401418477297,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004277910338714719,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002270375029183924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.075005073100328e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

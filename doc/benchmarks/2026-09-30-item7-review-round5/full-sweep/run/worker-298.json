@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower"
+  ],
+  "completed": [
+    "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025991699658334255,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

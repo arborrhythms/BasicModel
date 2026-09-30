@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-010.recycle.json"
+}

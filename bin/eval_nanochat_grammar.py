@@ -559,11 +559,28 @@ def trace_serial_grammar(model, text):
     """Report the committed per-round grammar choices and completion status."""
     import torch
     _reset_model(model)
-    with torch.no_grad(), warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        model.forward(model.inputSpace.prepInput([str(text)]))
-    trace = model._reconstruction_stack()
-    rules, arities, mask = trace.choices()
+    # This diagnostic owns a temporary copy of the winning open reading.
+    # The completed model field keeps no operation trace.
+    captured = {}
+    observe = model._sentence_observation
+    def capture(*args, **kwargs):
+        result = observe(*args, **kwargs)
+        if kwargs.get('admit'):
+            trace = model._reconstruction_stack()
+            for name in ('_choice_rule_ids', '_choice_arities', '_choice_mask',
+                         '_choice_positions', '_choice_attempted'):
+                captured[name] = getattr(trace, name).detach().clone()
+        return result
+    model._sentence_observation = capture
+    try:
+        with torch.no_grad(), warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            model.forward(model.inputSpace.prepInput([str(text)]))
+    finally:
+        model._sentence_observation = observe
+    from types import SimpleNamespace
+    trace = SimpleNamespace(**captured)
+    rules, arities, mask = (trace._choice_rule_ids, trace._choice_arities, trace._choice_mask)
     attempted = trace._choice_attempted
     active = model.inputSpace._word_active_mask
     width = active.shape[1]
@@ -573,7 +590,7 @@ def trace_serial_grammar(model, text):
                     unary=int((live & (arities[:, start:end] == 1)).sum()),
                     stop=int((attempted[:, start:end] & ~live).sum()))
     online = counts(0, 3 * width)
-    seal = counts(3 * width, rules.shape[1])
+    closing = counts(3 * width, rules.shape[1])
     part_ids = getattr(model.inputSpace, '_ar_word_part_ids', None)
     part_mask = getattr(model.inputSpace, '_ar_word_part_mask', None)
     word_cut = getattr(model.inputSpace, '_ar_word_truncated_mask', None)
@@ -590,8 +607,8 @@ def trace_serial_grammar(model, text):
                 stm_capacity=int(model.conceptualSpace.stm.capacity),
                 final_depth=int(model.conceptualSpace.stm._depth.max()),
                 complete=bool((model._stm_post_depth > 0).all()),
-                online=online, seal=seal,
-                total_reductions=online['binary'] + seal['binary'],
+                online=online, closing=closing,
+                total_reductions=online['binary'] + closing['binary'],
                 timeline=[dict(round=i, rule=int(rules[b, i]),
                                arity=int(arities[b, i]),
                                position=int(trace._choice_positions[b, i]))

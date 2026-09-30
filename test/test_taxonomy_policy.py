@@ -27,9 +27,11 @@ def test_numeric_world_evidence_cannot_establish_taxonomic_inclusion():
 
 
 def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
+    from index_fixtures import terminal_model_index
     cs, (a, b, _), store, model = _setup()
     fact = model.grammatical_thoughts.form('part', a, b, mode='assertive')
-    store.append_meaning(fact, trust=1)
+    order = terminal_model_index(model, fact.role_refs)
+    store.append_meaning(fact, trust=1, order=order)
     assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1
     result = model.reason_about(QuerySpec.from_surface('part', a, b))
     assert result.support_true == 0

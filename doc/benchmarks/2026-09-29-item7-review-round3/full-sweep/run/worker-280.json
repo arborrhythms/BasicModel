@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_space_carrier_bridge.py::test_space_exports_sparse_selection_with_live_read_only_identity",
+    "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+    "test/test_space_carrier_bridge.py::test_legacy_spaces_pipeline_via_fresh_snapshot_adapters",
+    "test/test_space_carrier_bridge.py::test_legacy_stage_requires_explicit_training_safety_migration",
+    "test/test_space_carrier_bridge.py::test_legacy_stage_requires_an_explicit_pipeline_safety_audit",
+    "test/test_space_carrier_bridge.py::test_dense_carrier_round_trips_through_unowned_legacy_input_adapter",
+    "test/test_space_carrier_bridge.py::test_prior_trace_and_typed_mutations_survive_legacy_snapshot",
+    "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners"
+  ],
+  "completed": [
+    "test/test_space_carrier_bridge.py::test_space_exports_sparse_selection_with_live_read_only_identity",
+    "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+    "test/test_space_carrier_bridge.py::test_legacy_spaces_pipeline_via_fresh_snapshot_adapters",
+    "test/test_space_carrier_bridge.py::test_legacy_stage_requires_explicit_training_safety_migration",
+    "test/test_space_carrier_bridge.py::test_legacy_stage_requires_an_explicit_pipeline_safety_audit",
+    "test/test_space_carrier_bridge.py::test_dense_carrier_round_trips_through_unowned_legacy_input_adapter",
+    "test/test_space_carrier_bridge.py::test_prior_trace_and_typed_mutations_survive_legacy_snapshot",
+    "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_space_exports_sparse_selection_with_live_read_only_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004406662192195654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020766700617969036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_legacy_spaces_pipeline_via_fresh_snapshot_adapters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014001375064253807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_legacy_stage_requires_explicit_training_safety_migration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019649998284876347,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_legacy_stage_requires_an_explicit_pipeline_safety_audit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016554095782339573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_dense_carrier_round_trips_through_unowned_legacy_input_adapter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043120887130498886,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_prior_trace_and_typed_mutations_survive_legacy_snapshot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014037499204277992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.12222966691479087,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8648/test_legacy_duplicate_checkpoi0/legacy-ownership.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8648/test_legacy_duplicate_checkpoi0/legacy-ownership.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

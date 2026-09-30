@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_marker_replay_canonical.py::test_marker_id_resolved_to_canonical_surface",
+    "test/test_marker_replay_canonical.py::test_opaque_marker_id_never_interpolated",
+    "test/test_marker_replay_canonical.py::test_string_marker_path_unchanged"
+  ],
+  "completed": [
+    "test/test_marker_replay_canonical.py::test_marker_id_resolved_to_canonical_surface",
+    "test/test_marker_replay_canonical.py::test_opaque_marker_id_never_interpolated",
+    "test/test_marker_replay_canonical.py::test_string_marker_path_unchanged"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_marker_replay_canonical.py::test_marker_id_resolved_to_canonical_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031304103322327137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_marker_replay_canonical.py::test_opaque_marker_id_never_interpolated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.366699330508709e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_marker_replay_canonical.py::test_string_marker_path_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.529091089963913e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

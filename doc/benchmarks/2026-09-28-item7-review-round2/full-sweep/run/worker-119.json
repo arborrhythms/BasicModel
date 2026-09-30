@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0047995420172810555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002827791031450033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002075791941024363,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.02500469237566e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021349999587982893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002241124981082976,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

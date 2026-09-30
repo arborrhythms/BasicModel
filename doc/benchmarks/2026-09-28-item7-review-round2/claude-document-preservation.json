@@ -1,0 +1,52 @@
+{
+  "comparison": "First round-2 probe against the final documents. None of these eight documents was edited by Codex in this pass. Seven remain byte-identical; the concurrent FutureWork learning-progression addition was preserved. Todo changes by Codex are confined to item 7.",
+  "baseline_manifest": "probes/grad-before/source-manifest.json",
+  "documents": {
+    "doc/specs/2026-09-16-two-truths-ideas-and-relations.md": {
+      "before": "82dfc12fe2a1e11192e799a2fd14720a519c428cb1983c9b74be3da3aaaaa8c6",
+      "now": "82dfc12fe2a1e11192e799a2fd14720a519c428cb1983c9b74be3da3aaaaa8c6",
+      "identical": true
+    },
+    "doc/specs/2026-09-20-accessible-mind-subsystems.md": {
+      "before": "50b28b51f48c6ec1e7422095966510fc2d272f5ab766606a065a9adb6d24b4c2",
+      "now": "50b28b51f48c6ec1e7422095966510fc2d272f5ab766606a065a9adb6d24b4c2",
+      "identical": true
+    },
+    "doc/specs/2026-09-26-independent-components.md": {
+      "before": "60c7b95675ca575a0cd7d3fd6a16b2ec25039e705a1787bc869ae39d9dda62b9",
+      "now": "60c7b95675ca575a0cd7d3fd6a16b2ec25039e705a1787bc869ae39d9dda62b9",
+      "identical": true
+    },
+    "doc/plans/2026-09-27-item-6-8-one-attention.md": {
+      "before": "d35c32f8f605992baa4f9c5ca576160e8e999db0f80e36e877fd2d90c84f701d",
+      "now": "d35c32f8f605992baa4f9c5ca576160e8e999db0f80e36e877fd2d90c84f701d",
+      "identical": true
+    },
+    "doc/Architecture.md": {
+      "before": "495a10d581d104a7a195812495630d30ac2e0a986112f9ac38cc62c634666370",
+      "now": "495a10d581d104a7a195812495630d30ac2e0a986112f9ac38cc62c634666370",
+      "identical": true
+    },
+    "doc/Language.md": {
+      "before": "ef50857cf7f0dd535d7d84df10e2575698f45280f8380afff8f93709ec42cd6a",
+      "now": "ef50857cf7f0dd535d7d84df10e2575698f45280f8380afff8f93709ec42cd6a",
+      "identical": true
+    },
+    "doc/Philosophy.md": {
+      "before": "8de73e8832570671f25d4dcea7a2c9b631f305a7cdfa57a6f05f1fd67cf15267",
+      "now": "8de73e8832570671f25d4dcea7a2c9b631f305a7cdfa57a6f05f1fd67cf15267",
+      "identical": true
+    },
+    "doc/FutureWork.md": {
+      "before": "ec9e9563ea056b8deb1a48b4aeeb66aa2ed66f6e04371d29bea79a292c2ad6ed",
+      "now": "bb310654710adc680e5c94e78062ce9596f4563f189562f4a4fa449d171a01cd",
+      "identical": false,
+      "last_verified_before_concurrent_edit": "ec9e9563ea056b8deb1a48b4aeeb66aa2ed66f6e04371d29bea79a292c2ad6ed",
+      "concurrent_edit_preserved": true,
+      "note": "Concurrent September 29 learning-progression, corpus and modality discussion was read and preserved. No item-7 scope or code changes followed.",
+      "concurrent_observed_hashes": [
+        "ee05b9d17b05c0cf63933fffba1aa099aa6d74b1de93b5d55cf2b825f5f18260"
+      ]
+    }
+  }
+}

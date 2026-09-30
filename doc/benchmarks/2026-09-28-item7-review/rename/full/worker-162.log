@@ -1,0 +1,86 @@
+.....Fs                                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_provisioning_keeps_its_existing_hard_reset_of_what_episode ________
+test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+    assert memory.get_what_slots(b=0) == []
+E   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []
+E     
+E     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0000, 0.0000, 0.0000, 0.4015, 0.0000, 1.0000, 0.2129, 1.9925,\n          0.4234, 1.9584, 0.04... 'iteration': 0, 'closure_pressure': 0.0, 'forced': False, 'temporal': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/256 docs
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_expectation_review.py::test_one_interaction_owner_even_when_expectation_is_enabled
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+1 failed, 5 passed, 1 skipped, 17 warnings in 3.22s

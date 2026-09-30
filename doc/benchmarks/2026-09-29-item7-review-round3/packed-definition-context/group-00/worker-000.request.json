@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_packed_definition_context.py::test_definition_share_of_native_predictor_reads[MM_grammar_wording.xml]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/packed-definition-context/group-00/worker-000.recycle.json"
+}

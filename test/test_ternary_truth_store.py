@@ -73,7 +73,7 @@ class TestSchema(unittest.TestCase):
     def test_np_vp_null_unary(self):
         s = _store()
         from Layers import TernaryTruthStore as T
-        s.append_relation(_v(1), _v(0, 1), None, rel_type=T.REL_OTHER)
+        s.append_relation(_v(1), _v(0, 1), None, rel_type=T.REL_OPERATOR)
         row = s.row(0)
         self.assertTrue(torch.equal(row['np2'], torch.zeros(_D)))  # Null tail
 

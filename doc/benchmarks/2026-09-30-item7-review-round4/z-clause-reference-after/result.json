@@ -1,0 +1,24 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_clause_program.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_item7_closing_identities.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_lexical_reference_orders.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

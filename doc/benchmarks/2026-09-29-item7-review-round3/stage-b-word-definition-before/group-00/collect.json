@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

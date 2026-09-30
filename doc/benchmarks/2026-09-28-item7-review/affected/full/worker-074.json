@@ -1,0 +1,69 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing",
+    "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "completed": [
+    "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing"
+  ],
+  "slow_selected": [
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029733299743384123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.145342624979094,
+      "message": "test/test_aligned_fold_binding.py:61: in test_aligned_binder_rejects_native_width_before_codebook_activation\n    model, _ = _serial_model_and_batch()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_serial_object_meta.py:41: in _serial_model_and_batch\n    m, _ = Models.BasicModel.from_config(cfg_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17300: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.091348957968876,
+      "message": "test/test_aligned_fold_binding.py:82: in test_aligned_serial_forward_rejects_native_width_before_legacy_adapter\n    model, _ = _serial_model_and_batch()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_serial_object_meta.py:41: in _serial_model_and_batch\n    m, _ = Models.BasicModel.from_config(cfg_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17300: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.140326542081311,
+      "message": "test/test_aligned_fold_binding.py:93: in test_aligned_serial_forward_rejects_wrong_symbolic_width\n    model, _ = _serial_model_and_batch()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_serial_object_meta.py:41: in _serial_model_and_batch\n    m, _ = Models.BasicModel.from_config(cfg_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17300: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.088228291017003,
+      "message": "test/test_aligned_fold_binding.py:105: in test_aligned_binder_uses_all_six_sources_without_location_mixing\n    model, _ = _serial_model_and_batch()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_serial_object_meta.py:41: in _serial_model_and_batch\n    m, _ = Models.BasicModel.from_config(cfg_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7100: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1908: in create_from_config\n    self.create(\nbin/Models.py:7120: in create\n    return self._create_per_stage(\nbin/Models.py:17300: in _create_per_stage\n    TheXMLConfig.validate()\nbin/util.py:1601: in validate\n    raise ValueError(\nE   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)",
+      "stdout": ""
+    }
+  ],
+  "recycled": true,
+  "active": null,
+  "device": "cpu"
+}

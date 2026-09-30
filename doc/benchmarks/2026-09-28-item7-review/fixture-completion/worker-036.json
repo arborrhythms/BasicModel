@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.917107665911317,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

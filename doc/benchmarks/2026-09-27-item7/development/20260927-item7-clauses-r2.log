@@ -1,0 +1,228 @@
+.......F................................FF..                             [100%]
+=================================== FAILURES ===================================
+______________ test_bare_unlocated_np_reuses_its_concept_identity ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12a81dac0>
+
+    def test_bare_unlocated_np_reuses_its_concept_identity(monkeypatch):
+        from Layers import TernaryTruthStore
+        _, registry, language, entry, _ = _nested(monkeypatch)
+        entry = replace(entry, rows=entry.rows[:1], word_rows=entry.word_rows[:1],
+                        activations=entry.activations[:1], leaves=entry.leaves[:1],
+                        concept_ids=torch.tensor([1]), lexical_forms=(None,),
+                        actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([-1]),
+                        end_state=torch.cat((entry.leaves[:1], torch.zeros_like(entry.end_state[1:]))))
+>       clause = clause_from_program(language, entry, registry=registry)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_clause_program.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/ClauseSeal.py:397: in clause_from_program
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = {'value': tensor([-0.0465,  0.0021, -0.0856,  0.0939, -0.0372,  0.0789,  0.0095,  0.1910],
+       grad_fn=<UnbindBackward0>), 'ref': 1, 'rule': None, 'children': (), ...}
+top = True
+
+    def recover(root, *, top=False):
+        polarity = True
+        mode = 'assertive'
+        node = head(root)
+        while len(node['children']) == 1:
+            if name(node) in ('not', 'non'):
+                polarity = not polarity
+            if name(node) == 'what':
+                mode = 'interrogative'
+            node = head(node['children'][0])
+        operator = name(node)
+        children = []
+        factored_refs = None
+        role_nodes = (node, None, None)
+    
+        def operand(item):
+            item = head(item)
+            if is_clause(item):
+                child = recover(item)
+                ref = ('clause', len(children))
+                children.append(child)
+                return child.point, ref
+            return value(item) if item['has_point'] else None, concept(item)
+    
+        relation = operator if operator in relative else None
+        operands = node['children']
+        if (len(operands) == 2 and getattr(node['rule'], 'clause_form', None) == 'S'
+                and generic(operands[0])):
+            relation = 'part'
+        if len(operands) == 2:
+            left, left_ref = operand(operands[0])
+            right, right_ref = None, -1
+            predicate = None
+            predicate_ref = -1
+            if relation is not None and registry is not None:
+                try:
+                    native = registry.clause_reference(relation)
+                    predicate, predicate_ref = registry._payload(native), int(native[1])
+                except (ValueError, KeyError):
+                    pass
+            if predicate is None:
+                vp = head(operands[1])
+                if len(vp['children']) == 2 and (name(vp) == 'verb'
+                        or getattr(vp['rule'], 'clause_form', None) == 'VP'):
+                    verb = head(vp['children'][0])
+                    predicate, predicate_ref = value(verb), concept(verb)
+                    right, right_ref = operand(vp['children'][1])
+                    role_nodes = operands[0], verb, head(vp['children'][1])
+                else:
+                    predicate, predicate_ref = value(vp), concept(vp)
+                    right, right_ref = None, -1
+                    role_nodes = operands[0], vp, None
+            else:
+                right, right_ref = operand(operands[1])
+                role_nodes = operands[0], None, operands[1]
+            if (any(child.relation is not None for child in children) or not root['has_point']) and relation is None:
+                relation = 'operator'
+                if right_ref == -1:
+                    # A structural verb can itself take a completed truth.
+                    # Keep both operands and the selected operation's atom.
+                    right, right_ref = operand(operands[1])
+                    predicate_ref = operation_concept(node)
+                    predicate = predicate_ref.point
+                    role_nodes = operands[0], None, operands[1]
+            zero = torch.zeros_like(program.leaves[0])
+            roles = torch.stack((zero if left is None else left,
+                                 predicate.to(zero), zero if right is None else right))
+            mask = torch.tensor([True, True, right is not None or right_ref != -1],
+                                device=roles.device)
+            described = ConceptualMeaning(roles, mask, polarity=polarity, mode=mode)
+            references = ((left_ref, predicate_ref, right_ref) if relation is not None else
+                          (left_ref, concept(operands[1]), -1))
+            factored_refs = left_ref, predicate_ref, right_ref
+        else:
+>           described = ConceptualMeaning.from_description(value(root), mode=mode, polarity=polarity)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: ConceptualMeaning.from_description() got an unexpected keyword argument 'mode'
+
+bin/ClauseSeal.py:326: TypeError
+_ test_nested_observation_writers_retain_children_without_certifying_them[pending] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1307ea720>
+path = 'pending'
+
+    @pytest.mark.parametrize("path", ["eager", "pending", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+>       store = _write_selected_observation(language, registry, entry, path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_selected_nested_meaning.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_selected_nested_meaning.py:117: in _write_selected_observation
+    BasicModel._drain_pending_stm_end_state(host)
+bin/Models.py:14106: in _drain_pending_stm_end_state
+    row = _append_observed_meaning(
+bin/Models.py:185: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:747: in seal_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:636: in write
+    children = tuple(write(child) for child in value.children)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:636: in <genexpr>
+    children = tuple(write(child) for child in value.children)
+                     ^^^^^^^^^^^^
+bin/ClauseSeal.py:741: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:686: in append
+    operands = [self.point_of_row(refs[0]), self.point_of_row(refs[2])]
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 14
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 14
+
+bin/ClauseSeal.py:499: ValueError
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1307f42f0>
+path = 'packed'
+
+    @pytest.mark.parametrize("path", ["eager", "pending", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+>       store = _write_selected_observation(language, registry, entry, path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_selected_nested_meaning.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_selected_nested_meaning.py:128: in _write_selected_observation
+    BasicModel._drain_packed_stm_end_states(host)
+bin/Models.py:14203: in _drain_packed_stm_end_states
+    row = _append_observed_meaning(
+bin/Models.py:185: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:747: in seal_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:636: in write
+    children = tuple(write(child) for child in value.children)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:636: in <genexpr>
+    children = tuple(write(child) for child in value.children)
+                     ^^^^^^^^^^^^
+bin/ClauseSeal.py:741: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:686: in append
+    operands = [self.point_of_row(refs[0]), self.point_of_row(refs[2])]
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 14
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 14
+
+bin/ClauseSeal.py:499: ValueError
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[pending]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+3 failed, 41 passed, 1 warning in 3.44s

@@ -1,0 +1,55 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______________ test_reading_an_idea_returns_its_one_occupied_slot ______________
+
+    def test_reading_an_idea_returns_its_one_occupied_slot():
+        store, _ = clause_store()
+        ended = idea_clause()
+        row = store.write_clause(ended, evidence=(.7, .2))
+        meaning = store.meaning_of(row)
+>       assert meaning.role_mask.tolist() == [True, False, False]
+E       assert [True, True, True] == [True, False, False]
+E         
+E         At index 1 diff: True != False
+E         Use -v to get more diff
+
+test/test_item7_end_state_storage.py:16: AssertionError
+___ test_relation_stores_the_supplied_contents_without_rereading_references ____
+
+    def test_relation_stores_the_supplied_contents_without_rereading_references():
+        store, points = clause_store()
+        ended = part_clause()
+        # Reference identities can outlive a change to the native dictionary.
+        # Such a change cannot replace the values held when this clause ended.
+        for cid in points:
+            points[cid] = torch.full((4,), float(cid + 10))
+        row = store.write_clause(ended)
+>       torch.testing.assert_close(store.slots[row], ended.meaning.roles, rtol=0, atol=0)
+E       AssertionError: Tensor-likes are not equal!
+E       
+E       Mismatched elements: 12 / 12 (100.0%)
+E       Greatest absolute difference: 13.0 at index (1, 0)
+E       Greatest relative difference: inf at index (0, 1)
+
+test/test_item7_end_state_storage.py:31: AssertionError
+_________ test_no_clause_derivation_or_factored_target_is_checkpointed _________
+
+    def test_no_clause_derivation_or_factored_target_is_checkpointed():
+        store, _ = clause_store()
+        ended = idea_clause()
+        row = store.write_clause(ended, trust=.5)
+>       assert 'derivation' not in {field.name for field in fields(Clause)}
+E       AssertionError: assert 'derivation' not in {'children', 'derivation', 'eternal', 'factored_refs', 'meaning', 'point', ...}
+
+test/test_item7_end_state_storage.py:39: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot
+FAILED test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references
+FAILED test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed
+3 failed, 1 warning in 2.00s

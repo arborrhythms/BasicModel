@@ -1,0 +1,44 @@
+........FFFF.F..                                                         [100%]
+=================================== FAILURES ===================================
+______ TestSymbolizeLayerNumericalGuard.test_forward_raises_on_inf_right _______
+test/test_symbolize_layer.py:311: in test_forward_raises_on_inf_right
+    ws.insert_percept(b"inf_guard_right")
+    ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'
+_______ TestSymbolizeLayerNumericalGuard.test_forward_raises_on_nan_left _______
+test/test_symbolize_layer.py:293: in test_forward_raises_on_nan_left
+    ws.insert_percept(b"nan_guard_left")
+    ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'
+_____ TestSymbolizeLayerComposeGenerate.test_compose_dispatches_to_forward _____
+test/test_symbolize_layer.py:346: in test_compose_dispatches_to_forward
+    ps_idx = ws.insert_percept(b"compose_word")
+             ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'
+_ TestSymbolizeLayerSignalRouterDispatch.test_binary_op_adapter_routes_through_registered_meta_forward _
+test/test_symbolize_layer.py:553: in test_binary_op_adapter_routes_through_registered_meta_forward
+    ps_idx = ws.insert_percept(b"adapter_word")
+             ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'
+_ TestSymbolizeLayerSignalRouterDispatch.test_registered_meta_layer_compose_dispatches_to_forward _
+test/test_symbolize_layer.py:492: in test_registered_meta_layer_compose_dispatches_to_forward
+    ps_idx = ws.insert_percept(b"dispatch_word")
+             ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'
+=========================== short test summary info ============================
+FAILED test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_inf_right
+FAILED test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_nan_left
+FAILED test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward
+FAILED test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward
+FAILED test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward
+5 failed, 11 passed in 2.84s

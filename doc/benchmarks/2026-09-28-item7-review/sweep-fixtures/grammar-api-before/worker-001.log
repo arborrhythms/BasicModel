@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_recovers_on_transitional_grammar_participation ______________
+test/test_semantic_categories_pipeline.py:82: in test_recovers_on_transitional_grammar_participation
+    op_vectors = {m: seed._seed_operator_vector(m)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'
+=========================== short test summary info ============================
+FAILED test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation
+1 failed in 2.16s

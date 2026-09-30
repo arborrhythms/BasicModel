@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/pytest_worker.py",
+    "/private/tmp/item7-isolated-fixtures/collect.request.json",
+    "/private/tmp/item7-isolated-fixtures/collect.json"
+  ],
+  "pid": 31696,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 438027536,
+  "elapsed_seconds": 4.469662583083846,
+  "log": "/private/tmp/item7-isolated-fixtures/collect.log"
+}

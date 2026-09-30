@@ -1,0 +1,142 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+  ],
+  "completed": [
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-09/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-09/worker-000.json"
+      ],
+      "pid": 35162,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431375656,
+      "elapsed_seconds": 3.614785165991634,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-09/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+        "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+        "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+        "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+        "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+      ],
+      "completed": [
+        "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+        "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+        "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+        "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+        "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006735167000442743,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004287749994546175,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003975125029683113,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0039099170826375484,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004422208061441779,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-09",
+  "elapsed_seconds": 7.339708500076085,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 431375656,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-09/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-09/collect.json"
+    ],
+    "pid": 35154,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 429556960,
+    "elapsed_seconds": 3.4906789581291378,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-09/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+        "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+        "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+        "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+        "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

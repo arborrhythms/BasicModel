@@ -1,0 +1,2839 @@
+{
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "rows": [
+    {
+      "seed": 0,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "0",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-0.json"
+          ],
+          "pid": 13125,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7098685968,
+          "elapsed_seconds": 867.2111975830048,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-0.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.10115476697683334,
+                "answer": 0.05011705681681633,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 155.64369262498803
+              },
+              {
+                "reconstruction": 0.10715824365615845,
+                "answer": 0.04412098228931427,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 30.911000792053528
+              },
+              {
+                "reconstruction": 0.09316506236791611,
+                "answer": 0.053160637617111206,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4434819999150932
+              },
+              {
+                "reconstruction": 0.10291387885808945,
+                "answer": 0.042829763144254684,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.38356370804831386
+              }
+            ],
+            "reconstruction_mean": 0.10109798796474934,
+            "sentences_per_second": 0.04269359456986942,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.10882318764925003,
+                "answer": 0.061115022748708725,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 654.7385972080519
+              },
+              {
+                "reconstruction": 0.09667078405618668,
+                "answer": 0.044516563415527344,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.700654709013179
+              },
+              {
+                "reconstruction": 0.11432646960020065,
+                "answer": 0.1082022413611412,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4653448750032112
+              },
+              {
+                "reconstruction": 0.10781940817832947,
+                "answer": 0.09706918150186539,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6642279999796301
+              },
+              {
+                "reconstruction": 0.09886888414621353,
+                "answer": 0.08809027820825577,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3978928329888731
+              },
+              {
+                "reconstruction": 0.1075684130191803,
+                "answer": 0.08915727585554123,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.406447833054699
+              },
+              {
+                "reconstruction": 0.10523621737957001,
+                "answer": 0.08421969413757324,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.624985541915521
+              }
+            ],
+            "reconstruction_mean": 0.10676387846469879,
+            "sentences_per_second": 1.3229439750779137,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.10547567903995514,
+                "answer": 0.08845583349466324,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.37771179201081395
+              },
+              {
+                "reconstruction": 0.11653949320316315,
+                "answer": 0.09377879649400711,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4142026249319315
+              },
+              {
+                "reconstruction": 0.10229567438364029,
+                "answer": 0.08428371697664261,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4134567501023412
+              },
+              {
+                "reconstruction": 0.1097472682595253,
+                "answer": 0.08720599114894867,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3703734159935266
+              }
+            ],
+            "reconstruction_mean": 0.10851452872157097,
+            "sentences_per_second": 5.076964938424898,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "bdc952b665db9575349a1e63dfd193e83e852ff2ff016d07d4bd93968fd2e66d"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "0",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-0.json"
+          ],
+          "pid": 13123,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7983078744,
+          "elapsed_seconds": 1014.7072276249528,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-0.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.10847394168376923,
+                "answer": 0.05128314718604088,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 177.19037437508814
+              },
+              {
+                "reconstruction": 0.11285143345594406,
+                "answer": 0.05610126629471779,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 53.432826875010505
+              },
+              {
+                "reconstruction": 0.10699737817049026,
+                "answer": 0.055279944092035294,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5692823749268427
+              },
+              {
+                "reconstruction": 0.11127547174692154,
+                "answer": 0.04134182631969452,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4608312089694664
+              }
+            ],
+            "reconstruction_mean": 0.10989955626428127,
+            "sentences_per_second": 0.03453436444772171,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.11357899010181427,
+                "answer": 0.05673714727163315,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 753.7552178329788
+              },
+              {
+                "reconstruction": 0.10945512354373932,
+                "answer": 0.05320775881409645,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.028124167001806
+              },
+              {
+                "reconstruction": 0.10682883113622665,
+                "answer": 0.05639123544096947,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6979969999520108
+              },
+              {
+                "reconstruction": 0.11677895486354828,
+                "answer": 0.04564256593585014,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.9370936249615625
+              },
+              {
+                "reconstruction": 0.10714221000671387,
+                "answer": 0.05509398132562637,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6612012500409037
+              },
+              {
+                "reconstruction": 0.09823066741228104,
+                "answer": 0.06033673882484436,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.665258749970235
+              },
+              {
+                "reconstruction": 0.10623714327812195,
+                "answer": 0.04386713728308678,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.913031208096072
+              }
+            ],
+            "reconstruction_mean": 0.10704356133937835,
+            "sentences_per_second": 1.1268136559169166,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.10857537388801575,
+                "answer": 0.04661212116479874,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.46741791698150337
+              },
+              {
+                "reconstruction": 0.11186221987009048,
+                "answer": 0.0541679710149765,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5348773329751566
+              },
+              {
+                "reconstruction": 0.10559289902448654,
+                "answer": 0.04046320170164108,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.525013625039719
+              },
+              {
+                "reconstruction": 0.11080741882324219,
+                "answer": 0.03989684209227562,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.46042070793919265
+              }
+            ],
+            "reconstruction_mean": 0.10920947790145874,
+            "sentences_per_second": 4.024692326702321,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 52,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "bdc952b665db9575349a1e63dfd193e83e852ff2ff016d07d4bd93968fd2e66d"
+      }
+    },
+    {
+      "seed": 1,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "1",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-1.json"
+          ],
+          "pid": 13124,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7168252456,
+          "elapsed_seconds": 869.2256760420278,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-1.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.12080370634794235,
+                "answer": 0.13391979038715363,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 155.78352041705512
+              },
+              {
+                "reconstruction": 0.11823108047246933,
+                "answer": 0.13389965891838074,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 30.738734500017017
+              },
+              {
+                "reconstruction": 0.13155531883239746,
+                "answer": 0.1383923441171646,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.44789499999023974
+              },
+              {
+                "reconstruction": 0.11842966079711914,
+                "answer": 0.14580829441547394,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.36487858300097287
+              }
+            ],
+            "reconstruction_mean": 0.12225494161248207,
+            "sentences_per_second": 0.04270423990672569,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.11360643059015274,
+                "answer": 0.12832383811473846,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 657.1663004579023
+              },
+              {
+                "reconstruction": 0.10412034392356873,
+                "answer": 0.12458375096321106,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7685335830319673
+              },
+              {
+                "reconstruction": 0.1233186423778534,
+                "answer": 0.09391693025827408,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4499259169679135
+              },
+              {
+                "reconstruction": 0.11981618404388428,
+                "answer": 0.06358546763658524,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6219500420847908
+              },
+              {
+                "reconstruction": 0.11581721901893616,
+                "answer": 0.09850651025772095,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3928881249157712
+              },
+              {
+                "reconstruction": 0.13333584368228912,
+                "answer": 0.1063481941819191,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3862137080868706
+              },
+              {
+                "reconstruction": 0.11314785480499268,
+                "answer": 0.09158303588628769,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6020153330173343
+              }
+            ],
+            "reconstruction_mean": 0.12108714878559113,
+            "sentences_per_second": 1.3417428182455866,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.12488027662038803,
+                "answer": 0.0857117548584938,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.37932654202450067
+              },
+              {
+                "reconstruction": 0.11455704271793365,
+                "answer": 0.08354385197162628,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.40815141692291945
+              },
+              {
+                "reconstruction": 0.12227165699005127,
+                "answer": 0.07385765016078949,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4059847079915926
+              },
+              {
+                "reconstruction": 0.11367537081241608,
+                "answer": 0.08033627271652222,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.36202050000429153
+              }
+            ],
+            "reconstruction_mean": 0.11884608678519726,
+            "sentences_per_second": 5.143096479610822,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "0cabb8c917fae9be5de028e2e678c44936687990ae484d288b057bbadffe792e"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "1",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-1.json"
+          ],
+          "pid": 13735,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7773805840,
+          "elapsed_seconds": 1016.3769713330548,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-1.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.1078411191701889,
+                "answer": 0.41259822249412537,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 177.48901179200038
+              },
+              {
+                "reconstruction": 0.10414770245552063,
+                "answer": 0.21778865158557892,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 53.54115249996539
+              },
+              {
+                "reconstruction": 0.10114313662052155,
+                "answer": 0.21050168573856354,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5694227919448167
+              },
+              {
+                "reconstruction": 0.11355447769165039,
+                "answer": 0.14941541850566864,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4531099160667509
+              }
+            ],
+            "reconstruction_mean": 0.10667160898447037,
+            "sentences_per_second": 0.034474927908296545,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.11257468163967133,
+                "answer": 0.28056100010871887,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 754.6736742500216
+              },
+              {
+                "reconstruction": 0.2232290804386139,
+                "answer": 0.6733022332191467,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.006508957943879
+              },
+              {
+                "reconstruction": 0.1484593152999878,
+                "answer": 0.17043708264827728,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.702971582999453
+              },
+              {
+                "reconstruction": 0.10766151547431946,
+                "answer": 0.07830537855625153,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.9888299170415848
+              },
+              {
+                "reconstruction": 0.125381201505661,
+                "answer": 0.1413802057504654,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6916095829801634
+              },
+              {
+                "reconstruction": 0.11911933124065399,
+                "answer": 0.07497325539588928,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6719846250489354
+              },
+              {
+                "reconstruction": 0.16848139464855194,
+                "answer": 0.09477423131465912,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.9671417089411989
+              }
+            ],
+            "reconstruction_mean": 0.13382055163383483,
+            "sentences_per_second": 1.108335664105502,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.11555574089288712,
+                "answer": 0.06936722248792648,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.49169449997134507
+              },
+              {
+                "reconstruction": 0.12000592797994614,
+                "answer": 0.10328638553619385,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5333231670083478
+              },
+              {
+                "reconstruction": 0.115424245595932,
+                "answer": 0.07272642850875854,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5435050829546526
+              },
+              {
+                "reconstruction": 0.12055324763059616,
+                "answer": 0.05669272318482399,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.474868250079453
+              }
+            ],
+            "reconstruction_mean": 0.11788479052484035,
+            "sentences_per_second": 3.9150607984208494,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 61,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "0cabb8c917fae9be5de028e2e678c44936687990ae484d288b057bbadffe792e"
+      }
+    },
+    {
+      "seed": 2,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "2",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-2.json"
+          ],
+          "pid": 13741,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 6915054120,
+          "elapsed_seconds": 862.3552860419732,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-2.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.1253357231616974,
+                "answer": 0.13762889802455902,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 154.75278962496668
+              },
+              {
+                "reconstruction": 0.1228356882929802,
+                "answer": 0.13998502492904663,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 30.50626991596073
+              },
+              {
+                "reconstruction": 0.11588243395090103,
+                "answer": 0.14101381599903107,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.42358633398544043
+              },
+              {
+                "reconstruction": 0.11935310065746307,
+                "answer": 0.13882888853549957,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3548895410494879
+              }
+            ],
+            "reconstruction_mean": 0.12085173651576042,
+            "sentences_per_second": 0.04300207472708535,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.1208706870675087,
+                "answer": 0.14583340287208557,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 651.0095491659595
+              },
+              {
+                "reconstruction": 0.1208706870675087,
+                "answer": 0.13498777151107788,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7449720420408994
+              },
+              {
+                "reconstruction": 0.11976861208677292,
+                "answer": 0.06504975259304047,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4839142919518054
+              },
+              {
+                "reconstruction": 0.12067917734384537,
+                "answer": 0.03850637748837471,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.666593165951781
+              },
+              {
+                "reconstruction": 0.11075319349765778,
+                "answer": 0.11712836474180222,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4384933341061696
+              },
+              {
+                "reconstruction": 0.1249653548002243,
+                "answer": 0.12682081758975983,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3998390829656273
+              },
+              {
+                "reconstruction": 0.10991572588682175,
+                "answer": 0.10821984708309174,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6370285419980064
+              }
+            ],
+            "reconstruction_mean": 0.11721641272306442,
+            "sentences_per_second": 1.3113260619265803,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.11807888746261597,
+                "answer": 0.11156021058559418,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.36711041699163616
+              },
+              {
+                "reconstruction": 0.12159252166748047,
+                "answer": 0.12312281131744385,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.40465087501797825
+              },
+              {
+                "reconstruction": 0.10642650723457336,
+                "answer": 0.09962085634469986,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4116049170261249
+              },
+              {
+                "reconstruction": 0.11164309084415436,
+                "answer": 0.10656595975160599,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3645303329685703
+              }
+            ],
+            "reconstruction_mean": 0.11443525180220604,
+            "sentences_per_second": 5.168304071305126,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "6c775bdc5f88ac6dee791e96f542c8cab04aa839a2f471bf1956ad91a2420bb4"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "2",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-2.json"
+          ],
+          "pid": 13795,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7899389344,
+          "elapsed_seconds": 1018.1988682500087,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-2.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.12969273328781128,
+                "answer": 0.4077533483505249,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 177.7013430830557
+              },
+              {
+                "reconstruction": 0.11362271755933762,
+                "answer": 0.23722301423549652,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 54.00338116695639
+              },
+              {
+                "reconstruction": 0.11432208120822906,
+                "answer": 0.24749039113521576,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5857302080839872
+              },
+              {
+                "reconstruction": 0.13876651227474213,
+                "answer": 0.4790676236152649,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4641129169613123
+              }
+            ],
+            "reconstruction_mean": 0.12410101108253002,
+            "sentences_per_second": 0.03437096891468907,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.1380881369113922,
+                "answer": 0.27848032116889954,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 751.4463811661117
+              },
+              {
+                "reconstruction": 0.17928588390350342,
+                "answer": 0.46563461422920227,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.0250287499511614
+              },
+              {
+                "reconstruction": 0.15150749683380127,
+                "answer": 0.2598968744277954,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7177369589917362
+              },
+              {
+                "reconstruction": 0.13992509245872498,
+                "answer": 0.12765814363956451,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.9593535410240293
+              },
+              {
+                "reconstruction": 0.13446182012557983,
+                "answer": 0.14931173622608185,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 7.7423410000046715
+              },
+              {
+                "reconstruction": 0.12154810130596161,
+                "answer": 0.09676922857761383,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.68151875003241
+              },
+              {
+                "reconstruction": 0.1480843424797058,
+                "answer": 0.08014155924320221,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.953346624970436
+              }
+            ],
+            "reconstruction_mean": 0.1391053706407547,
+            "sentences_per_second": 0.6642621759765538,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.116449274122715,
+                "answer": 0.07319893687963486,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.47721258306410164
+              },
+              {
+                "reconstruction": 0.1184203252196312,
+                "answer": 0.07172654569149017,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5329222499858588
+              },
+              {
+                "reconstruction": 0.1286306232213974,
+                "answer": 0.09272241592407227,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5362512919818982
+              },
+              {
+                "reconstruction": 0.1238337904214859,
+                "answer": 0.082351915538311,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4727265830151737
+              }
+            ],
+            "reconstruction_mean": 0.12183350324630737,
+            "sentences_per_second": 3.9621364216651007,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 51,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "6c775bdc5f88ac6dee791e96f542c8cab04aa839a2f471bf1956ad91a2420bb4"
+      }
+    },
+    {
+      "seed": 3,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "3",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-3.json"
+          ],
+          "pid": 14216,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 6439115064,
+          "elapsed_seconds": 861.8425040829461,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-3.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.08901623636484146,
+                "answer": 0.04899197816848755,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 156.2709329999052
+              },
+              {
+                "reconstruction": 0.09641730040311813,
+                "answer": 0.04871956259012222,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 30.184482290991582
+              },
+              {
+                "reconstruction": 0.10172251611948013,
+                "answer": 0.04604722931981087,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4229060000507161
+              },
+              {
+                "reconstruction": 0.10690558701753616,
+                "answer": 0.0443599708378315,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.36822583398316056
+              }
+            ],
+            "reconstruction_mean": 0.09851540997624397,
+            "sentences_per_second": 0.04272441934356424,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.102887362241745,
+                "answer": 0.045377541333436966,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 648.2161049590213
+              },
+              {
+                "reconstruction": 0.09822070598602295,
+                "answer": 0.04616514593362808,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.699389124987647
+              },
+              {
+                "reconstruction": 0.09223228693008423,
+                "answer": 0.05024081841111183,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4616909999167547
+              },
+              {
+                "reconstruction": 0.09370043128728867,
+                "answer": 0.048452142626047134,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6658151660813019
+              },
+              {
+                "reconstruction": 0.10030944645404816,
+                "answer": 0.04667844623327255,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.433368208934553
+              },
+              {
+                "reconstruction": 0.11075453460216522,
+                "answer": 0.047091253101825714,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4415008750511333
+              },
+              {
+                "reconstruction": 0.10634072870016098,
+                "answer": 0.046307872980833054,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6335816249484196
+              }
+            ],
+            "reconstruction_mean": 0.10066748559474945,
+            "sentences_per_second": 1.3095935668296763,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.0972645953297615,
+                "answer": 0.05134148150682449,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.37190891604404896
+              },
+              {
+                "reconstruction": 0.101915143430233,
+                "answer": 0.054816167801618576,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.40672774997074157
+              },
+              {
+                "reconstruction": 0.1025581955909729,
+                "answer": 0.0420224592089653,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.41441587498411536
+              },
+              {
+                "reconstruction": 0.1036272794008255,
+                "answer": 0.050217777490615845,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.36309516709297895
+              }
+            ],
+            "reconstruction_mean": 0.10134130343794823,
+            "sentences_per_second": 5.140900159027596,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "e55d5f9ec784507e81fbfae0198d793651f801a9eed6af9278022e2c9a52cfba"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "3",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-3.json"
+          ],
+          "pid": 14385,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8083299600,
+          "elapsed_seconds": 1015.5831639589742,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-3.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.09724138677120209,
+                "answer": 0.05170644447207451,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 177.3748445409583
+              },
+              {
+                "reconstruction": 0.10437969863414764,
+                "answer": 0.05751585587859154,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 53.95638004201464
+              },
+              {
+                "reconstruction": 0.09471743553876877,
+                "answer": 0.0472925640642643,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5697392500005662
+              },
+              {
+                "reconstruction": 0.09756734222173691,
+                "answer": 0.04189160838723183,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4682458749739453
+              }
+            ],
+            "reconstruction_mean": 0.09847646579146385,
+            "sentences_per_second": 0.034427969222147706,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.10835312306880951,
+                "answer": 0.05024426057934761,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 753.5912351669976
+              },
+              {
+                "reconstruction": 0.10117251425981522,
+                "answer": 0.13007767498493195,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.185513957985677
+              },
+              {
+                "reconstruction": 0.11947520077228546,
+                "answer": 0.3028579652309418,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.8033792080823332
+              },
+              {
+                "reconstruction": 0.11371316760778427,
+                "answer": 0.2910099923610687,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.9828464589081705
+              },
+              {
+                "reconstruction": 0.107540562748909,
+                "answer": 0.37367624044418335,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7256641660351306
+              },
+              {
+                "reconstruction": 0.11447623372077942,
+                "answer": 0.11665934324264526,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7065200420329347
+              },
+              {
+                "reconstruction": 0.1016865223646164,
+                "answer": 0.3159659206867218,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.9697770830243826
+              }
+            ],
+            "reconstruction_mean": 0.11137833744287491,
+            "sentences_per_second": 1.088353996889766,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.12434367090463638,
+                "answer": 0.05023445934057236,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5023869160795584
+              },
+              {
+                "reconstruction": 0.12423224747180939,
+                "answer": 0.051884256303310394,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5547174999956042
+              },
+              {
+                "reconstruction": 0.12414570897817612,
+                "answer": 0.049351971596479416,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5483220840105787
+              },
+              {
+                "reconstruction": 0.10324474424123764,
+                "answer": 0.17224708199501038,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.47370124992448837
+              }
+            ],
+            "reconstruction_mean": 0.11899159289896488,
+            "sentences_per_second": 3.847767411098543,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 52,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "e55d5f9ec784507e81fbfae0198d793651f801a9eed6af9278022e2c9a52cfba"
+      }
+    },
+    {
+      "seed": 4,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "4",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-4.json"
+          ],
+          "pid": 14531,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 6971873784,
+          "elapsed_seconds": 861.8500094580231,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-4.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.09262026101350784,
+                "answer": 0.04600714519619942,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 154.80785091698635
+              },
+              {
+                "reconstruction": 0.09695214778184891,
+                "answer": 0.04704642668366432,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 30.675668083014898
+              },
+              {
+                "reconstruction": 0.09984360635280609,
+                "answer": 0.05012758448719978,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4411844579735771
+              },
+              {
+                "reconstruction": 0.09084475040435791,
+                "answer": 0.06802064925432205,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.35858604207169265
+              }
+            ],
+            "reconstruction_mean": 0.09506519138813019,
+            "sentences_per_second": 0.042945344273609694,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.11217016726732254,
+                "answer": 0.047615647315979004,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 650.3362472089939
+              },
+              {
+                "reconstruction": 0.11038180440664291,
+                "answer": 0.04325692355632782,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.777182124904357
+              },
+              {
+                "reconstruction": 0.09380403161048889,
+                "answer": 0.05295094475150108,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4928817501058802
+              },
+              {
+                "reconstruction": 0.09438492357730865,
+                "answer": 0.04351946711540222,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6648652909789234
+              },
+              {
+                "reconstruction": 0.10024149715900421,
+                "answer": 0.05000416934490204,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3860769999446347
+              },
+              {
+                "reconstruction": 0.10607776045799255,
+                "answer": 0.05851592496037483,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3748075000476092
+              },
+              {
+                "reconstruction": 0.11663034558296204,
+                "answer": 0.04624322056770325,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.5995197090087458
+              }
+            ],
+            "reconstruction_mean": 0.10222771167755126,
+            "sentences_per_second": 1.3301142351832687,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.10116640478372574,
+                "answer": 0.0505475252866745,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3667643750086427
+              },
+              {
+                "reconstruction": 0.10580582171678543,
+                "answer": 0.050320547074079514,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4006322920322418
+              },
+              {
+                "reconstruction": 0.10928472131490707,
+                "answer": 0.04613230377435684,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.40985162497963756
+              },
+              {
+                "reconstruction": 0.09170565754175186,
+                "answer": 0.053809184581041336,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3565704169450328
+              }
+            ],
+            "reconstruction_mean": 0.10199065133929253,
+            "sentences_per_second": 5.2157402652855875,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "9a497769d4aeb92d2bbe21581582c7bc47bb3357e61519c2b0f327b8110ea128"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "4",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-4.json"
+          ],
+          "pid": 14887,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7919508752,
+          "elapsed_seconds": 1014.3935422500363,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-4.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.10703273862600327,
+                "answer": 0.06696584075689316,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 181.42103145900182
+              },
+              {
+                "reconstruction": 0.10108903050422668,
+                "answer": 0.06169021502137184,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 53.62922741600778
+              },
+              {
+                "reconstruction": 0.0926622524857521,
+                "answer": 0.06359034031629562,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5806128340773284
+              },
+              {
+                "reconstruction": 0.09355318546295166,
+                "answer": 0.0673939436674118,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.46574174996931106
+              }
+            ],
+            "reconstruction_mean": 0.09858430176973343,
+            "sentences_per_second": 0.03388443350707932,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.09588019549846649,
+                "answer": 0.10197510570287704,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 747.5792327910895
+              },
+              {
+                "reconstruction": 0.09676260501146317,
+                "answer": 0.07788999378681183,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.1378720419015735
+              },
+              {
+                "reconstruction": 0.09817344695329666,
+                "answer": 0.05059666559100151,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.8160629170015454
+              },
+              {
+                "reconstruction": 0.10080475360155106,
+                "answer": 0.061650969088077545,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.02929125004448
+              },
+              {
+                "reconstruction": 0.09456995129585266,
+                "answer": 0.0465649850666523,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6980698329862207
+              },
+              {
+                "reconstruction": 0.12003070116043091,
+                "answer": 0.07119254022836685,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6824855420272797
+              },
+              {
+                "reconstruction": 0.09553506970405579,
+                "answer": 0.047334350645542145,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.992154874955304
+              }
+            ],
+            "reconstruction_mean": 0.10182278454303742,
+            "sentences_per_second": 1.0848264394357956,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.11198310554027557,
+                "answer": 0.08106876909732819,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4709548749960959
+              },
+              {
+                "reconstruction": 0.09791556000709534,
+                "answer": 0.08462401479482651,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5302317080786452
+              },
+              {
+                "reconstruction": 0.09511878341436386,
+                "answer": 0.06707195937633514,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5311724999919534
+              },
+              {
+                "reconstruction": 0.09504268318414688,
+                "answer": 0.048609040677547455,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.46726545796263963
+              }
+            ],
+            "reconstruction_mean": 0.10001503303647041,
+            "sentences_per_second": 4.000751058937239,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 41,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "9a497769d4aeb92d2bbe21581582c7bc47bb3357e61519c2b0f327b8110ea128"
+      }
+    },
+    {
+      "seed": 5,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "5",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-5.json"
+          ],
+          "pid": 15277,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 6610622920,
+          "elapsed_seconds": 864.38995087496,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-5.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.11155201494693756,
+                "answer": 0.051113907247781754,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 155.70335979096126
+              },
+              {
+                "reconstruction": 0.12408757209777832,
+                "answer": 0.060008659958839417,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 30.97529420896899
+              },
+              {
+                "reconstruction": 0.12100207060575485,
+                "answer": 0.06682860851287842,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4398507500300184
+              },
+              {
+                "reconstruction": 0.12147477269172668,
+                "answer": 0.05458496883511543,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3607234579976648
+              }
+            ],
+            "reconstruction_mean": 0.11952910758554935,
+            "sentences_per_second": 0.042671393927044256,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.11022713780403137,
+                "answer": 0.049838244915008545,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 651.4792606249684
+              },
+              {
+                "reconstruction": 0.1214032992720604,
+                "answer": 0.04610029235482216,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6902220830088481
+              },
+              {
+                "reconstruction": 0.12475180625915527,
+                "answer": 0.05076547712087631,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4000687500229105
+              },
+              {
+                "reconstruction": 0.12042929977178574,
+                "answer": 0.048366744071245193,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.693671333952807
+              },
+              {
+                "reconstruction": 0.12446388602256775,
+                "answer": 0.0405845083296299,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4127335409866646
+              },
+              {
+                "reconstruction": 0.12696486711502075,
+                "answer": 0.04860363528132439,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.420834792079404
+              },
+              {
+                "reconstruction": 0.11473102867603302,
+                "answer": 0.03916849568486214,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6500464580021799
+              }
+            ],
+            "reconstruction_mean": 0.1222681775689125,
+            "sentences_per_second": 1.3197217452405483,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.11930465698242188,
+                "answer": 0.04183419421315193,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3710858749691397
+              },
+              {
+                "reconstruction": 0.12265593558549881,
+                "answer": 0.04692422226071358,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.40960662509314716
+              },
+              {
+                "reconstruction": 0.12728078663349152,
+                "answer": 0.0451977401971817,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.41414174996316433
+              },
+              {
+                "reconstruction": 0.125973641872406,
+                "answer": 0.04821352660655975,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.36934283294249326
+              }
+            ],
+            "reconstruction_mean": 0.12380375526845455,
+            "sentences_per_second": 5.114510426671395,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "6a6bd568035df084d128e73b300ae81fbb6bc48dadf32234e63cb11653f884c3"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "5",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-5.json"
+          ],
+          "pid": 15285,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7698488592,
+          "elapsed_seconds": 1016.674021959072,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-5.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.10554371774196625,
+                "answer": 0.048765573650598526,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 178.49756650009658
+              },
+              {
+                "reconstruction": 0.12579470872879028,
+                "answer": 0.05325228348374367,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 53.440942582907155
+              },
+              {
+                "reconstruction": 0.13055098056793213,
+                "answer": 0.06432471424341202,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5607277920935303
+              },
+              {
+                "reconstruction": 0.11426400393247604,
+                "answer": 0.06443721801042557,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.46294170792680234
+              }
+            ],
+            "reconstruction_mean": 0.11903835274279118,
+            "sentences_per_second": 0.034340338198498285,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.15459558367729187,
+                "answer": 0.06962195783853531,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 754.3122151249554
+              },
+              {
+                "reconstruction": 0.14986735582351685,
+                "answer": 0.05550646409392357,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.0579338329844177
+              },
+              {
+                "reconstruction": 0.1143999919295311,
+                "answer": 0.05427022650837898,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7111817919649184
+              },
+              {
+                "reconstruction": 0.12539666891098022,
+                "answer": 0.04782642424106598,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.0025256250519305
+              },
+              {
+                "reconstruction": 0.11009038239717484,
+                "answer": 0.04382403567433357,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7169536669971421
+              },
+              {
+                "reconstruction": 0.13739117980003357,
+                "answer": 0.09540469944477081,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6923608330544084
+              },
+              {
+                "reconstruction": 0.12936753034591675,
+                "answer": 0.10225964337587357,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.9518616249551997
+              }
+            ],
+            "reconstruction_mean": 0.1233291506767273,
+            "sentences_per_second": 1.1019425157019822,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.14163631200790405,
+                "answer": 0.08972997963428497,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.46669470902998
+              },
+              {
+                "reconstruction": 0.14389568567276,
+                "answer": 0.05933587625622749,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5165673749288544
+              },
+              {
+                "reconstruction": 0.16435036063194275,
+                "answer": 0.10127910226583481,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5214005410671234
+              },
+              {
+                "reconstruction": 0.13701599836349487,
+                "answer": 0.28396785259246826,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4606812089914456
+              }
+            ],
+            "reconstruction_mean": 0.14672458916902542,
+            "sentences_per_second": 4.070534560686524,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 61,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "6a6bd568035df084d128e73b300ae81fbb6bc48dadf32234e63cb11653f884c3"
+      }
+    },
+    {
+      "seed": 6,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "6",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-6.json"
+          ],
+          "pid": 16399,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 6542809520,
+          "elapsed_seconds": 857.83679983404,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-6.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.10920964926481247,
+                "answer": 0.050021447241306305,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 156.57678316603415
+              },
+              {
+                "reconstruction": 0.11474438011646271,
+                "answer": 0.05407753586769104,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 30.86661466700025
+              },
+              {
+                "reconstruction": 0.10848814249038696,
+                "answer": 0.046569813042879105,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.43169508303981274
+              },
+              {
+                "reconstruction": 0.12064981460571289,
+                "answer": 0.0460597462952137,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3594773749355227
+              }
+            ],
+            "reconstruction_mean": 0.11327299661934376,
+            "sentences_per_second": 0.04250016342711139,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.11554385721683502,
+                "answer": 0.04613301903009415,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 643.647591792047
+              },
+              {
+                "reconstruction": 0.11709192395210266,
+                "answer": 0.042998865246772766,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.689724166993983
+              },
+              {
+                "reconstruction": 0.10473321378231049,
+                "answer": 0.05049918219447136,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4716797079890966
+              },
+              {
+                "reconstruction": 0.1128946840763092,
+                "answer": 0.04401508718729019,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6819194169947878
+              },
+              {
+                "reconstruction": 0.1070861965417862,
+                "answer": 0.13106325268745422,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3952445409959182
+              },
+              {
+                "reconstruction": 0.11385935544967651,
+                "answer": 0.11294392496347427,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.3702298749703914
+              },
+              {
+                "reconstruction": 0.10782798379659653,
+                "answer": 0.1283712238073349,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6085616250056773
+              }
+            ],
+            "reconstruction_mean": 0.10928028672933579,
+            "sentences_per_second": 1.328438451059043,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.11166134476661682,
+                "answer": 0.11992493271827698,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3719344169367105
+              },
+              {
+                "reconstruction": 0.1063140332698822,
+                "answer": 0.13227766752243042,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3982271670829505
+              },
+              {
+                "reconstruction": 0.10404861718416214,
+                "answer": 0.11425109207630157,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.40501204098109156
+              },
+              {
+                "reconstruction": 0.1138533279299736,
+                "answer": 0.13698092103004456,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.36172208399511874
+              }
+            ],
+            "reconstruction_mean": 0.10896933078765869,
+            "sentences_per_second": 5.205297895734766,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "a256a8f52fd64089180f8ecbf65abda0fb0f504de2f2a894ab8b5ad44b2fc329"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "6",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-6.json"
+          ],
+          "pid": 16716,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7619992776,
+          "elapsed_seconds": 1021.2201476660557,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-6.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.11411906033754349,
+                "answer": 0.05068346858024597,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 178.74152791697998
+              },
+              {
+                "reconstruction": 0.11052751541137695,
+                "answer": 0.06272882223129272,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 54.07388599996921
+              },
+              {
+                "reconstruction": 0.11675634235143661,
+                "answer": 0.060375943779945374,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.566992708016187
+              },
+              {
+                "reconstruction": 0.11342649906873703,
+                "answer": 0.051154233515262604,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.47414258401840925
+              }
+            ],
+            "reconstruction_mean": 0.11370735429227352,
+            "sentences_per_second": 0.03420900559364225,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.12183254957199097,
+                "answer": 0.060881827026605606,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 757.7006584589835
+              },
+              {
+                "reconstruction": 0.13004444539546967,
+                "answer": 0.05069006606936455,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.0522821249905974
+              },
+              {
+                "reconstruction": 0.1310528963804245,
+                "answer": 0.07394246011972427,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.817081082961522
+              },
+              {
+                "reconstruction": 0.12883850932121277,
+                "answer": 0.09469272196292877,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.0104653750313446
+              },
+              {
+                "reconstruction": 0.12479939311742783,
+                "answer": 0.24794073402881622,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7178800830151886
+              },
+              {
+                "reconstruction": 0.12596158683300018,
+                "answer": 0.23786015808582306,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7906496670329943
+              },
+              {
+                "reconstruction": 0.1241757795214653,
+                "answer": 0.42042550444602966,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 2.0215714579680935
+              }
+            ],
+            "reconstruction_mean": 0.12696563303470612,
+            "sentences_per_second": 1.068644637724943,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.11461277306079865,
+                "answer": 0.04702386260032654,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4938898340333253
+              },
+              {
+                "reconstruction": 0.13186530768871307,
+                "answer": 0.26383110880851746,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5342431250028312
+              },
+              {
+                "reconstruction": 0.10836061090230942,
+                "answer": 0.07113011181354523,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5495192499365658
+              },
+              {
+                "reconstruction": 0.10969451069831848,
+                "answer": 0.0756348967552185,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.47506316599901766
+              }
+            ],
+            "reconstruction_mean": 0.1161333005875349,
+            "sentences_per_second": 3.8972767961608596,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 56,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "a256a8f52fd64089180f8ecbf65abda0fb0f504de2f2a894ab8b5ad44b2fc329"
+      }
+    },
+    {
+      "seed": 7,
+      "head": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "1678ee1fb79c474ffaee5725fd035716de5f1913",
+            "--seed",
+            "7",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-7.json"
+          ],
+          "pid": 17042,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 7473126144,
+          "elapsed_seconds": 863.36760937504,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-7.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.0822516530752182,
+                "answer": 0.04033968597650528,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 155.44936208392028
+              },
+              {
+                "reconstruction": 0.08239119499921799,
+                "answer": 0.04893531650304794,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 31.025942375068553
+              },
+              {
+                "reconstruction": 0.09009136259555817,
+                "answer": 0.0526307113468647,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.435008707921952
+              },
+              {
+                "reconstruction": 0.09197348356246948,
+                "answer": 0.04589777812361717,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3663578750565648
+              }
+            ],
+            "reconstruction_mean": 0.08667692355811596,
+            "sentences_per_second": 0.042717547014744076,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.09546928107738495,
+                "answer": 0.058015428483486176,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 650.7433819160797
+              },
+              {
+                "reconstruction": 0.10521827638149261,
+                "answer": 0.13943922519683838,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.739297959022224
+              },
+              {
+                "reconstruction": 0.10331042110919952,
+                "answer": 0.08525943756103516,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4280776659725234
+              },
+              {
+                "reconstruction": 0.09866806864738464,
+                "answer": 0.08272559940814972,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6933117499575019
+              },
+              {
+                "reconstruction": 0.1000354140996933,
+                "answer": 0.12157032638788223,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.5002981249708682
+              },
+              {
+                "reconstruction": 0.10157675296068192,
+                "answer": 0.13185764849185944,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4555324170505628
+              },
+              {
+                "reconstruction": 0.09993905574083328,
+                "answer": 0.10749675333499908,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.6402910000178963
+              }
+            ],
+            "reconstruction_mean": 0.10070594251155854,
+            "sentences_per_second": 1.295754557973601,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.11749471724033356,
+                "answer": 0.13167697191238403,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.37668633298017085
+              },
+              {
+                "reconstruction": 0.12431676685810089,
+                "answer": 0.12360365688800812,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4109412500401959
+              },
+              {
+                "reconstruction": 0.10033285617828369,
+                "answer": 0.10738470405340195,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.40651187498588115
+              },
+              {
+                "reconstruction": 0.10587233304977417,
+                "answer": 0.10257554054260254,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.3689408330246806
+              }
+            ],
+            "reconstruction_mean": 0.11200416833162308,
+            "sentences_per_second": 5.118099208277782,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 0,
+        "definition_rows": 0,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "3e3e7e16e7434c6f713333df67b913a451721700d9dd8bd9c4123eafb677b010"
+      },
+      "candidate": {
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+            "--revision",
+            "item7-round3-candidate",
+            "--seed",
+            "7",
+            "--out",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-7.json"
+          ],
+          "pid": 17725,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8288017944,
+          "elapsed_seconds": 897.0840089579578,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/candidate-reconstruction/seed-7.log"
+        },
+        "phases": {
+          "before_training": {
+            "name": "before_training",
+            "steps": [
+              {
+                "reconstruction": 0.09207986295223236,
+                "answer": 0.15928241610527039,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 181.84459229093045
+              },
+              {
+                "reconstruction": 0.08918531984090805,
+                "answer": 0.1624251753091812,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 53.554717542021535
+              },
+              {
+                "reconstruction": 0.09443160891532898,
+                "answer": 0.09318718314170837,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.5947268330492079
+              },
+              {
+                "reconstruction": 0.11479143798351288,
+                "answer": 0.06545086950063705,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.48858087498228997
+              }
+            ],
+            "reconstruction_mean": 0.09762205742299557,
+            "sentences_per_second": 0.033829124876857235,
+            "thought_calls": 0
+          },
+          "training": {
+            "name": "training",
+            "steps": [
+              {
+                "reconstruction": 0.08584857732057571,
+                "answer": 0.05250583216547966,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 632.9922851249576
+              },
+              {
+                "reconstruction": 0.10693783313035965,
+                "answer": 0.044499170035123825,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.8167546661570668
+              },
+              {
+                "reconstruction": 0.10167136043310165,
+                "answer": 0.1605449914932251,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.5114476669114083
+              },
+              {
+                "reconstruction": 0.08465605229139328,
+                "answer": 0.11893049627542496,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.7621477500069886
+              },
+              {
+                "reconstruction": 0.09488626569509506,
+                "answer": 0.0795779749751091,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4943034169264138
+              },
+              {
+                "reconstruction": 0.0943809300661087,
+                "answer": 0.2721920907497406,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.4928741659969091
+              },
+              {
+                "reconstruction": 0.0897459015250206,
+                "answer": 0.32427000999450684,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 1.8447124590165913
+              }
+            ],
+            "reconstruction_mean": 0.09306810200214385,
+            "sentences_per_second": 1.233732396505778,
+            "thought_calls": 0
+          },
+          "after_training": {
+            "name": "after_training",
+            "steps": [
+              {
+                "reconstruction": 0.0948190838098526,
+                "answer": 0.301251620054245,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.44039416685700417
+              },
+              {
+                "reconstruction": 0.10219482332468033,
+                "answer": 0.33625930547714233,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.505028499988839
+              },
+              {
+                "reconstruction": 0.10491293668746948,
+                "answer": 0.2920111417770386,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.48807504097931087
+              },
+              {
+                "reconstruction": 0.11097998172044754,
+                "answer": 0.3151605427265167,
+                "thought_calls": 0,
+                "thought_work": 0,
+                "execute_records": 0,
+                "seconds": 0.4455182501114905
+              }
+            ],
+            "reconstruction_mean": 0.10322670638561249,
+            "sentences_per_second": 4.257547662758987,
+            "thought_calls": 0
+          }
+        },
+        "store_rows": 104,
+        "definition_rows": 11,
+        "definition_context_reads": {
+          "estimates": 0,
+          "rows": 0,
+          "definitions": 0
+        },
+        "initial_atom_prefix_sha256": "3e3e7e16e7434c6f713333df67b913a451721700d9dd8bd9c4123eafb677b010"
+      }
+    }
+  ],
+  "summary": {
+    "head": {
+      "completed": 8,
+      "mean": 0.11123813455924392,
+      "median": 0.11048674955964088,
+      "minimum": 0.10134130343794823,
+      "maximum": 0.12380375526845455
+    },
+    "candidate": {
+      "completed": 8,
+      "mean": 0.11675237421877682,
+      "median": 0.11700904555618763,
+      "minimum": 0.10001503303647041,
+      "maximum": 0.14672458916902542
+    }
+  },
+  "rebaselined": false
+}

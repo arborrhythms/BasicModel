@@ -1,0 +1,13 @@
+{
+  "reason": "Observer assumes a common LTM store exists at HEAD; after-validation observation raised TypeError before metrics were saved. All runs stopped before changing the observer. All eight declared seeds will restart on both trees.",
+  "processes": {
+    "12864": 25038444629442,
+    "12865": 25038444655107,
+    "12866": 25038444673684,
+    "12867": 25038444731689,
+    "13025": 25043275265960,
+    "13026": 25043287225641,
+    "12852": 25038441052334,
+    "12958": 25040433268414
+  }
+}

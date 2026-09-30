@@ -1,0 +1,83 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+    "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+    "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+    "test/test_adverb_eig_edit.py::test_delta_is_sparse"
+  ],
+  "completed": [
+    "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+    "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+    "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+    "test/test_adverb_eig_edit.py::test_delta_is_sparse"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017300829058513045,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003867920022457838,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048191705718636513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008445420535281301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006664579268544912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006102499319240451,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_delta_is_sparse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005308339605107903,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

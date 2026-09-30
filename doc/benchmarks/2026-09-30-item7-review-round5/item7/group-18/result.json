@@ -1,0 +1,155 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+    "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+  ],
+  "completed": [
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+    "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+    "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+    "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/item7/group-18/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/item7/group-18/worker-000.json"
+      ],
+      "pid": 11090,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 531892120,
+      "elapsed_seconds": 4.547553333221003,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/item7/group-18/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+        "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+        "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+      ],
+      "completed": [
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+        "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+        "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01708270888775587,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003914541099220514,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0038038750644773245,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003532333066686988,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016854589339345694,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.28877112502232194,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/item7/group-18",
+  "elapsed_seconds": 6.793440959183499,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 531892120,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/item7/group-18/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/item7/group-18/collect.json"
+    ],
+    "pid": 11083,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180863840,
+    "elapsed_seconds": 1.9612410420086235,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/item7/group-18/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+        "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+        "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+        "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

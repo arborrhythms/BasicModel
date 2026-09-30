@@ -1,0 +1,20 @@
+F...F                                                                    [100%]
+=================================== FAILURES ===================================
+______________________ test_phase2_end_to_end_round_trip _______________________
+test/test_phase2_end_to_end.py:99: in test_phase2_end_to_end_round_trip
+    assert isinstance(ws.references, nn.Parameter)
+                      ^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?
+_________________ test_phase2_end_to_end_reattach_after_extend _________________
+test/test_phase2_end_to_end.py:213: in test_phase2_end_to_end_reattach_after_extend
+    refs_param_id_1 = id(ws.references)
+                         ^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?
+=========================== short test summary info ============================
+FAILED test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip - At...
+FAILED test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend
+2 failed, 3 passed in 2.37s

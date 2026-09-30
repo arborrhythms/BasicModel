@@ -1,0 +1,134 @@
+........................................FF..                             [100%]
+=================================== FAILURES ===================================
+_ test_nested_observation_writers_retain_children_without_certifying_them[pending] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12c352c00>
+path = 'pending'
+
+    @pytest.mark.parametrize("path", ["eager", "pending", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+>       store = _write_selected_observation(language, registry, entry, path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_selected_nested_meaning.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_selected_nested_meaning.py:117: in _write_selected_observation
+    BasicModel._drain_pending_stm_end_state(host)
+bin/Models.py:14106: in _drain_pending_stm_end_state
+    row = _append_observed_meaning(
+bin/Models.py:185: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:629: in seal_clause
+    index_plan.commit()
+bin/ConceptIndex.py:314: in commit
+    self.order(cid) if cs._symbolic_order > 0 else 0, cid)
+                       ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_symbolic_order'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_symbolic_order'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12c35f380>
+path = 'packed'
+
+    @pytest.mark.parametrize("path", ["eager", "pending", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+>       store = _write_selected_observation(language, registry, entry, path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_selected_nested_meaning.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_selected_nested_meaning.py:128: in _write_selected_observation
+    BasicModel._drain_packed_stm_end_states(host)
+bin/Models.py:14203: in _drain_packed_stm_end_states
+    row = _append_observed_meaning(
+bin/Models.py:185: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:629: in seal_clause
+    index_plan.commit()
+bin/ConceptIndex.py:314: in commit
+    self.order(cid) if cs._symbolic_order > 0 else 0, cid)
+                       ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_symbolic_order'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_symbolic_order'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[pending]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+2 failed, 42 passed, 1 warning in 3.46s

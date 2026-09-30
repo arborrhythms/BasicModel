@@ -1,0 +1,92 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_basicmodel.py::TestSPNN::test_xor_training"
+  ],
+  "completed": [
+    "test/test_basicmodel.py::TestSPNN::test_xor_training"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-07/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-07/worker-000.json"
+      ],
+      "pid": 75330,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 437110128,
+      "elapsed_seconds": 21.72149341693148,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-07/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_basicmodel.py::TestSPNN::test_xor_training"
+      ],
+      "completed": [
+        "test/test_basicmodel.py::TestSPNN::test_xor_training"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_basicmodel.py::TestSPNN::test_xor_training",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 12.985731333959848,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-07",
+  "elapsed_seconds": 29.471279917052016,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 438732048,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-07/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-07/collect.json"
+    ],
+    "pid": 75307,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 438732048,
+    "elapsed_seconds": 7.35579829197377,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/af-head/gate-07/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_basicmodel.py::TestSPNN::test_xor_training"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_basicmodel.py::TestSPNN::test_xor_training"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

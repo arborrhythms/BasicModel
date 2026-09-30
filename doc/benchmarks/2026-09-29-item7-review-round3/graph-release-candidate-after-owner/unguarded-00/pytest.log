@@ -1,0 +1,111 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_two_epoch_training_severs_cross_batch_graph _______________
+test/test_word_store.py:892: in test_two_epoch_training_severs_cross_batch_graph
+    m.runEpoch(optimizer=opt, batchSize=batch_size, split="train")
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16251: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:14029: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14201: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14568: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9263: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10741: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8962: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8774: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23849: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17761: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22025: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21567: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20810: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:147: in sentence_pair
+    cost_b, state_b = score(explore, True)
+                      ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20794: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20450: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20421: in _sentence_observation
+    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
+bin/Models.py:208: in _boundary_observation_view
+    clause = finish_clause(language, entry, meaning=meaning,
+bin/ClauseJournal.py:348: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:216: in recover
+    left, left_ref = operand(operands[0], sentence=relation == 'implies')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:203: in operand
+    child = recover(item)
+            ^^^^^^^^^^^^^
+bin/ClauseJournal.py:216: in recover
+    left, left_ref = operand(operands[0], sentence=relation == 'implies')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:203: in operand
+    child = recover(item)
+            ^^^^^^^^^^^^^
+bin/ClauseJournal.py:216: in recover
+    left, left_ref = operand(operands[0], sentence=relation == 'implies')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:203: in operand
+    child = recover(item)
+            ^^^^^^^^^^^^^
+bin/ClauseJournal.py:216: in recover
+    left, left_ref = operand(operands[0], sentence=relation == 'implies')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:203: in operand
+    child = recover(item)
+            ^^^^^^^^^^^^^
+bin/ClauseJournal.py:222: in recover
+    native = registry.clause_reference(relation)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1881: in clause_reference
+    operation = self.operation_spec('part' if relation in ('whole', 'equal', 'generic') else relation)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1982: in operation_spec
+    raise RuntimeError(
+E   RuntimeError: thought operation 'part' is unavailable: ConceptualSpace concept inventory exhausted while allocating 8 id(s) for grammatical thought VPs: snap block has 0 occupied rows and capacity 4. No concept was minted.
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7637: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_grammar_wordstore.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+1 failed, 2 warnings in 11.70s

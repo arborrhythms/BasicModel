@@ -14,7 +14,7 @@ forward input is a scoring target held by the caller, never a carrier.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any, Mapping
 
@@ -23,10 +23,10 @@ import torch
 
 @dataclass(frozen=True)
 class AnswerProgram:
-    """One sentence's owned row references and identified compose program.
+    """Temporary operations and values of one open sentence reading.
 
     Tensor copies retain the current forward's gradients while insulating
-    the record from subsequent staging. ``targets`` describe reconstruction
+    the reading from subsequent staging. ``targets`` describe reconstruction
     only; output generation never follows them. ``word_rows`` identify the
     presented WORDs separately from ``rows``, which identify their interpreted
     concepts (OBJECTs when associated).
@@ -42,6 +42,8 @@ class AnswerProgram:
     # Native allocator identities are addresses, never dictionary rows or
     # numerical semantic features. Older programs have unknown identities.
     concept_ids: Any = None
+    # Word identity survives unary row replacement and synonymy during reading.
+    word_ids: Any = None
     # A lexical infix may name one grammar-spelled structural form even when
     # that form shares a canonical native VP with a converse.  This is frozen
     # grammar provenance (for example ``whole``), never a raw surface, row,
@@ -54,11 +56,20 @@ class AnswerProgram:
     reference_orders: Any = None
     symbol_where: Any = None
     symbol_when: Any = None
+    reference_values: Any = None
+    reference_relations: Any = None
+    # Actual left/right operands and result, only while this reading is open.
+    operation_values: Any = None
+    operation_refs: Any = None
+    operation_relations: Any = None
+    leaf_orders: Any = None
+    leaf_evidence: Any = None
     @property
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
                 "targets", "end_state", "concept_ids")
-        return core + tuple(name for name in ("reference_ids", "reference_orders", "symbol_where", "symbol_when")
+        return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
+                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "leaf_orders", "leaf_evidence")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
@@ -70,6 +81,10 @@ class AnswerProgram:
                 or bool(((ids <= 0) & (ids != -1)).any())):
             raise ValueError("program concept IDs must be positive native addresses or -1, aligned to leaves")
         object.__setattr__(self, "concept_ids", ids)
+        words = self.word_ids
+        if words is not None and (not torch.is_tensor(words) or words.dtype != torch.long
+                                  or words.shape != ids.shape or bool(((words <= 0) & (words != -1)).any())):
+            raise ValueError('program word IDs must be positive identities or -1, aligned to leaves')
         # Unresolved programs retain no second identity vector. Structural
         # edits can then change their leaves without carrying stale aliases.
         refs, orders = self.reference_ids, self.reference_orders
@@ -84,6 +99,27 @@ class AnswerProgram:
             if value is not None and (not torch.is_tensor(value) or value.shape != (*ids.shape, 4)
                                       or not value.is_floating_point()):
                 raise ValueError('symbol occurrence bands must align to program leaves')
+        if self.reference_values is not None and self.reference_values.shape != self.leaves.shape:
+            raise ValueError('semantic reference values must align with word leaves')
+        if self.reference_relations is not None and (self.reference_relations.shape != ids.shape
+                or self.reference_relations.dtype != torch.bool):
+            raise ValueError('relation reference flags must align with native identities')
+        if self.operation_values is not None and self.operation_values.shape != (
+                self.actions.shape[0], 3, self.leaves.shape[-1]):
+            raise ValueError('operation values must hold two operands and a result per action')
+        if self.operation_refs is not None and (self.operation_refs.shape != (self.actions.shape[0], 2)
+                or self.operation_refs.dtype != torch.long):
+            raise ValueError('operation references must hold two operand addresses per action')
+        if self.operation_relations is not None and (self.operation_relations.shape != (self.actions.shape[0],2)
+                or self.operation_relations.dtype != torch.bool):
+            raise ValueError('operation reference kinds must align to operand addresses')
+        if self.leaf_orders is not None and (self.leaf_orders.shape != ids.shape
+                or self.leaf_orders.dtype != torch.long or bool((self.leaf_orders < -1).any())):
+            raise ValueError('leaf orders must align with the open reading')
+        if self.leaf_evidence is not None and (self.leaf_evidence.shape != (*ids.shape, 2)
+                or not bool(torch.isfinite(self.leaf_evidence).all())
+                or bool(((self.leaf_evidence < 0) | (self.leaf_evidence > 1)).any())):
+            raise ValueError('leaf evidence requires two finite poles in [0, 1]')
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())
@@ -106,7 +142,7 @@ class AnswerProgram:
             object.__setattr__(self, name, None if value is None else value.clone())
 
     def detached(self):
-        """A durable recall record, without a previous brick's graph."""
+        """The open trial's values after its graph has trained and been freed."""
         values = {name: (None if getattr(self, name) is None else
                          getattr(self, name).detach().to("cpu"))
                   for name in self._tensor_fields}
@@ -133,6 +169,64 @@ class InputReconstruction:
         for name in ("ideas", "event", "idea_cost", "byte_cost", "truncated", "sentence_costs"):
             value = getattr(self, name)
             object.__setattr__(self, name, value.clone() if value is not None else None)
+
+
+@dataclass(frozen=True)
+class SentenceEndState:
+    """A completed field, independent of how its grammar produced it.
+
+    An idea has one occupied slot; a relation has three. The two operand
+    addresses cached by an idea do not restore its pre-fusion target.
+    A selected question is a typed semantic request, never a compose program.
+    """
+
+    meaning: Any
+    refs: tuple = (-1, -1, -1)
+    row_id: int = -1
+    where: Any = None
+    when: Any = None
+    query: Any = None
+    order: int = 0
+    evidence: tuple = (0., 0.)
+    trust: float = 0.
+
+    def __post_init__(self):
+        from Meaning import ConceptualMeaning
+        import math
+        if type(self.order) is not int or self.order < -1:
+            raise ValueError('completed field order must be nonnegative or unknown (-1)')
+        if len(self.evidence) != 2 or any(not math.isfinite(float(x)) or not 0 <= float(x) <= 1 for x in self.evidence):
+            raise ValueError('completed evidence requires two finite poles in [0, 1]')
+        if not math.isfinite(float(self.trust)) or not -1 <= float(self.trust) <= 1:
+            raise ValueError('completed source trust must be a finite scalar in [-1, 1]')
+        if not isinstance(self.meaning, ConceptualMeaning):
+            raise TypeError('a sentence end state requires a conceptual field')
+        if int(self.meaning.role_mask.sum()) not in (1, 3):
+            raise ValueError('a sentence end state occupies one or three slots')
+        if len(self.refs) != 3 or any(type(ref) is not int or ref == 0 or ref < -1 for ref in self.refs):
+            raise ValueError('completed references must be native addresses or -1')
+        if self.query is not None and (not isinstance(self.query, ConceptualMeaning)
+                                      or self.query.mode != 'interrogative'):
+            raise ValueError('a completed question must be an interrogative meaning')
+        object.__setattr__(self, 'meaning', replace(self.meaning))
+        if self.query is not None:
+            object.__setattr__(self, 'query', replace(self.query))
+        for name in ('where', 'when'):
+            value = getattr(self, name)
+            if value is not None:
+                if not torch.is_tensor(value) or value.shape != (4,):
+                    raise ValueError('a completed field band has four coordinates')
+                object.__setattr__(self, name, value.clone())
+
+    @property
+    def end_state(self):
+        return self.meaning.roles
+
+    def detached(self):
+        return type(self)(self.meaning.detached(), self.refs, self.row_id,
+            None if self.where is None else self.where.detach(),
+            None if self.when is None else self.when.detach(),
+            None if self.query is None else self.query.detached(), self.order, self.evidence, self.trust)
 
 
 @dataclass(frozen=True)
@@ -164,21 +258,19 @@ class Understanding:
     reconstruction_carriers: Mapping[str, Any] = field(
         default_factory=lambda: MappingProxyType({}))
     execution: Any = field(default=None, repr=False, compare=False)
-    # Dense seed for topologies without indexed answer programs. The serial
-    # path resolves its owned answer_program first and needs neither this
-    # seed nor symbolic_state. None falls back to symbolic_state only in
-    # the dense compatibility path.
+    # The serial path owns completed fields. Other topologies retain their
+    # dense answer seed.
     answer_seed: Any = field(default=None, repr=False, compare=False)
-    answer_program: tuple = field(default_factory=tuple, repr=False, compare=False)
-    sentence_programs: Mapping[int, tuple] = field(
+    sentence_states: tuple = field(default_factory=tuple, repr=False, compare=False)
+    sentence_fields: Mapping[int, tuple] = field(
         default_factory=lambda: MappingProxyType({}), repr=False, compare=False)
     input_reconstruction: InputReconstruction | None = field(
         default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "answer_program", tuple(self.answer_program))
-        object.__setattr__(self, "sentence_programs", MappingProxyType({
-            int(slot): tuple(rows) for slot, rows in self.sentence_programs.items()}))
+        object.__setattr__(self, "sentence_states", tuple(self.sentence_states))
+        object.__setattr__(self, "sentence_fields", MappingProxyType({
+            int(slot): tuple(rows) for slot, rows in self.sentence_fields.items()}))
         carriers = self.reconstruction_carriers
         if not isinstance(carriers, MappingProxyType):
             object.__setattr__(

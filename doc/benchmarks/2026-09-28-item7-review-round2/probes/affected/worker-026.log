@@ -1,0 +1,16 @@
+...                                                                      [100%]
+=============================== warnings summary ===============================
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13590: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 7 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 8 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 3 warnings in 2.95s

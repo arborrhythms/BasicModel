@@ -1,0 +1,34 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___________________________ test_no_intent_is_a_noop ___________________________
+test/test_analysis_attention_gate.py:41: in test_no_intent_is_a_noop
+    s = _stub(boosts=None)
+        ^^^^^^^^^^^^^^^^^^
+test/test_analysis_attention_gate.py:36: in _stub
+    WholeSpace._topk_priming_mask, s)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'
+__________________ test_mask_keeps_top_half_and_is_shape_safe __________________
+test/test_analysis_attention_gate.py:49: in test_mask_keeps_top_half_and_is_shape_safe
+    s = _stub(boosts=boosts)
+        ^^^^^^^^^^^^^^^^^^^^
+test/test_analysis_attention_gate.py:36: in _stub
+    WholeSpace._topk_priming_mask, s)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'
+__________________ test_priming_selects_the_aligned_positions __________________
+test/test_analysis_attention_gate.py:70: in test_priming_selects_the_aligned_positions
+    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'
+__________________________ test_no_codebook_is_a_noop __________________________
+test/test_analysis_attention_gate.py:87: in test_no_codebook_is_a_noop
+    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'
+=========================== short test summary info ============================
+FAILED test/test_analysis_attention_gate.py::test_no_intent_is_a_noop - Attri...
+FAILED test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe
+FAILED test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions
+FAILED test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop - Att...
+4 failed in 2.00s

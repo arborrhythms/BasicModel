@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/probe.py",
+    "--config",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/parity.xml",
+    "--parity",
+    "packed",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/measurements/packed.json"
+  ],
+  "pid": 42327,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 5602350624,
+  "elapsed_seconds": 366.11343737505376,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/measurements/packed.log"
+}

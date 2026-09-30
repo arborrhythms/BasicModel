@@ -1,0 +1,69 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_on_syntactic_ws",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_on_syntactic_ws",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_on_syntactic_ws",
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.491706103086472e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 49, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_grammar_decode_runs_on_syntactic_ws",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.916699931025505e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 55, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.216601468622684e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 72, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.550003308802843e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 87, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.008400280028582e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 104, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

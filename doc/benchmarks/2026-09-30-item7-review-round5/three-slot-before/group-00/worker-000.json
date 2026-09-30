@@ -1,0 +1,53 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-implies]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-implies]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.014817292103543878,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence\n    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/reading_fixtures.py:97: in finish_reading\n    return finish_clause(language, entry, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:334: in finish_clause\n    raise ValueError('three slots have no selected relative clause')\nE   ValueError: three slots have no selected relative clause",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-implies]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.010316082974895835,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence\n    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/reading_fixtures.py:97: in finish_reading\n    return finish_clause(language, entry, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:334: in finish_clause\n    raise ValueError('three slots have no selected relative clause')\nE   ValueError: three slots have no selected relative clause",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-part]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.009673916036263108,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:27: in test_first_three_slot_predicate_occurrence\n    row = f.store.write_clause(clause)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:333: in write_clause\n    preflight(clause)\nbin/ClauseRow.py:300: in preflight\n    else self.point_of_row(ref))\n         ^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:225: in point_of_row\n    raise ValueError(f'unavailable shared row {reference}')\nE   ValueError: unavailable shared row 4010033338316264258",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-implies]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01223333296366036,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py:26: in test_first_three_slot_predicate_occurrence\n    clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/reading_fixtures.py:97: in finish_reading\n    return finish_clause(language, entry, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:334: in finish_clause\n    raise ValueError('three slots have no selected relative clause')\nE   ValueError: three slots have no selected relative clause",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

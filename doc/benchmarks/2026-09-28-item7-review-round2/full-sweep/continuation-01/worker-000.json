@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+    "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+  ],
+  "completed": [
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+    "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.5112450000597164,
+      "message": "test/test_compile_cache_recovery.py:46: in test_stale_header_retry_is_once_and_preserves_real_failures\n    assert sorted(result[\"completed\"]) == sorted(result[\"selected\"])\nE   AssertionError: assert [] == ['test_cache....::test_other']\nE     \nE     Right contains 2 more items, first extra item: 'test_cache.py::test_compile'\nE     Use -v to get more diff",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 0.0s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001179124927148223,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_perceptual_chunking.py::test_synthesis_mode_lexicon_splits_on_spaces",
+    "test/test_perceptual_chunking.py::test_synthesis_mode_bpe_returns_learned_segments",
+    "test/test_perceptual_chunking.py::test_chunking_invalid_mode_raises",
+    "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+    "test/test_perceptual_chunking.py::test_embedding_token_stream_honors_bpe_fallback_mode"
+  ],
+  "completed": [
+    "test/test_perceptual_chunking.py::test_synthesis_mode_lexicon_splits_on_spaces",
+    "test/test_perceptual_chunking.py::test_synthesis_mode_bpe_returns_learned_segments",
+    "test/test_perceptual_chunking.py::test_chunking_invalid_mode_raises",
+    "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+    "test/test_perceptual_chunking.py::test_embedding_token_stream_honors_bpe_fallback_mode"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_perceptual_chunking.py::test_synthesis_mode_lexicon_splits_on_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012625008821487427,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_chunking.py::test_synthesis_mode_bpe_returns_learned_segments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001004999503493309,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_chunking.py::test_chunking_invalid_mode_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010266597382724285,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001114583108574152,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_chunking.py::test_embedding_token_stream_honors_bpe_fallback_mode",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011670798994600773,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

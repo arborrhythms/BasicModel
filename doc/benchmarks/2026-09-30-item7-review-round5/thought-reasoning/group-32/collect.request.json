@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_truth_grounded_reasoning.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

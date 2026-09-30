@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.07449595793150365,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py:92: in test_mm_grammar_part_under_disjunction_closes_at_full_inventory\n    row = f.store.write_clause(clause)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:237: in write_clause\n    index_plan = None if make_index_plan is None else make_index_plan(clause)\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:145: in <lambda>\n    lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ConceptIndex.py:147: in __init__\n    self.validate_rows()\nbin/ConceptIndex.py:175: in validate_rows\n    raise RuntimeError('native conceptual row capacity exhausted before clause admission')\nE   RuntimeError: native conceptual row capacity exhausted before clause admission",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

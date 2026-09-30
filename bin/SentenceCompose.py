@@ -1,4 +1,4 @@
-"""Eager sentence seals around fixed-shape numerical compose bricks."""
+"""Eager sentence endings around fixed-shape numerical compose bricks."""
 import torch
 from contextlib import contextmanager
 from weakref import WeakValueDictionary

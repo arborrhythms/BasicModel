@@ -1,0 +1,43 @@
+........s.Fsss                                                           [100%]
+=================================== FAILURES ===================================
+_____________ test_curriculum_drives_question_families_through_run _____________
+test/test_what_training.py:383: in test_curriculum_drives_question_families_through_run
+    m.runEpoch(optimizer=opt, batchSize=2, split="train",
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16701: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15975: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16644: in _autobind_property_concepts
+    prop_rows = ws.property_rows_for_bytes(key)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23603: in property_rows_for_bytes
+    lut, discard = _analysis_property_signature(self)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22000: in _analysis_property_signature
+    raise RuntimeError('property analysis requires learned primitive definitions')
+E   RuntimeError: property analysis requires learned primitive definitions
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 8.33%)
+batch = 2 (Δ=0.017s, 16.67%)
+=============================== warnings summary ===============================
+test/test_what_training.py::test_data_what_supervised_target_matches_loader_output
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7865/cfg0/MM_xor_synth_discourse.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_what_training.py::test_curriculum_drives_question_families_through_run
+1 failed, 9 passed, 4 skipped, 2 warnings in 3.88s

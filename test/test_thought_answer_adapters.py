@@ -118,7 +118,6 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
         # This adapter fixture stubs every numerical synthesis operation.
         generation_scope=nullcontext))
     object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
-    model._materialize_entries = lambda _entries, base, _budget: (base, None)
     model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
     model._select_perceptual_bindings = lambda *_a: ()
     model._condition_answer_on_question = lambda idea, _context: idea
@@ -128,7 +127,10 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
     model.selected_thought_budget = 128
     model.reconstruct_in_loop = False
-    understanding = Understanding(answer_program=(entry,))
+    from Understanding import SentenceEndState
+    from Meaning import ConceptualMeaning
+    field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)
+    understanding = Understanding(sentence_states=(field,))
     model.eval()
     derivation = model.resolveAnswer(understanding, What.supervised(0))
     assert derivation.source == 'thought-' + kind

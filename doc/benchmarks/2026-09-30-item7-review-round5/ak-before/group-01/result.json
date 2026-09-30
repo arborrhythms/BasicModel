@@ -1,0 +1,103 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+  ],
+  "completed": [
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-01/worker-000.json"
+      ],
+      "pid": 9436,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 433735024,
+      "elapsed_seconds": 3.5991475000046194,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+      ],
+      "completed": [
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.010593916988000274,
+          "message": "test/test_selected_relation_meaning.py:427: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert stored.role_refs == registry.form(\"part\", _a, _b).role_refs\nE   AssertionError: assert (('sym', 11),..., ('sym', 12)) == (('sym', 11),..., ('sym', 12))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.006619292078539729,
+          "message": "test/test_selected_relation_meaning.py:427: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert stored.role_refs == registry.form(\"part\", _a, _b).role_refs\nE   AssertionError: assert (('sym', 11),..., ('sym', 12)) == (('sym', 11),..., ('sym', 12))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-01",
+  "elapsed_seconds": 7.470105333952233,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 433735024,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-01/collect.json"
+    ],
+    "pid": 9406,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 429098160,
+    "elapsed_seconds": 3.578525874996558,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

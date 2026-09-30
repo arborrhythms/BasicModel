@@ -63,7 +63,6 @@
     <nVectors>16</nVectors>
     <nDim>16</nDim>
     <nOutput>16</nOutput>
-    <propertyBasis>true</propertyBasis>
     <analysis>meronomy</analysis>
     <digitWholes>false</digitWholes>
     <divideWithinWhole>false</divideWithinWhole>

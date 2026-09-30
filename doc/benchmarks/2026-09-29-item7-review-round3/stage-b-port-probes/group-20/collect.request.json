@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_wholespace_property_migration.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

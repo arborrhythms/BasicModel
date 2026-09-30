@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-1-expected0]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[all-4-expected1]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[off-4-expected2]",
+    "test/test_subsymbolic_loop.py::test_attention_pass_selection[1, 3-4-expected3]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[0]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[4]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[-1]",
+    "test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[1,no]",
+    "test/test_subsymbolic_loop.py::test_default_and_overlay_use_subsymbolic_loop",
+    "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
+    "test/test_subsymbolic_loop.py::test_selected_pass_changes_the_attentive_extent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-160.recycle.json"
+}

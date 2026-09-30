@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "completed": [
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015081166988238692,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

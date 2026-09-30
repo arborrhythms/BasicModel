@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-001.recycle.json"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/byte-columns-after/worker-000.recycle.json"
+}

@@ -1,0 +1,20 @@
+{
+  "selectors": [
+    "test/test_reference_table.py::test_nary_bindings_keep_each_selected_extent",
+    "test/test_reference_table.py::test_full_rows_only",
+    "test/test_reference_table.py::test_append_only",
+    "test/test_reference_table.py::test_gate_license_required",
+    "test/test_reference_table.py::test_unknown_word_is_a_query_outcome",
+    "test/test_reference_table.py::test_no_reverse_index_anywhere",
+    "test/test_reference_table.py::test_search_is_object_side_scan_by_dominance",
+    "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+    "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+    "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert",
+    "test/test_reference_table.py::test_minted_whole_is_searchable_by_its_parts",
+    "test/test_reference_table.py::test_bind_gauge_orients_object_row",
+    "test/test_reference_table.py::test_bottom_extent_cached_definable_but_empty",
+    "test/test_reference_table.py::test_top_saturation_detected"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/affected/full/worker-159.recycle.json"
+}

@@ -1,0 +1,8 @@
+....                                                                     [100%]
+=============================== warnings summary ===============================
+test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:24447: UserWarning: Dropped retired WholeSpace META taxonomy.
+    warnings.warn('Dropped retired WholeSpace META taxonomy.', UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 1 warning in 2.46s

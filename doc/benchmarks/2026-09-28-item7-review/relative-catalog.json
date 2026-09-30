@@ -1,0 +1,8 @@
+{
+  "file": "test/test_relative_rule_detection_collapsed.py",
+  "before_sha256": "7d7569f59e65c0dda46e5982648169d691fbb1edcc18d4b71797a41b7361c1bc",
+  "after_sha256": "01bae45c241e2d22afd3c7d2edffd1e3d8608d267e71924d6ae4f576b4bb9ebc",
+  "change": "Expected canonical catalog includes item 7 implies; equality predicate and all other assertions unchanged. No protected assertion changed.",
+  "before": "1 failed, 4 passed",
+  "isolated_rerun": "5 passed"
+}

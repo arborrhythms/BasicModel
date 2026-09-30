@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01283020805567503,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

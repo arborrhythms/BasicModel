@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm"
+  ],
+  "completed": [
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 268.5611688750796,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

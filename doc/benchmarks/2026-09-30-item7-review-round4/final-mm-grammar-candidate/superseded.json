@@ -1,0 +1,4 @@
+{
+  "reason": "Final validation stopped after its saved complete-forward fullgraph failure. The boundary refresh must be repaired; completed and partial outcomes remain visible, and new final measurements will use the corrected source.",
+  "failing_probe": "explicit-final/group-00/result.json"
+}

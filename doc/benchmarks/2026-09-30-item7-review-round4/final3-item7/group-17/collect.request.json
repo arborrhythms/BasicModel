@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_property_read_storage.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

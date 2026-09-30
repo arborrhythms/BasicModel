@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+  ],
+  "completed": [
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-21/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-21/worker-000.json"
+      ],
+      "pid": 22937,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 428721520,
+      "elapsed_seconds": 3.604945082915947,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-21/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+        "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+        "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+      ],
+      "completed": [
+        "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+        "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+        "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010144416941329837,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000546750146895647,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0028614578768610954,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-21",
+  "elapsed_seconds": 6.094794957898557,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 428721520,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-21/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-21/collect.json"
+    ],
+    "pid": 22929,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 259982224,
+    "elapsed_seconds": 2.2504611669573933,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-21/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+        "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+        "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

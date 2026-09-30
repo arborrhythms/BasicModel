@@ -1,0 +1,31 @@
+--- test/test_reduction_pressure.py (before AD)
++++ test/test_reduction_pressure.py (after AD)
+@@ -151,14 +151,14 @@
+     monkeypatch.setattr(chooser, 'score_unary', prefer_unary)
+     try:
+         store = model.symbolSpace.ltm_store
+-        before = len(store)
++        before = int((store.rel_type[:len(store)] != store.REL_DEF).sum())
+         inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
+         from types import SimpleNamespace
+         from reading_fixtures import capture_operation_traces
+         with capture_operation_traces(model) as traces:
+             model.runBatch(train=False, batchSize=1, split='runtime',
+                            batch_override=(inputs, torch.zeros(1, 1, 0)))
+-        assert len(store) - before == 2
++        assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before == 2
+         assert (model._tensor_sentence_roots_depth[0, :2] > 0).all()
+         # The caller observes the open readings; the completed rows discard
+         # their operation records. Retain the same unary-execution assertion.
+--- test/test_sentence_expectation.py (before AD)
++++ test/test_sentence_expectation.py (after AD)
+@@ -254,7 +254,8 @@
+                         forbid_external_binding)
+     model.provision_ltm()
+     assert not bound
+-    assert len(model.symbolSpace.ltm_store) == 3
++    store = model.symbolSpace.ltm_store
++    assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) == 3
+     assert not any(discourse._inter_context)
+     assert model.symbolSpace.discourse.expect_next_meaning() is None
+ 

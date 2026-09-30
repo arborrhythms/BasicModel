@@ -1,0 +1,1516 @@
+{
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l",
+  "reason": "failed",
+  "groups": [
+    {
+      "gate": 0,
+      "selector": "test/test_grounded_xor.py",
+      "reason": "passed",
+      "outcomes": {
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]": "passed",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]": "passed",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]": "passed",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]": "passed",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]": "passed",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]": "passed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.9142765840515494,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.842545208986849,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.868207334075123,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.809986666077748,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.9247484169900417,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.786839124979451,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        }
+      ],
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "completed": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "peak_memory_bytes": 483214704,
+      "observations": [],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 1,
+      "selector": "test/test_concept_output.py",
+      "reason": "passed",
+      "outcomes": {
+        "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown": "passed",
+        "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field": "passed",
+        "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence": "passed",
+        "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower": "passed",
+        "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not": "passed",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]": "passed",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]": "passed",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]": "passed",
+        "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent": "passed",
+        "test/test_concept_output.py::test_property_reverse_attributes_only_written_members": "passed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02262787497602403,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04479225003160536,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.029053375124931335,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.028481499990448356,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 34.66821145801805,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.374399707885459,
+          "message": "",
+          "stdout": "{'trial': 0, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.9388908750843257,
+          "message": "",
+          "stdout": "{'trial': 1, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.275118791963905,
+          "message": "",
+          "stdout": "{'trial': 2, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04553379095159471,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006851670332252979,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "selected": [
+        "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+        "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+        "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+        "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+        "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+        "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+        "test/test_concept_output.py::test_property_reverse_attributes_only_written_members"
+      ],
+      "completed": [
+        "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+        "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+        "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+        "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+        "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+        "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+        "test/test_concept_output.py::test_property_reverse_attributes_only_written_members"
+      ],
+      "peak_memory_bytes": 1807976896,
+      "observations": [],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 2,
+      "selector": "test/test_mm_xor.py",
+      "reason": "passed",
+      "outcomes": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs": "passed",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols": "passed",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces": "passed",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal": "passed",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal": "passed",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental": "passed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009685833007097244,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.14095341693609953,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03520329110324383,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010083289816975594,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.036974834045395255,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 47.94432379095815,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010358286090195179,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "peak_memory_bytes": 600589776,
+      "observations": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+          "kind": "mm",
+          "calls": 19,
+          "best": 0.19833029806613922,
+          "last": 0.19833029806613922,
+          "predictions": [
+            0.4656599164009094,
+            0.5819024443626404,
+            0.5747597217559814,
+            0.4699437916278839
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "gate": 2
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "kind": "mm",
+          "calls": 1,
+          "best": 0.2499701827764511,
+          "last": 0.2499701827764511,
+          "predictions": [
+            0.4985657036304474,
+            0.49868521094322205,
+            0.4985244870185852,
+            0.4985165596008301
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "gate": 2
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "kind": "mm",
+          "calls": 362,
+          "best": 0.1996452361345291,
+          "last": 0.1996452361345291,
+          "predictions": [
+            0.4467729926109314,
+            0.5533133149147034,
+            0.5529821515083313,
+            0.44678956270217896
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "gate": 2
+        }
+      ],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 3,
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "reason": "passed",
+      "outcomes": {
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp": "passed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 32.06929670809768,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+      ],
+      "peak_memory_bytes": 1190136664,
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+          "kind": "cli",
+          "config": "data/XOR_exact.xml",
+          "returncode": 0,
+          "stdout": "Device: cpu\nfullgraph relaxed: host-island config (full-router grammar, symbolTower forward_symbol, or sparse indexed codebook is a tolerated graph break)\nDebug checks: OFF\nModel compiled (eager, mode=max-autotune, fullgraph=False)\n\n\n==== BasicModel ====\n\nTrial [1/1]\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\nEpoch [1/64]\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\nTraining throughput: 1 batches in 11.802s; word units 100.0% of 4 words.\nTrain Loss: output=0.3500, reconstruction=0.0000\nEpoch [2/64]\nbatch = 0 (\u0394=6.189s, 100.00%)\n  [compile] dynamo +116 frame events (total 423; ok=205, total=218)\nTraining throughput: 1 batches in 6.187s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [3/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [4/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [5/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [6/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [7/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [8/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [9/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [10/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [11/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [12/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [13/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [14/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [15/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [16/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [17/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [18/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [19/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [20/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [21/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [22/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [23/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [24/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [25/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [26/64]\nbatch = 0 (\u0394=0.151s, 100.00%)\nTraining throughput: 1 batches in 0.151s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [27/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [28/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [29/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [30/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [31/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [32/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [33/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [34/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [35/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [36/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [37/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [38/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [39/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [40/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [41/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [42/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [43/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [44/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [45/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [46/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [47/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [48/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [49/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [50/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [51/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [52/64]\nbatch = 0 (\u0394=0.288s, 100.00%)\nTraining throughput: 1 batches in 0.288s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [53/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [54/64]\nbatch = 0 (\u0394=0.151s, 100.00%)\nTraining throughput: 1 batches in 0.151s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [55/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [56/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [57/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [58/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [59/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [60/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [61/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [62/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [63/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [64/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nFinal Stats:\n=== Selected operation grammar ===\n  compose space_role='subsymbolic':\n    row[0] = ['0:P -> sigma(P)']\n  compose space_role='CS':\n    row[0] = ['1:C -> pi(C)']\n  compose space_role='SS':\n    row[0] = ['2:S -> sigma(S)']\n  generate space_role='SS':\n    row[0] = ['5:S -> sigma.reverse(S)']\n  generate space_role='subsymbolic':\n    row[0] = ['3:P -> sigma.reverse(P)']\n  generate space_role='CS':\n    row[0] = ['4:C -> pi.reverse(C)']\nbatch = 0 (\u0394=0.123s, 100.00%)\nTraining throughput: 1 batches in 0.113s; word units 100.0% of 4 words.\n=== Input Reconstruction (test) ===\n  row[0] input='00' -> reconstructed='00' label=0.0000 predicted=0.0000 OK\n  row[1] input='01' -> reconstructed='01' label=1.0000 predicted=1.0000 OK\n  row[2] input='10' -> reconstructed='10' label=1.0000 predicted=1.0000 OK\n  row[3] input='11' -> reconstructed='11' label=0.0000 predicted=0.0000 OK\n",
+          "stderr": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/bin/Models.py:7642: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/data/XOR_exact.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)\n  return func(*args, **kwargs)\nW0930 04:46:12.196000 93769 torch/_dynamo/backends/debugging.py:57] [5/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:12.557000 93769 torch/_dynamo/backends/debugging.py:57] [9/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:12.611000 93769 torch/_dynamo/backends/debugging.py:57] [10/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:12.697000 93769 torch/_dynamo/backends/debugging.py:57] [11/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:12.737000 93769 torch/_dynamo/backends/debugging.py:57] [12/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:12.987000 93769 torch/_dynamo/backends/debugging.py:57] [14/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:13.254000 93769 torch/_dynamo/backends/debugging.py:57] [15/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:13.465000 93769 torch/_dynamo/backends/debugging.py:57] [18/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:13.583000 93769 torch/_dynamo/backends/debugging.py:57] [20/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break from `Tensor.item()`, consider setting:\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]     torch._dynamo.config.capture_scalar_outputs = True\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0] or:\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]     env TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0] to include these operations in the captured graph.\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break: from user code at:\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/bin/Spaces.py\", line 18919, in torch_dynamo_resume_in__ensure_concept_pool_at_18911\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]     missing = self.concept_pool_size - int(ly.provisional[start:min(end, ly.nOutput)].sum())\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]     return func(*args, **kwargs)\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0]            ^^^^^^^^^^^^^^^^^^^^^\nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW0930 04:46:13.667000 93769 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW0930 04:46:13.977000 93769 torch/_dynamo/backends/debugging.py:57] [28/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:14.568000 93769 torch/_dynamo/backends/debugging.py:57] [29/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:14.782000 93769 torch/_dynamo/backends/debugging.py:57] [30/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:14.904000 93769 torch/_dynamo/backends/debugging.py:57] [31/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.123000 93769 torch/_dynamo/backends/debugging.py:57] [32/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.183000 93769 torch/_dynamo/backends/debugging.py:57] [33/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.271000 93769 torch/_dynamo/backends/debugging.py:57] [42/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.434000 93769 torch/_dynamo/backends/debugging.py:57] [43/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.500000 93769 torch/_dynamo/backends/debugging.py:57] [44/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.532000 93769 torch/_dynamo/backends/debugging.py:57] [45/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.587000 93769 torch/_dynamo/backends/debugging.py:57] [46/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.640000 93769 torch/_dynamo/backends/debugging.py:57] [47/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.681000 93769 torch/_dynamo/backends/debugging.py:57] [48/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.729000 93769 torch/_dynamo/backends/debugging.py:57] [49/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.923000 93769 torch/_dynamo/backends/debugging.py:57] [50/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:15.954000 93769 torch/_dynamo/backends/debugging.py:57] [44/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.117000 93769 torch/_dynamo/backends/debugging.py:57] [53/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.209000 93769 torch/_dynamo/backends/debugging.py:57] [54/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.278000 93769 torch/_dynamo/backends/debugging.py:57] [56/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.501000 93769 torch/_dynamo/backends/debugging.py:57] [44/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.521000 93769 torch/_dynamo/backends/debugging.py:57] [45/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.569000 93769 torch/_dynamo/backends/debugging.py:57] [46/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.619000 93769 torch/_dynamo/backends/debugging.py:57] [47/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.736000 93769 torch/_dynamo/backends/debugging.py:57] [50/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.773000 93769 torch/_dynamo/backends/debugging.py:57] [44/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.826000 93769 torch/_dynamo/backends/debugging.py:57] [46/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.863000 93769 torch/_dynamo/backends/debugging.py:57] [44/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:16.912000 93769 torch/_dynamo/backends/debugging.py:57] [46/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.016000 93769 torch/_dynamo/backends/debugging.py:57] [50/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.069000 93769 torch/_dynamo/backends/debugging.py:57] [46/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.128000 93769 torch/_dynamo/backends/debugging.py:57] [43/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.190000 93769 torch/_dynamo/backends/debugging.py:57] [44/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.300000 93769 torch/_dynamo/backends/debugging.py:57] [53/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.389000 93769 torch/_dynamo/backends/debugging.py:57] [54/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.444000 93769 torch/_dynamo/backends/debugging.py:57] [44/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.501000 93769 torch/_dynamo/backends/debugging.py:57] [43/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.729000 93769 torch/_dynamo/backends/debugging.py:57] [53/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.818000 93769 torch/_dynamo/backends/debugging.py:57] [54/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.877000 93769 torch/_dynamo/backends/debugging.py:57] [44/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:17.935000 93769 torch/_dynamo/backends/debugging.py:57] [43/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.054000 93769 torch/_dynamo/backends/debugging.py:57] [53/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.142000 93769 torch/_dynamo/backends/debugging.py:57] [54/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.199000 93769 torch/_dynamo/backends/debugging.py:57] [44/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.239000 93769 torch/_dynamo/backends/debugging.py:57] [57/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.405000 93769 torch/_dynamo/backends/debugging.py:57] [15/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.485000 93769 torch/_dynamo/backends/debugging.py:57] [58/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.526000 93769 torch/_dynamo/backends/debugging.py:57] [59/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.719000 93769 torch/_dynamo/backends/debugging.py:57] [62/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.784000 93769 torch/_dynamo/backends/debugging.py:57] [63/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.811000 93769 torch/_dynamo/backends/debugging.py:57] [64/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.836000 93769 torch/_dynamo/backends/debugging.py:57] [65/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.863000 93769 torch/_dynamo/backends/debugging.py:57] [66/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.909000 93769 torch/_dynamo/backends/debugging.py:57] [63/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.933000 93769 torch/_dynamo/backends/debugging.py:57] [66/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.950000 93769 torch/_dynamo/backends/debugging.py:57] [67/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.961000 93769 torch/_dynamo/backends/debugging.py:57] [63/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:18.978000 93769 torch/_dynamo/backends/debugging.py:57] [67/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:19.169000 93769 torch/_dynamo/backends/debugging.py:57] [63/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:19.241000 93769 torch/_dynamo/backends/debugging.py:57] [63/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:19.314000 93769 torch/_dynamo/backends/debugging.py:57] [63/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:19.332000 93769 torch/_dynamo/backends/debugging.py:57] [68/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:19.386000 93769 torch/_dynamo/backends/debugging.py:57] [71/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:19.412000 93769 torch/_dynamo/backends/debugging.py:57] [72/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:19.844000 93769 torch/_dynamo/backends/debugging.py:57] [73/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.051000 93769 torch/_dynamo/backends/debugging.py:57] [18/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.372000 93769 torch/_dynamo/backends/debugging.py:57] [20/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.430000 93769 torch/_dynamo/backends/debugging.py:57] [9/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.478000 93769 torch/_dynamo/backends/debugging.py:57] [77/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.564000 93769 torch/_dynamo/backends/debugging.py:57] [79/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.657000 93769 torch/_dynamo/backends/debugging.py:57] [82/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.729000 93769 torch/_dynamo/backends/debugging.py:57] [83/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.756000 93769 torch/_dynamo/backends/debugging.py:57] [45/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.806000 93769 torch/_dynamo/backends/debugging.py:57] [46/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:20.883000 93769 torch/_dynamo/backends/debugging.py:57] [47/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.002000 93769 torch/_dynamo/backends/debugging.py:57] [50/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.085000 93769 torch/_dynamo/backends/debugging.py:57] [46/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.101000 93769 torch/_dynamo/backends/debugging.py:57] [85/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.114000 93769 torch/_dynamo/backends/debugging.py:57] [86/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.124000 93769 torch/_dynamo/backends/debugging.py:57] [42/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.134000 93769 torch/_dynamo/backends/debugging.py:57] [87/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.155000 93769 torch/_dynamo/backends/debugging.py:57] [88/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.309000 93769 torch/_dynamo/backends/debugging.py:57] [89/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.342000 93769 torch/_dynamo/backends/debugging.py:57] [90/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.426000 93769 torch/_dynamo/backends/debugging.py:57] [92/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:21.475000 93769 torch/_dynamo/backends/debugging.py:57] [93/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:22.032000 93769 torch/_dynamo/backends/debugging.py:57] [94/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:22.104000 93769 torch/_dynamo/backends/debugging.py:57] [95/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:22.124000 93769 torch/_dynamo/backends/debugging.py:57] [9/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:22.195000 93769 torch/_dynamo/backends/debugging.py:57] [9/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/bin/Models.py:7642: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/data/XOR_exact.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 16)\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\nW0930 04:46:22.526000 93769 torch/_dynamo/backends/debugging.py:57] [15/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:22.830000 93769 torch/_dynamo/backends/debugging.py:57] [28/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:23.306000 93769 torch/_dynamo/backends/debugging.py:57] [29/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:23.578000 93769 torch/_dynamo/backends/debugging.py:57] [32/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:23.628000 93769 torch/_dynamo/backends/debugging.py:57] [33/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:23.686000 93769 torch/_dynamo/backends/debugging.py:57] [43/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:23.762000 93769 torch/_dynamo/backends/debugging.py:57] [44/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:23.814000 93769 torch/_dynamo/backends/debugging.py:57] [46/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.016000 93769 torch/_dynamo/backends/debugging.py:57] [47/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.053000 93769 torch/_dynamo/backends/debugging.py:57] [48/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.098000 93769 torch/_dynamo/backends/debugging.py:57] [49/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.298000 93769 torch/_dynamo/backends/debugging.py:57] [50/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.337000 93769 torch/_dynamo/backends/debugging.py:57] [44/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.471000 93769 torch/_dynamo/backends/debugging.py:57] [53/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.564000 93769 torch/_dynamo/backends/debugging.py:57] [54/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.629000 93769 torch/_dynamo/backends/debugging.py:57] [44/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.681000 93769 torch/_dynamo/backends/debugging.py:57] [47/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.741000 93769 torch/_dynamo/backends/debugging.py:57] [43/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.884000 93769 torch/_dynamo/backends/debugging.py:57] [53/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:24.976000 93769 torch/_dynamo/backends/debugging.py:57] [54/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.041000 93769 torch/_dynamo/backends/debugging.py:57] [44/12_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.103000 93769 torch/_dynamo/backends/debugging.py:57] [43/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.249000 93769 torch/_dynamo/backends/debugging.py:57] [53/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.341000 93769 torch/_dynamo/backends/debugging.py:57] [54/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.408000 93769 torch/_dynamo/backends/debugging.py:57] [44/13_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.471000 93769 torch/_dynamo/backends/debugging.py:57] [43/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.614000 93769 torch/_dynamo/backends/debugging.py:57] [53/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.850000 93769 torch/_dynamo/backends/debugging.py:57] [54/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:25.919000 93769 torch/_dynamo/backends/debugging.py:57] [44/14_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.041000 93769 torch/_dynamo/backends/debugging.py:57] [63/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.070000 93769 torch/_dynamo/backends/debugging.py:57] [64/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.090000 93769 torch/_dynamo/backends/debugging.py:57] [65/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.163000 93769 torch/_dynamo/backends/debugging.py:57] [63/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.261000 93769 torch/_dynamo/backends/debugging.py:57] [63/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.286000 93769 torch/_dynamo/backends/debugging.py:57] [64/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.305000 93769 torch/_dynamo/backends/debugging.py:57] [65/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.333000 93769 torch/_dynamo/backends/debugging.py:57] [66/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.363000 93769 torch/_dynamo/backends/debugging.py:57] [66/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.458000 93769 torch/_dynamo/backends/debugging.py:57] [63/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.562000 93769 torch/_dynamo/backends/debugging.py:57] [63/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.592000 93769 torch/_dynamo/backends/debugging.py:57] [71/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:26.626000 93769 torch/_dynamo/backends/debugging.py:57] [72/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.016000 93769 torch/_dynamo/backends/debugging.py:57] [73/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.151000 93769 torch/_dynamo/backends/debugging.py:57] [47/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.166000 93769 torch/_dynamo/backends/debugging.py:57] [42/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.306000 93769 torch/_dynamo/backends/debugging.py:57] [53/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.396000 93769 torch/_dynamo/backends/debugging.py:57] [54/8] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.436000 93769 torch/_dynamo/backends/debugging.py:57] [97/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.561000 93769 torch/_dynamo/backends/debugging.py:57] [53/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.650000 93769 torch/_dynamo/backends/debugging.py:57] [54/9] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.693000 93769 torch/_dynamo/backends/debugging.py:57] [97/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:27.972000 93769 torch/_dynamo/backends/debugging.py:57] [53/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:28.063000 93769 torch/_dynamo/backends/debugging.py:57] [54/10] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:28.110000 93769 torch/_dynamo/backends/debugging.py:57] [97/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:28.238000 93769 torch/_dynamo/backends/debugging.py:57] [53/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:28.329000 93769 torch/_dynamo/backends/debugging.py:57] [54/11] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:28.379000 93769 torch/_dynamo/backends/debugging.py:57] [97/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n",
+          "mse": [
+            0.0,
+            4
+          ],
+          "reconstructed": [
+            4,
+            4
+          ],
+          "gate": 3
+        }
+      ],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 4,
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+      "reason": "passed",
+      "outcomes": {
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct": "passed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 31.95315562491305,
+          "message": "",
+          "stdout": "XOR_exact reconstruction count: 4/4\n\n"
+        }
+      ],
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct"
+      ],
+      "peak_memory_bytes": 1189038840,
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+          "kind": "cli",
+          "config": "data/XOR_exact.xml",
+          "returncode": 0,
+          "stdout": "Device: cpu\nfullgraph relaxed: host-island config (full-router grammar, symbolTower forward_symbol, or sparse indexed codebook is a tolerated graph break)\nDebug checks: OFF\nModel compiled (eager, mode=max-autotune, fullgraph=False)\n\n\n==== BasicModel ====\n\nTrial [1/1]\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\nEpoch [1/64]\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\nTraining throughput: 1 batches in 11.690s; word units 100.0% of 4 words.\nTrain Loss: output=0.3500, reconstruction=0.0000\nEpoch [2/64]\nbatch = 0 (\u0394=6.124s, 100.00%)\n  [compile] dynamo +116 frame events (total 423; ok=205, total=218)\nTraining throughput: 1 batches in 6.121s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [3/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [4/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [5/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [6/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [7/64]\nbatch = 0 (\u0394=0.143s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [8/64]\nbatch = 0 (\u0394=0.150s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [9/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [10/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [11/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [12/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [13/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [14/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [15/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [16/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [17/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [18/64]\nbatch = 0 (\u0394=0.150s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [19/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [20/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [21/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [22/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [23/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [24/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [25/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [26/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [27/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [28/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [29/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [30/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [31/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [32/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [33/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [34/64]\nbatch = 0 (\u0394=0.150s, 100.00%)\nTraining throughput: 1 batches in 0.150s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [35/64]\nbatch = 0 (\u0394=0.150s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [36/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [37/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [38/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [39/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [40/64]\nbatch = 0 (\u0394=0.151s, 100.00%)\nTraining throughput: 1 batches in 0.150s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [41/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [42/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [43/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [44/64]\nbatch = 0 (\u0394=0.151s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [45/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [46/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [47/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [48/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [49/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [50/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [51/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [52/64]\nbatch = 0 (\u0394=0.306s, 100.00%)\nTraining throughput: 1 batches in 0.307s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [53/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [54/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [55/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [56/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [57/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [58/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [59/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [60/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [61/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [62/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [63/64]\nbatch = 0 (\u0394=0.150s, 100.00%)\nTraining throughput: 1 batches in 0.150s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [64/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nFinal Stats:\n=== Selected operation grammar ===\n  compose space_role='subsymbolic':\n    row[0] = ['0:P -> sigma(P)']\n  compose space_role='CS':\n    row[0] = ['1:C -> pi(C)']\n  compose space_role='SS':\n    row[0] = ['2:S -> sigma(S)']\n  generate space_role='subsymbolic':\n    row[0] = ['3:P -> sigma.reverse(P)']\n  generate space_role='SS':\n    row[0] = ['5:S -> sigma.reverse(S)']\n  generate space_role='CS':\n    row[0] = ['4:C -> pi.reverse(C)']\nbatch = 0 (\u0394=0.126s, 100.00%)\nTraining throughput: 1 batches in 0.115s; word units 100.0% of 4 words.\n=== Input Reconstruction (test) ===\n  row[0] input='00' -> reconstructed='00' label=0.0000 predicted=0.0000 OK\n  row[1] input='01' -> reconstructed='01' label=1.0000 predicted=1.0000 OK\n  row[2] input='10' -> reconstructed='10' label=1.0000 predicted=1.0000 OK\n  row[3] input='11' -> reconstructed='11' label=0.0000 predicted=0.0000 OK\n",
+          "stderr": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/bin/Models.py:7642: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/data/XOR_exact.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)\n  return func(*args, **kwargs)\nW0930 04:46:49.639000 93809 torch/_dynamo/backends/debugging.py:57] [5/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:49.997000 93809 torch/_dynamo/backends/debugging.py:57] [9/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:50.048000 93809 torch/_dynamo/backends/debugging.py:57] [10/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:50.126000 93809 torch/_dynamo/backends/debugging.py:57] [11/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:50.166000 93809 torch/_dynamo/backends/debugging.py:57] [12/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:50.411000 93809 torch/_dynamo/backends/debugging.py:57] [14/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:50.675000 93809 torch/_dynamo/backends/debugging.py:57] [15/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:50.888000 93809 torch/_dynamo/backends/debugging.py:57] [18/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:51.005000 93809 torch/_dynamo/backends/debugging.py:57] [20/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break from `Tensor.item()`, consider setting:\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]     torch._dynamo.config.capture_scalar_outputs = True\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0] or:\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]     env TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0] to include these operations in the captured graph.\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break: from user code at:\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/bin/Spaces.py\", line 18919, in torch_dynamo_resume_in__ensure_concept_pool_at_18911\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]     missing = self.concept_pool_size - int(ly.provisional[start:min(end, ly.nOutput)].sum())\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]     return func(*args, **kwargs)\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0]            ^^^^^^^^^^^^^^^^^^^^^\nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW0930 04:46:51.090000 93809 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW0930 04:46:51.396000 93809 torch/_dynamo/backends/debugging.py:57] [28/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:51.979000 93809 torch/_dynamo/backends/debugging.py:57] [29/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.194000 93809 torch/_dynamo/backends/debugging.py:57] [30/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.320000 93809 torch/_dynamo/backends/debugging.py:57] [31/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.542000 93809 torch/_dynamo/backends/debugging.py:57] [32/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.602000 93809 torch/_dynamo/backends/debugging.py:57] [33/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.689000 93809 torch/_dynamo/backends/debugging.py:57] [42/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.849000 93809 torch/_dynamo/backends/debugging.py:57] [43/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.916000 93809 torch/_dynamo/backends/debugging.py:57] [44/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:52.950000 93809 torch/_dynamo/backends/debugging.py:57] [45/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.003000 93809 torch/_dynamo/backends/debugging.py:57] [46/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.057000 93809 torch/_dynamo/backends/debugging.py:57] [47/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.099000 93809 torch/_dynamo/backends/debugging.py:57] [48/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.146000 93809 torch/_dynamo/backends/debugging.py:57] [49/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.330000 93809 torch/_dynamo/backends/debugging.py:57] [50/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.361000 93809 torch/_dynamo/backends/debugging.py:57] [44/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.521000 93809 torch/_dynamo/backends/debugging.py:57] [53/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.613000 93809 torch/_dynamo/backends/debugging.py:57] [54/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.685000 93809 torch/_dynamo/backends/debugging.py:57] [56/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.904000 93809 torch/_dynamo/backends/debugging.py:57] [44/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.925000 93809 torch/_dynamo/backends/debugging.py:57] [45/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:53.973000 93809 torch/_dynamo/backends/debugging.py:57] [46/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.023000 93809 torch/_dynamo/backends/debugging.py:57] [47/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.139000 93809 torch/_dynamo/backends/debugging.py:57] [50/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.175000 93809 torch/_dynamo/backends/debugging.py:57] [44/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.229000 93809 torch/_dynamo/backends/debugging.py:57] [46/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.266000 93809 torch/_dynamo/backends/debugging.py:57] [44/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.314000 93809 torch/_dynamo/backends/debugging.py:57] [46/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.413000 93809 torch/_dynamo/backends/debugging.py:57] [50/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.465000 93809 torch/_dynamo/backends/debugging.py:57] [46/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.522000 93809 torch/_dynamo/backends/debugging.py:57] [43/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.582000 93809 torch/_dynamo/backends/debugging.py:57] [44/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.691000 93809 torch/_dynamo/backends/debugging.py:57] [53/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.777000 93809 torch/_dynamo/backends/debugging.py:57] [54/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.832000 93809 torch/_dynamo/backends/debugging.py:57] [44/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:54.889000 93809 torch/_dynamo/backends/debugging.py:57] [43/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.111000 93809 torch/_dynamo/backends/debugging.py:57] [53/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.200000 93809 torch/_dynamo/backends/debugging.py:57] [54/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.257000 93809 torch/_dynamo/backends/debugging.py:57] [44/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.316000 93809 torch/_dynamo/backends/debugging.py:57] [43/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.435000 93809 torch/_dynamo/backends/debugging.py:57] [53/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.522000 93809 torch/_dynamo/backends/debugging.py:57] [54/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.585000 93809 torch/_dynamo/backends/debugging.py:57] [44/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.626000 93809 torch/_dynamo/backends/debugging.py:57] [57/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.786000 93809 torch/_dynamo/backends/debugging.py:57] [15/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.867000 93809 torch/_dynamo/backends/debugging.py:57] [58/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:55.909000 93809 torch/_dynamo/backends/debugging.py:57] [59/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.095000 93809 torch/_dynamo/backends/debugging.py:57] [62/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.159000 93809 torch/_dynamo/backends/debugging.py:57] [63/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.185000 93809 torch/_dynamo/backends/debugging.py:57] [64/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.210000 93809 torch/_dynamo/backends/debugging.py:57] [65/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.237000 93809 torch/_dynamo/backends/debugging.py:57] [66/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.285000 93809 torch/_dynamo/backends/debugging.py:57] [63/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.310000 93809 torch/_dynamo/backends/debugging.py:57] [66/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.329000 93809 torch/_dynamo/backends/debugging.py:57] [67/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.339000 93809 torch/_dynamo/backends/debugging.py:57] [63/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.357000 93809 torch/_dynamo/backends/debugging.py:57] [67/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.544000 93809 torch/_dynamo/backends/debugging.py:57] [63/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.614000 93809 torch/_dynamo/backends/debugging.py:57] [63/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.687000 93809 torch/_dynamo/backends/debugging.py:57] [63/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.705000 93809 torch/_dynamo/backends/debugging.py:57] [68/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.759000 93809 torch/_dynamo/backends/debugging.py:57] [71/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:56.786000 93809 torch/_dynamo/backends/debugging.py:57] [72/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:57.210000 93809 torch/_dynamo/backends/debugging.py:57] [73/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:57.422000 93809 torch/_dynamo/backends/debugging.py:57] [18/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:57.741000 93809 torch/_dynamo/backends/debugging.py:57] [20/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:57.798000 93809 torch/_dynamo/backends/debugging.py:57] [9/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:57.842000 93809 torch/_dynamo/backends/debugging.py:57] [77/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:57.926000 93809 torch/_dynamo/backends/debugging.py:57] [79/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.019000 93809 torch/_dynamo/backends/debugging.py:57] [82/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.091000 93809 torch/_dynamo/backends/debugging.py:57] [83/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.120000 93809 torch/_dynamo/backends/debugging.py:57] [45/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.172000 93809 torch/_dynamo/backends/debugging.py:57] [46/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.251000 93809 torch/_dynamo/backends/debugging.py:57] [47/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.367000 93809 torch/_dynamo/backends/debugging.py:57] [50/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.451000 93809 torch/_dynamo/backends/debugging.py:57] [46/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.466000 93809 torch/_dynamo/backends/debugging.py:57] [85/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.479000 93809 torch/_dynamo/backends/debugging.py:57] [86/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.490000 93809 torch/_dynamo/backends/debugging.py:57] [42/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.499000 93809 torch/_dynamo/backends/debugging.py:57] [87/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.518000 93809 torch/_dynamo/backends/debugging.py:57] [88/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.670000 93809 torch/_dynamo/backends/debugging.py:57] [89/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.704000 93809 torch/_dynamo/backends/debugging.py:57] [90/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.788000 93809 torch/_dynamo/backends/debugging.py:57] [92/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:58.836000 93809 torch/_dynamo/backends/debugging.py:57] [93/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:59.383000 93809 torch/_dynamo/backends/debugging.py:57] [94/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:59.453000 93809 torch/_dynamo/backends/debugging.py:57] [95/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:59.472000 93809 torch/_dynamo/backends/debugging.py:57] [9/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:46:59.541000 93809 torch/_dynamo/backends/debugging.py:57] [9/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/bin/Models.py:7642: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/data/XOR_exact.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 16)\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\nW0930 04:46:59.864000 93809 torch/_dynamo/backends/debugging.py:57] [15/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:00.164000 93809 torch/_dynamo/backends/debugging.py:57] [28/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:00.636000 93809 torch/_dynamo/backends/debugging.py:57] [29/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:00.913000 93809 torch/_dynamo/backends/debugging.py:57] [32/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:00.962000 93809 torch/_dynamo/backends/debugging.py:57] [33/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.019000 93809 torch/_dynamo/backends/debugging.py:57] [43/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.091000 93809 torch/_dynamo/backends/debugging.py:57] [44/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.143000 93809 torch/_dynamo/backends/debugging.py:57] [46/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.338000 93809 torch/_dynamo/backends/debugging.py:57] [47/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.375000 93809 torch/_dynamo/backends/debugging.py:57] [48/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.419000 93809 torch/_dynamo/backends/debugging.py:57] [49/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.614000 93809 torch/_dynamo/backends/debugging.py:57] [50/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.653000 93809 torch/_dynamo/backends/debugging.py:57] [44/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.788000 93809 torch/_dynamo/backends/debugging.py:57] [53/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.880000 93809 torch/_dynamo/backends/debugging.py:57] [54/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.946000 93809 torch/_dynamo/backends/debugging.py:57] [44/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:01.998000 93809 torch/_dynamo/backends/debugging.py:57] [47/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.056000 93809 torch/_dynamo/backends/debugging.py:57] [43/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.199000 93809 torch/_dynamo/backends/debugging.py:57] [53/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.289000 93809 torch/_dynamo/backends/debugging.py:57] [54/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.355000 93809 torch/_dynamo/backends/debugging.py:57] [44/12_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.417000 93809 torch/_dynamo/backends/debugging.py:57] [43/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.558000 93809 torch/_dynamo/backends/debugging.py:57] [53/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.651000 93809 torch/_dynamo/backends/debugging.py:57] [54/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.719000 93809 torch/_dynamo/backends/debugging.py:57] [44/13_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.781000 93809 torch/_dynamo/backends/debugging.py:57] [43/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:02.918000 93809 torch/_dynamo/backends/debugging.py:57] [53/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.152000 93809 torch/_dynamo/backends/debugging.py:57] [54/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.225000 93809 torch/_dynamo/backends/debugging.py:57] [44/14_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.347000 93809 torch/_dynamo/backends/debugging.py:57] [63/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.373000 93809 torch/_dynamo/backends/debugging.py:57] [64/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.393000 93809 torch/_dynamo/backends/debugging.py:57] [65/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.465000 93809 torch/_dynamo/backends/debugging.py:57] [63/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.562000 93809 torch/_dynamo/backends/debugging.py:57] [63/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.586000 93809 torch/_dynamo/backends/debugging.py:57] [64/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.605000 93809 torch/_dynamo/backends/debugging.py:57] [65/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.634000 93809 torch/_dynamo/backends/debugging.py:57] [66/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.665000 93809 torch/_dynamo/backends/debugging.py:57] [66/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.761000 93809 torch/_dynamo/backends/debugging.py:57] [63/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.864000 93809 torch/_dynamo/backends/debugging.py:57] [63/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.893000 93809 torch/_dynamo/backends/debugging.py:57] [71/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:03.928000 93809 torch/_dynamo/backends/debugging.py:57] [72/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.305000 93809 torch/_dynamo/backends/debugging.py:57] [73/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.441000 93809 torch/_dynamo/backends/debugging.py:57] [47/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.455000 93809 torch/_dynamo/backends/debugging.py:57] [42/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.593000 93809 torch/_dynamo/backends/debugging.py:57] [53/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.681000 93809 torch/_dynamo/backends/debugging.py:57] [54/8] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.721000 93809 torch/_dynamo/backends/debugging.py:57] [97/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.847000 93809 torch/_dynamo/backends/debugging.py:57] [53/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.934000 93809 torch/_dynamo/backends/debugging.py:57] [54/9] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:04.978000 93809 torch/_dynamo/backends/debugging.py:57] [97/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:05.259000 93809 torch/_dynamo/backends/debugging.py:57] [53/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:05.347000 93809 torch/_dynamo/backends/debugging.py:57] [54/10] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:05.394000 93809 torch/_dynamo/backends/debugging.py:57] [97/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:05.521000 93809 torch/_dynamo/backends/debugging.py:57] [53/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:05.611000 93809 torch/_dynamo/backends/debugging.py:57] [54/11] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW0930 04:47:05.660000 93809 torch/_dynamo/backends/debugging.py:57] [97/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n",
+          "mse": [
+            0.0,
+            4
+          ],
+          "reconstructed": [
+            4,
+            4
+          ],
+          "gate": 4
+        }
+      ],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 5,
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "reason": "test_failure",
+      "outcomes": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "failed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 78.67565558291972,
+          "message": "test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+          "stdout": "\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1798, reconstruction=0.2314\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.217s, 100.00%)\r\nTrain Loss: output=0.1783, reconstruction=0.2353\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.226s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.2364\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1766, reconstruction=0.2376\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1788, reconstruction=0.2362\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.219s, 100.00%)\r\nTrain Loss: output=0.1762, reconstruction=0.2362\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.2356\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1772, reconstruction=0.2347\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1783, reconstruction=0.2347\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1756, reconstruction=0.2386\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1751, reconstruction=0.2361\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.224s, 100.00%)\r\nTrain Loss: output=0.1772, reconstruction=0.2342\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1768, reconstruction=0.2332\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.224s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.2333\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.2326\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.224s, 100.00%)\r\nTrain Loss: output=0.1766, reconstruction=0.2324\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.293s, 100.00%)\r\nTrain Loss: output=0.1761, reconstruction=0.2311\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.223s, 100.00%)\r\nTrain Loss: output=0.1746, reconstruction=0.2339\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1755, reconstruction=0.2275\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1765, reconstruction=0.2274\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.227s, 100.00%)\r\nTrain Loss: output=0.1754, reconstruction=0.2262\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.2820\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.223s, 100.00%)\r\nTrain Loss: output=0.1753, reconstruction=0.2803\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.221s, 100.00%)\r\nTrain Loss: output=0.1761, reconstruction=0.2797\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.2878\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.223s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.2877\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1755, reconstruction=0.2823\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.227s, 100.00%)\r\nTrain Loss: output=0.1755, reconstruction=0.2802\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.223s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.2823\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.221s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.2871\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.220s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.2701\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.230s, 100.00%)\r\nTrain Loss: output=0.1753, reconstruction=0.2925\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.222s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.2897\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.227s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.2850\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.224s, 100.00%)\r\nTrain Loss: output=0.1752, reconstruction=0.2816\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.223s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.2762\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.209s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='hello hello' label=0.0000 predicted=0.4995 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.4995 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.4964 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.4913 MISMATCH\r\n"
+        }
+      ],
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "peak_memory_bytes": 656672232,
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "gate": 5
+        }
+      ],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 6,
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "reason": "test_failure",
+      "outcomes": {
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "failed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 78.50820954097435,
+          "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', '  there'), ('hello there', '  there')]",
+          "stdout": "\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3037\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1739, reconstruction=0.3151\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3089\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3062\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3169\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3157\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3142\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1739, reconstruction=0.3102\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1744, reconstruction=0.3132\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3187\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3187\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3076\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.1735, reconstruction=0.3130\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1735, reconstruction=0.3173\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1742, reconstruction=0.3228\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3210\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3169\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.1735, reconstruction=0.3190\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.1734, reconstruction=0.3241\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.149s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3175\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1748, reconstruction=0.3233\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1747, reconstruction=0.3227\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3164\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1738, reconstruction=0.3247\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1743, reconstruction=0.3190\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3206\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3208\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3150\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3250\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3213\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3234\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3293\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.3288\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.3291\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.1740, reconstruction=0.3306\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.1741, reconstruction=0.3249\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.167s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.5061 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5061 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5061 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5024 MISMATCH\r\n"
+        }
+      ],
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "peak_memory_bytes": 653215280,
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "gate": 6
+        }
+      ],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 7,
+      "selector": "test/test_basicmodel.py::TestSPNN::test_xor_training",
+      "reason": "passed",
+      "outcomes": {
+        "test/test_basicmodel.py::TestSPNN::test_xor_training": "passed"
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_basicmodel.py::TestSPNN::test_xor_training",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.523398834047839,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "selected": [
+        "test/test_basicmodel.py::TestSPNN::test_xor_training"
+      ],
+      "completed": [
+        "test/test_basicmodel.py::TestSPNN::test_xor_training"
+      ],
+      "peak_memory_bytes": 441615704,
+      "observations": [],
+      "diagnostic_only": []
+    },
+    {
+      "gate": 8,
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8991366368,
+      "observations": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 1,
+          "seed": 0,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17499390244483948,
+          "recon_loss": 0.00013660475087817758,
+          "gate": 8
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15551918008,
+          "elapsed_seconds": 14.237366332905367
+        }
+      ]
+    },
+    {
+      "gate": 9,
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9120013656,
+      "observations": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+          "kind": "reconstruction",
+          "config": "data/matrix/MM_20M_xor_noraise.xml",
+          "epochs": 1,
+          "seed": 0,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17499567568302155,
+          "recon_loss": 0.00013989095168653876,
+          "gate": 9
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15561748432,
+          "elapsed_seconds": 13.275700542144477
+        }
+      ]
+    },
+    {
+      "gate": 10,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8816647272,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 1,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17499560117721558,
+          "recon_loss": 0.0001281373988604173,
+          "gate": 10
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15551295440,
+          "elapsed_seconds": 13.422964708181098
+        }
+      ]
+    },
+    {
+      "gate": 11,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9190481264,
+      "observations": [],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 13076572360,
+          "elapsed_seconds": 10.913385458057746
+        }
+      ]
+    },
+    {
+      "gate": 12,
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8720899104,
+      "observations": [],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15671570456,
+          "elapsed_seconds": 18.427550917025656
+        }
+      ]
+    },
+    {
+      "gate": 13,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9275186616,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 3,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17264127731323242,
+          "recon_loss": 0.00015896341938059777,
+          "gate": 13
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15672078336,
+          "elapsed_seconds": 17.560662833042443
+        }
+      ]
+    },
+    {
+      "gate": 14,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9004309752,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17494851350784302,
+          "recon_loss": 2.724627620409592e-06,
+          "gate": 14
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15679827992,
+          "elapsed_seconds": 349.0367574580014
+        }
+      ]
+    },
+    {
+      "gate": 15,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9274023352,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17340007424354553,
+          "recon_loss": 3.2067775464383885e-05,
+          "gate": 15
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15407853400,
+          "elapsed_seconds": 347.815708582988
+        }
+      ]
+    },
+    {
+      "gate": 16,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8634276824,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17545826733112335,
+          "recon_loss": 0.00013766062329523265,
+          "gate": 16
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15398203224,
+          "elapsed_seconds": 337.1704444580246
+        }
+      ]
+    },
+    {
+      "gate": 17,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8595626992,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 0.75,
+          "where_recovery": 0.8333333333333334,
+          "output_loss": 0.17592746019363403,
+          "recon_loss": 0.00019212854385841638,
+          "gate": 17
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 1,
+          "reason": "completed",
+          "peak_memory_bytes": 15407951728,
+          "elapsed_seconds": 338.4714407918509
+        }
+      ]
+    },
+    {
+      "gate": 18,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8934284464,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.16721254587173462,
+          "recon_loss": 0.00022642992553301156,
+          "gate": 18
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15407476544,
+          "elapsed_seconds": 328.09583770809695
+        }
+      ]
+    },
+    {
+      "gate": 19,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8904449152,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17566487193107605,
+          "recon_loss": 3.730725438799709e-05,
+          "gate": 19
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15406755648,
+          "elapsed_seconds": 326.426123958081
+        }
+      ]
+    },
+    {
+      "gate": 20,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9358106064,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17958404123783112,
+          "recon_loss": 9.52095870161429e-05,
+          "gate": 20
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15406739216,
+          "elapsed_seconds": 322.762858791044
+        }
+      ]
+    },
+    {
+      "gate": 21,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8651037680,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.15376347303390503,
+          "recon_loss": 0.00023752174456603825,
+          "gate": 21
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15406624552,
+          "elapsed_seconds": 321.88536212500185
+        }
+      ]
+    },
+    {
+      "gate": 22,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8908446920,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.1664573699235916,
+          "recon_loss": 0.0001642876013647765,
+          "gate": 22
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15406542656,
+          "elapsed_seconds": 321.8984982499387
+        }
+      ]
+    },
+    {
+      "gate": 23,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8768937016,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.1734451949596405,
+          "recon_loss": 8.990257629193366e-05,
+          "gate": 23
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15406886744,
+          "elapsed_seconds": 323.82001641602255
+        }
+      ]
+    },
+    {
+      "gate": 24,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9029803256,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 0.75,
+          "where_recovery": 1.0,
+          "output_loss": 0.177021786570549,
+          "recon_loss": 3.53349132637959e-05,
+          "gate": 24
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 1,
+          "reason": "completed",
+          "peak_memory_bytes": 15406690112,
+          "elapsed_seconds": 321.22007579216734
+        }
+      ]
+    },
+    {
+      "gate": 25,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9214467440,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17637072503566742,
+          "recon_loss": 6.10711140325293e-05,
+          "gate": 25
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15406673752,
+          "elapsed_seconds": 320.7042086669244
+        }
+      ]
+    },
+    {
+      "gate": 26,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9337363896,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17575503885746002,
+          "recon_loss": 0.0001105711271520704,
+          "gate": 26
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15407066920,
+          "elapsed_seconds": 325.0071317499969
+        }
+      ]
+    },
+    {
+      "gate": 27,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 8776490040,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.16638341546058655,
+          "recon_loss": 0.00014416199701372534,
+          "gate": 27
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15406411608,
+          "elapsed_seconds": 322.5048036670778
+        }
+      ]
+    },
+    {
+      "gate": 28,
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "reason": "memory",
+      "outcomes": {},
+      "reports": [],
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "peak_memory_bytes": 9185598808,
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.1761285662651062,
+          "recon_loss": 3.2981257390929386e-05,
+          "gate": 28
+        }
+      ],
+      "diagnostic_only": [
+        {
+          "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "diagnostic_only": true,
+          "memory_guard": null,
+          "returncode": 0,
+          "reason": "completed",
+          "peak_memory_bytes": 15407132528,
+          "elapsed_seconds": 323.4571148750838
+        }
+      ]
+    }
+  ],
+  "named_pytest_outcomes": {
+    "passed": 26,
+    "failed": 2
+  },
+  "guarded_group_outcomes": {
+    "passed": 6,
+    "test_failure": 2,
+    "memory": 21
+  },
+  "roundtrip_attempts": 15,
+  "guarded_roundtrip_outcomes": {
+    "memory": 15
+  },
+  "diagnostic_roundtrip_outcomes": {
+    "0": 13,
+    "1": 2
+  },
+  "diagnostic_only": [
+    {
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15551918008,
+      "elapsed_seconds": 14.237366332905367
+    },
+    {
+      "selector": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15561748432,
+      "elapsed_seconds": 13.275700542144477
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15551295440,
+      "elapsed_seconds": 13.422964708181098
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 13076572360,
+      "elapsed_seconds": 10.913385458057746
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15671570456,
+      "elapsed_seconds": 18.427550917025656
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15672078336,
+      "elapsed_seconds": 17.560662833042443
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15679827992,
+      "elapsed_seconds": 349.0367574580014
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15407853400,
+      "elapsed_seconds": 347.815708582988
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15398203224,
+      "elapsed_seconds": 337.1704444580246
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 1,
+      "reason": "completed",
+      "peak_memory_bytes": 15407951728,
+      "elapsed_seconds": 338.4714407918509
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15407476544,
+      "elapsed_seconds": 328.09583770809695
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15406755648,
+      "elapsed_seconds": 326.426123958081
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15406739216,
+      "elapsed_seconds": 322.762858791044
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15406624552,
+      "elapsed_seconds": 321.88536212500185
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15406542656,
+      "elapsed_seconds": 321.8984982499387
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15406886744,
+      "elapsed_seconds": 323.82001641602255
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 1,
+      "reason": "completed",
+      "peak_memory_bytes": 15406690112,
+      "elapsed_seconds": 321.22007579216734
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15406673752,
+      "elapsed_seconds": 320.7042086669244
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15407066920,
+      "elapsed_seconds": 325.0071317499969
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15406411608,
+      "elapsed_seconds": 322.5048036670778
+    },
+    {
+      "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 15407132528,
+      "elapsed_seconds": 323.4571148750838
+    }
+  ]
+}

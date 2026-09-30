@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-02/worker-000.recycle.json"
+}

@@ -1,0 +1,26 @@
+{
+  "source": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "destination": "/Users/arogers/github/WikiOracle/basicmodel",
+  "files": [
+    "bin/Language.py",
+    "bin/Models.py",
+    "bin/Spaces.py",
+    "test/test_bivector_retirement_state.py",
+    "test/test_compose_pair_driver.py",
+    "test/test_init_scale.py",
+    "test/test_item7_lesson_gradients.py",
+    "test/test_item7_reduction_deadline.py",
+    "test/test_item7_word_interpretation.py",
+    "test/test_mental_model.py",
+    "test/test_mm_xor.py",
+    "test/test_perceptual_loopback.py",
+    "test/test_phase2_end_to_end.py",
+    "test/test_runtime_split_ingestion.py",
+    "test/test_shamatha_inline_grammar.py",
+    "test/test_sparsity_regularizer.py",
+    "test/test_subspace_context.py",
+    "test/test_subspace_what_stm_contract.py",
+    "test/test_word_space_attach_knowledge.py"
+  ],
+  "documents_copied": false
+}

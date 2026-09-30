@@ -1,0 +1,41 @@
+{
+  "reason": "Final candidate validation exposed the unaligned native-identity API regression. Preserve all completed/partial outcomes, restore the None contract without porting the protected assertion, and measure the corrected source.",
+  "roots": [
+    80219,
+    80694,
+    80706,
+    80751,
+    80799,
+    80800,
+    81169,
+    81170
+  ],
+  "stopped_processes": [
+    80219,
+    80395,
+    80694,
+    80706,
+    80751,
+    80799,
+    80800,
+    80821,
+    81169,
+    81170,
+    81171,
+    81172,
+    81560,
+    81565,
+    84219,
+    84324,
+    84522
+  ],
+  "failure": "explicit-final2/group-35/result.json",
+  "labels": [
+    "explicit-final2",
+    "final2-reconstruction-candidate",
+    "final2-xor-candidate",
+    "final2-mm-grammar-candidate",
+    "final2-repeats-29-31",
+    "ai-compiled-boundary-after"
+  ]
+}

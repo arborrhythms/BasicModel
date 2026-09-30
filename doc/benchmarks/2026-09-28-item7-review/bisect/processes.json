@@ -1,0 +1,66 @@
+{
+  "interpret-head": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect_components.py",
+      "--mode",
+      "interpret-head",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/interpret-head/baseline.json"
+    ],
+    "pid": 42423,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7505484712,
+    "elapsed_seconds": 1006.4313922500005,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/interpret-head/run.log"
+  },
+  "context-head": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect_components.py",
+      "--mode",
+      "context-head",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/context-head/baseline.json"
+    ],
+    "pid": 42424,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7652465840,
+    "elapsed_seconds": 1007.5426067080116,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/context-head/run.log"
+  },
+  "journal-detached": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect_components.py",
+      "--mode",
+      "journal-detached",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/journal-detached/baseline.json"
+    ],
+    "pid": 43643,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7810030816,
+    "elapsed_seconds": 931.1619302090257,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/journal-detached/run.log"
+  },
+  "identity-no-st": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect_components.py",
+      "--mode",
+      "identity-no-st",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/identity-no-st/baseline.json"
+    ],
+    "pid": 43642,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7781014704,
+    "elapsed_seconds": 933.3165158339543,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/bisect/identity-no-st/run.log"
+  }
+}

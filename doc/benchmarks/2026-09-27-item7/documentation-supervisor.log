@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 180s, 8.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 116 selectors; limit 180s, 8.0 GiB
+[worker-000] exit 0; 3.8s; peak 0.40 GiB
+Result: passed, exit 0; 116/116 cases completed.
+doc/benchmarks/2026-09-27-item7/documentation/result.json

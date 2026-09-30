@@ -1,0 +1,29 @@
+{
+  "status": "integrated; 48 affected cases pass; remaining caller failures repaired in reader-fixtures.json",
+  "files": [
+    {
+      "path": "test/test_truth_criterion_gates_learning.py",
+      "before_sha256": "b2a277ec01037bd49c8d12f073a54c7903ab2598e39d1dc4911cd13cd1604a7b",
+      "after_sha256": "5b396dc01e8aebddbf1632b3935a7a64ec62e1914eb1ba4791941c9a38336d0d"
+    },
+    {
+      "path": "test/test_relative_sentence_codebook_insertion.py",
+      "before_sha256": "1a46e307e00f36ed845d8f32a3ed7e92531af7c0aad046820446f92aaa166f86",
+      "after_sha256": "4eea304236fb9ab882a939538a42ffe09705a09f59c915d8ab65ca7648c941bd"
+    },
+    {
+      "path": "test/test_lies_can_be_learned.py",
+      "before_sha256": "7615003cc8ab6b4737633cd1c8407c4421de47f58657700e490dcfb20468ce9a",
+      "after_sha256": "fc7cca949bd63792e458f9ed58c226b6104aaf52a991d206132819178c6fe8e8"
+    },
+    {
+      "path": "test/test_item7_storage.py",
+      "before_sha256": "d52786cf28960e208029ab5c094434b814d0811290407c253518b12e574dea45",
+      "after_sha256": "944800378e939db6161e8a5eff64cb9754ea601f394566d102d45df55fe4931d"
+    }
+  ],
+  "runtime_changed": false,
+  "protected_assertions_changed": false,
+  "fixture_contract": "Relative/contradiction fixtures supply evidence explicitly and retain their expected row identity, poles and both corner. Registration keeps fixed evidence while varying trust and now checks both columns. The old collapse callback is an assertion trap, not a pole-difference computation.",
+  "main_changed_files_match_affected_receipt": true
+}

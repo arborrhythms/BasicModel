@@ -1,0 +1,36 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+__________________ test_operations_inserted_into_ws_codebook ___________________
+test/test_ss_codebook_operations.py:86: in test_operations_inserted_into_ws_codebook
+    pos_map = ws.insert_operations(g)
+              ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'
+______________________ test_build_auto_inserts_operations ______________________
+test/test_ss_codebook_operations.py:117: in test_build_auto_inserts_operations
+    assert ws.operation_position(op) is not None, (
+           ^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'operation_position'
+_____________________ test_insert_operations_is_idempotent _____________________
+test/test_ss_codebook_operations.py:127: in test_insert_operations_is_idempotent
+    first = ws.insert_operations(g)
+            ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'
+______________ test_operations_are_distinct_from_meaning_symbols _______________
+test/test_ss_codebook_operations.py:140: in test_operations_are_distinct_from_meaning_symbols
+    pos_map = ws.insert_operations(g)
+              ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'
+=========================== short test summary info ============================
+FAILED test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook
+FAILED test/test_ss_codebook_operations.py::test_build_auto_inserts_operations
+FAILED test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent
+FAILED test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols
+4 failed in 2.17s

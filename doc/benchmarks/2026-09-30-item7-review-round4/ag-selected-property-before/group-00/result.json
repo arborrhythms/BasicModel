@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-before/group-00/worker-000.json"
+      ],
+      "pid": 74861,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 429737304,
+      "elapsed_seconds": 6.733551082899794,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.017447791062295437,
+          "message": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py:28: in test_selected_property_rows_are_gathered_before_byte_read\n    assert observed_widths == [len(selected)], observed_widths\nE   AssertionError: [513]\nE   assert [513] == [3]\nE     \nE     At index 0 diff: 513 != 3\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-before/group-00",
+  "elapsed_seconds": 14.597392916912213,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 429737304,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-before/group-00/collect.json"
+    ],
+    "pid": 74853,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 424396000,
+    "elapsed_seconds": 7.5065297081600875,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

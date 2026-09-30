@@ -1,0 +1,3 @@
+test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root
+
+1 test collected in 5.00s

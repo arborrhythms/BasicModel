@@ -11,8 +11,8 @@ def _host():
         shards=[dict(path='fixture.parquet', size=123)]), source_addresses={'train': addresses})
     program = SimpleNamespace(leaves=torch.empty(2, 4, device='meta'))
     return SimpleNamespace(inputSpace=SimpleNamespace(data=data),
-        _last_understanding=SimpleNamespace(sentence_programs={0: (program, program),
-            1: (program, None)}, answer_program=(program, program)))
+        _last_understanding=SimpleNamespace(sentence_fields={0: (program, program),
+            1: (program, None)}, sentence_states=(program, program)))
 
 
 def test_progress_counts_completed_ragged_sentences_without_reading_device_values():
@@ -33,7 +33,7 @@ def test_unaddressed_or_unfinished_presentations_do_not_claim_fineweb_training()
     model = _host()
     record_fineweb_training(model, split='train', source_rows=[[-1, 400], [None]])
     assert getattr(model, '_fineweb_training_progress', {}).get('sentences', 0) == 0
-    model._last_understanding.sentence_programs = {0: (None, None)}
+    model._last_understanding.sentence_fields = {0: (None, None)}
     record_fineweb_training(model, split='train', source_rows=[0, 1])
     assert getattr(model, '_fineweb_training_progress', {}).get('sentences', 0) == 0
 
@@ -113,7 +113,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     from data import Data
     from test_compiled_word_chunk import _tiny_canonical_model
     from test_packed_reconstruction_parity import reset
-    from test_reverse_traversal import _select_completed_binary_path
+    from reading_fixtures import force_absolute_reading
     from LearningEvaluation import FINEWEB_CORPUS, checkpoint_readiness
     from eval_fineweb_learning import load_model, read_validation
     from What import What
@@ -134,9 +134,9 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     model.reconstruction_placement = 'eager'
-    # This is checkpoint/prediction plumbing. Supply complete observations;
-    # unconstrained unary rounds may correctly exhaust the compose budget.
-    _select_completed_binary_path(model)
+    # This is checkpoint/prediction plumbing with an explicitly supplied
+    # absolute reading, not a measurement of the untrained English parser.
+    force_absolute_reading(model)
     data = model.inputSpace.data
     manifest = dict(dataset='text', corpus=FINEWEB_CORPUS,
                     shards=[dict(path='fixture.parquet', size=123)])
@@ -177,7 +177,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
                            for i in range(4)]}
     monkeypatch.setattr(Data, 'load', heldout)
     loaded = load_model(tmp_path/'tiny_chunk_model.xml', path, minimum_sentences=3)
-    _select_completed_binary_path(loaded)
+    force_absolute_reading(loaded)
     try:
         report = read_validation(loaded, sentences=4, gain=0.)
         assert report['predicted_targets'] == 2
@@ -187,9 +187,9 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     finally:
         loaded.End()
     broken = torch.load(path, map_location='cpu', weights_only=False)
-    key = next(k for k in broken['state_dict'] if k.endswith('.leaf_codes'))
+    key = next(k for k in broken['state_dict'] if k.endswith('.posting_codes'))
     broken['state_dict'][key] = broken['state_dict'][key].reshape(1, -1)
     corrupt = tmp_path/'invalid-index.ckpt'
     torch.save(broken, corrupt)
-    with pytest.raises(ValueError, match='leaf_codes'):
+    with pytest.raises(ValueError, match='posting_codes'):
         load_model(tmp_path/'tiny_chunk_model.xml', corrupt, minimum_sentences=3)

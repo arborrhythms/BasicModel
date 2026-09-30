@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0039857919327914715,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-thought-reasoning/run/worker-038.recycle.json"
+}

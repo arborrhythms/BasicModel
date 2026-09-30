@@ -1,0 +1,3 @@
+test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+
+1 test collected in 0.45s

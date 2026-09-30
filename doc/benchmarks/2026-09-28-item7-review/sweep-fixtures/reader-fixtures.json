@@ -1,0 +1,58 @@
+{
+  "status": "integrated; final affected rerun 55 passes; uncommitted for review",
+  "files": [
+    {
+      "path": "test/index_fixtures.py",
+      "before_sha256": "750003af2e2e9636f454b537f6ae1ffa354e5dcccc26c2fe415daf407a4ffaa2",
+      "after_sha256": "9f96367e979b6a7436b9b8405c860f65804fc24b80c435540576c70c4b5f43c7",
+      "original_assertions": 0,
+      "all_original_assertions_retained": true
+    },
+    {
+      "path": "test/test_query_work_budget.py",
+      "before_sha256": "1f4da19d6e5b14cddbce947cb707caa12ee5f6e5d5cb91f68fd69c6d9c3b737a",
+      "after_sha256": "aa9222cbc42510979cc07953b273ac1e90e9f9cff5303b03fe8ef2860eaf38f2",
+      "original_assertions": 20,
+      "all_original_assertions_retained": true
+    },
+    {
+      "path": "test/test_replacement_kernel_contracts.py",
+      "before_sha256": "d8dbd85b0d63efda8ae389e6275c3a0a4378847b175dedc70b9da925e898e8b1",
+      "after_sha256": "bd14e66b81a224526b1bf8b1d5272a41d7d0a5fe26556721f58c3786f07e7b83",
+      "original_assertions": 25,
+      "all_original_assertions_retained": true
+    },
+    {
+      "path": "test/test_taxonomy_policy.py",
+      "before_sha256": "c036f292998b336ef55c3ef86c0f28325b4ef8e282549773ad218f388e4d3788",
+      "after_sha256": "2469da52bddbb34534cf9bedfe4f59213bfd73ba2b345d476ff60941eb891667",
+      "original_assertions": 8,
+      "all_original_assertions_retained": true
+    },
+    {
+      "path": "test/test_truth_ideas_routing.py",
+      "before_sha256": "79cd8ae71096d682c3c20716df1f791aaf69a9c98e60e518f17986780c270103",
+      "after_sha256": "8e1582c73cff096fd7a8d2df17ee210ffb6095d9b028d4afe0f723e30ed1a648",
+      "original_assertions": 60,
+      "all_original_assertions_retained": true
+    },
+    {
+      "path": "test/test_two_truth_stores.py",
+      "before_sha256": "6c7f1534d97e03da5b9b0e40981caa0eb64b8ce0837a5867b66b8636e89ed5a5",
+      "after_sha256": "323bc973bffaa55014ae3cc0a4404066a5149481cfbd519ec147f6fd2d16384e",
+      "original_assertions": 37,
+      "all_original_assertions_retained": true
+    }
+  ],
+  "runtime_changed": false,
+  "protected_assertions_changed": false,
+  "renamed_case": {
+    "test_counterevidence_lowers_trust": "test_counterevidence_joins_the_negative_pole"
+  },
+  "notes": [
+    "The new terminal-only fixture drives the production numeric unfolding index and real priming surface with native row orders; it asserts no learned generation quality.",
+    "The two-unit work-budget fixture reads an already indexed, explicitly primed candidate set without a generation owner; the same operation/record charges and every original assertion are preserved.",
+    "Relation fixtures explicitly supply their initial evidence, independently of source trust.",
+    "Three unused retired-gate helpers and stale rebaking comments are removed; no test case is retired."
+  ]
+}

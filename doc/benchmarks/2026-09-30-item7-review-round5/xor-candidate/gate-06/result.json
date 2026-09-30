@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/gate-06/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/gate-06/worker-000.json"
+      ],
+      "pid": 11408,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 660456888,
+      "elapsed_seconds": 97.41253416705877,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/gate-06/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 93.09507224988192,
+          "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', 'there'), ('hello there', 'there')]",
+          "stdout": "\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1745, reconstruction=0.1992\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.326s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1617\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1542\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1500\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1490\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.247s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1503\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1530\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1558\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1574\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1572\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.237s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1562\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1555\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.243s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1544\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.236s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1535\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1537\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1541\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1547\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.244s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1563\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1580\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1592\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1838\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1887\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1582\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.252s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1575\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1578\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.247s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1872\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.325s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1872\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.247s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1577\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1824\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.245s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1591\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1588\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.249s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1884\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1593\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1594\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1887\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTrain Loss: output=0.1750, reconstruction=0.1891\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=0.213s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.5006 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.4997 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5017 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5008 MISMATCH\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/gate-06",
+  "elapsed_seconds": 99.05820966581814,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 660456888,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/gate-06/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/gate-06/collect.json"
+    ],
+    "pid": 11403,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 47481384,
+    "elapsed_seconds": 1.3589777911547571,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/gate-06/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit-final/group-02/worker-000.recycle.json"
+}

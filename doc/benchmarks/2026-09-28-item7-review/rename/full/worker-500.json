@@ -1,0 +1,63 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+    "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+    "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name",
+    "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback"
+  ],
+  "completed": [
+    "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+    "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+    "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name",
+    "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0003255420597270131,
+      "message": "test/test_relative_rule_detection_collapsed.py:78: in test_relative_op_names_are_canonical_structural_forms\n    assert Grammar._RELATIVE_OP_NAMES == frozenset({\"equal\", \"part\", \"whole\"})\nE   AssertionError: assert frozenset({'e...rt', 'whole'}) == frozenset({'e...rt', 'whole'})\nE     \nE     Extra items in the left set:\nE     'implies'\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005637919530272484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033616600558161736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029858294874429703,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025216699577867985,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

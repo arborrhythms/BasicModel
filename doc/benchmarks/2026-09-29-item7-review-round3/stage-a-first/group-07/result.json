@@ -1,0 +1,116 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+  ],
+  "completed": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-07/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-07/worker-000.json"
+      ],
+      "pid": 5386,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 601113920,
+      "elapsed_seconds": 4.831302833976224,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-07/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+      ],
+      "completed": [
+        "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05952445906586945,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.03324887505732477,
+          "message": "test/test_category_em_smoke.py:133: in test_codebook_enables_and_em_populates_on_real_model\n    fired = _run_forwards(model)\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_category_em_smoke.py:112: in _run_forwards\n    model.forward(ipt)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23815: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13584: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:83: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:16910: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+          "stdout": "Starting with dynamic 12-dim embedding (words added at runtime)\n  Building span table: 0/16 docs\n"
+        },
+        {
+          "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.030777332955040038,
+          "message": "test/test_category_em_smoke.py:172: in test_mlp_chooser_sized_and_context_built\n    _run_forwards(model)\ntest/test_category_em_smoke.py:112: in _run_forwards\n    model.forward(ipt)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23815: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13584: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11502: in _stage_reading_word_concepts\n    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],\nbin/Interpret.py:83: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:16910: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+          "stdout": "Starting with dynamic 12-dim embedding (words added at runtime)\n  Building span table: 0/16 docs\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-07",
+  "elapsed_seconds": 8.57510291703511,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 601113920,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-07/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-07/collect.json"
+    ],
+    "pid": 5378,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433505504,
+    "elapsed_seconds": 3.5208148329984397,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-07/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

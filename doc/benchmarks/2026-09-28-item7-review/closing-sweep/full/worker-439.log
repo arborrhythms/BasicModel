@@ -1,0 +1,34 @@
+......FFFFF...                                                           [100%]
+=================================== FAILURES ===================================
+___________ test_symbolic_space_attach_creates_references_parameter ____________
+test/test_word_space_attach_knowledge.py:131: in test_symbolic_space_attach_creates_references_parameter
+    assert hasattr(ws, 'references')
+E   AssertionError: assert False
+E    +  where False = hasattr(WholeSpace(), 'references')
+_______________ test_symbolic_space_attach_creates_order_buffer ________________
+test/test_word_space_attach_knowledge.py:151: in test_symbolic_space_attach_creates_order_buffer
+    assert hasattr(ws, 'order')
+E   AssertionError: assert False
+E    +  where False = hasattr(WholeSpace(), 'order')
+______________ test_symbolic_space_references_in_named_parameters ______________
+test/test_word_space_attach_knowledge.py:165: in test_symbolic_space_references_in_named_parameters
+    assert 'references' in names
+E   AssertionError: assert 'references' in []
+__________________ test_symbolic_space_order_in_named_buffers __________________
+test/test_word_space_attach_knowledge.py:175: in test_symbolic_space_order_in_named_buffers
+    assert 'order' in names
+E   AssertionError: assert 'order' in []
+________________ test_symbolic_space_reattach_updates_in_place _________________
+test/test_word_space_attach_knowledge.py:186: in test_symbolic_space_reattach_updates_in_place
+    refs_id_before = id(ws.references)
+                        ^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?
+=========================== short test summary info ============================
+FAILED test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter
+FAILED test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer
+FAILED test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters
+FAILED test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers
+FAILED test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place
+5 failed, 9 passed in 2.36s

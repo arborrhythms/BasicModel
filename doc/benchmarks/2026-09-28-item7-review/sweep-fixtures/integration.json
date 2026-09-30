@@ -1,0 +1,111 @@
+{
+  "status": "integrated and affected files verified; uncommitted for Claude review",
+  "files": [
+    {
+      "path": "test/test_meronomy_ladder.py",
+      "before_sha256": "3a00b8722fc2e7e58ffd8d9f7b8e356ad36e6cf7a2e0c54362223b81fe6fcc17",
+      "after_sha256": "d0d958f62e5354458fc8b66a5725f663590dc57f1a0f375bb1f9c1302cbc147b",
+      "assertions_identical": true
+    },
+    {
+      "path": "test/test_type_run_spans.py",
+      "before_sha256": "a00b16237731dd34a7070d4eeb3b24a159d68eb1b622da01792f272ddf0634f5",
+      "after_sha256": "96090f331d93e90a5f240022b4a9537af940ecf15f7233d36f7ad898bcbdba89",
+      "assertions_identical": false
+    },
+    {
+      "path": "test/property_fixtures.py",
+      "before_sha256": null,
+      "after_sha256": "a24fb47bf67a11758e6975e87551f9ce96d09ce9cdc39d00b5f1564aff11a614",
+      "assertions_identical": true
+    },
+    {
+      "path": "test/test_where_encoding_recovery.py",
+      "before_sha256": "d1a81d4f98d2fbc99f8d11a5f4f9c92d941a983d4147ab3e8bda2c27bb2e2f98",
+      "after_sha256": "cd9b75d248e229551cacb4b02748ed9728d380194a5ced1ab3d654b96de4c2fc",
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_semantic_categories_pipeline.py",
+      "before_sha256": "c5deb1e5cadd4afef7d18f04e25a4c637f4b04839a58909d2632c1cd18cae720",
+      "after_sha256": "53a939f07daa87191c49f480c0b6063fb05ffa95f25030d58eb22d602479f3b8",
+      "assertions_identical": true
+    },
+    {
+      "path": "test/test_active_codebook_reads.py",
+      "before_sha256": "5894647665c9b211939e3383ee679bcba2341291cf32d8d2f1732fa4c3a4564d",
+      "after_sha256": "310ea8b0973c49d6ade6eb0f455b7cc1c35cb827ab4f1221a3925b261e48e862",
+      "assertions_identical": false,
+      "isolated_after_sha256": "e6a12cce9861d9bc0d5eec7d19d783651aded26aa42c02f033a897510afb4882",
+      "main_only_difference": "Trim trailing blank lines at EOF after the 118-case documentation-link check; AST unchanged."
+    },
+    {
+      "path": "test/test_operator_superposition.py",
+      "before_sha256": "2f4f4582e197dab185b7a44b229077fb4ac69b9b387e21b0ab6cc1f8d839c6c3",
+      "after_sha256": "7304febc7cc6bbcd5ea687682bcbbc0e47aa09c0ef8124c340b613c5f3aef79c",
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_serial_stm_split.py",
+      "before_sha256": "19bb36cb7e5ef46e0f9b93a191978b30462fb61d2e7cec2ec8925e0cc071f924",
+      "after_sha256": "c5a79d75a7f9175aaf4482bfa481029efa9c25d455e1a50d71a7d38b17a233ad",
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_basicmodel.py",
+      "before_sha256": "4ef21395a6611e8c0a40d3c0c02e3fa501dda3425d3f68ddb019816137676a97",
+      "after_sha256": "dc814a1dd485cb8d6f8ad5d2986e9ea507728441a061d4f27e2611b4ebf77413",
+      "assertions_identical": true
+    },
+    {
+      "path": "test/test_operator_codebook_shaping.py",
+      "before_sha256": "cbc39754ac0fd1e2eb2e29c5d7ff3ff8542fe1216f28210f33339cf23e6abbab",
+      "after_sha256": null,
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_topk_priming_codebook_growth.py",
+      "before_sha256": "c2dbf59a822dc0bb5483ba91c1b066ce2e881cd60f80abc29098f9bcdbbe03fc",
+      "after_sha256": null,
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_ps_ss_binding.py",
+      "before_sha256": "52d2ea2d49e7be5444aab8e01b0536af0d12962449585f7c772fa3550d8e7dab",
+      "after_sha256": null,
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_analysis_attention_gate.py",
+      "before_sha256": "dc00041cb290cbf7a2f6075b93e035826dbc0b9d165df8e936c2843cc4dd7b20",
+      "after_sha256": null,
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_ss_codebook_operations.py",
+      "before_sha256": "1b99be0dde83e32e68bc22bc3c70aa1386fcbad23999e7e6e1bc487ae6ea08ab",
+      "after_sha256": null,
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_merge_structural_not_operator.py",
+      "before_sha256": "cac2a07f37ede5fe31c7a65f28e4d35a7c0c30f61129623b927fbd1c91214754",
+      "after_sha256": null,
+      "assertions_identical": false
+    },
+    {
+      "path": "test/test_search_then_mint.py",
+      "before_sha256": "11b3651788bdd2b6238788bc6c47f7f2815999e10d430f053ef186db7f25f13a",
+      "after_sha256": null,
+      "assertions_identical": false
+    }
+  ],
+  "retirement_disposition": "retired-cases.json",
+  "runtime_changed": false,
+  "protected_gates_changed": false,
+  "contract": "\u00a711.4: WholeSpace is a learned property basis only. Meronomy/category assertions are unchanged. Type-table and allocator fixtures follow their current owners; retired dictionary APIs have no compatibility paths.",
+  "main_matches_isolated_changed_files": false,
+  "main_difference": "Only test/test_active_codebook_reads.py EOF whitespace; the meronomy process still owns the isolated source.",
+  "meronomy_file_result": "meronomy-file-after/result.json",
+  "main_non_executable_differences": "EOF whitespace in test_active_codebook_reads.py and the subsequent TruthLayer LTM-view docstring correction; no runtime executable difference."
+}

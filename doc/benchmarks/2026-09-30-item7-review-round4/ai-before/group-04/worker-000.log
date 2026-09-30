@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_provisioning_keeps_its_existing_hard_reset_of_what_episode ________
+test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+    assert memory.get_what_slots(b=0) == []
+E   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []
+E     
+E     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0000, 0.0000, 0.8196, 0.0000, 0.7914, 0.6919, 0.2129, 1.9925,\n          0.4234, 1.9584, 0.04... 'iteration': 0, 'closure_pressure': 0.0, 'forced': False, 'temporal': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13589: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+1 failed, 1 warning in 5.08s

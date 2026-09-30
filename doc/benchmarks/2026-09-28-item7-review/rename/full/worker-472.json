@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+    "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+    "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+    "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop"
+  ],
+  "completed": [
+    "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+    "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+    "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+    "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002957920078188181,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016883329953998327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006691670278087258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010062498040497303,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

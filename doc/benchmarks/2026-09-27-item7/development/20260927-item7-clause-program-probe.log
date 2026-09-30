@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.6s; peak 0.40 GiB
+[worker-000] 2 selectors; limit 1796s, 8.0 GiB
+[worker-000] exit 1; 3.7s; peak 0.40 GiB
+Result: test_failure, exit 1; 2/2 cases completed.
+output/tests/20260927-item7-clause-program-probe/result.json

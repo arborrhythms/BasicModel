@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_three_slot_predicate_probe.py::test_first_three_slot_predicate_occurrence[True-implies]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/three-slot-before/group-00/worker-000.recycle.json"
+}

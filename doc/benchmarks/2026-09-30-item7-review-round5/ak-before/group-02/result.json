@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-02/worker-000.json"
+      ],
+      "pid": 9454,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 431867200,
+      "elapsed_seconds": 3.5804623749572784,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+      ],
+      "completed": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.010881124995648861,
+          "message": "test/test_item9b_interpret.py:158: in test_selected_generic_grammar_ends_the_interpreted_kinds\n    assert store.row(row)['meaning'].role_refs == meaning.role_refs\nE   AssertionError: assert (('sym', 17),..., ('sym', 18)) == (('sym', 17),..., ('sym', 18))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-02",
+  "elapsed_seconds": 7.4152835418935865,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 431867200,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-02/collect.json"
+    ],
+    "pid": 9446,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428213424,
+    "elapsed_seconds": 3.5243030418641865,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

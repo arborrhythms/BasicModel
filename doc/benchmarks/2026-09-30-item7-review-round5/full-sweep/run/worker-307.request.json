@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_corrections.py::test_copy_preserves_the_single_registry_ladder"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-307.recycle.json"
+}

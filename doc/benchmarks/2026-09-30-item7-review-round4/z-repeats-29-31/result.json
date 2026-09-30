@@ -1,0 +1,846 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-07/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-08/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-09/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-10/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-11/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-12/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-13/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-14/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-15/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-16/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-17/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-18/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-19/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-20/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-21/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-22/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-23/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-24/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-25/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-26/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-27/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-28/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-29/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-30/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-31/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-32/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-33/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-34/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-35/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-36/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-37/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-38/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-39/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-40/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-41/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-42/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-43/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-44/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-45/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-46/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-47/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-48/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-49/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-50/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-51/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-52/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-53/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-54/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-55/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-56/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-57/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-58/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-59/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-60/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-61/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-62/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-63/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-64/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-65/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-66/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-67/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-68/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-69/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-70/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-71/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-72/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-73/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-74/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-75/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-76/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-77/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-78/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-79/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-80/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-81/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-82/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-83/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-84/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-85/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-86/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-87/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-88/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-89/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-90/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-91/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-92/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-93/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-94/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-95/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-96/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-97/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-98/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-99/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-100/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-101/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-102/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-103/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-104/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-105/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-106/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-107/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-108/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-109/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-110/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-111/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-112/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-113/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-114/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-115/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-116/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-117/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-118/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-119/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-120/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-121/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-122/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-123/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-124/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-125/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-126/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-127/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-128/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-129/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-130/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-131/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-132/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-133/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-134/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-135/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-136/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-137/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-138/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-139/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

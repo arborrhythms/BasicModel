@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 11.469187750015408,
+      "message": "test/test_output_walk.py:223: in test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk\n    assert tuple(idea.shape) == (2, 3, D) and bool(resolved.all())\n                 ^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'shape'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

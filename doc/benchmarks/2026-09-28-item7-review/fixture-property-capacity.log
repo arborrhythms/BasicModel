@@ -1,0 +1,179 @@
+FF.F.....F......F.......ss............                                   [100%]
+=================================== FAILURES ===================================
+__________ test_wholespace_W_identity_is_frozen_and_optimizer_visible __________
+
+    def test_wholespace_W_identity_is_frozen_and_optimizer_visible():
+        model = _make_model()
+        ws = model.wholeSpace
+        cb = ws.subspace.what
+        W = cb.getW()
+        assert cb._capacity_frozen
+        assert cb.vq is None
+>       assert any(param is W for param in ws.getParameters())
+E       assert False
+E        +  where False = any(<generator object test_wholespace_W_identity_is_frozen_and_optimizer_visible.<locals>.<genexpr> at 0x1208a7920>)
+
+test/test_wholespace_fixed_capacity.py:46: AssertionError
+_________ test_wholespace_capacity_exhaustion_is_atomic_and_actionable _________
+
+    def test_wholespace_capacity_exhaustion_is_atomic_and_actionable():
+        model = _make_model()
+        ws = model.wholeSpace
+        cb, W = ws.subspace.what, ws.subspace.what.getW()
+        cap = int(cb.nVectors)
+        ws._property_rows_used = set(range(cap))
+        _pending_split(ws)
+        before_W = W.detach().clone()
+        before_properties = cb.primitive_properties.members.detach().clone()
+        assert ws.maybe_split_property_row(0) is None
+>       assert cb.getW() is W
+E       assert tensor([[0.0000e+00, 0.0000e+00, 0.0000e+00, 5.7492e-01, 1.3427e-01, 3.2753e-01,\n         7.4893e-01, 0.0000e+00],\n   ... 2.7048e-01, 0.0000e+00, 0.0000e+00, 0.0000e+00, 5.6929e-01,\n         0.0000e+00, 0.0000e+00]], grad_fn=<AddBackward0>) is tensor([[0.0000e+00, 0.0000e+00, 0.0000e+00, 5.7492e-01, 1.3427e-01, 3.2753e-01,\n         7.4893e-01, 0.0000e+00],\n   ... 2.7048e-01, 0.0000e+00, 0.0000e+00, 0.0000e+00, 5.6929e-01,\n         0.0000e+00, 0.0000e+00]], grad_fn=<AddBackward0>)
+E        +  where tensor([[0.0000e+00, 0.0000e+00, 0.0000e+00, 5.7492e-01, 1.3427e-01, 3.2753e-01,\n         7.4893e-01, 0.0000e+00],\n   ... 2.7048e-01, 0.0000e+00, 0.0000e+00, 0.0000e+00, 5.6929e-01,\n         0.0000e+00, 0.0000e+00]], grad_fn=<AddBackward0>) = getW()
+E        +    where getW = Codebook(\n  (primitive_properties): PrimitiveProperties()\n).getW
+
+test/test_wholespace_fixed_capacity.py:77: AssertionError
+_____ test_property_split_uses_an_unused_row_without_replacing_parameters ______
+
+    def test_property_split_uses_an_unused_row_without_replacing_parameters():
+        from Spaces import WholeSpace
+        from util import init_config
+        init_config(path=_CONFIG, defaults_path=_DEFAULTS)
+        ws = WholeSpace([8, 14], [64, 14], [8, 14])
+        cb, W = ws.subspace.what, ws.subspace.what.getW()
+        primitives = cb.primitive_properties.members
+        initial = cb.active_row_count()
+        _pending_split(ws)
+        row = ws.maybe_split_property_row(0)
+        assert row is not None and row > 0
+>       assert cb.getW() is W
+E       assert tensor([[5.7148e-01, 0.0000e+00, 0.0000e+00, 2.1986e-01, 0.0000e+00, 5.5652e-01,\n         0.0000e+00, 0.0000e+00, 2.66... 0.0000e+00, 0.0000e+00, 0.0000e+00, 5.8649e-01, 0.0000e+00,\n         4.2138e-01, 0.0000e+00]], grad_fn=<AddBackward0>) is tensor([[5.7148e-01, 0.0000e+00, 0.0000e+00, 2.1986e-01, 0.0000e+00, 5.5652e-01,\n         0.0000e+00, 0.0000e+00, 2.66... 0.0000e+00, 0.0000e+00, 0.0000e+00, 5.8649e-01, 0.0000e+00,\n         4.2138e-01, 0.0000e+00]], grad_fn=<AddBackward0>)
+E        +  where tensor([[5.7148e-01, 0.0000e+00, 0.0000e+00, 2.1986e-01, 0.0000e+00, 5.5652e-01,\n         0.0000e+00, 0.0000e+00, 2.66... 0.0000e+00, 0.0000e+00, 0.0000e+00, 5.8649e-01, 0.0000e+00,\n         4.2138e-01, 0.0000e+00]], grad_fn=<AddBackward0>) = getW()
+E        +    where getW = Codebook(\n  (primitive_properties): PrimitiveProperties()\n).getW
+
+test/test_wholespace_fixed_capacity.py:116: AssertionError
+______ TestAutobindFiresFromCS.test_autobind_creates_meta_taxonomy_entry _______
+
+self = <test_autobind_from_cs.TestAutobindFiresFromCS testMethod=test_autobind_creates_meta_taxonomy_entry>
+
+    def test_autobind_creates_meta_taxonomy_entry(self):
+        m = _make_radix_model()
+        ps = m.perceptualSpace
+        ps_store = ps.percept_store
+        ws = m._concept_owner()
+        # Use the FIRST conceptualSpace stage (stage_idx == 0) where the
+        # production autobind fires. NB: since the 2026-06-03 fullgraph
+        # refactor it fires from cs.Reset (sentence boundary), not mid-
+        # forward; this test calls _maybe_autobind_meta directly, so it is
+        # unaffected by that relocation.
+        cs = m.conceptualSpaces[0]
+        # Insert a fresh percept on the PS store and grab its vector.
+        D = int(ps_store.dim)
+        seed = torch.zeros(D)
+        seed[0] = 0.7
+        pid = ps_store.insert(b"taskg_unique", init_vector=seed)
+        # Synthesize a [B=1, N=1] pid grid + [B=1, N=1, D] vec tensor.
+        pid_grid = torch.tensor([[pid]], dtype=torch.long)
+        vec_event = seed.view(1, 1, -1)
+        # Snapshot the SS taxonomy size before the call.
+        size_before = len(getattr(getattr(cs, "_concept_allocator", None), "lexical_words", {}))
+        extent = len(ps_store.bytes_for(pid))
+        cs.wholeSpace_ref._staged_analysis_spans = torch.tensor([[[0, extent]]])
+        cs._maybe_autobind_meta(pid_grid, vec_event,
+            tile_spans=[[(0, extent)]], percept_store=ps_store)
+        size_after = len(getattr(getattr(cs, "_concept_allocator", None), "lexical_words", {}))
+        self.assertGreater(
+            size_after, size_before,
+            "autobind from CS should have grown the SS META taxonomy",
+        )
+        # The autobind set on CS should track the pid.
+        bound = getattr(cs, '_percept_word_concept', None)
+>       self.assertIsNotNone(bound)
+E       AssertionError: unexpectedly None
+
+test/test_autobind_from_cs.py:146: AssertionError
+________ test_symbolspace_and_grammar_use_conceptual_not_property_width ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7934/test_symbolspace_and_grammar_u0')
+
+    def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
+        """SS state is CS-width even when the upstream property basis is narrow."""
+        model = _small_property_model(
+            tmp_path, native_event=16, concept_event=24,
+            symbol_tower=True, symbolic_lift=True)
+        cs = model.conceptualSpace
+        ws = model.wholeSpace
+        ss = model.symbolSpace
+    
+        # Concepts are opaque codes: no conceptual band, the whole width is
+        # the code (2026-09-14).  Symbols are percepts and keep their band.
+        assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
+        assert ws.subspace.nWhat == 8
+        assert ws.subspace.muxedSize == 16
+    
+        assert ss.muxedSize == cs.subspace.muxedSize
+        assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
+        # Grammar consumes opaque concept codes, not the symbol's located-event
+        # content slice. No conceptual coordinate may be truncated here.
+        assert ss.languageLayer.feature_dim == cs.subspace.muxedSize
+        assert ss.truth_layer.nDim == cs.subspace.muxedSize      # ideas are concept codes
+        assert ss.ltm_store.nDim == cs.subspace.muxedSize
+        assert ss._stm_payload_dim == cs.subspace.muxedSize
+        assert ss.what.nDim == ss.nWhat
+    
+        lift = next(op for rule, op in zip(model.languageSpace._compose_binary_rules,
+                                          model.languageSpace._tree_layer(2).ops)
+                    if rule.method_name == 'lift')
+>       assert lift.nInput == cs.subspace.muxedSize          # opaque concept event (2026-09-13)
+               ^^^^^^^^^^^
+
+test/test_wholespace_property_migration.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = _BinaryGrammarOpAdapter(
+  (gl): LiftLayer()
+), name = 'nInput'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: '_BinaryGrammarOpAdapter' object has no attribute 'nInput'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_loopback.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_wholespace_fixed_capacity.py::test_wholespace_W_identity_is_frozen_and_optimizer_visible
+FAILED test/test_wholespace_fixed_capacity.py::test_wholespace_capacity_exhaustion_is_atomic_and_actionable
+FAILED test/test_wholespace_fixed_capacity.py::test_property_split_uses_an_unused_row_without_replacing_parameters
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry
+FAILED test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width
+5 failed, 31 passed, 2 skipped, 4 warnings in 46.52s

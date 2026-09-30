@@ -1,0 +1,36 @@
+{
+  "head": {
+    "reason": "passed",
+    "exit_code": 0,
+    "peak_memory_bytes": 6384784880,
+    "peak_gib": 5.946294292807579,
+    "guard_gib": 8,
+    "under_guard": true,
+    "completed": [
+      "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+    ]
+  },
+  "candidate_initial": {
+    "reason": "memory",
+    "exit_code": 137,
+    "peak_memory_bytes": 8793021472,
+    "peak_gib": 8.189139395952225,
+    "guard_gib": 8,
+    "under_guard": false,
+    "completed": []
+  },
+  "candidate_final": {
+    "reason": "memory",
+    "exit_code": 137,
+    "peak_memory_bytes": 9305234848,
+    "peak_gib": 8.66617527604103,
+    "guard_gib": 8,
+    "under_guard": false,
+    "completed": []
+  },
+  "receipts": {
+    "head": "head-memory/run/result.json",
+    "candidate_initial": "explicit/group-02/result.json",
+    "candidate_final": "explicit-final/group-02/result.json"
+  }
+}

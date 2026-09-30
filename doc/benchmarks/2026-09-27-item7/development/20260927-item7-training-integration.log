@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.5s; peak 0.40 GiB
+[worker-000] 29 selectors; limit 1796s, 8.0 GiB
+[worker-000] exit 1; 424.6s; peak 2.11 GiB
+Result: source_changed, exit 125; 29/29 cases completed.
+output/tests/20260927-item7-training-integration/result.json

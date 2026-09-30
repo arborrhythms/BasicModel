@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence"
+  ],
+  "completed": [
+    "test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004553207894787192,
+      "message": "test/test_cs_symbol_table.py:474: in test_word_object_testimony_participation_strengthens_on_reoccurrence\n    assert before < float(store.participation[row]) <= 1.\nE   assert 1.0 < 1.0\nE    +  where 1.0 = float(tensor(1.))",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

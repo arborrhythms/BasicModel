@@ -203,17 +203,14 @@ def test_priority_spreads_through_edge_magnitudes():
 
 
 def test_symbol_history_projection():
-    """Heat over symbols lands on the rows of the concepts that reference
-    them through ('sym', id) constituent records (the SS->CS bridge)."""
+    """Heat follows a genuine sigma reference; DEF is not a part edge."""
     from test_cs_symbol_table import _cs_sparse_active
     cs = _cs_sparse_active()
-    A1, B1, C1 = cs.interpret_word([1], 2, key="w1")
-    # Testimony's object references the word. META is the structural
-    # association and owns no weighted row under the 9b contract.
-    row_object = cs._csw_row_of(B1)
+    _, obj = cs.interpret_word([1], 2, key="w1")
+    parent = cs.singleton_concept(obj)
+    row_object = cs._csw_row_of(parent)
     assert row_object is not None
-    assert cs._csw_row_of(C1) is None
-    p = cs.symbol_history_priority({int(A1): 5.0})
+    p = cs.symbol_history_priority({int(obj): 5.0})
     assert p is not None and float(p[row_object]) >= 5.0
     assert cs.symbol_history_priority({}) is None
     assert cs.symbol_history_priority(None) is None

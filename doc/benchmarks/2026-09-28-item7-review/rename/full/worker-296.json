@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+    "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+    "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook"
+  ],
+  "completed": [
+    "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+    "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+    "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010937920305877924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003940419992431998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05087875004392117,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

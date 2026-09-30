@@ -62,7 +62,7 @@ def _whole_space(d=8):
         wordDim=d, outputDim=d, nInput=nP, nPercepts=nP,
         nConcepts=nS, nSymbols=nS, nWords=nS, nOutput=nS,
         nWhere=0, nWhen=0)
-    return Spaces.WholeSpace([nP, d], [nS, d], [nS, d])
+    return Spaces.ConceptualSpace([nP, d], [nS, d], [nS, d])
 
 
 def test_gated_off_by_default_stores_no_collapse():

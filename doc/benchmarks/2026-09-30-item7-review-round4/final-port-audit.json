@@ -1,0 +1,111 @@
+[
+  {
+    "file": "test/test_item7_taxonomy.py",
+    "test": "test_referenced_phrase_admission_is_atomic",
+    "current_body_matches": true,
+    "before_sha256": "cda764a270acaffe1102921871fd475d72f6acff2d3d5ad7c334297dadc69fa0",
+    "after_sha256": "e3c4875448bb8b9ae6f9d90b81a132f2b3f134ecec164cee8b99c87e135b0b95",
+    "unchanged_assertions": [
+      "before == (alloc.next_id, alloc.placement, alloc.relate_idx)",
+      "len(f.store) == 0"
+    ],
+    "old_only_assertions": [
+      "isinstance(clause.refs[2], ClauseConcept)"
+    ],
+    "new_only_assertions": [
+      "clause.refs[2] == ('clause', 0)",
+      "f.store.write_clause(clause) == -1"
+    ]
+  },
+  {
+    "file": "test/test_order0_attended_field.py",
+    "test": "test_more_than_eight_words_reuse_the_attended_field",
+    "current_body_matches": true,
+    "before_sha256": "df48d6eb1d1876982377aa01aa6d81d3975c864dfd2733b5069d14425a7759c1",
+    "after_sha256": "6c4e42b401c967e08afa9efa2e75343788167c11ea3d9ed6031a98709ff4ff43",
+    "unchanged_assertions": [
+      "len(slot) == 1",
+      "carrier._concept_activations[slot[0], 0, :, 0].max() > 0",
+      "cs._cs_last_a0.shape[0] >= 8",
+      "leg._symbol_indices[slot[0]].tolist() == [2 * cid, 2 * cid + 1]",
+      "len(slot) == 1",
+      "carrier._concept_activations[slot[0], b, :, 0].max() > 0",
+      "pair.tolist() == [2 * cid, 2 * cid + 1]"
+    ],
+    "old_only_assertions": [],
+    "new_only_assertions": []
+  },
+  {
+    "file": "test/test_output_path_supervised.py",
+    "test": "test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer",
+    "current_body_matches": true,
+    "before_sha256": "d5bab1140ef562924204c9ff8630e0f4b15f253acff4afeecbb348dc70eff278",
+    "after_sha256": "00dcc09a1961f43439221146b6b050e80a2bfc33b156a71153fc273b2bc3361e",
+    "unchanged_assertions": [
+      "bool(deltas.abs().sum() > 0)",
+      "m.ltm_attention is module",
+      "d.conceptual_answer.shape == (2, 3, concept_width)"
+    ],
+    "old_only_assertions": [],
+    "new_only_assertions": []
+  },
+  {
+    "file": "test/test_reduction_pressure.py",
+    "test": "test_native_packed_unary_preference_still_records_every_sentence",
+    "current_body_matches": true,
+    "before_sha256": "76cd88a47295e73ca0f3d81e26b38d505c07d4f066e7e01d90568e32d9cc2564",
+    "after_sha256": "1f229b46d024f6e63746bb2a72716c4f94982df0446c42077d6c4cdc644679a9",
+    "unchanged_assertions": [
+      "(model._tensor_sentence_roots_depth[0, :2] > 0).all()",
+      "(trace._choice_arities[trace._choice_mask] == 1).any()"
+    ],
+    "old_only_assertions": [
+      "len(store) - before == 2"
+    ],
+    "new_only_assertions": [
+      "int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before == 2"
+    ]
+  },
+  {
+    "file": "test/test_sentence_expectation.py",
+    "test": "test_real_provisioning_is_not_an_external_prediction_stream",
+    "current_body_matches": true,
+    "before_sha256": "1db0beb010ee30407d443889917bb228ca849205b18e44b5195fd71262e15f24",
+    "after_sha256": "ff294e4348cf19c8b2e3597b606c83803a57c251670630accf136d83095e4963",
+    "unchanged_assertions": [
+      "not bound",
+      "not any(discourse._inter_context)",
+      "model.symbolSpace.discourse.expect_next_meaning() is None"
+    ],
+    "old_only_assertions": [
+      "len(model.symbolSpace.ltm_store) == 3"
+    ],
+    "new_only_assertions": [
+      "int((store.rel_type[:len(store)] != store.REL_DEF).sum()) == 3"
+    ]
+  },
+  {
+    "file": "test/test_word_store.py",
+    "test": "test_two_epoch_training_severs_cross_batch_graph",
+    "current_body_matches": true,
+    "before_sha256": "d7b82166c52942f6822ce4361744b073b011e047fe01bb6f4d1090c935d4e55d",
+    "after_sha256": "22b61f41e8960265771493f6dc78a06f2466546ce62ca2bbb7e1d32606e17756",
+    "unchanged_assertions": [
+      "torch.is_tensor(stm_buf) and stm_buf.numel() > 0",
+      "torch.is_tensor(root) and root.numel() > 0",
+      "torch.is_tensor(actions) and bool((actions >= 0).any())",
+      "torch.equal(actions >= 0, trace._choice_attempted)",
+      "graph_free(stm_buf)",
+      "graph_free(root)",
+      "graph_free(getattr(m.perceptualSpace, '_intent_boosts', None))",
+      "rs is None or graph_free(getattr(rs, 'rule_probs', None))"
+    ],
+    "old_only_assertions": [],
+    "new_only_assertions": [
+      "observed is not None",
+      "torch.is_tensor(closed_trace._choice_actions)",
+      "not bool((closed_trace._choice_actions >= 0).any())",
+      "not bool(closed_trace._choice_attempted.any())"
+    ]
+  }
+]

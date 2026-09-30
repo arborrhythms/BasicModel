@@ -1,0 +1,3 @@
+test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation
+
+1 test collected in 3.97s

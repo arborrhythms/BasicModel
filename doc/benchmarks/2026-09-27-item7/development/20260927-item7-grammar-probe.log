@@ -1,0 +1,64 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__ test_complete_grammar_declares_sentence_predicate_generic_and_implication ___
+
+    def test_complete_grammar_declares_sentence_predicate_generic_and_implication():
+        grammar = Grammar()
+        grammar.load_from_grammar_file('complete.grammar')
+        rules = {rule.method_name: rule for rule in grammar.rules_upward if rule.space_role == 'CS'}
+>       assert rules['lift'].clause_form == 'S'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'RuleDef' object has no attribute 'clause_form'
+
+test/test_item7_grammar.py:11: AttributeError
+_______________ test_clause_facets_preserve_operator_input_roles _______________
+
+    def test_clause_facets_preserve_operator_input_roles():
+        grammar = Grammar()
+>       grammar.configure({'compose': {'rule': [
+            {'_': 'exist_O1 = lift.forward(lift_I1, lift_I2)', 'clause': 'S'},
+            {'_': 'verb_O1 = verb.forward(verb_I1, verb_I2)', 'clause': 'VP'},
+            {'_': 'lower_O1 = lower.forward(lower_I1, lower_I2)', 'head': 'I2',
+             'reference': 'I2:particular'}]}})
+
+test/test_item7_grammar.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:1226: in configure
+    self.thought_operations = self._derive_thought_operations()
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:1350: in _derive_thought_operations
+    contract = self._thought_contract_from_rule(rule, direction)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x11f267aa0>
+rule = RuleDef(space_role='SS', canonical='exist_O1 -> lift.forward(lift_I1, lift_I2)', arity=2, method_name='lift', lhs='exi...in=0, width_max=0, query=False, thought_family=None, thought_permutation=None, reference_orders=(), reference_kinds=())
+direction = 'forward'
+
+    def _thought_contract_from_rule(self, rule, direction):
+        """Derive a role contract from one compose or generate declaration."""
+        method = getattr(rule, 'method_name', None)
+        if not isinstance(method, str) or not method:
+            return None
+        lhs = tuple(part.strip() for part in str(rule.lhs).split(',') if part.strip())
+        rhs = tuple(rule.rhs_symbols or ())
+        if direction in ('forward', 'thought'):
+            inputs = self._thought_role_tokens(method, rhs, 'I')
+            outputs = self._thought_role_tokens(method, lhs, 'O')
+        elif direction == 'reverse':
+            inputs = self._thought_role_tokens(method, lhs, 'I')
+            outputs = self._thought_role_tokens(method, rhs, 'O')
+        else:
+            raise ValueError(f'unknown structural direction {direction!r}')
+        if inputs is None and outputs is None:
+            return None
+        if inputs is None or outputs is None:
+>           raise ValueError(
+                f'thought operation {method!r} has an incomplete {direction} role contract')
+E           ValueError: thought operation 'lift' has an incomplete forward role contract
+
+bin/Language.py:1303: ValueError
+=========================== short test summary info ============================
+FAILED test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication
+FAILED test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles
+2 failed in 2.13s

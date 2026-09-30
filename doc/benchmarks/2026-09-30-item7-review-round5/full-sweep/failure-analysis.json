@@ -1,0 +1,89 @@
+{
+  "failures": [
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+      "phase": "call",
+      "message": "test/test_taxonomy_policy.py:33: in test_unrelated_true_episode_cannot_establish_the_next_parent_relation\n    order = terminal_model_index(model, fact.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-068.log"
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+      "phase": "call",
+      "message": "test/test_accessible_mind.py:228: in test_normal_what_effect_enters_recency_and_detached_knowing\n    terms = tuple((_existing_row(registry.space, ref),) for ref in fact.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_accessible_mind.py:228: in <genexpr>\n    terms = tuple((_existing_row(registry.space, ref),) for ref in fact.role_refs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-101.log"
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+      "phase": "call",
+      "message": "test/test_arithmetic_isolation.py:77: in test_renamed_native_vocabulary_preserves_checked_relation_answers\n    assert all(a != b for a, b in zip(x.role_refs, y.role_refs))\nE   assert False\nE    +  where False = all(<generator object test_renamed_native_vocabulary_preserves_checked_relation_answers.<locals>.<genexpr> at 0x109e50790>)",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-103.log"
+    }
+  ],
+  "all_six_passed_round4": true,
+  "unchanged_source_bodies": {
+    "test/index_fixtures.py": {
+      "unchanged_from_round5_incoming": true,
+      "sha256": "9f96367e979b6a7436b9b8405c860f65804fc24b80c435540576c70c4b5f43c7",
+      "bodies": {
+        "terminal_model_index": "def terminal_model_index(model, references):\n    \"\"\"Force terminal generation over primed native codes for reader mechanisms.\n\n    The production index still unfolds numeric values and descends sigma using\n    each row's stamp. This fixture asserts no learned parsing or word recovery.\n    \"\"\"\n    from MemoryIndex import configure_model_index\n    from Queries import _existing_row\n    model.languageSpace = SimpleNamespace(\n        _generate_binary_ops=(), _generate_unary_ops=(),\n        reverse_inverses=lambda _ops: (),\n        generate_policy_logits=lambda values: values.new_zeros(len(values), 1))\n    space = model.conceptualSpace\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         if reference is not None])\n    space.prime_seen(rows)\n    configure_model_index(model, model.symbolSpace.ltm_store)\n    return max((space._row_order(int(row)) for row in rows), default=0)"
+      }
+    },
+    "test/test_replacement_kernel_contracts.py": {
+      "unchanged_from_round5_incoming": true,
+      "sha256": "bd14e66b81a224526b1bf8b1d5272a41d7d0a5fe26556721f58c3786f07e7b83",
+      "bodies": {
+        "test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees": "def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):\n    from index_fixtures import terminal_model_index\n    model, registry, store, (a, b, _c, _d) = _world()\n    meaning = registry.form('part', a, b, mode='assertive')\n    order = terminal_model_index(model, meaning.role_refs)\n    for trust in (positive, -negative):\n        if trust:\n            store.append_meaning(meaning, kind='fact', trust=trust, order=order)\n    occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)\n    with model._query_boundary_scope((0,)):\n        from QueryWork import QueryWorkBudget\n        query = registry.form('exist', store.row(occurrence)['occurrence'],\n                              context=model._thought_grammar_context(meaning,\n                                  row=0, work=QueryWorkBudget(32), continuation=None))\n    before = len(store)\n    result = model.reason_about(query)\n    assert result.posture == posture\n    assert result.support_true == pytest.approx(positive)\n    assert result.support_false == pytest.approx(negative)\n    assert len(store) == before"
+      }
+    },
+    "test/test_taxonomy_policy.py": {
+      "unchanged_from_round5_incoming": true,
+      "sha256": "2469da52bddbb34534cf9bedfe4f59213bfd73ba2b345d476ff60941eb891667",
+      "bodies": {
+        "test_unrelated_true_episode_cannot_establish_the_next_parent_relation": "def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():\n    from index_fixtures import terminal_model_index\n    cs, (a, b, _), store, model = _setup()\n    fact = model.grammatical_thoughts.form('part', a, b, mode='assertive')\n    order = terminal_model_index(model, fact.role_refs)\n    store.append_meaning(fact, trust=1, order=order)\n    assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1\n    result = model.reason_about(QuerySpec.from_surface('part', a, b))\n    assert result.support_true == 0"
+      }
+    },
+    "test/test_accessible_mind.py": {
+      "unchanged_from_round5_incoming": true,
+      "sha256": "4853ca0720ccf585507c10c479fd640f8e86171a2816f7fc598649f28c045dd3",
+      "bodies": {
+        "test_normal_what_effect_enters_recency_and_detached_knowing": "def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):\n    from dataclasses import replace\n    from QueryWork import QueryWorkBudget\n    from test_normal_thought_controller import _catalog_world\n    from Queries import ThoughtResult\n    model, registry, memory, part, whole = _catalog_world()\n    store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)\n    fact = registry.form('part', part, whole, mode='assertive')\n    from MemoryIndex import configure_model_index\n    from Queries import _existing_row\n    configure_model_index(model, store)\n    terms = tuple((_existing_row(registry.space, ref),) for ref in fact.role_refs)\n    # Force the terminal inverse for these three numerical atoms. The test\n    # concerns retrieval effects, not training a generate policy.\n    def unfold(value, limit, **kwargs):\n        matches = (fact.roles == value).all(-1).nonzero().flatten()\n        return (terms[int(matches[0])], 1, True) if limit and len(matches) else ((), 0, False)\n    store.configure_leaf_index(unfold=unfold)\n    oldest = append_indexed(store, fact, terms=terms, trust=.7)\n    for _ in range(20):\n        append_indexed(store, replace(fact, roles=fact.roles + 20,\n                                    role_refs=(('sym', 500), None, ('sym', 501))),\n                       terms=((500,), (), (501,)), trust=.1)\n    cue = replace(fact, mode='interrogative', role_mask=torch.tensor([True, True, False]),\n                  role_refs=(part, fact.role_refs[1], None))\n    cue_row = store.append_meaning(cue, kind='question')\n    with model._query_boundary_scope((0,)):\n        meter = QueryWorkBudget(256)\n        context = model._thought_grammar_context(cue, row=0, work=meter, continuation=None)\n        question = registry.form('what', store.occurrence_of(cue_row), context=context)\n    def choose(root, active, actions, **kw):\n        if kw.get('evidence') is not None:\n            return None\n        return next(action for action in actions if action and action.semantic_id == 'what')\n    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)\n    with model._query_boundary_scope((0,)):\n        before = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))\n        result = model.run_selected_thought(question, work_budget=256)\n        after = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))\n    assert not bool(before[1].any()) and bool(after[1].any())\n    assert result.result.semantic_id == 'what' and result.result.result_kind == 'set'\n    frame, = memory.retrieved_frames()\n    assert frame['occurrence'] == store.occurrence_of(oldest)\n    assert frame['occurrence'] in memory.retained_ltm_occurrences(frame['occurrence'][1])\n    assert not frame['meaning'].roles.requires_grad\n    saved = ThoughtResult.from_checkpoint(result.result.checkpoint())\n    assert saved.evidence['frames'][0]['occurrence'] == frame['occurrence']\n    # Mutating an LTM row never changes the retained, owned frame.\n    store.slots[oldest].fill_(100.)\n    torch.testing.assert_close(frame['meaning'].roles, fact.roles)\n    field = model.conceptualSpace.subspace._concept_activations\n    assert field is not None and not field.requires_grad"
+      }
+    },
+    "test/test_arithmetic_isolation.py": {
+      "unchanged_from_round5_incoming": true,
+      "sha256": "70a8fdbeb5c45800392243da4d24923138e0956351daac68de7f21ed718a730a",
+      "bodies": {
+        "test_renamed_native_vocabulary_preserves_checked_relation_answers": "def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatch):\n    from types import SimpleNamespace\n    from Language import Grammar\n    from Queries import (GrammaticalThoughtRegistry, ThoughtGrammarContext,\n                         ThoughtConceptualCapability, ThoughtTaxonomyCapability)\n    from QueryWork import QueryWorkBudget\n    from test_cs_symbol_table import _cs\n    def world(prefix, names):\n        cs = _cs()\n        for _ in range(prefix):\n            cs.new_concept()\n        grammar = Grammar()\n        grammar.load_from_grammar_file('complete.grammar')\n        registry = GrammaticalThoughtRegistry.install(cs, grammar)\n        base = cs.new_concept()\n        part = ('sym', cs.synthesize_higher_order([('sym', base)]))\n        whole = ('sym', cs.new_concept())\n        for ref, name in zip((part, whole), names):\n            cs._csw_concept_row(0, ref[1])\n            cs.bind_word_concept(name.encode(), ref[1])\n        cs.add_whole(part[1], whole)\n        context = ThoughtGrammarContext(word_stream=(),\n            conceptual_space=ThoughtConceptualCapability(\n                cs, lambda left, right: float(torch.allclose(left, right))),\n            primed_symbols=(), ltm=object(), taxonomy=ThoughtTaxonomyCapability(cs),\n            work=QueryWorkBudget(128), continuation=None, boundary=lambda _row: None)\n        return cs, registry, part, whole, context\n    first, second = world(0, ('one', 'two')), world(11, ('cedar', 'birch'))\n    x = first[1].form('part', first[2], first[3])\n    y = second[1].form('part', second[2], second[3])\n    assert all(a != b for a, b in zip(x.role_refs, y.role_refs))\n    with torch.no_grad():\n        for value, ref in zip(x.roles, y.role_refs):\n            row = second[0]._csw_concept_row(0, ref[1])\n            second[0].similarity_codebook.getW()[row].copy_(value)\n    y = second[1].form('part', second[2], second[3])\n    torch.testing.assert_close(x.roles, y.roles)\n    _poison_oracles(monkeypatch)\n    a, b = first[1].execute(x, first[4]), second[1].execute(y, second[4])\n    assert a.support_true == b.support_true == 1\n    assert a.support_false == b.support_false == 0\n    reverse = second[1].execute(second[1].form('part', second[3], second[2]), second[4])\n    assert reverse.support_true == 0"
+      }
+    }
+  },
+  "repairs_or_ports_after_sweep": false,
+  "cause_groups": [
+    {
+      "cases": 5,
+      "cause": "Inventory-only test setup tries to resolve the canonical row-free part predicate as an inventory row before evidence/recency assertions."
+    },
+    {
+      "cases": 1,
+      "cause": "Renaming test requires all three references to differ, including the globally shared predicate, then would attempt to allocate and overwrite that predicate row."
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item11c_membership_folds.py::test_required_parts_keep_support_and_counterevidence_separate",
+    "test/test_item11c_membership_folds.py::test_swapped_evidence_combination_is_distinct_from_a_both_pole_test",
+    "test/test_item11c_membership_folds.py::test_unknown_concept_does_not_refute_or_erase_a_known_conjunct",
+    "test/test_item11c_membership_folds.py::test_seam_never_invents_counterevidence_from_an_absent_property",
+    "test/test_item11c_membership_folds.py::test_conjunctive_edges_exist_only_within_order_zero",
+    "test/test_item11c_membership_folds.py::test_union_is_max_including_empty_and_repeated_support",
+    "test/test_item11c_membership_folds.py::test_property_pervasion_is_min_over_observed_values_not_their_counts",
+    "test/test_item11c_membership_folds.py::test_property_alternatives_use_max_min_for_graded_primitive_inputs",
+    "test/test_item11c_membership_folds.py::test_sparse_requirements_and_alternatives_are_weighted_min_and_max"
+  ],
+  "completed": [
+    "test/test_item11c_membership_folds.py::test_required_parts_keep_support_and_counterevidence_separate",
+    "test/test_item11c_membership_folds.py::test_swapped_evidence_combination_is_distinct_from_a_both_pole_test",
+    "test/test_item11c_membership_folds.py::test_unknown_concept_does_not_refute_or_erase_a_known_conjunct",
+    "test/test_item11c_membership_folds.py::test_seam_never_invents_counterevidence_from_an_absent_property",
+    "test/test_item11c_membership_folds.py::test_conjunctive_edges_exist_only_within_order_zero",
+    "test/test_item11c_membership_folds.py::test_union_is_max_including_empty_and_repeated_support",
+    "test/test_item11c_membership_folds.py::test_property_pervasion_is_min_over_observed_values_not_their_counts",
+    "test/test_item11c_membership_folds.py::test_property_alternatives_use_max_min_for_graded_primitive_inputs",
+    "test/test_item11c_membership_folds.py::test_sparse_requirements_and_alternatives_are_weighted_min_and_max"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_required_parts_keep_support_and_counterevidence_separate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007278459146618843,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_swapped_evidence_combination_is_distinct_from_a_both_pole_test",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003258167067542672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_unknown_concept_does_not_refute_or_erase_a_known_conjunct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00277441693469882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_seam_never_invents_counterevidence_from_an_absent_property",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015933583956211805,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_conjunctive_edges_exist_only_within_order_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007116707973182201,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_union_is_max_including_empty_and_repeated_support",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01559120905585587,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_property_pervasion_is_min_over_observed_values_not_their_counts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006184170488268137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_property_alternatives_use_max_min_for_graded_primitive_inputs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047941599041223526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_membership_folds.py::test_sparse_requirements_and_alternatives_are_weighted_min_and_max",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017273749690502882,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

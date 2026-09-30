@@ -1,0 +1,41 @@
+--- a/test/test_category_em_smoke.py
++++ b/test/test_category_em_smoke.py
+@@ -75,6 +75,10 @@
+     dat = TheXMLConfig.data.get("architecture", {}).get("data", {})
+     Models.TheData.load("inline", dat=dat)
+     model, _ = Models.BasicModel.from_config(path)
++    # This fixture measures role learning from an untrained reader. It does
++    # not provision relation truths or claim that its arbitrary parses have
++    # trained native references suitable for durable LTM rows.
++    model.conceptualSpace._ltm_consolidation = False
+     return model
+ 
+ 
+--- a/test/test_item7_end_state_storage.py
++++ b/test/test_item7_end_state_storage.py
+@@ -118,10 +118,10 @@
+ def test_closing_discards_operations_without_changing_other_live_rows():
+     from Models import BasicModel
+ 
+-    lang = tuple(torch.ones(2, 4) for _ in range(24))
++    lang = tuple(torch.ones(2, 4) for _ in range(26))
+     _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
+                                                                   torch.tensor([True, False]))
+-    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23):
++    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25):
+         expected = -1 if index in (4, 5, 15, 16, 17, 18, 23) else 0
+         assert (cleared[index][0] == expected).all()
+         torch.testing.assert_close(cleared[index][1], lang[index][1], rtol=0, atol=0)
+--- a/test/test_unified_thought_controller.py
++++ b/test/test_unified_thought_controller.py
+@@ -154,7 +154,9 @@
+         registry = model.grammatical_thoughts
+         # The controller-credit mechanism needs an explicit native operand;
+         # learned segmentation is not a fixture for the spelling "12".
+-        ref = ('sym', model._concept_owner().new_concept())
++        owner = model._concept_owner()
++        ref = ('sym', owner.new_concept())
++        owner._csw_concept_row(0, ref[1])
+         query = registry.form('equal', ref, ref)
+         monkeypatch.setattr(model.languageSpace, 'program_meaning', lambda *_a: query)
+         model.selected_thought_policy_weight = 1

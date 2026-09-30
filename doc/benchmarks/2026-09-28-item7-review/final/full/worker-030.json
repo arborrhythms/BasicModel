@@ -1,0 +1,84 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+    "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+  ],
+  "completed": [
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+    "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046274997293949127,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011262495536357164,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.574997238814831e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.108299855142832e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.929202497005463e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012162502389401197,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 171.24745687504765,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=75.695s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+  "device": "cpu"
+}

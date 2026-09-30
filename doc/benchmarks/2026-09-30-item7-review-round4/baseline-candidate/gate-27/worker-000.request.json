@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/baseline-candidate/gate-27/worker-000.recycle.json"
+}

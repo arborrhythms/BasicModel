@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none"
+  ],
+  "completed": [
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05763270903844386,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02748775004874915,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02673862490337342,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02638891595415771,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026407500030472875,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,52 @@
+FF.F                                                                     [100%]
+=================================== FAILURES ===================================
+__________ test_fresh_object_concept_reads_its_naming_word_at_order1 ___________
+test/test_cs_symbol_table.py:450: in test_fresh_object_concept_reads_its_naming_word_at_order1
+    A, B, _ = cs.interpret_word([1, 2], 3, key="cat")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+___________ test_assert_concrete_whole_retires_everything_bias_edge ____________
+test/test_cs_symbol_table.py:461: in test_assert_concrete_whole_retires_everything_bias_edge
+    A, _B, _C = cs.interpret_word([1, 2], 3, key="cat")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+_____ test_word_object_testimony_participation_strengthens_on_reoccurrence _____
+test/test_cs_symbol_table.py:491: in test_word_object_testimony_participation_strengthens_on_reoccurrence
+    A, B, C = cs.interpret_word([1, 2], 3, key="cat", occurrence=(0, 0))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_prune_drops_everything_when_other_whole_linked
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_cs_symbol_table.py::test_fresh_object_concept_reads_its_naming_word_at_order1
+FAILED test/test_cs_symbol_table.py::test_assert_concrete_whole_retires_everything_bias_edge
+FAILED test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence
+3 failed, 1 passed, 1 warning in 2.60s

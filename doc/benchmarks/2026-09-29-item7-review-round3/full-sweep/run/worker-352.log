@@ -1,0 +1,16 @@
+......ss..ss.ss                                                          [100%]
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18179: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18179: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+9 passed, 6 skipped, 3 warnings in 2.39s

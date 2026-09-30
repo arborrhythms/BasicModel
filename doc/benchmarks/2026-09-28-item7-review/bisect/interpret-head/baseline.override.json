@@ -1,0 +1,15 @@
+{
+  "mode": "interpret-head",
+  "scope": "Use pre-item-7 interpret admission/order/association. The unused selected keyword is accepted for API shape.",
+  "override_sha256": "db2bf6832d331e1cdf5bff77d3749ba51367369c68d786edcadc793239a532c4",
+  "base_revision": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "configurations": [
+    {
+      "reference_rules": [],
+      "situation_weight": 0.0,
+      "expectation_weight": 0.0,
+      "expectation_loss": 0.0,
+      "sentence_expectation": false
+    }
+  ]
+}

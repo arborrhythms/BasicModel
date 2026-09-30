@@ -1,0 +1,12 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

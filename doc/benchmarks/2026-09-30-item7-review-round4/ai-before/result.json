@@ -1,0 +1,36 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-04/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

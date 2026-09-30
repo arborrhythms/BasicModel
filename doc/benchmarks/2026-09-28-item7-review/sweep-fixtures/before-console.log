@@ -1,0 +1,7 @@
+[collect] 3 selectors; limit 180s, 2.0 GiB
+[collect] exit 0; 4.8s; peak 0.47 GiB
+[worker-000] 28 selectors; limit 180s, 2.0 GiB
+[worker-000] exit 1; 5.5s; peak 0.50 GiB
+[worker-001] 5 selectors; limit 180s, 2.0 GiB
+[worker-001] exit 1; 5.7s; peak 0.50 GiB
+{"reason": "test_failure", "exit_code": 1, "selected": 33, "completed": 33}

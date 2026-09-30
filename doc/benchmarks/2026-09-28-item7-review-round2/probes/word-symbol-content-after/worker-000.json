@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.059738292009569705,
+      "message": "test/test_item7_word_interpretation.py:33: in test_every_read_word_has_a_concept_and_symbol\n    assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'\nE   AssertionError: derived concepts must have symbol activations\nE   assert tensor(0.) > 0\nE    +  where tensor(0.) = <built-in method sum of Tensor object at 0x1233c7890>()\nE    +    where <built-in method sum of Tensor object at 0x1233c7890> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]).sum\nE    +      where tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x1234d2760>()\nE    +        where <built-in method abs of Tensor object at 0x1234d2760> = tensor([[[-0., -0., 0., -0., -0., -0., -0., -0., 0., -0., 0., -0., -0., 0.],\\n         [0., 0., -0., 0., 0., 0., 0., 0....0., -0., -0., -0., 0., -0., 0., -0., -0., 0.],\\n         [0., 0., -0., 0., 0., 0., 0., 0., -0., 0., -0., 0., 0., -0.]]]).abs",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1808429170632735,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.14500762498937547,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

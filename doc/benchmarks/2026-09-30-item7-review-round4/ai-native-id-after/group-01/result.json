@@ -1,0 +1,129 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+    "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+    "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+    "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+  ],
+  "completed": [
+    "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+    "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+    "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+    "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-native-id-after/group-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-native-id-after/group-01/worker-000.json"
+      ],
+      "pid": 84655,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2160610592,
+      "elapsed_seconds": 279.00788462511264,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-native-id-after/group-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+        "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+        "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+        "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+      ],
+      "completed": [
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+        "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+        "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+        "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 269.1954566249624,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00021579116582870483,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00018312502652406693,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00023933383636176586,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-native-id-after/group-01",
+  "elapsed_seconds": 284.86741179181263,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 2160610592,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-native-id-after/group-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-native-id-after/group-01/collect.json"
+    ],
+    "pid": 84638,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 427246768,
+    "elapsed_seconds": 5.5330167091451585,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-native-id-after/group-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+        "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+        "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+        "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "stale_contracts_removed": true,
+  "claude_sections_unchanged": true,
+  "files": {
+    "doc/Architecture.md": "b8ae6c6574acd4cc5307d2259da7715c3c2733e89f7581ac006345a35716ec58",
+    "doc/Language.md": "19204e1e73c710cc1ccb67e3a7187b3dfd16f742f315e3387536771e63899a32",
+    "doc/Lexicon.md": "7eef48ae24e774aa7573fbfa6402dd6f8574ee972d78abaf19ace2311d990443"
+  }
+}

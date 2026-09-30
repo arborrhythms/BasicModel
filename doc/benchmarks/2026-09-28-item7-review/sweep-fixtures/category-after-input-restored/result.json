@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "completed": [
+    "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/category-after-input-restored/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/category-after-input-restored/worker-000.json"
+      ],
+      "pid": 53490,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429311368,
+      "elapsed_seconds": 3.6052477080374956,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/category-after-input-restored/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "completed": [
+        "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005685000214725733,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004625665955245495,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/category-after-input-restored",
+  "elapsed_seconds": 5.562154666986316,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 429311368,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/category-after-input-restored/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/category-after-input-restored/collect.json"
+    ],
+    "pid": 53456,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180798280,
+    "elapsed_seconds": 1.7796010830206797,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/category-after-input-restored/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

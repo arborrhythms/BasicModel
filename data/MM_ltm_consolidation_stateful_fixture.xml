@@ -18,8 +18,8 @@
     <stateless>false</stateless>
     <truthSet>
       <truth text="cat" trust="0.9"/>
-      <truth text="fire causes smoke" trust="0.8" kind="implies"/>
-      <truth text="paw partOf cat" trust="0.7" kind="partOf"/>
+      <truth text="fire causes smoke" trust="0.8"/>
+      <truth text="a paw is part of a cat" trust="0.7"/>
     </truthSet>
 
     <training>

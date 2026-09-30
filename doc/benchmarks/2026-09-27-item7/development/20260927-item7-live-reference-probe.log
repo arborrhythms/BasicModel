@@ -1,0 +1,62 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator ____
+
+    def test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator():
+        language, program = language_and_program('pronoun')
+        rule = language._compose_binary_rules[0]
+        rule.reference_orders, rule.reference_kinds = (('I2', 1),), (('I2', 'pronoun'),)
+        program = replace(program, reference_orders=torch.tensor([1, 1]))
+>       got = resolve_occurrences(language, program, forced={1: 1})
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_references.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+language = namespace(_compose_binary_rules=(namespace(method_name='sum', lhs='exist_O1', reference_orders=(('I2', 1),), reference...'),)),), _compose_unary_rules=(), forward_binary_step=<function language_and_program.<locals>.<lambda> at 0x12a2267a0>)
+program = AnswerProgram(rows=tensor([0, 2]), word_rows=tensor([0, 2]), activations=tensor([1., 1.]), leaves=tensor([[1., 0., 0.,... reference_orders=tensor([1, 1]), symbol_where=None, symbol_when=None, reference_values=None, reference_relations=None)
+frames = (), prediction = None, content_width = None, forced = {1: 1}
+
+    def resolve_occurrences(language, program, *, frames=(), prediction=None,
+                            content_width=None, forced=None):
+        """Choose addresses and semantic values without changing word provenance.
+    
+        The predictor scores the candidate points. A hard selected value keeps
+        its softmax derivative; input content and the reconstruction leaves are
+        unchanged. ``forced`` selects a native candidate in mechanism tests only.
+        """
+        requests = reference_requests(language, program.actions)
+        ids = (program.concept_ids if program.reference_ids is None else program.reference_ids).clone()
+        orders = (ids.new_full(ids.shape, -1) if program.reference_orders is None
+                  else program.reference_orders.clone())
+        values = list((program.leaves if program.reference_values is None else program.reference_values).unbind())
+        relations = torch.zeros_like(ids, dtype=torch.bool)
+        if program.reference_relations is not None:
+            relations = program.reference_relations.clone()
+        anchors = tuple(frame for frame in frames if isinstance(frame, SituationFrame))
+        live = []
+        width = int(content_width or program.leaves.shape[-1])
+        forced = {} if forced is None else forced
+        for leaf, (order, mode) in sorted(requests.items()):
+            if order != 1:
+                continue
+            candidates = []
+            if mode != 'pronoun' and int(ids[leaf]) > 0:
+                candidates.append((int(ids[leaf]), values[leaf], False))
+            # A cold predictor has no standing identity expectation. Live bind
+            # operands remain available; older rows need the predictor carrier.
+            carried = (*anchors, *live) if prediction is not None else tuple(live)
+            for frame in carried:
+                if frame.order == 1 and all(cid != frame.row_id for cid, _, _ in candidates):
+                    candidates.append((frame.row_id,
+                        values[leaf].new_zeros(values[leaf].shape) if frame.point is None
+                        else frame.point.to(values[leaf]), frame.point is None))
+            if not candidates:
+                if mode == 'pronoun':
+>                   raise ValueError('pronoun has no particular in the bounded situation')
+E                   ValueError: pronoun has no particular in the bounded situation
+
+bin/ReferenceContext.py:101: ValueError
+=========================== short test summary info ============================
+FAILED test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator
+1 failed, 6 deselected in 2.02s

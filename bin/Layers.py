@@ -27,6 +27,7 @@ from collections import namedtuple
 from dataclasses import dataclass, replace
 from contextlib import contextmanager
 from Meaning import ConceptualMeaning, canonical_role_payload
+from ClauseRow import ClauseRows
 from MemoryIndex import LeafCodeIndex
 from Thoughts import LevelledThoughtHistory, ThoughtRecord
 
@@ -5321,7 +5322,10 @@ class SparseLayer(Layer):
                                 migrated[name] = value
                         leaf.state[new] = migrated
             if not owned and new is not None:
-                leaves[0].add_param_group({'params': [new]})
+                # These definition weights join the ordinary dense group
+                # when getOptimizer sees them at construction. Keep that
+                # layout when their first edge is admitted after construction.
+                leaves[0].param_groups[0]['params'].append(new)
         if old is not None and old.requires_grad:
             def relay(gradient):
                 live = self.values
@@ -5883,6 +5887,7 @@ class ConceptualAttentionLayer(SparseLayer):
 
     def pop_row_key(self, key):
         """Remove ``key`` + its records (retire)."""
+        self._record_revision = getattr(self, '_record_revision', 0) + 1
         return self._constituents.pop(int(key), None)
 
     def constituents(self, key):
@@ -5906,22 +5911,26 @@ class ConceptualAttentionLayer(SparseLayer):
         recs = self._constituents.setdefault(int(key), [])
         if (role, ref) not in recs:
             recs.append((role, ref))
+            self._record_revision = getattr(self, '_record_revision', 0) + 1
 
     def remove_constituent(self, key, role, ref):
         """Discard one role-tagged record (silent when absent)."""
         recs = self._constituents.get(int(key))
         if recs is not None and (role, ref) in recs:
             recs.remove((role, ref))
+            self._record_revision = getattr(self, '_record_revision', 0) + 1
 
     def set_role_constituents(self, key, role, refs):
         """Replace ALL of ``role``'s records for ``key`` (other roles kept)."""
         recs = self._constituents.setdefault(int(key), [])
         kept = [(r, x) for (r, x) in recs if r != role]
         self._constituents[int(key)] = kept + [(role, x) for x in refs]
+        self._record_revision = getattr(self, '_record_revision', 0) + 1
 
     def clear_constituents(self, key):
         """Empty ``key``'s records but KEEP the key registered."""
         self._constituents[int(key)] = []
+        self._record_revision = getattr(self, '_record_revision', 0) + 1
 
     def count_role(self, key, role):
         """Number of ``role``-tagged records on ``key``."""
@@ -6059,15 +6068,10 @@ class ConceptAllocator:
         self.retired = set()
         self.identity = {}               # cid -> (part, whole) 1:1 ties
         self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
-        self.chain_idx = {}              # ("chain", tuple) -> cid
-        self.word_obj_meta = {}          # surface key -> (A, B, C)
         self.word_forms = {}             # surface -> set of persistent concept ids
-        self.lexical_words = {}          # ordered native part ids -> word id
-        self.interpretations = {}        # (word id, grammar order) -> (object, meta)
         self.reference_orders = {}       # grammar-resolved object order
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
-        self.joint = {}                  # word-tuple key -> J
         self._layers = {}                # {0: THE shared square layer}
         self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
         self._order_cap = order_cap      # () -> max ramsified order S
@@ -7429,10 +7433,11 @@ class TruthLayer(Layer):
     this layer is then a COMPATIBILITY READ MODEL over it. ``attach_ltm``
     wires the back-reference and ``sync_from_ltm`` materializes the
     provisioned + user rows into ``truths``/``count``/``_sources``/
-    ``_trusts`` (one flat content-width vector per row, scaled by the
-    row's trust) so every flat-field reader -- luminosity, falsity
-    penalty, consistency, clarifications, assess -- reads the LTM-backed
-    data unchanged. Gate off: no back-reference, this buffer stays the
+    ``_trusts``. Each nonzero identification pole contributes a flat vector
+    scaled by that pole, preserving both independently. Scalar source trust
+    stays in ``_trusts`` and never supplies a pole's magnitude. The flat-field
+    readers include luminosity, falsity penalty, consistency, clarifications
+    and assess. Gate off: no back-reference, this buffer stays the
     canonical store (legacy behaviour).
     """
 
@@ -7679,17 +7684,12 @@ class TruthLayer(Layer):
         return getattr(self, '_ltm', None)
 
     def _flatten_ltm_row(self, store, idx: int) -> torch.Tensor:
-        """One flat content-width vector for LTM row ``idx``: the mean of
-        the non-Null slots' content bands (an absolute row reduces to its
-        NP1 band), conformed to this layer's ``nDim``. Trust is NOT
-        applied here -- the caller scales, matching ``store_truths``'
-        plain scalar DoT multiply."""
+        """Read an idea's fused point, conformed to the content width."""
+        if int(store.rel_type[idx]) != store.REL_NONE:
+            raise ValueError("a relation has no luminosity point")
         cw = max(1, min(int(getattr(store, 'content_width', store.nDim)),
                         int(store.nDim)))
-        slots = store.slots[idx, :, :cw]                       # [3, cw]
-        live = slots.norm(dim=-1) > 1e-12
-        vec = (slots[live].mean(dim=0) if bool(live.any())
-               else slots.new_zeros(cw))
+        vec = store.slots[idx, 0, :cw]
         if cw == self.nDim:
             return vec
         out = vec.new_zeros(self.nDim)
@@ -7702,8 +7702,8 @@ class TruthLayer(Layer):
         """Rebuild the materialized view from the attached LTM store.
 
         Selects the provisioned + user rows (``rows_of_origin``) in row
-        order and rewrites ``truths[:n]`` = flattened row * row trust,
-        together with ``count`` / ``_sources`` / ``_trusts`` /
+        order and expands each independent evidence pole into ``truths[:n]``,
+        together with ``count`` / ``_sources`` / scalar source ``_trusts`` /
         ``_nonempty``, then drops any staged pending entries (the view
         supersedes per-cell candidates recorded during ingestion
         forwards). Conversation rows stay out: they are the training-time
@@ -7722,16 +7722,19 @@ class TruthLayer(Layer):
         # re-enter this flat accepted-truth view.
         fact_kind = store.KINDS.index('fact')
         idx_list = [i for i in idxs.tolist()
-                    if int(store.record_kind[i]) == fact_kind][:self.max_truths]
-        n = len(idx_list)
+                    if int(store.record_kind[i]) == fact_kind
+                    and int(store.rel_type[i]) == store.REL_NONE][:self.max_truths]
         self.truths.zero_()
         sources, trusts = [], []
-        for view_i, row_i in enumerate(idx_list):
-            t = float(store.trust[row_i].item())
-            self.truths[view_i] = (
-                self._flatten_ltm_row(store, row_i).to(self.truths) * t)
-            sources.append(store.text_of(row_i))
-            trusts.append(t)
+        for row_i in idx_list:
+            poles = (float(store.c_plus[row_i]), -float(store.c_minus[row_i]))
+            for t in poles:
+                if t == 0 or len(trusts) == self.max_truths:
+                    continue
+                self.truths[len(trusts)] = self._flatten_ltm_row(store, row_i).to(self.truths) * t
+                sources.append(store.text_of(row_i))
+                trusts.append(float(store.trust[row_i]))
+        n = len(trusts)
         self.count.fill_(n)
         self._nonempty = n > 0
         self._sources = sources
@@ -8512,8 +8515,8 @@ class TruthLayer(Layer):
 
         MeronomySpec §3 (rev 2026-06-10b). Per conceptual dimension
         ``k``, the stored signed references split into the true/false
-        pole bivector — coverage, not mass: trust is already baked into
-        stored magnitudes, and duplicate truths must not inflate the
+        pole bivector — coverage, not mass: pole strength is already baked
+        into stored magnitudes, and duplicate truths must not inflate the
         area —
 
             T_k = max_i relu(+truths[i, k])
@@ -8558,7 +8561,7 @@ class TruthLayer(Layer):
     # The absolute truth set is a CONSISTENT CORPUS governing admission:
     # it (1) governs the admissibility of new truths/beliefs, (2) serves
     # as the basis for causal reasoning (relations between ideas live in
-    # the sibling ``RelativeTruthStore`` and NEVER enter this store or
+    # the relation rows in ``TernaryTruthStore`` and NEVER enter this store or
     # its luminosity), and (3) provides user feedback on the truth of a
     # statement. The conflict region ``min(T_k, F_k)`` is MEASURED,
     # never stored; the preemption/admissibility statistic is its
@@ -8989,216 +8992,22 @@ class TruthLayer(Layer):
         print("TruthLayer tests passed.")
 
 
-class RelativeTruthStore(Layer):
-    """The second of the two truth sets (GrammarOpsPass §6; author
-    sign-off 2026-06-11): **relative truths are relations between
-    ideas** — causal implication is the worked example.
+class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+    """Durable clause rows with shared references and independent evidence.
 
-    A relative truth contains two ideas and a relation. Model it as
-    ``NP = VP NP``, but ``VP(NP)`` cannot be collapsed without making
-    it specific, so **all three components are stored uncollapsed**
-    (``np1`` — the state of affairs at t₁; ``vp`` — the change; ``np2``
-    — the consequent at t₂; the codes' ``.when`` band carries the
-    temporal shape) and enforced as a **structural constraint** over
-    references: this structures the references and creates universal
-    truths.
-
-    NOT expressible as material truth: recording ``if a then b`` as
-    ``¬a ∨ b`` both loses the temporal content and corrupts the
-    absolute set with a region assertion the causal rule never
-    licensed. Accordingly this store is a SIBLING of ``TruthLayer``
-    (the absolute store) — relative entries never enter the luminosity
-    measure, and no coverage computation ever has to mask them out.
-
-    Consumed only by the reasoning loop: evaluation is by SIMULATION or
-    RELATIONAL EVALUATION, never by coverage — evaluate NP₁, run
-    one-or-more VP reasoning steps (``consequents`` is the per-step
-    expansion), check NP₂ (``evaluate`` is the relational form).
-    """
-
-    def __init__(self, nDim: int, max_triples: int = 1024):
-        super().__init__(nDim, nDim)
-        self.nDim = int(nDim)
-        self.max_triples = int(max_triples)
-        # The three components, stored UNCOLLAPSED and aligned by row.
-        self.register_buffer('np1', torch.zeros(max_triples, nDim))
-        self.register_buffer('vp', torch.zeros(max_triples, nDim))
-        self.register_buffer('np2', torch.zeros(max_triples, nDim))
-        self.register_buffer('count', torch.tensor(0, dtype=torch.long))
-        # Per-triple relation trust (DoT), aligned by row with np1/vp/np2.
-        # A REGISTERED BUFFER (not a plain list) so it survives a
-        # state_dict save/load round-trip alongside the magnitude buffers
-        # -- otherwise a reloaded relation silently reverts to the 1.0
-        # fallback in ConceptualSpace.reason / verify_relation. Zero-init
-        # means an OLD checkpoint lacking this key loads (non-strict) with
-        # all-zero trust rather than erroring.
-        self.register_buffer('trust', torch.zeros(max_triples))
-
-    @property
-    def _trusts(self):
-        """Read-only back-compat view of the per-triple trust as a Python
-        list over the live rows. The canonical store is the ``trust``
-        buffer; this exists for callers/docstrings that referred to the
-        old list. Writes must target the ``trust`` buffer directly (a
-        list snapshot would not write back)."""
-        return self.trust[: int(self.count.item())].tolist()
-
-    def __len__(self):
-        return int(self.count.item())
-
-    @torch.no_grad()
-    def record_triple(self, np1, vp, np2, degree: float = 1.0) -> int:
-        """Store one relation between ideas — all three components,
-        uncollapsed; ``degree`` (the relation's DoT/trust) is baked
-        into the stored magnitudes like ``TruthLayer.record``. Returns
-        the row index, or ``-1`` when the store is full."""
-        n = int(self.count.item())
-        if n >= self.max_triples:
-            return -1
-        d = float(degree)
-        self.np1[n] = np1.reshape(-1)[: self.nDim].to(self.np1) * d
-        self.vp[n] = vp.reshape(-1)[: self.nDim].to(self.vp) * d
-        self.np2[n] = np2.reshape(-1)[: self.nDim].to(self.np2) * d
-        self.trust[n] = d
-        self.count.fill_(n + 1)
-        return n
-
-    def triple(self, idx: int):
-        """The stored ``(np1, vp, np2)`` at ``idx`` (views)."""
-        n = int(self.count.item())
-        if not (0 <= int(idx) < n):
-            raise IndexError(f"triple {idx} of {n}")
-        return self.np1[idx], self.vp[idx], self.np2[idx]
-
-    @staticmethod
-    def _sims(query, rows):
-        q = query.reshape(-1)[: rows.shape[-1]].to(rows)
-        qn = q / q.norm().clamp_min(1e-12)
-        rn = F.normalize(rows, dim=-1)
-        return rn @ qn
-
-    @torch.no_grad()
-    def consequents(self, state, vp=None, threshold: float = 0.7):
-        """One causal reasoning step (the loop's expansion): stored
-        relations whose antecedent matches ``state`` (graded cosine
-        over ``np1``; further filtered by ``vp`` similarity when a
-        change is specified) yield their consequents.
-
-        Returns a list of ``(idx, match, vp_row, np2_row)`` sorted by
-        descending match — the serial loop steps from a state of
-        affairs to its licensed next states.
-        """
-        n = int(self.count.item())
-        if n == 0:
-            return []
-        match = self._sims(state, self.np1[:n])
-        if vp is not None:
-            match = match * self._sims(vp, self.vp[:n]).clamp_min(0.0)
-        keep = (match > float(threshold)).nonzero(as_tuple=True)[0]
-        out = [(int(i), float(match[i]), self.vp[int(i)],
-                self.np2[int(i)]) for i in keep]
-        out.sort(key=lambda t: -t[1])
-        return out
-
-    @torch.no_grad()
-    def evaluate(self, np1, vp, np2) -> float:
-        """Relational evaluation of a queried relation against the
-        corpus of stored relations (the §6 evaluation that coverage
-        can never provide): the best joint match
-        ``max_i sim(np1, np1_i) · sim(vp, vp_i) · sim(np2, np2_i)``
-        over non-negative component similarities, in ``[0, 1]``.
-
-        0.0 = no stored relation licenses it; 1.0 = exactly the stored
-        universal. Verification by SIMULATION (running the VP steps)
-        composes from :meth:`consequents`; this is the one-shot
-        relational form.
-        """
-        n = int(self.count.item())
-        if n == 0:
-            return 0.0
-        j = (self._sims(np1, self.np1[:n]).clamp_min(0.0)
-             * self._sims(vp, self.vp[:n]).clamp_min(0.0)
-             * self._sims(np2, self.np2[:n]).clamp_min(0.0))
-        return float(j.max().item())
-
-    @torch.no_grad()
-    def constraint_residuals(self):
-        """The structural-constraint face (sign-off: 'store all three
-        and then enforce them as a structural constraint'): for every
-        pair of stored relations whose ``(np1, vp)`` agree, their
-        consequents must agree — a universal truth is one rule, not a
-        coincidence of instances. Returns ``[n]`` per-row residuals:
-        ``max_j agree_ij · (1 − sim(np2_i, np2_j))`` — 0 when the
-        corpus is functionally consistent. Measured, never stored."""
-        n = int(self.count.item())
-        if n == 0:
-            return torch.zeros(0)
-        a1 = F.normalize(self.np1[:n], dim=-1)
-        av = F.normalize(self.vp[:n], dim=-1)
-        a2 = F.normalize(self.np2[:n], dim=-1)
-        agree = ((a1 @ a1.T).clamp_min(0.0)
-                 * (av @ av.T).clamp_min(0.0))
-        agree.fill_diagonal_(0.0)
-        disagree = 1.0 - (a2 @ a2.T)
-        return (agree * disagree).max(dim=-1).values.clamp_min(0.0)
-
-    @torch.no_grad()
-    def reset(self):
-        """Clear the store (idempotent)."""
-        self.np1.zero_()
-        self.vp.zero_()
-        self.np2.zero_()
-        self.count.zero_()
-        self.trust.zero_()
-
-
-class TernaryTruthStore(LeafCodeIndex, Layer):
-    """The unified LTM + relative-truth store (Truth / Ideas consolidation,
-    Alec 2026-06-18): ONE tensor of ternary rows that combines the discourse
-    LTM end-state chain and the ``RelativeTruthStore`` relation corpus.
-
-    Each row is ``(NP1, VP, NP2)`` -- three FULL idea vectors (event width
-    ``nDim``) with explicit role-presence, mode and evidence-kind columns,
-    plus a ``timestamp`` and signed ``trust`` in ``[-1, 1]``:
-
-      * ``NP  .   .``  -> a one-role IDEA
-      * ``NP  VP  .``  -> a unary predication
-      * ``NP  VP  NP`` -> an IDEA-RELATION-IDEA (relative truth)
-
-    The relation kind is tagged in ``rel_type`` (``REL_NONE`` for an absolute
-    idea; ``REL_PARTOF`` / ``REL_IMPLIES`` are the legacy relation tags;
-    ``REL_OTHER`` for any learned predicate carried in the VP slot).
-    ``partOf`` rows feed the meronomy / parthood; ``implies`` rows feed
-    modus-ponens reasoning.
-
-    UNLIKE ``RelativeTruthStore`` the idea vectors are stored UNSCALED (trust
-    is a SEPARATE column, not baked into the magnitude), so a reader needs no
-    un-baking. Tensor state rides state_dict; scope, bindings, constituent
-    references and source text ride semantic_extras in the model's structural
-    sidecar. Required context missing from a tensor-only restore makes evidence
-    unavailable, never unscoped. Only explicit fact records support Exist;
-    storing a question, observation or estimate does not certify its referent.
-    The monotonic ``timestamp`` gives
-    the single ordering both readers need: the AR predictor takes the recent
-    slice (:meth:`recent`); reasoning scans the whole corpus
-    (:meth:`relations`).
-
-    PROVENANCE: a per-row ``origin`` column distinguishes the three writers
-    that share the store -- ``ORIGIN_CONVERSATION`` (the observe-site STM
-    push, the default), ``ORIGIN_PROVISIONED`` (XML ``<truthSet>`` rows,
-    ``provision_ltm``) and ``ORIGIN_USER`` (runtime request-body TruthSet
-    rows, ``store_truths``). Origin alone does not admit a fact. Source text
-    attached by ``set_origin(..., text=)`` persists with semantic metadata.
-    Occurrence identities survive compaction and are never reused on reset.
-    ``clear_origin`` compacts one origin's rows out
-    in place so ``store_truths`` can give runtime user rows replace-on-
-    resubmit semantics without touching conversation / provisioned rows.
+    An idea stores one fused point without its reading derivation. A
+    relation stores three reference slots, with null point operands for
+    referenced relations. Only part, implication and operator relations are
+    admitted by the closing. Trust is external provenance; c_plus and c_minus
+    retain the two evidence poles independently. Tensor columns checkpoint
+    with state_dict; semantic_extras holds reference and provenance metadata.
     """
 
     REL_NONE = 0
     REL_PARTOF = 1
     REL_IMPLIES = 2
-    REL_OTHER = 3
+    REL_OPERATOR = 3
+    REL_DEF = 4
 
     ORIGIN_CONVERSATION = 0
     ORIGIN_PROVISIONED = 1
@@ -9221,6 +9030,14 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                              torch.zeros(capacity, dtype=torch.long))
         self.register_buffer('timestamp', torch.zeros(capacity))
         self.register_buffer('trust', torch.zeros(capacity))
+        self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
+        self.register_buffer('c_plus', torch.zeros(capacity))
+        self.register_buffer('c_minus', torch.zeros(capacity))
+        self.register_buffer('refs', torch.full((capacity, 3), -1, dtype=torch.long))
+        self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
+        self.register_buffer('where', torch.zeros(capacity, 4))
+        self.register_buffer('when', torch.zeros(capacity, 4))
+        self.register_buffer('truth_schema', torch.tensor(8, dtype=torch.long))
         self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
@@ -9252,10 +9069,13 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         # rows themselves. It is sidecar data, not a second LTM: occurrence
         # IDs, role vectors and evidence kind remain in the buffers above.
         self._expectation_rows = {}
+        self._definition_rows = {}
+        from Definitions import DefinitionIndex
+        self.definitions = DefinitionIndex(self)
         self._init_leaf_index()
 
     @staticmethod
-    def _context_fingerprint(context, text, expectation=None):
+    def _context_fingerprint(context, text, expectation=None, definition=None):
         """Bind sidecar content to its tensor-owned occurrence without duplicating it."""
         context = context or {}
         content = {"role_refs": context.get("role_refs", (None, None, None)),
@@ -9265,6 +9085,13 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         # actually carry expectation provenance add this key.
         if expectation is not None:
             content["expectation"] = expectation
+        if definition is not None:
+            content["definition"] = definition
+        return TernaryTruthStore._fingerprint_payload(content)
+
+    @staticmethod
+    def _fingerprint_payload(content):
+        """Hash metadata, including a legacy payload while validating migration."""
         encoded = json.dumps(content, sort_keys=True, separators=(",", ":"),
                              ensure_ascii=True, allow_nan=False).encode("utf-8")
         return list(hashlib.sha256(encoded).digest())
@@ -9307,7 +9134,8 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         if kind == "estimate":
             expected = {"kind", "source_occurrences", "stream", "document",
                         "intended_occurrence", "presence_logits"}
-            if set(value) != expected or not isinstance(value["source_occurrences"], tuple):
+            if (set(value) - {'kind_logit'} != expected
+                    or not isinstance(value["source_occurrences"], tuple)):
                 raise ValueError("invalid estimate provenance")
             sources = tuple(cls._validated_expectation_reference(source, namespace)
                             for source in value["source_occurrences"])
@@ -9318,6 +9146,10 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                     or any(not isinstance(item, (int, float))
                            or not math.isfinite(float(item)) for item in logits)):
                 raise ValueError("estimate provenance requires three finite presence logits")
+            kind_logit = value.get('kind_logit')
+            if kind_logit is not None and (not isinstance(kind_logit, (int, float))
+                                           or not math.isfinite(float(kind_logit))):
+                raise ValueError('estimate kind logit must be finite')
             return {
                 "kind": "estimate",
                 "source_occurrences": sources,
@@ -9325,14 +9157,17 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                 "document": cls._freeze_expectation_value(value["document"]),
                 "intended_occurrence": intended,
                 "presence_logits": tuple(float(item) for item in logits),
+                **({'kind_logit': kind_logit} if 'kind_logit' in value else {}),
             }
         if kind == "observation":
-            if set(value) != {"kind", "estimate_occurrence"}:
+            if set(value) - {'previous_estimates'} != {"kind", "estimate_occurrence"}:
                 raise ValueError("invalid observation expectation provenance")
             return {
                 "kind": "observation",
                 "estimate_occurrence": cls._validated_expectation_reference(
                     value["estimate_occurrence"], namespace),
+                **({'previous_estimates': tuple(cls._validated_expectation_reference(ref, namespace)
+                    for ref in value['previous_estimates'])} if 'previous_estimates' in value else {}),
             }
         raise ValueError("unknown expectation provenance kind")
 
@@ -9345,7 +9180,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             return tuple(provenance["source_occurrences"]) + tuple(
                 reference for reference in (provenance["intended_occurrence"],)
                 if reference is not None)
-        return (provenance["estimate_occurrence"],)
+        return (*provenance.get('previous_estimates', ()), provenance["estimate_occurrence"])
 
     def _validate_expectation_links(self, records=None):
         """Verify reference availability and bidirectional pair integrity."""
@@ -9366,7 +9201,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                 continue
             inverse = records.get(target[2])
             if (inverse is None or inverse["kind"] != "observation"
-                    or inverse["estimate_occurrence"][2] != identifier):
+                    or identifier not in {ref[2] for ref in self._expectation_references(inverse)}):
                 raise ValueError("expectation provenance pair is not bidirectionally linked")
 
     def _update_semantic_fingerprint(self, idx):
@@ -9376,7 +9211,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.semantic_fingerprint[i] = self.semantic_fingerprint.new_tensor(
             self._context_fingerprint(
                 self._semantic_rows.get(identifier, {}), self.text_of(i),
-                self._expectation_rows.get(identifier)))
+                self._expectation_rows.get(identifier), self._definition_rows.get(identifier)))
 
     def occurrence_of(self, idx):
         """Stable identity; compaction changes a row index, not its occurrence."""
@@ -9586,7 +9421,10 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         return ConceptualMeaning(
             self.slots[i].detach(), self.role_mask[i],
             mode=self.MODES[int(self.grammatical_mode[i])],
-            polarity=bool(self.polarity[i]), **(context or {}))
+            polarity=bool(self.polarity[i]),
+            sentence_kind=(None if self.KINDS[int(self.record_kind[i])] == 'estimate' else
+                           'idea' if int(self.rel_type[i]) == self.REL_NONE else 'relation'),
+            **(context or {}))
 
     def semantic_extras(self):
         """Versioned context/provenance beside the existing tensor state.
@@ -9602,35 +9440,82 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                 raise ValueError("cannot checkpoint evidence with missing semantic metadata")
             records.append({"id": identifier, "context": dict(context or {}),
                             "text": self.text_of(i),
-                            "expectation": self.expectation_of(i)})
-        return {"version": 2,
+                            "expectation": self.expectation_of(i),
+                            **({"definition": self._definition_rows[identifier]}
+                               if identifier in self._definition_rows else {})})
+        return {"version": 4,
                 "namespace": bytes(self._occurrence_namespace.tolist()).hex(),
                 "records": records}
 
     def load_semantic_extras(self, extras):
         """Restore metadata only onto the matching durable occurrences."""
-        if not isinstance(extras, dict) or extras.get("version") not in (1, 2):
+        if not isinstance(extras, dict) or extras.get("version") not in (1, 2, 3, 4):
             raise ValueError("unsupported truth semantic checkpoint version")
         version = extras["version"]
         namespace = bytes(self._occurrence_namespace.tolist()).hex()
         if extras.get("namespace") != namespace:
             raise ValueError("truth semantic checkpoint occurrence namespace differs")
+        discarded = set(getattr(self, '_discarded_occurrences', ()))
+        if discarded:
+            # A removed legacy row cannot remain reachable through a surviving
+            # observation, prediction pair, or stored row reference.
+            records = extras.get('records', ())
+            changed = True
+            while changed:
+                changed = False
+                for record in records:
+                    identifier = int(record['id'])
+                    if identifier in discarded:
+                        continue
+                    refs = self._context_occurrence_references(record.get('context') or {})
+                    refs += self._expectation_references(record.get('expectation'))
+                    if any(tuple(ref[:2]) == ('ltm', namespace) and ref[2] in discarded for ref in refs):
+                        discarded.add(identifier)
+                        changed = True
+            count = len(self)
+            keep = self.count.new_tensor([i for i in range(count)
+                if int(self.occurrence_id[i]) not in discarded])
+            if len(keep) != count:
+                import warnings
+                warnings.warn('Dropping dependent rows whose legacy truth references were retired.',
+                              UserWarning, stacklevel=2)
+                with torch.no_grad():
+                    self.compact_leaf_rows(keep)
+                    for name, value in self._buffers.items():
+                        if (name not in ('posting_codes', 'posting_roles', 'posting_rows', '_occurrence_namespace') and value is not None
+                                and value.ndim and value.shape[0] == self.capacity):
+                            value[:len(keep)] = value[keep]
+                    self.count.fill_(len(keep))
+                    self.rebuild_leaf_postings()
+            self._discarded_occurrences = discarded
         rows = {int(self.occurrence_id[i]): i for i in range(len(self))}
         if len(rows) != len(self):
             raise ValueError("duplicate truth occurrence identity")
-        incoming, texts, expectation_rows = {}, [None] * len(self), {}
+        incoming, texts, expectation_rows, definitions = {}, [None] * len(self), {}, {}
+        migrated_fingerprints = {}
+        discarded_derivation = False
         for record in extras.get("records", ()):
             identifier = int(record["id"])
+            if identifier in getattr(self, '_discarded_occurrences', ()):
+                continue
             if identifier not in rows or identifier in incoming:
                 raise ValueError("truth semantic checkpoint has an unavailable or duplicate occurrence")
             i = rows[identifier]
             context = record.get("context") or {}
             if not isinstance(context, dict) or set(context) - {"role_refs", "bindings", "scope"}:
                 raise ValueError("invalid truth semantic context")
+            if version >= 4 and 'clause' in record:
+                raise ValueError('a current truth checkpoint cannot contain a clause derivation')
+            legacy = record.get('clause') if version == 3 else None
+            stored_context = dict(context)
+            if legacy is not None and int(self.rel_type[i]) == self.REL_NONE:
+                # Pre-fusion roles belonged to reading, never to this idea.
+                # Its two cached operands already have tensor-owned addresses.
+                stored_context['role_refs'] = (None, None, None)
             meaning = ConceptualMeaning(
                 self.slots[i].detach(), self.role_mask[i],
                 mode=self.MODES[int(self.grammatical_mode[i])],
-                polarity=bool(self.polarity[i]), **context)
+                polarity=bool(self.polarity[i]), **stored_context)
             incoming[identifier] = {key: meaning.metadata()[key]
                                     for key in ("role_refs", "bindings", "scope")}
             text = record.get("text")
@@ -9648,10 +9533,27 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                     record["expectation"], namespace)
             if expectation is not None:
                 expectation_rows[identifier] = expectation
-            if (meaning.has_context or text is not None or expectation is not None) and not bool(self.metadata_required[i]):
+            if (meaning.has_context or text is not None or expectation is not None or legacy is not None) and not bool(self.metadata_required[i]):
                 raise ValueError("truth context disagrees with its required-metadata flag")
-            fingerprint = self.semantic_fingerprint.new_tensor(
-                self._context_fingerprint(incoming[identifier], text, expectation))
+            definition = record.get("definition")
+            if definition is not None:
+                if int(self.rel_type[i]) != self.REL_DEF or set(definition) != {"forms", "parts", "wholes"}:
+                    raise ValueError("invalid definition row metadata")
+                definitions[identifier] = definition
+            if legacy is None:
+                fingerprint_values = self._context_fingerprint(incoming[identifier], text, expectation, definition)
+            else:
+                # Validate the old binding without constructing its program,
+                # then discard the entire old clause payload.
+                content = {key: context.get(key, default) for key, default in
+                           (('role_refs', (None, None, None)), ('bindings', ()), ('scope', ()))}
+                content.update(text=text, clause=legacy)
+                if expectation is not None:
+                    content['expectation'] = expectation
+                fingerprint_values = self._fingerprint_payload(content)
+                migrated_fingerprints[i] = self._context_fingerprint(incoming[identifier], text, expectation)
+                discarded_derivation = True
+            fingerprint = self.semantic_fingerprint.new_tensor(fingerprint_values)
             if not torch.equal(fingerprint, self.semantic_fingerprint[i]):
                 raise ValueError("truth semantic content differs from its checkpoint fingerprint")
         if set(incoming) != set(rows):
@@ -9663,37 +9565,45 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self._semantic_rows = incoming
         self._texts = texts
         self._expectation_rows = expectation_rows
+        self._definition_rows = definitions
+        self.definitions.rebuild()
+        for index, values in migrated_fingerprints.items():
+            self.semantic_fingerprint[index] = self.semantic_fingerprint.new_tensor(values)
+        if discarded_derivation:
+            import warnings
+            warnings.warn('Dropping stored clause derivations; rows retain their end state (§11.1).',
+                          UserWarning, stacklevel=2)
         if getattr(self, "_leaf_index_missing", False):
             for row in range(len(self)):
                 if self.KINDS[int(self.record_kind[row])] == "fact":
                     self.index_stream[row] = -1
                 meaning = self.meaning_of(row)
                 if meaning is not None:
-                    terms, complete = self._meaning_leaf_terms(meaning)
+                    terms, complete = self._meaning_leaf_terms(meaning, order=int(self.order[row]))
                     self._append_leaf_terms(row, terms, complete, int(self.index_stream[row]))
             self._leaf_index_missing = False
+            self._leaf_needs_owner_reindex = self._index_unfold is None
         self.rebuild_leaf_postings()
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        self._definition_rows = {}
+        self.definitions.rebuild()
         # Older checkpoints did not score surprise: unknown is not perfect.
         state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
-        index_keys = ('leaf_codes', 'leaf_offsets', 'leaf_complete', 'index_stream')
-        present_index = [prefix + key in state_dict for key in index_keys]
-        if any(present_index) and not all(present_index):
-            error_msgs.append(f"{prefix}incomplete leaf-code index checkpoint")
-            return
-        self._leaf_index_missing = not any(present_index)
-        self._leaf_needs_owner_reindex = self._leaf_index_missing and self._index_code_row is None
-        if self._leaf_index_missing:
-            state_dict[prefix + 'leaf_codes'] = self.leaf_codes.new_empty(0)
-            state_dict[prefix + 'leaf_offsets'] = torch.zeros_like(self.leaf_offsets)
-            state_dict[prefix + 'leaf_complete'] = torch.zeros_like(self.leaf_complete)
-            # Legacy observations have no row isolation proof. Facts alone
-            # are shared; unknown stream ownership is never treated as row 0.
-            state_dict[prefix + 'index_stream'] = torch.full_like(self.index_stream, -2)
-        self.leaf_codes = self.leaf_codes.new_empty(state_dict[prefix + 'leaf_codes'].shape)
-        self._leaf_used = self.leaf_codes.numel()
+        old_schema = prefix + 'truth_schema' not in state_dict
+        # Scalar trust cannot reconstruct missing identification evidence.
+        state_dict.setdefault(prefix + 'c_plus', torch.zeros_like(self.c_plus))
+        state_dict.setdefault(prefix + 'c_minus', torch.zeros_like(self.c_minus))
+        if prefix + 'order' not in state_dict:
+            import warnings
+            warnings.warn('Legacy LTM rows have unknown order; decoding requires an explicit order stamp.',
+                          UserWarning, stacklevel=2)
+            state_dict[prefix + 'order'] = torch.full_like(self.order, -1)
+        state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
+        for name in ('refs', 'row_ids', 'where', 'when', 'truth_schema'):
+            state_dict.setdefault(prefix + name, getattr(self, name).clone())
+
         semantic_keys = (
             'record_kind', 'grammatical_mode', 'role_mask', 'polarity',
             'occurrence_id', '_next_occurrence', '_occurrence_namespace',
@@ -9738,6 +9648,30 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self._semantic_rows = {}
         self._texts = []
         self._expectation_rows = {}
+        self._discarded_occurrences = set()
+        if old_schema:
+            count = int(state_dict.get(prefix + 'count', self.count))
+            kinds = state_dict.get(prefix + 'rel_type', self.rel_type)[:count]
+            origins = state_dict.get(prefix + 'origin', self.origin)[:count]
+            discard = (kinds == 3) | (origins == self.ORIGIN_PROVISIONED)
+            discarded = discard.nonzero().flatten()
+            if discarded.numel():
+                import warnings
+                warnings.warn('Dropping legacy REL_OTHER rows; provisioned truths must be re-provisioned from XML.',
+                              UserWarning, stacklevel=2)
+                self._discarded_occurrences = set(state_dict[
+                    prefix + 'occurrence_id'][discarded].tolist())
+                keep = (~discard).nonzero().flatten()
+                for name, default in self._buffers.items():
+                    key = prefix + name
+                    value = state_dict.get(key)
+                    if (name in ('posting_codes', 'posting_roles', 'posting_rows', '_occurrence_namespace') or value is None or value.ndim == 0
+                            or value.shape[0] != self.capacity):
+                        continue
+                    compact = default.clone().to(value)
+                    compact[:len(keep)] = value[keep]
+                    state_dict[key] = compact
+                state_dict[prefix + 'count'] = self.count.new_tensor(len(keep))
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
         self.rebuild_leaf_postings()
@@ -9817,7 +9751,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append_meaning(self, meaning, *, kind="fact", rel_type=None,
-                       trust=0.0, timestamp=None, leaf_codes=None, stream=-1, surprise=-1.):
+                       trust=0.0, timestamp=None, stream=-1, surprise=-1., evidence=None, order=0):
         """Commit a complete description with explicit evidential provenance."""
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("append_meaning requires a ConceptualMeaning")
@@ -9838,8 +9772,12 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         surprise = float(surprise)
         if not math.isfinite(surprise) or not (surprise == -1. or 0. <= surprise <= 1.):
             raise ValueError("surprise must be unknown (-1) or in [0, 1]")
-        terms, complete = (self._meaning_leaf_terms(meaning) if leaf_codes is None else
-                           (self._checked_leaf_terms(leaf_codes), (True, True, True)))
+        if type(order) is not int or order < 0:
+            raise ValueError('a stored field requires a nonnegative order')
+        evidence = (0., 0.) if evidence is None else tuple(map(float, evidence))
+        if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
+            raise ValueError('evidence poles must be finite and in [0, 1]')
+        terms, complete = self._meaning_leaf_terms(meaning, order=order)
         meaning = self.bind_constituents(meaning, reserve=1, stream=stream)
         if meaning is None:
             return -1
@@ -9848,9 +9786,11 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.slots[n].copy_(meaning.roles)
         self.role_mask[n].copy_(meaning.role_mask)
         if rel_type is None:
-            rel_type = self.REL_OTHER if bool(meaning.role_mask[1:].any()) else self.REL_NONE
+            rel_type = self.REL_OPERATOR if bool(meaning.role_mask[1:].any()) else self.REL_NONE
         self.rel_type[n] = int(rel_type)
         self.trust[n] = max(-1.0, min(1.0, float(trust)))
+        self.c_plus[n], self.c_minus[n] = evidence
+        self.order[n] = order
         self.surprise[n] = surprise
         self.origin[n] = self.ORIGIN_CONVERSATION
         self.record_kind[n] = self.KINDS.index(kind)
@@ -9879,7 +9819,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append_estimate(self, meaning, *, presence_logits, source_occurrences=(),
-                        stream=None, document=None, trust=0.0, timestamp=None):
+                        stream=None, document=None, trust=0.0, timestamp=None, kind_logit=None):
         """Append one explicit prediction without granting fact authority.
 
         The estimate's complete role vectors and predicted occupancy live in
@@ -9901,6 +9841,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             "document": document,
             "intended_occurrence": None,
             "presence_logits": tuple(float(value) for value in logits.to("cpu").tolist()),
+            **({'kind_logit': float(kind_logit)} if kind_logit is not None else {}),
         }, namespace)
         identifiers = set(int(identifier)
                           for identifier in self.occurrence_id[:len(self)].tolist())
@@ -9908,7 +9849,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                for reference in self._expectation_references(provenance)):
             raise ValueError("estimate source occurrence is unavailable")
         index = self.append_meaning(
-            meaning, kind="estimate", trust=trust, timestamp=timestamp)
+            meaning, kind="estimate", rel_type=self.REL_NONE, trust=trust, timestamp=timestamp)
         if index < 0:
             return -1
         identifier = int(self.occurrence_id[index])
@@ -9929,7 +9870,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             raise IndexError("expectation link row is unavailable")
         if self.KINDS[int(self.record_kind[estimate])] != "estimate":
             raise ValueError("expectation link must start at an estimate")
-        if self.KINDS[int(self.record_kind[observation])] not in ("observation", "question"):
+        if self.KINDS[int(self.record_kind[observation])] not in ("observation", "question", "fact"):
             raise ValueError("expectation link must end at an external observation")
         estimate_id = int(self.occurrence_id[estimate])
         observation_id = int(self.occurrence_id[observation])
@@ -9945,8 +9886,11 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         linked_estimate["intended_occurrence"] = observation_ref
         linked_estimate = self._normalise_expectation_provenance(
             linked_estimate, namespace)
+        prior = self._expectation_rows.get(observation_id)
+        history = () if prior is None else self._expectation_references(prior)
         linked_observation = self._normalise_expectation_provenance({
             "kind": "observation", "estimate_occurrence": estimate_ref,
+            **({'previous_estimates': history} if history else {}),
         }, namespace)
         self._expectation_rows[estimate_id] = linked_estimate
         self._expectation_rows[observation_id] = linked_observation
@@ -9962,7 +9906,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
     @torch.no_grad()
     def append_expectation_pair(self, estimate, observation, *, presence_logits,
                                 source_occurrences=(), stream=None, document=None,
-                                observation_kind="observation", trust=0.0, leaf_codes=None, index_stream=-1):
+                                observation_kind="observation", trust=0.0, index_stream=-1):
         """Atomically prefer one external observation over an optional estimate.
 
         A nearly full store must never discard an understood input merely to
@@ -9981,7 +9925,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             return -1, -1
         if self.capacity - len(self) < 2:
             return -1, self.append_meaning(
-                observation, kind=observation_kind, trust=trust, leaf_codes=leaf_codes,
+                observation, kind=observation_kind, trust=trust,
                 stream=index_stream, surprise=surprise)
         estimate_index = self.append_estimate(
             estimate, presence_logits=presence_logits,
@@ -9992,7 +9936,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             # if a future store implementation violates that invariant.
             raise RuntimeError("estimate append unexpectedly exhausted durable capacity")
         observation_index = self.append_meaning(
-            observation, kind=observation_kind, trust=trust, leaf_codes=leaf_codes,
+            observation, kind=observation_kind, trust=trust,
                 stream=index_stream, surprise=surprise)
         if observation_index < 0:
             raise RuntimeError("observation append unexpectedly exhausted durable capacity")
@@ -10084,7 +10028,7 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append(self, np1, vp=None, np2=None, *, rel_type=REL_NONE,
-               trust=0.0, timestamp=None, kind="fact") -> int:
+               trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
         """Append one ternary row. ``Null`` slots (``None``) store the zero
         vector. ``trust`` is clamped to ``[-1, 1]``. ``timestamp`` defaults to
         the next monotonic tick. Returns the row index, or ``-1`` when the
@@ -10095,19 +10039,19 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                          dtype=torch.bool, device=self.slots.device),
             mode="interrogative" if kind == "question" else "assertive")
         return self.append_meaning(meaning, kind=kind, rel_type=rel_type,
-                                   trust=trust, timestamp=timestamp)
+                                   trust=trust, timestamp=timestamp, evidence=evidence, order=order)
 
-    def append_idea(self, np1, *, trust=0.0, timestamp=None, kind="fact") -> int:
+    def append_idea(self, np1, *, trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
         """Append a one-role description; legacy callers explicitly write facts."""
         return self.append(np1, None, None, rel_type=self.REL_NONE,
-                           trust=trust, timestamp=timestamp, kind=kind)
+                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order)
 
-    def append_relation(self, np1, vp, np2, *, rel_type=REL_OTHER,
-                        trust=0.0, timestamp=None, kind="fact") -> int:
+    def append_relation(self, np1, vp, np2, *, rel_type=REL_OPERATOR,
+                        trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
         """Append an IDEA-RELATION-IDEA (``NP VP NP``); ``np2=None`` ->
         ``NP VP .``."""
         return self.append(np1, vp, np2, rel_type=rel_type,
-                           trust=trust, timestamp=timestamp, kind=kind)
+                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order)
 
     def row(self, idx: int) -> dict:
         """Read slots, evidence, stable provenance and an owned meaning.
@@ -10124,6 +10068,13 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
             'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
             'timestamp': float(self.timestamp[i].item()),
             'trust': float(self.trust[i].item()),
+            'order': int(self.order[i]),
+            'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
+            'corners': self.corners(i),
+            'refs': self.refs[i].clone(),
+            'row_id': int(self.row_ids[i]),
+            'where': self.where[i].clone(),
+            'when': self.when[i].clone(),
             'surprise': float(self.surprise[i].item()),
             'origin': int(self.origin[i].item()),
             'text': self.text_of(i),
@@ -10170,6 +10121,22 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         if not math.isfinite(float(trust)):
             raise ValueError("fact trust must be finite")
         self.trust[i] = max(-1.0, min(1.0, float(trust)))
+
+    @torch.no_grad()
+    def set_evidence(self, idx, positive, negative):
+        """Replace the two independent evidence poles, retaining provenance."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        values = (float(positive), float(negative))
+        if any(not math.isfinite(x) or not 0. <= x <= 1. for x in values):
+            raise ValueError("evidence poles must be finite and in [0, 1]")
+        self.c_plus[i], self.c_minus[i] = values
+
+    def corners(self, idx):
+        """Compute four overlapping corners without collapsing the poles."""
+        p, n = float(self.c_plus[idx]), float(self.c_minus[idx])
+        return min(p, 1-n), min(n, 1-p), min(p, n), min(1-p, 1-n)
 
     # -- Provenance ------------------------------------------------------
 
@@ -10290,6 +10257,12 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
                 if child is None:
                     raise ValueError("retained expectation occurrence is unavailable")
                 pending.append(child)
+            # Cached idea operands and relation slots name the same shared
+            # rows. Retention follows those addresses, without a syntax tree.
+            for reference in self.refs[index].tolist():
+                child = self.index_of_row(reference) if reference > 0 else None
+                if child is not None:
+                    pending.append(child)
 
         # This includes all closure members (including context-only roots), so
         # validation cannot accidentally erase an invalid survivor's evidence.
@@ -10318,7 +10291,8 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.surprise[:n_keep] = self.surprise[keep]
         self.origin[:n_keep] = self.origin[keep]
         for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
-                     'occurrence_id', 'metadata_required', 'semantic_fingerprint'):
+                     'occurrence_id', 'metadata_required', 'semantic_fingerprint',
+                     'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when', 'order'):
             values = getattr(self, name)
             values[:n_keep] = values[keep]
         alive = set(int(value) for value in self.occurrence_id[:n_keep].tolist())
@@ -10340,8 +10314,14 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.occurrence_id[n_keep:c].fill_(-1)
         self.metadata_required[n_keep:c].zero_()
         self.semantic_fingerprint[n_keep:c].zero_()
+        for name in ('c_plus', 'c_minus', 'where', 'when'):
+            getattr(self, name)[n_keep:c].zero_()
+        self.refs[n_keep:c].fill_(-1)
+        self.row_ids[n_keep:c].fill_(-1)
+        self.order[n_keep:c].fill_(-1)
         self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
         self.count.fill_(n_keep)
+        self.definitions.rebuild()
         self.rebuild_leaf_postings()
         self._validate_expectation_links()
         return removed
@@ -10367,8 +10347,15 @@ class TernaryTruthStore(LeafCodeIndex, Layer):
         self.semantic_fingerprint.zero_()
         self._semantic_rows = {}
         self._expectation_rows = {}
-        self._leaf_used = 0
-        self.leaf_offsets.zero_()
+        self._definition_rows = {}
+        self.definitions.rebuild()
+        self.c_plus.zero_()
+        self.c_minus.zero_()
+        self.refs.fill_(-1)
+        self.row_ids.fill_(-1)
+        self.order.fill_(-1)
+        self.where.zero_()
+        self.when.zero_()
         self.leaf_complete.zero_()
         self.index_stream.fill_(-1)
         self._leaf_postings, self._index_occurrences = {}, {}
@@ -10710,17 +10697,21 @@ class MeaningExpectation:
     presence_logits: torch.Tensor
     bindings: object = ()
     scope: object = ()
+    kind_logit: object = None
 
     def __post_init__(self):
         from Meaning import _freeze_metadata
         if self.roles.ndim != 2 or self.roles.shape[0] != 3 or self.presence_logits.shape != (3,):
             raise ValueError("expectation requires three roles and presence logits")
+        if self.kind_logit is not None and self.kind_logit.shape != ():
+            raise ValueError("expectation kind requires one idea/relation logit")
         object.__setattr__(self, "bindings", _freeze_metadata(self.bindings))
         object.__setattr__(self, "scope", _freeze_metadata(self.scope))
 
     def detached(self):
         return type(self)(self.roles.detach().clone(), self.presence_logits.detach().clone(),
-                          self.bindings, self.scope)
+                          self.bindings, self.scope, None if self.kind_logit is None else
+                          self.kind_logit.detach().clone())
 
 
 @dataclass(frozen=True)
@@ -10735,6 +10726,8 @@ class ExpectationComparison:
     document: object
     source_occurrences: tuple = ()
     stream: object = None
+    sentence_kind: object = None
+    kind_residual: object = None
 
 
 @dataclass(frozen=True)
@@ -10749,6 +10742,7 @@ class _PendingMeaningExpectation:
     versions: tuple = ()
     policy: tuple = ()
     work: int = 0
+    frames: tuple = ()
 
 
 class SentenceExpectation(Layer):
@@ -10769,14 +10763,27 @@ class SentenceExpectation(Layer):
         self.network = nn.Sequential(
             nn.Linear(self.nInput, hidden), nn.Tanh(),
             nn.Linear(hidden, width))
+        # New checkpoints start neutral. This consumes no random draws and
+        # leaves the reviewed role-head initialization reproducible.
+        self.kind_weight = nn.Parameter(torch.zeros(hidden))
+        self.kind_bias = nn.Parameter(torch.zeros(()))
 
     def forward(self, roles, masks):
         features = torch.cat((
             torch.where(masks.unsqueeze(-1), roles, torch.zeros_like(roles)),
             masks.to(roles.dtype).unsqueeze(-1)), dim=-1)
-        out = self.network(features.flatten(start_dim=1)).reshape(
+        hidden = self.network[:2](features.flatten(start_dim=1))
+        out = self.network[2](hidden).reshape(
             roles.shape[0], 3, self.concept_dim + 1)
-        return out[..., :self.concept_dim], out[..., -1]
+        kind = F.linear(hidden, self.kind_weight[None], self.kind_bias[None]).squeeze(-1)
+        return out[..., :self.concept_dim], out[..., -1], kind
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        for name in ('kind_weight', 'kind_bias'):
+            state_dict.setdefault(prefix + name, torch.zeros_like(getattr(self, name)))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
 
 
 class InterSentenceLayer(Layer):
@@ -11320,7 +11327,8 @@ class InterSentenceLayer(Layer):
 
     @torch.compiler.disable
     def expect_next_meaning(self, b=0, *, record=True, work=None,
-                            frames=(), frame_occurrences=(), policy=(), policy_work=0, refresh=False):
+                            frames=(), frame_occurrences=(), policy=(), policy_work=0, refresh=False,
+                            reference_frames=()):
         """Return the complete prior estimate, or None at a cold boundary.
 
         Reading an already staged estimate does not replace it. ``refresh``
@@ -11359,8 +11367,9 @@ class InterSentenceLayer(Layer):
         roles = [zero] * pad + [p.to(parameter) for _, p, _ in chain]
         masks = [empty] * pad + [m.to(parameter.device) for _, _, m in chain]
         inputs = (torch.stack(roles)[None], torch.stack(masks)[None])
-        values, logits = self._inter_predictor(*inputs)
-        if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()):
+        values, logits, kind_logits = self._inter_predictor(*inputs)
+        if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()
+                    and torch.isfinite(kind_logits).all()):
             raise FloatingPointError("non-finite structured sentence prediction")
         # Metadata comes only from an already retained source occurrence.
         # The arriving target's bindings/scope are not an input to this call.
@@ -11371,7 +11380,7 @@ class InterSentenceLayer(Layer):
             source = None if index is None else self._ltm_store.meaning_of(index)
             if source is not None:
                 bindings, scope = source.bindings, source.scope
-        prediction = MeaningExpectation(values[0], logits[0], bindings, scope)
+        prediction = MeaningExpectation(values[0], logits[0], bindings, scope, kind_logits[0])
         if record:
             document = self._expectation_documents[b]
             self._inter_last_meaning[b] = _PendingMeaningExpectation(
@@ -11380,11 +11389,11 @@ class InterSentenceLayer(Layer):
                                     if reference is not None)),
                 ("external", document), document, inputs,
                 tuple(p._version for p in self._inter_predictor.parameters()),
-                tuple(policy), int(policy_work))
+                tuple(policy), int(policy_work), tuple(reference_frames))
         return prediction
 
     def _observe_meanings(self, depths, payloads, tetralemmas, mask,
-                          layout, role_masks, train_prediction=True):
+                          layout, role_masks, train_prediction=True, sentence_kinds=None):
         for b, payload in enumerate(payloads):
             if mask is not None and not bool(mask[b]):
                 continue
@@ -11415,11 +11424,17 @@ class InterSentenceLayer(Layer):
                 mse = squared.mean()
                 presence = F.binary_cross_entropy_with_logits(
                     prediction.presence_logits, target_mask.to(prediction.roles.dtype))
-                if not bool(torch.isfinite(mse) and torch.isfinite(presence)):
+                kind = None if sentence_kinds is None else sentence_kinds[b]
+                kind_loss = self._kind_loss(prediction.kind_logit, kind, mse)
+                if not bool(torch.isfinite(mse) and torch.isfinite(presence)
+                            and torch.isfinite(kind_loss)):
                     raise FloatingPointError("non-finite structured prediction loss")
                 self._expectation_stats["predicted_targets"] += 1
                 self._expectation_stats["feature_sum"] += float(mse.detach())
                 self._expectation_stats["presence_sum"] += float(presence.detach())
+                if kind is not None:
+                    self._expectation_stats['kind_targets'] += 1
+                    self._expectation_stats['kind_sum'] += float(kind_loss.detach())
                 estimate = prediction.detached()
                 actual = target.detach().clone()
                 self._last_expectation_comparisons[b] = ExpectationComparison(
@@ -11430,8 +11445,11 @@ class InterSentenceLayer(Layer):
                     (pending.source_occurrences
                      if isinstance(pending, _PendingMeaningExpectation) else ()),
                     (pending.stream
-                     if isinstance(pending, _PendingMeaningExpectation) else None))
+                     if isinstance(pending, _PendingMeaningExpectation) else None), kind,
+                    None if kind is None or estimate.kind_logit is None else
+                    (float(kind == 'relation') - estimate.kind_logit.sigmoid()))
                 train_roles, train_logits = prediction.roles, prediction.presence_logits
+                train_kind = prediction.kind_logit
                 if (train_prediction and self.training and torch.is_grad_enabled()
                         and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
                     if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
@@ -11441,18 +11459,20 @@ class InterSentenceLayer(Layer):
                         # Both residual and contrastive objectives train the
                         # current predictor from the frozen prior, never an
                         # old parameter version's graph.
-                        replay, logits = self._inter_predictor(*(v.detach() for v in pending.inputs))
+                        replay, logits, kinds = self._inter_predictor(*(v.detach() for v in pending.inputs))
                         train_roles, train_logits = replay[0], logits[0]
+                        train_kind = kinds[0]
                 if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
                     step = (train_roles - target).square().mean() + F.binary_cross_entropy_with_logits(
                         train_logits, target_mask.to(train_logits))
+                    step = step + self._kind_loss(train_kind, kind, step)
                     self._inter_loss_accum = (step if self._inter_loss_accum is None
                                               else self._inter_loss_accum + step)
                     self._inter_loss_count += 1
                 if (isinstance(pending, _PendingMeaningExpectation) and pending.policy
                         and self.training and torch.is_grad_enabled()):
                     self._expectation_policy_outcomes.append((
-                        pending.policy, -float((mse + presence).detach()), pending.work))
+                        pending.policy, -float((mse + presence + kind_loss).detach()), pending.work))
                 if train_prediction and self._inter_contrastive_weight > 0:
                     self._accumulate_inter_contrastive(
                         train_roles.flatten(), target.flatten(),
@@ -11469,6 +11489,16 @@ class InterSentenceLayer(Layer):
             if self._ltm_store is None:
                 trust = None if tetralemmas is None else tetralemmas[b]
                 self._stm_end_states[b].append((depth, roles.detach().clone(), trust))
+
+    @staticmethod
+    def _kind_loss(logit, kind, like):
+        if kind not in (None, 'idea', 'relation'):
+            raise ValueError('sentence kind must come from the selected grammar')
+        if kind is None:
+            return like.new_zeros(())
+        if logit is None:
+            raise ValueError('grammatical kind requires a prediction logit')
+        return F.binary_cross_entropy_with_logits(logit, logit.new_tensor(float(kind == 'relation')))
 
     @torch.compiler.disable
     def bind_observation_occurrence(self, b, occurrence):
@@ -11495,6 +11525,23 @@ class InterSentenceLayer(Layer):
         if occurrences[-1] is not None:
             raise ValueError("external observation occurrence is already bound")
         occurrences[-1] = occurrence
+        store = self._ltm_store
+        index = None if store is None else store._index_occurrences.get(occurrence)
+        if index is not None and int(store.row_ids[index]) > 0:
+            from ReferenceContext import SituationFrame
+            depth, roles, occupied = context[-1]
+            point = store.slots[index, 0] if int(store.rel_type[index]) == store.REL_NONE else None
+            context[-1] = SituationFrame(depth, roles, occupied, int(store.row_ids[index]),
+                                         None if point is None else point.detach().clone())
+
+    def situation_references(self, b=0):
+        """Only the bounded frames the predictor already holds; no LTM read."""
+        from ReferenceContext import SituationFrame
+        pending = self._inter_last_meaning[int(b)]
+        retrieved = () if pending is None else pending.frames
+        frames = [value for value in (*self._inter_context[int(b)], *retrieved)
+                  if isinstance(value, SituationFrame)]
+        return tuple(frames[-self._inter_chain_window:])
 
     def migrate_expectation_checkpoint(self, state_dict, prefix=""):
         """Declare root-to-structured migration without guessing shared weights.
@@ -11547,16 +11594,14 @@ class InterSentenceLayer(Layer):
     @torch.compiler.disable
     def observe_stm_end_state(
             self, depths, payloads, tetralemmas=None, mask=None, *,
-            documents=None, layout="stm", role_masks=None, train_prediction=True):
+            documents=None, layout="stm", role_masks=None, train_prediction=True,
+            sentence_kinds=None):
         """Append one STM end-state PER ROW to the LTM chain.
 
         Called from the sentence-boundary hook AFTER the reduce /
         relative-preserve step has decided each row's end-state. EVERY
-        sentence's end-state lands in LTM regardless of
-        ``truthCriterion`` — LTM is the AR sequence the inter-sentence
-        predictor consumes; ``truthCriterion`` only gates the separate
-        WS-codebook insertion of *learned relations* (Task 6c), not
-        this chain.
+        sentence's end state supplies the inter-sentence predictor. External
+        provenance supplies trust; grammar supplies the field's structure.
 
         Args:
           depths: ``[B]`` ints/long tensor (or python sequence) — the
@@ -11584,7 +11629,8 @@ class InterSentenceLayer(Layer):
         self._prepare_expectation_documents(documents, mask, len(payloads))
         if self.expectation_scope == "structured":
             return self._observe_meanings(
-                depths, payloads, tetralemmas, mask, layout, role_masks, train_prediction)
+                depths, payloads, tetralemmas, mask, layout, role_masks, train_prediction,
+                sentence_kinds)
         # Normalise ``depths`` to a python list of ints without forcing
         # a per-row host sync inside any captured region (this method is
         # ``@torch.compiler.disable``'d and boundary-only, so a single
@@ -11707,7 +11753,7 @@ class InterSentenceLayer(Layer):
     @torch.compiler.disable
     def predict_and_observe_stm_end_state(
             self, depths, payloads, tetralemmas=None, mask=None, *,
-            documents=None, layout="stm", role_masks=None):
+            documents=None, layout="stm", role_masks=None, sentence_kinds=None):
         """Stage the next-end-state prediction THEN observe the arriving
         end-state, in one call — the foolproof AR ordering for the TRAINING
         sentence-boundary hook.
@@ -11768,7 +11814,8 @@ class InterSentenceLayer(Layer):
         # tetralemma handling identical and avoids any duplication.
         self.observe_stm_end_state(
             depths, payloads, tetralemmas=tetralemmas, mask=mask,
-            documents=documents, layout=layout, role_masks=role_masks)
+            documents=documents, layout=layout, role_masks=role_masks,
+            sentence_kinds=sentence_kinds)
 
     def get_stm_chain(self, n=None, b=0):
         """Return the last ``n`` LTM end-states for row ``b``.
@@ -11997,7 +12044,7 @@ class InterSentenceLayer(Layer):
         return depth_hat, payload_hat
 
     def sentence_prediction_cost(self, depths, payloads, mask, *,
-                                 documents=None, layout="stm", role_masks=None):
+                                 documents=None, layout="stm", role_masks=None, sentence_kinds=None):
         """Preview one sentence per row without observing either candidate.
 
         Only the pending predictions are scratch. Context, occurrences, LTM,
@@ -12028,16 +12075,20 @@ class InterSentenceLayer(Layer):
                             pending, _PendingMeaningExpectation) else pending)
                         if prediction is not None:
                             pred, logits = prediction.roles, prediction.presence_logits
+                            kind_logit = prediction.kind_logit
                             if (isinstance(pending, _PendingMeaningExpectation)
                                     and pending.inputs is not None
                                     and (not pred.requires_grad or pending.versions != tuple(
                                         p._version for p in self._inter_predictor.parameters()))):
-                                replay, presence = self._inter_predictor(
+                                replay, presence, kinds = self._inter_predictor(
                                     *(v.detach() for v in pending.inputs))
                                 pred, logits = replay[0], presence[0]
+                                kind_logit = kinds[0]
                             target = roles.detach().to(pred)
                             cost = (pred - target).square().mean() + F.binary_cross_entropy_with_logits(
                                 logits, occupied.to(logits))
+                            cost = cost + self._kind_loss(kind_logit,
+                                None if sentence_kinds is None else sentence_kinds[b], cost)
                             negatives = [p.detach().to(target).flatten()
                                          for _, p, _ in self._inter_context[b]]
                     else:
@@ -12124,15 +12175,18 @@ class InterSentenceLayer(Layer):
         Pending predictions cannot carry credit across parameter versions.
         """
         for b, chain in enumerate(self._inter_context):
+            from ReferenceContext import SituationFrame
             self._inter_context[b] = collections.deque(
-                ((d, p.detach(), t) for d, p, t in chain),
+                (value.detached() if isinstance(value, SituationFrame) else
+                 (value[0], value[1].detach(), value[2]) for value in chain),
                 maxlen=self._inter_chain_window)
         self._inter_last_pred_root = [None] * self._batch
         self._inter_last_meaning = [
             None if value is None else _PendingMeaningExpectation(
                 value.prediction.detached(), value.source_occurrences, value.stream,
                 value.document, None if value.inputs is None else tuple(x.detach() for x in value.inputs),
-                value.versions, value.policy, value.work)
+                value.versions, value.policy, value.work,
+                tuple(frame.detached() for frame in value.frames))
             for value in self._inter_last_meaning]
 
     def consume_expectation_policy_outcomes(self):
@@ -12148,7 +12202,7 @@ class InterSentenceLayer(Layer):
         """Start a reporting interval without changing memory or training loss."""
         self._expectation_stats = dict(
             observations=0, cold_starts=0, predicted_targets=0,
-            document_starts=0, feature_sum=0., presence_sum=0.)
+            document_starts=0, feature_sum=0., presence_sum=0., kind_targets=0, kind_sum=0.)
 
     def expectation_metrics(self):
         """Report detached local-role metrics in training and evaluation."""
@@ -12160,6 +12214,8 @@ class InterSentenceLayer(Layer):
             "enabled": self.expectation_enabled, "scope": self.expectation_scope,
             "feature_mse": stats["feature_sum"] / pairs if pairs else None,
             "presence_bce": stats["presence_sum"] / pairs if pairs else None,
+            "kind_targets": stats['kind_targets'],
+            "kind_bce": stats['kind_sum'] / stats['kind_targets'] if stats['kind_targets'] else None,
             "document_boundary_fraction": stats["document_starts"] / max(1, stats["observations"]),
         }
 
@@ -12172,7 +12228,8 @@ class InterSentenceLayer(Layer):
             value.estimate.detached(),
             value.observed.clone(), value.occupied.clone(), value.residual.clone(),
             value.presence_residual.clone(), value.document,
-            tuple(value.source_occurrences), value.stream)
+            tuple(value.source_occurrences), value.stream, value.sentence_kind,
+            None if value.kind_residual is None else value.kind_residual.clone())
 
     def set_expectation_enabled(self, enabled):
         """Toggle expectation; retain durable observations and start fresh on enable."""
@@ -14198,193 +14255,39 @@ class RadixLayer(Layer):
         return result
 
     def reverse(self, vec, *, symbolic_space=None):
-        """Layer-API reverse: vec -> canonical bytes (or list-of-bytes).
+        """Decode native concept candidates through their word-owned inverse.
 
-        Stage 8 structural decode formerly resident on
-        :meth:`BasicModel._reverse_decode_one`; relocated here so
-        ``RadixLayer.forward`` / ``RadixLayer.reverse`` are symmetric
-        Layer-API operations and the cross-space reach lives on the
-        layer that owns the inverse table.
-
-        Accepts:
-          * ``vec`` of shape ``[D]`` -> returns ``bytes``.
-          * ``vec`` of shape ``[N, D]`` -> returns ``List[bytes]``.
-          * ``vec`` of shape ``[B, N, D]`` -> returns ``List[List[bytes]]``.
-
-        When ``symbolic_space`` is supplied, the walk goes
-        ``vec -> WS.codebook nearest -> META taxonomy children
-        -> positive PS percept id -> bytes_for(pid)``. When it is
-        ``None`` the fallback is nearest-PS-codebook directly (no META
-        walk); useful for standalone tests without a full WholeSpace
-        wired.
-
-        Numerical-divergence policy:
-          * NaN/Inf entries raise ``RuntimeError`` (fail loud); silently
-            masking them via ``nan_to_num`` would hide upstream bugs.
-          * Width mismatch / empty codebook / near-zero norm slots
-            return ``b""``; those are legitimate "no symbol here"
-            conditions, not divergences.
+        Without a concept owner this is the standalone percept-table inverse.
+        WholeSpace property rows never name words or own a taxonomy.
         """
         if not torch.is_tensor(vec):
-            return b""
-        if vec.dim() == 3:
-            return [
-                [self.reverse(vec[b, n], symbolic_space=symbolic_space)
-                 for n in range(vec.shape[1])]
-                for b in range(vec.shape[0])
-            ]
-        if vec.dim() == 2:
-            return [
-                self.reverse(vec[n], symbolic_space=symbolic_space)
-                for n in range(vec.shape[0])
-            ]
-        # 1-D path: actual structural decode.
-        # Fail loud on NaN/Inf: with NaN, all (diffs*diffs) comparisons
-        # are False and argmin silently returns row 0, masking a real
-        # numerical divergence upstream.
-        finite = torch.isfinite(vec.detach().cpu())
-        if not bool(finite.all()):
-            raise RuntimeError(
-                "RadixLayer.reverse: input vector contains NaN/Inf. "
-                "Numerical divergence must surface, not be silently "
-                "masked. "
-                f"vec[finite]={int(finite.sum().item())}/"
-                f"{int(vec.numel())}.")
-        # Pick the comparison codebook. WS-driven walk if a WS peer is
-        # supplied (preferred); else nearest-PS-codebook fallback.
-        candidate_row_ids = None
-        if symbolic_space is not None:
-            cb = getattr(symbolic_space.subspace, "what", None)
-            W = _active_codebook_prototypes(cb)
-            if W is None:
-                # WS codebook absent (e.g. <codebook>none</codebook>): there
-                # is no WS taxonomy to walk, so fall back to the standalone
-                # PS-table decode (nearest ACTIVE percept -> inverse_table)
-                # rather than emitting an empty slot for every word.
-                symbolic_space = None
-                W = self.active_prototypes()
-            else:
-                # A WS row is structurally decodable only when it is logically
-                # active AND its bound position reaches a META with a live PS
-                # child. Search that intersection directly: inactive reserve
-                # rows are random capacity, while plain/unbound WS rows have no
-                # surface-bytes path and must not shadow a slightly farther
-                # decodable row.
-                active_count = int(W.shape[0])
-
-                def _has_surface_path(pos):
-                    children = symbolic_space.taxonomy_children(int(pos))
-                    if not children:
-                        parent_pos = symbolic_space.taxonomy_parent(int(pos))
-                        if (parent_pos is None
-                                or not symbolic_space.is_meta(int(parent_pos))):
-                            return False
-                        children = symbolic_space.taxonomy_children(
-                            int(parent_pos))
-                    for child in children:
-                        child_pos = int(child)
-                        if symbolic_space._pos_kind.get(child_pos) != "ps":
-                            continue
-                        ps_row = symbolic_space._ps_pos_to_row.get(child_pos)
-                        if ps_row is not None and 0 <= int(ps_row) < self._size:
-                            return True
-                    return False
-
-                bound_rows = sorted(
-                    int(row)
-                    for row, pos in getattr(
-                        symbolic_space, "_ws_row_to_pos", {}).items()
-                    if (0 <= int(row) < active_count
-                        and _has_surface_path(pos)))
-                if not bound_rows:
-                    return b""
-                candidate_row_ids = torch.tensor(
-                    bound_rows, dtype=torch.long, device=W.device)
-                W = W.index_select(0, candidate_row_ids)
+            return b''
+        if vec.ndim > 1:
+            return [self.reverse(row, symbolic_space=symbolic_space) for row in vec]
+        if not bool(torch.isfinite(vec).all()):
+            raise RuntimeError('RadixLayer.reverse: input vector contains NaN/Inf')
+        owner = symbolic_space if callable(getattr(symbolic_space, 'word_surface_for_row', None)) else None
+        rows = None
+        if owner is not None:
+            bank = _active_codebook_prototypes(getattr(owner, 'similarity_codebook', None))
+            if bank is None:
+                return b''
+            rows = [row for row in range(len(bank)) if owner.word_surface_for_row(row) is not None]
+            if not rows:
+                return b''
+            bank = bank[rows]
         else:
-            W = self.active_prototypes()
-        if W is None:
-            return b""
-        # Empty codebook is a clean no-symbol situation, not a
-        # divergence -- bail before argmin sees a [0, D] tensor.
-        if W.shape[0] == 0:
-            return b""
-        # ``active_prototypes`` already bounded the standalone PS search to
-        # occupied rows before applying the percept read transform.  Keep the
-        # size guard explicit for malformed/restored empty stores.
-        if symbolic_space is None:
-            if self._size <= 0:
-                return b""
-        # Move both to the same device + dtype; collapse to [D].
-        target = vec.detach().to(W.device, W.dtype).reshape(-1)
-        if target.shape[0] != W.shape[1]:
-            # CS->PS demux: the recon vector is the muxed [what|where|when]
-            # event, wider than the content-width codebook row -- take the
-            # leading .what slice (mirrors insert_whole's demux). A narrower
-            # vec is a genuine mismatch; bail.
-            if target.shape[0] > W.shape[1]:
-                target = target[:W.shape[1]]
-            else:
-                return b""
-        # Null-slot guard (2026-05-28). Padding / inter-word-space slots
-        # produce near-zero recon vectors. Matching them against any
-        # codebook via argmin would land on whichever row is closest to
-        # the origin and surface a spurious word. Return b"" instead so
-        # the slot renders as empty in the join. Threshold is
-        # conservative: well below the typical recon norm (~1-2 in
-        # MM_xor) but above numerical noise.
-        if float(target.norm()) < 1e-3:
-            return b""
-        # Nearest-row search.
-        diffs = W - target.unsqueeze(0)
-        sq = (diffs * diffs).sum(dim=1)
-        nearest_local = int(torch.argmin(sq).item())
-        nearest_row = (int(candidate_row_ids[nearest_local].item())
-                       if candidate_row_ids is not None else nearest_local)
-        # Standalone fallback: no WS, decode directly via PS table.
-        if symbolic_space is None:
-            try:
-                return self.bytes_for(nearest_row)
-            except IndexError:
-                return b""
-        # WS-walk: nearest may be the META itself, or its WS child.
-        # Resolve the row's position via WholeSpace's lookup tables;
-        # an unbound row (not in _ws_row_to_pos) has no taxonomy entry
-        # and no surface-bytes path -- return b"" rather than
-        # mis-indexing the PS table with an WS row id.
-        ws = symbolic_space
-        nearest_pos = getattr(ws, "_ws_row_to_pos", {}).get(nearest_row)
-        if nearest_pos is None:
-            return b""
-        # Walk to a META node: either the nearest row IS a META, or
-        # it's the WS-child of one (auto-bound under word learning
-        # initializes both the META row and its WS child to the same
-        # seed vector; the META row drifts during training while the
-        # child stays close to seed, so the nearest match often lands
-        # on the child, not the META). Climb one level via
-        # ``taxonomy_parent`` to recover the META in that case.
-        meta_pos = None
-        children = ws.taxonomy_children(nearest_pos)
-        if children:
-            meta_pos = nearest_pos
-        else:
-            parent = ws.taxonomy_parent(nearest_pos)
-            if parent is not None and ws.is_meta(int(parent)):
-                meta_pos = int(parent)
-                children = ws.taxonomy_children(meta_pos)
-        if meta_pos is None or not children:
-            return b""
-        for child in children:
-            ci = int(child)
-            if ws._pos_kind.get(ci) == "ps":
-                ps_row = ws._ps_pos_to_row.get(ci)
-                if ps_row is None:
-                    continue
-                try:
-                    return self.bytes_for(int(ps_row))
-                except IndexError:
-                    return b""
-        return b""
+            bank = self.active_prototypes()
+        if bank is None or not len(bank):
+            return b''
+        target = vec.detach().to(bank).reshape(-1)
+        if target.numel() < bank.shape[1] or float(target.norm()) < 1e-3:
+            return b''
+        target = target[:bank.shape[1]]
+        selected = int((bank - target).square().sum(-1).argmin())
+        if owner is not None:
+            return owner.word_surface_for_row(rows[selected])
+        return self.bytes_for(selected)
 
     # ------------------------------------------------------------------
     # Growth
@@ -14953,7 +14856,7 @@ class MPHFGpuLayer(Layer):
             by_len[L] = (hashes[order].to(device),
                          ids_t[order].to(device))
 
-        # The NULL row: ``\x00`` (byte 0) is the per-row cursor seal / pad
+        # The NULL row: ``\x00`` (byte 0) is the per-row cursor closing / pad
         # sentinel and ``Embedding.create`` seeds it at row 0. An empty /
         # all-zero percept slot resolves here (the NULL char surface), NOT
         # via the hash.
@@ -15574,6 +15477,17 @@ class ShortTermMemory(Layer):
         self._concept_activations = torch.zeros(
             (batch, cap), dtype=dtype, device=device)
         self._max_depth_host = 0
+        from ClauseScope import ClauseScope
+        self._clause_state = ClauseScope.empty(self._buffer)
+
+    def ensure_clause_state(self):
+        from ClauseScope import ClauseScope
+        value = getattr(self, '_clause_state', None)
+        if (not torch.is_tensor(value) or value.shape != (*self._buffer.shape[:2], 2)
+                or value.device != self._buffer.device):
+            value = ClauseScope.empty(self._buffer)
+            self._clause_state = value
+        return value
 
     def ensure_order_state(self):
         """Return shape/device-aligned concept and grammar order slabs.
@@ -15992,6 +15906,9 @@ class ShortTermMemory(Layer):
         activation_slab[:, 0] = concept_activations
         self._depth = self._depth + 1
         self._max_depth_host = self._max_depth_host + 1
+        from ClauseScope import ClauseScope
+        self._clause_state = ClauseScope.push(self.ensure_clause_state(),
+            torch.ones(B, dtype=torch.bool, device=buf.device), torch.full_like(concept_rows, -1))
 
     def push_step_masked(self, ideas, gate_b_1, orders=None,
                          grammar_orders=None, concept_row=None,
@@ -16018,6 +15935,9 @@ class ShortTermMemory(Layer):
         (self._buffer, self._depth, self._orders,
          self._grammar_orders, self._concept_rows,
          self._concept_activations) = state
+        from ClauseScope import ClauseScope
+        self._clause_state = ClauseScope.push(self.ensure_clause_state(),
+            gate_b_1.reshape(B).bool(), torch.full_like(inserted_rows, -1))
 
     @staticmethod
     def functional_push_step_masked(
@@ -16287,6 +16207,10 @@ class ShortTermMemory(Layer):
         if buf is None:
             return
         ks = getattr(self, "_slot_kinds", None)
+        from ClauseScope import ClauseScope
+        reset = torch.ones(buf.shape[0], dtype=torch.bool, device=buf.device) if b is None else (
+            torch.arange(buf.shape[0], device=buf.device) == int(b))
+        self._clause_state = ClauseScope.reset(self.ensure_clause_state(), reset)
         if b is None:
             buf.zero_()
             self._depth.zero_()

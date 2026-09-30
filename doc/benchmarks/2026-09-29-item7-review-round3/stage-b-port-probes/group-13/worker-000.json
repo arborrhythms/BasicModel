@@ -1,0 +1,113 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002524374984204769,
+      "message": "test/test_item9b_interpret.py:16: in test_interpret_reuses_provisional_testimony_and_reverses_by_identity\n    word = interpret.lookup_word([7], [1], form='wug')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018792079063132405,
+      "message": "test/test_item9b_interpret.py:36: in test_grammar_resolution_distinguishes_particular_and_kind\n    word = interpret.lookup_word([7], [1], form='cat')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020976660307496786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.183294605463743e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018707909621298313,
+      "message": "test/test_item9b_interpret.py:67: in test_ordered_word_lookup_keeps_anagrams_distinct\n    ab = interpret.lookup_word([1, 2], [], form='ab')\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018331250175833702,
+      "message": "test/test_item9b_interpret.py:75: in test_unused_one_off_testimony_is_forgotten_at_the_boundary\n    word = interpret.lookup_word([7], [], form='wugg')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 245.00363337493036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07151129096746445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.008226833073422313,
+      "message": "test/test_item9b_interpret.py:151: in test_selected_generic_grammar_ends_the_interpreted_kinds\n    words = [cs.interpret.lookup_word([part], [], form=form)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00202262494713068,
+      "message": "test/test_item9b_interpret.py:192: in test_testimony_and_its_later_definition_are_read_by_the_parallel_field\n    word = interpret.lookup_word([7], [], form='wug')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

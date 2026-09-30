@@ -1,0 +1,197 @@
+{
+  "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk": {
+    "outcome": "not rerun"
+  },
+  "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows": {
+    "outcome": "not rerun"
+  },
+  "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present": {
+    "outcome": "not rerun"
+  },
+  "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs": {
+    "outcome": "not rerun"
+  },
+  "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]": {
+    "outcome": "not rerun"
+  },
+  "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer": {
+    "outcome": "passed",
+    "receipt": "final-fixtures"
+  },
+  "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons": {
+    "outcome": "not rerun"
+  },
+  "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]": {
+    "outcome": "not rerun"
+  },
+  "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]": {
+    "outcome": "not rerun"
+  },
+  "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting": {
+    "outcome": "not rerun"
+  },
+  "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model": {
+    "outcome": "passed",
+    "receipt": "final-fixtures"
+  },
+  "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts": {
+    "outcome": "not rerun"
+  },
+  "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random": {
+    "outcome": "not rerun"
+  },
+  "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row": {
+    "outcome": "not rerun"
+  },
+  "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_inf_right": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_nan_left": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_percept_returns_positive_position": {
+    "outcome": "not rerun"
+  },
+  "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_whole_returns_positive_position": {
+    "outcome": "not rerun"
+  },
+  "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi": {
+    "outcome": "not rerun"
+  },
+  "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_flag_off_does_not_call_stack_route_forward": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_symbolic_space_stack_route_uses_canonical_forward": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_language_layer_reverse": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_off_does_not_call_language_layer": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_codebook": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_v_sym_wired_into_grammar_from_symbolic_space": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_rule_codebook_does_not_determine_parent_vectors": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_subspace_what_stm_contract.py::test_symbolic_space_owns_signal_router": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_subspace_what_stm_contract.py::test_use_stack_router_flag_default_false": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_stack_route_forward_runs_and_writes_subspace_what": {
+    "outcome": "not rerun"
+  },
+  "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_word_space_current_rules": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm": {
+    "outcome": "passed",
+    "receipt": "integration"
+  },
+  "test/test_subspace_what_stm_contract.py::test_stack_router_dispatches_via_syntactic_layer_execute": {
+    "outcome": "not rerun"
+  },
+  "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches": {
+    "outcome": "passed",
+    "receipt": "integration"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "path": "doc/FutureWork.md",
+  "sha256": "eab230d77d1d2317637ae2ce58c50639f4c45fe91f0e73e55f520aa6e1b2ea22",
+  "after": "## 5. Definition rows and interpretation-time discrimination\n\n**Amended (Alec, 2026-09-29).** The earlier n-ary META proposal is replaced\nby `word DEF object` rows in\n[two truths \u00a717](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).\nSeveral definitions express synonymy and polysemy. One derived index returns\nthe objects of a word and the words of an object; learning their codes does\nnot change these identity links. `interpret` writes the definition and\nreplaces the word by its object in the existing inventory row. The grammar\nselects among defined objects from context at interpretation time.\n\nThe remaining learning question is how the chooser ranks those objects in\ncontext and credits a wrong selection through expectation and reconstruction.\nSentences that state a definition, and `Equals` versus `Def`, belong to the\ngrammatical operators update. Definitions' participation in forgetting is\nordinary row participation; any bias by truth kind belongs to item 5.\n",
+  "checks": {
+    "META_allocation_is_no_longer_future_work": true,
+    "DEF_amendment_recorded": true,
+    "old_inbound_anchor_preserved": true
+  }
+}

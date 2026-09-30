@@ -1,0 +1,311 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_property_tiling.py::test_char_class_letter",
+    "test/test_property_tiling.py::test_char_class_digit",
+    "test/test_property_tiling.py::test_char_class_whitespace",
+    "test/test_property_tiling.py::test_char_class_punct",
+    "test/test_property_tiling.py::test_char_class_or_union",
+    "test/test_property_tiling.py::test_complement_is_the_other_whole",
+    "test/test_property_tiling.py::test_layer_matches_function",
+    "test/test_property_tiling.py::test_batched",
+    "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+    "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+    "test/test_property_tiling.py::test_property_spans_letter_runs",
+    "test/test_property_tiling.py::test_property_spans_digit_runs",
+    "test/test_property_tiling.py::test_property_spans_or_union_runs",
+    "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+    "test/test_property_tiling.py::test_property_spans_none_passthrough",
+    "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "completed": [
+    "test/test_property_tiling.py::test_char_class_letter",
+    "test/test_property_tiling.py::test_char_class_digit",
+    "test/test_property_tiling.py::test_char_class_whitespace",
+    "test/test_property_tiling.py::test_char_class_punct",
+    "test/test_property_tiling.py::test_char_class_or_union",
+    "test/test_property_tiling.py::test_complement_is_the_other_whole",
+    "test/test_property_tiling.py::test_layer_matches_function",
+    "test/test_property_tiling.py::test_batched",
+    "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+    "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+    "test/test_property_tiling.py::test_property_spans_letter_runs",
+    "test/test_property_tiling.py::test_property_spans_digit_runs",
+    "test/test_property_tiling.py::test_property_spans_or_union_runs",
+    "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+    "test/test_property_tiling.py::test_property_spans_none_passthrough",
+    "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-01/worker-000.json"
+      ],
+      "pid": 74981,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 433358192,
+      "elapsed_seconds": 7.277726083993912,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_property_tiling.py::test_char_class_letter",
+        "test/test_property_tiling.py::test_char_class_digit",
+        "test/test_property_tiling.py::test_char_class_whitespace",
+        "test/test_property_tiling.py::test_char_class_punct",
+        "test/test_property_tiling.py::test_char_class_or_union",
+        "test/test_property_tiling.py::test_complement_is_the_other_whole",
+        "test/test_property_tiling.py::test_layer_matches_function",
+        "test/test_property_tiling.py::test_batched",
+        "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+        "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+        "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+        "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+        "test/test_property_tiling.py::test_property_spans_letter_runs",
+        "test/test_property_tiling.py::test_property_spans_digit_runs",
+        "test/test_property_tiling.py::test_property_spans_or_union_runs",
+        "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+        "test/test_property_tiling.py::test_property_spans_none_passthrough",
+        "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent"
+      ],
+      "completed": [
+        "test/test_property_tiling.py::test_char_class_letter",
+        "test/test_property_tiling.py::test_char_class_digit",
+        "test/test_property_tiling.py::test_char_class_whitespace",
+        "test/test_property_tiling.py::test_char_class_punct",
+        "test/test_property_tiling.py::test_char_class_or_union",
+        "test/test_property_tiling.py::test_complement_is_the_other_whole",
+        "test/test_property_tiling.py::test_layer_matches_function",
+        "test/test_property_tiling.py::test_batched",
+        "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+        "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+        "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+        "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+        "test/test_property_tiling.py::test_property_spans_letter_runs",
+        "test/test_property_tiling.py::test_property_spans_digit_runs",
+        "test/test_property_tiling.py::test_property_spans_or_union_runs",
+        "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+        "test/test_property_tiling.py::test_property_spans_none_passthrough",
+        "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_property_tiling.py::test_char_class_letter",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005032501649111509,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_char_class_digit",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00024612504057586193,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_char_class_whitespace",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00017004087567329407,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_char_class_punct",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00014479178935289383,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_char_class_or_union",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001277080737054348,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_complement_is_the_other_whole",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00026133400388062,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_layer_matches_function",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005432909820228815,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_batched",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00031704199500381947,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000908292131498456,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005520828999578953,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0013707911130040884,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000563416862860322,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_property_spans_letter_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002010792028158903,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_property_spans_digit_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006846250034868717,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_property_spans_or_union_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005034999921917915,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009794160723686218,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_property_spans_none_passthrough",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.975000284612179e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001062911469489336,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-01",
+  "elapsed_seconds": 14.377658375073224,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 433358192,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-01/collect.json"
+    ],
+    "pid": 74973,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431801616,
+    "elapsed_seconds": 6.824136083014309,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_property_tiling.py::test_char_class_letter",
+        "test/test_property_tiling.py::test_char_class_digit",
+        "test/test_property_tiling.py::test_char_class_whitespace",
+        "test/test_property_tiling.py::test_char_class_punct",
+        "test/test_property_tiling.py::test_char_class_or_union",
+        "test/test_property_tiling.py::test_complement_is_the_other_whole",
+        "test/test_property_tiling.py::test_layer_matches_function",
+        "test/test_property_tiling.py::test_batched",
+        "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+        "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+        "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+        "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+        "test/test_property_tiling.py::test_property_spans_letter_runs",
+        "test/test_property_tiling.py::test_property_spans_digit_runs",
+        "test/test_property_tiling.py::test_property_spans_or_union_runs",
+        "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+        "test/test_property_tiling.py::test_property_spans_none_passthrough",
+        "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

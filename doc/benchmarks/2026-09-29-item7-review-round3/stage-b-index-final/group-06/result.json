@@ -1,0 +1,194 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_codebook_update_law.py::test_law_truth_table",
+    "test/test_codebook_update_law.py::test_law_edge_cases",
+    "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+    "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+    "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+    "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+    "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+    "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+    "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+  ],
+  "completed": [
+    "test/test_codebook_update_law.py::test_law_truth_table",
+    "test/test_codebook_update_law.py::test_law_edge_cases",
+    "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+    "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+    "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+    "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+    "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+    "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+    "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-06/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-06/worker-000.json"
+      ],
+      "pid": 10917,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 425821528,
+      "elapsed_seconds": 3.6217547500273213,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-06/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_codebook_update_law.py::test_law_truth_table",
+        "test/test_codebook_update_law.py::test_law_edge_cases",
+        "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+        "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+        "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+        "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+        "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+        "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+        "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+      ],
+      "completed": [
+        "test/test_codebook_update_law.py::test_law_truth_table",
+        "test/test_codebook_update_law.py::test_law_edge_cases",
+        "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+        "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+        "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+        "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+        "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+        "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+        "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_law_truth_table",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00019687495660036802,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_law_edge_cases",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001593749038875103,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003163415938615799,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0013853339478373528,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0023265000199899077,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017364589730277658,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004183329874649644,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003907090285792947,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_codebook_update_law.py::test_install_without_codebook_returns_false",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 7.862504571676254e-05,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-06",
+  "elapsed_seconds": 7.326481540920213,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 425821528,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-06/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-06/collect.json"
+    ],
+    "pid": 10898,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 422282464,
+    "elapsed_seconds": 3.477649333071895,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-index-final/group-06/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_codebook_update_law.py::test_law_truth_table",
+        "test/test_codebook_update_law.py::test_law_edge_cases",
+        "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+        "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+        "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+        "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
+        "test/test_codebook_update_law.py::test_install_and_dark_discipline",
+        "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+        "test/test_codebook_update_law.py::test_install_without_codebook_returns_false"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

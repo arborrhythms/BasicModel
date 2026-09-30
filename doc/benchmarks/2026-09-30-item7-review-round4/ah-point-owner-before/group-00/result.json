@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-point-owner-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-point-owner-before/group-00/worker-000.json"
+      ],
+      "pid": 69450,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 488637712,
+      "elapsed_seconds": 5.76171312504448,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-point-owner-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.01149087492376566,
+          "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py:16: in test_program_meaning_reads_ended_points_from_their_rows\n    meaning = LanguageSpace.program_meaning(f.language, entry, f.registry)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:13627: in program_meaning\n    values[i] = registry._payload(('sym', int(native_ids[i]))).to(leaves)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:1992: in _payload\n    row = _existing_row(self.space, reference)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-point-owner-before/group-00",
+  "elapsed_seconds": 11.70507995900698,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 488637712,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-point-owner-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-point-owner-before/group-00/collect.json"
+    ],
+    "pid": 69419,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435291408,
+    "elapsed_seconds": 5.596328208921477,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ah-point-owner-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

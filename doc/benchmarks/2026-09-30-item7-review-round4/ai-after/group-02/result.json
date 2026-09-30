@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes"
+  ],
+  "completed": [
+    "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-02/worker-000.json"
+      ],
+      "pid": 72946,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 564970936,
+      "elapsed_seconds": 7.607704082969576,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes"
+      ],
+      "completed": [
+        "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.904256833018735,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 64 docs from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi/data/fineweb\nLoaded 64 docs -> 2558 sentences (1927 train, 317 val, 314 test)\nStarting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 8 (\u0394=0.450s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=False).\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-02",
+  "elapsed_seconds": 12.10991737502627,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 564970936,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-02/collect.json"
+    ],
+    "pid": 72884,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430736608,
+    "elapsed_seconds": 4.271124541992322,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-after/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+  ],
+  "completed": [
+    "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014925840077921748,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004724999889731407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040429201908409595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007192080374807119,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030199160100892186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011793292011134326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001230000052601099,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0053558750078082085,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

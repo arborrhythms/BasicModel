@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_query_work_budget.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

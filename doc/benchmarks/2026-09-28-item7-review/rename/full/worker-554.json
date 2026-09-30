@@ -1,0 +1,36 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on"
+  ],
+  "completed": [
+    "test/test_idea_decode.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode.py::test_idea_decode_defaults_off",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.545804303139448e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode.py', 67, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.624994032084942e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode.py', 75, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

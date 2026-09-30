@@ -1,0 +1,25 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+    "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+  ],
+  "completed": [
+    "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06738424999639392,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+  "device": "cpu"
+}

@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_pair_trains_twice_and_commits_once ____________________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_compose_pair_driver.py:91: in test_pair_trains_twice_and_commits_once
+    torch.testing.assert_close(m._reconstruction_stack()._choice_actions, chosen)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 32 / 608 (5.3%)
+E   Greatest absolute difference: 5 at index (0, 1)
+E   Greatest relative difference: 2.0 at index (0, 3)
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=========================== short test summary info ============================
+FAILED test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once
+1 failed in 2.80s

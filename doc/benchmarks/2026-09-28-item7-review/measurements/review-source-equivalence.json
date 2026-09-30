@@ -1,0 +1,131 @@
+{
+  "exact_source_match": false,
+  "differences": {
+    "bin/Layers.py": {
+      "measured": "8cd13be6a0f82cb6b9b23b323b2970cf760db2b5d7de0177da96f23104d1f2ed",
+      "current": "052b9f44c9b24a5e1b4dbbdba2594571210a312ea7b41bd081abfbbd83d63c3f"
+    },
+    "test/index_fixtures.py": {
+      "measured": "750003af2e2e9636f454b537f6ae1ffa354e5dcccc26c2fe415daf407a4ffaa2",
+      "current": "9f96367e979b6a7436b9b8405c860f65804fc24b80c435540576c70c4b5f43c7"
+    },
+    "test/property_fixtures.py": {
+      "measured": null,
+      "current": "a24fb47bf67a11758e6975e87551f9ce96d09ce9cdc39d00b5f1564aff11a614"
+    },
+    "test/test_active_codebook_reads.py": {
+      "measured": "5894647665c9b211939e3383ee679bcba2341291cf32d8d2f1732fa4c3a4564d",
+      "current": "310ea8b0973c49d6ade6eb0f455b7cc1c35cb827ab4f1221a3925b261e48e862"
+    },
+    "test/test_analysis_attention_gate.py": {
+      "measured": "dc00041cb290cbf7a2f6075b93e035826dbc0b9d165df8e936c2843cc4dd7b20",
+      "current": null
+    },
+    "test/test_basicmodel.py": {
+      "measured": "4ef21395a6611e8c0a40d3c0c02e3fa501dda3425d3f68ddb019816137676a97",
+      "current": "dc814a1dd485cb8d6f8ad5d2986e9ea507728441a061d4f27e2611b4ebf77413"
+    },
+    "test/test_item7_storage.py": {
+      "measured": "d52786cf28960e208029ab5c094434b814d0811290407c253518b12e574dea45",
+      "current": "944800378e939db6161e8a5eff64cb9754ea601f394566d102d45df55fe4931d"
+    },
+    "test/test_lexical_reference_orders.py": {
+      "measured": "e5908219ed68c50eb6b6b6284047032f20db834105aec2b47c7438b34f9ba80d",
+      "current": "38723e6772f18c2725b97e0f8b884f94e31704a84642e40ae700dd4488214ff5"
+    },
+    "test/test_lies_can_be_learned.py": {
+      "measured": "7615003cc8ab6b4737633cd1c8407c4421de47f58657700e490dcfb20468ce9a",
+      "current": "fc7cca949bd63792e458f9ed58c226b6104aaf52a991d206132819178c6fe8e8"
+    },
+    "test/test_merge_structural_not_operator.py": {
+      "measured": "cac2a07f37ede5fe31c7a65f28e4d35a7c0c30f61129623b927fbd1c91214754",
+      "current": null
+    },
+    "test/test_meronomy_ladder.py": {
+      "measured": "3a00b8722fc2e7e58ffd8d9f7b8e356ad36e6cf7a2e0c54362223b81fe6fcc17",
+      "current": "d0d958f62e5354458fc8b66a5725f663590dc57f1a0f375bb1f9c1302cbc147b"
+    },
+    "test/test_operator_codebook_shaping.py": {
+      "measured": "cbc39754ac0fd1e2eb2e29c5d7ff3ff8542fe1216f28210f33339cf23e6abbab",
+      "current": null
+    },
+    "test/test_operator_superposition.py": {
+      "measured": "2f4f4582e197dab185b7a44b229077fb4ac69b9b387e21b0ab6cc1f8d839c6c3",
+      "current": "7304febc7cc6bbcd5ea687682bcbbc0e47aa09c0ef8124c340b613c5f3aef79c"
+    },
+    "test/test_output_walk.py": {
+      "measured": "fd3adda1f337ddcb07c45de5146281883928d0f9a04818b4950ea74ba618a7bc",
+      "current": "10f8b062d908027e9f6e34642794140edd870c3eec97f927704d852b35ac43ca"
+    },
+    "test/test_ps_ss_binding.py": {
+      "measured": "52d2ea2d49e7be5444aab8e01b0536af0d12962449585f7c772fa3550d8e7dab",
+      "current": null
+    },
+    "test/test_query_work_budget.py": {
+      "measured": "1f4da19d6e5b14cddbce947cb707caa12ee5f6e5d5cb91f68fd69c6d9c3b737a",
+      "current": "aa9222cbc42510979cc07953b273ac1e90e9f9cff5303b03fe8ef2860eaf38f2"
+    },
+    "test/test_relative_rule_detection_collapsed.py": {
+      "measured": "7d7569f59e65c0dda46e5982648169d691fbb1edcc18d4b71797a41b7361c1bc",
+      "current": "01bae45c241e2d22afd3c7d2edffd1e3d8608d267e71924d6ae4f576b4bb9ebc"
+    },
+    "test/test_relative_sentence_codebook_insertion.py": {
+      "measured": "1a46e307e00f36ed845d8f32a3ed7e92531af7c0aad046820446f92aaa166f86",
+      "current": "4eea304236fb9ab882a939538a42ffe09705a09f59c915d8ab65ca7648c941bd"
+    },
+    "test/test_replacement_kernel_contracts.py": {
+      "measured": "d8dbd85b0d63efda8ae389e6275c3a0a4378847b175dedc70b9da925e898e8b1",
+      "current": "bd14e66b81a224526b1bf8b1d5272a41d7d0a5fe26556721f58c3786f07e7b83"
+    },
+    "test/test_search_then_mint.py": {
+      "measured": "11b3651788bdd2b6238788bc6c47f7f2815999e10d430f053ef186db7f25f13a",
+      "current": null
+    },
+    "test/test_semantic_categories_pipeline.py": {
+      "measured": "c5deb1e5cadd4afef7d18f04e25a4c637f4b04839a58909d2632c1cd18cae720",
+      "current": "53a939f07daa87191c49f480c0b6063fb05ffa95f25030d58eb22d602479f3b8"
+    },
+    "test/test_serial_stm_split.py": {
+      "measured": "19bb36cb7e5ef46e0f9b93a191978b30462fb61d2e7cec2ec8925e0cc071f924",
+      "current": "c5a79d75a7f9175aaf4482bfa481029efa9c25d455e1a50d71a7d38b17a233ad"
+    },
+    "test/test_ss_codebook_operations.py": {
+      "measured": "1b99be0dde83e32e68bc22bc3c70aa1386fcbad23999e7e6e1bc487ae6ea08ab",
+      "current": null
+    },
+    "test/test_taxonomy_policy.py": {
+      "measured": "c036f292998b336ef55c3ef86c0f28325b4ef8e282549773ad218f388e4d3788",
+      "current": "2469da52bddbb34534cf9bedfe4f59213bfd73ba2b345d476ff60941eb891667"
+    },
+    "test/test_topk_priming_codebook_growth.py": {
+      "measured": "c2dbf59a822dc0bb5483ba91c1b066ce2e881cd60f80abc29098f9bcdbbe03fc",
+      "current": null
+    },
+    "test/test_truth_criterion_gates_learning.py": {
+      "measured": "b2a277ec01037bd49c8d12f073a54c7903ab2598e39d1dc4911cd13cd1604a7b",
+      "current": "5b396dc01e8aebddbf1632b3935a7a64ec62e1914eb1ba4791941c9a38336d0d"
+    },
+    "test/test_truth_ideas_routing.py": {
+      "measured": "79cd8ae71096d682c3c20716df1f791aaf69a9c98e60e518f17986780c270103",
+      "current": "8e1582c73cff096fd7a8d2df17ee210ffb6095d9b028d4afe0f723e30ed1a648"
+    },
+    "test/test_two_truth_stores.py": {
+      "measured": "6c7f1534d97e03da5b9b0e40981caa0eb64b8ce0837a5867b66b8636e89ed5a5",
+      "current": "323bc973bffaa55014ae3cc0a4404066a5149481cfbd519ec147f6fd2d16384e"
+    },
+    "test/test_type_run_spans.py": {
+      "measured": "a00b16237731dd34a7070d4eeb3b24a159d68eb1b622da01792f272ddf0634f5",
+      "current": "96090f331d93e90a5f240022b4a9537af940ecf15f7233d36f7ad898bcbdba89"
+    },
+    "test/test_where_encoding_recovery.py": {
+      "measured": "d1a81d4f98d2fbc99f8d11a5f4f9c92d941a983d4147ab3e8bda2c27bb2e2f98",
+      "current": "cd9b75d248e229551cacb4b02748ed9728d380194a5ced1ab3d654b96de4c2fc"
+    }
+  },
+  "runtime_executable_unchanged": true,
+  "runtime_evidence": "The prior AST audit covers the luminosity docstring change. A fresh AST comparison against that archived source also proves the TruthLayer LTM-view docstring correction is non-executable. Every other runtime file is byte-identical to the measurement.",
+  "prior_audit": "final-source-equivalence.json",
+  "data_configuration_and_build_files_exact": true,
+  "fixture_disposition": "../sweep-fixtures/integration.json",
+  "retired_cases": "../sweep-fixtures/retired-cases.json"
+}

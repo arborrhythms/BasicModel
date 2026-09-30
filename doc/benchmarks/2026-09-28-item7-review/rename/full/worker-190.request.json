@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-190.recycle.json"
+}

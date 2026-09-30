@@ -1,0 +1,1209 @@
+# The operator catalogue
+
+> **Status:** specification in progress, written by Claude on 2026-09-29 from
+> Alec's statements of 2026-09-27 to 2026-09-29. It is the specification of the
+> todo's *grammatical operators update*, which is taken up after item 7 is
+> accepted: "let's iron out the operators after getting 7 accepted". Nothing in
+> it is built and nothing in it changes item 7. What the word classes *mean* is
+> in [accessible mind §2.0 to §2.0.1](2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)
+> and [§2.6.2](2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-for-concepts-not-percepts-or-symbols),
+> and is not repeated. This document is the catalogue: which operators there
+> are, under which names, with which faces and operands, and which are retired.
+> **Decided** is Alec's decision. **Proposed** is his proposal, not yet
+> decided. *Claude's reading* and *Claude's answer* are Claude's, to be
+> confirmed. *Measured* means a probe was run on the candidate of 2026-09-29
+> and nothing in the repository was edited for it.
+>
+> *Amended (Alec, 2026-09-29).* Item 6.9 comes first: XOR_grammar is to
+> pass, refining what operators it needs, "so that we can prevent any
+> grammatical regression"
+> ([6.9 plan](../plans/2026-09-29-item-6-9-xor-grammar.md)). The rest of
+> this catalogue is made under that baseline. "The operator rename can also
+> be future work": the renames of section 3 and the candidate names of 3.9
+> are in [FutureWork](../FutureWork.md#operator-names-future-work-alec-2026-09-29),
+> and what each operator is to do stands here.
+
+## 1. Rules that hold of every operator
+
+1. **Effects, not values.** An operator has no return value; it has reads and
+   writes over the ten subsystems
+   ([accessible mind §1](2026-09-20-accessible-mind-subsystems.md#1-principle)).
+2. **Effect completeness** *(decided, 2026-09-28: "yes")*. The list of an
+   operator's writes is exhaustive: what is not listed is not written. It is
+   declared, and checked at load.
+3. **Face invariance** *(decided, 2026-09-28: "yes, unless that causes
+   problems as we continue to refine the operators")*. An operator's effects
+   are the same in every face it holds. A face may forbid a write and never
+   adds one; an operator that needs another effect in another face is another
+   operator.
+4. **One write per subsystem per round** *(decided in direction,
+   2026-09-28)*: "sounds advisable unless there is a reason to do something
+   else, since it would aide pipelining".
+5. **Operand kinds are declared**, field or symbol
+   ([6.8 plan §6a](../plans/2026-09-27-item-6-8-one-attention.md#6-questions-for-alec-none-blocking-68-1--6a-and-6b-answered-2026-09-27)).
+6. **No operator leaves a scalar** *(decided, 2026-09-29)*. "We don't process
+   scalars", and "the mind can understand concepts directly instead of
+   reducing them to scalars." What an operator leaves is conceptual content.
+   *Claude's reading:* whether an idea is true is read from the evidence pair
+   of the content that `query` returns, which is for, against, both or
+   neither, and not from an operator that reduces the idea to a number.
+7. **A pair is named as a pair** *(Claude's reading of "pairs better with
+   analyze")*. Where the forward and the reverse of an operator have names of
+   their own, the operator carries both: `synthesize` and `analyze`,
+   `symbolize` and `conceptualize`.
+8. **An operator is not named for a part of speech** *(proposed, Alec,
+   2026-09-29)*. "We might choose operator names which are not linked to
+   parts of speech; presumably, there will be enough pressure on the
+   operators that the correct operators will be chosen (regardless of their
+   name)." **Decided with it (Alec, 2026-09-29: "Yes"):** whatever the code
+   needs to know of an operator is a declared property of its rule, and the
+   name is never consulted. Section 3.9.
+9. **Alternatives may be supplied, and learning chooses** *(proposed, Alec,
+   2026-09-29)*. "This would suggest that even supplying multiple
+   alternative implementations (up to a point) would allow learning to
+   chose the best fit." Section 3.9.
+
+## 2. The catalogue
+
+| Today | After the update | Operands | Faces | Status | Section |
+|---|---|---|---|---|---|
+| `not`, `non` | the same | field | compose, generate | decided 2026-09-28; two defects logged | 3.8 |
+| `conjunction`, `disjunction` | the same, over symbols | field | compose, generate | decided 2026-09-28 | 3.8 |
+| `intersection`, `union` | the same, over vectors of conceptual space | field | compose, generate | decided 2026-09-28 | 3.8 |
+| `interpret` | the same; the link is `word DEF object` | symbol | compose, generate | decided 2026-09-29, in item 7 | 3.8 |
+| noun, adjective | `intersection`: symmetric, idempotent | symbol | compose, generate | **decided** 2026-09-29; three gaps measured | 4 |
+| compound | sub-typing: a selection among the head's cases | symbol | compose, generate | **decided** 2026-09-29 | 4 |
+| verb | a modifier of the noun phrase: a projection within the sentence, a transformation between events; its object sub-types it | symbol | compose, generate | the candidate (4.4); the object: "Sounds correct" (5.6); one gap measured | 4, 5.6 |
+| modal | a third projection, after the verb phrase's: a dimension, not an order | symbol | compose, generate | the dimension **decided** 2026-09-29 (4.4); not scheduled | 4 |
+| adverb | a modifier of a modifier, multiplicative | symbol | compose, generate | **decided** 2026-09-29 | 4 |
+| determiner | the inverse of the fold: "a" leaves the extension one order down, "the" binds one member of it | symbol | compose, generate | Alec's proposal, 2026-09-29 (5.2) | 5.2 |
+| `generic` | the choice not to lower | symbol | compose, generate | Claude's reading | 5.3 |
+| `lift`, `lower` | intended to raise and lower the order; "perhaps" to lift and lower a dimension | symbol | compose, generate | future work, "or at least after item 6" (Alec, 2026-09-29; 5.4) | 5.4 |
+| `chunk` | `synthesize`, its reverse `analyze` | symbol | compose, generate | **decided** (the name) | 3.1 |
+| `sum`, `product` | `sum` as a mean, and `product` | symbol | compose, generate | **decided**: "should be provided" | 3.2 |
+| `bind` | open | symbol | | open | 3.3 |
+| `quantize` | `symbolize`, its reverse `conceptualize` | symbol | thought | **decided** (the names); the faces are Claude's reading | 3.4 |
+| `arma` | `expect`, or nothing | symbol | thought | open: "(?)" | 3.5 |
+| `what`, `lookup` | `query` | symbol | thought | **decided** | 3.6 |
+| `true` | retired | | | **decided** | 3.7 |
+| `exist` | retired | | | **decided**; one consequence open | 3.7 |
+| `part`, `whole`, `equal` | the same; they consult the symbol codebook, and `query` consults LTM | symbol | compose, thought, generate | the rows are **decided** (two truths); where each looks is Alec's, 2026-09-29 (6.2) | 6 |
+| `implies` | "a relation candidate for LTM", needing no inverse | symbol | compose | proposed, Alec, 2026-09-29 (6.1) | 6.1 |
+| `operator` | a kind of row and not a rule; the name is this catalogue's word for every rule | | | the kind is **decided** (two truths) | 6.2 |
+| none | none: a sentence that says what a word names is an `equal` | | | Alec, 2026-09-29: "I guess we only need equal?" (6.3) | 6.3 |
+| `surface` | a surface transformation of words, "like tense and aspect": one operator, four suboperations | symbol | compose, generate | Alec, 2026-09-29 (7); **item 5.5** (2026-09-30) | 7, 9 |
+| `preposition` | a clausal formula that makes an adjective or an adverb: the compound, selecting among the head's cases | symbol | compose, generate | **decided** 2026-09-30, closed out in item 5.5 (9) | 9 |
+| `tense`, `aspect` | prepositions of the verb phrase with none written, selecting among its phases | symbol | compose, generate | **decided** 2026-09-30, item 5.5 (9) | 9 |
+| `morphology`, `null` | retired; markers are leaves and `surface` handles forms | | | item 5.5 (9) | 9 |
+
+## 3. The changes, one by one
+
+*Amended (Alec, 2026-09-29):* "The operator rename can also be future
+work." The new names below (`synthesize` and `analyze`, `query`,
+`symbolize` and `conceptualize`, `expect`) wait in FutureWork. What each
+operator is to do, decided below, stands.
+
+### 3.1 `synthesize`, and `analyze`
+
+Alec, 2026-09-29: "Should 'analyze' and 'synthesize' be written to the
+grammar as operators, even though they are used in the perceptual stage? My
+feeling is there is no need to do so, but having synthesize available might
+help for idiomatic expressions, assuming that we can continue to chunk
+/beyond/ the word level." And: "Chunk should be renamed as synthesize (which
+pairs better with analyze)."
+
+*What the code has (read).* The grammar files already name the two faces of
+the perceptual cover: the `<PartSpace>` section has a `<Synthesize>` face
+and an `<Analyze>` face, each with the same four rules, `stop`, `boundary`,
+`uniform` and `chunk`. `chunk` adds its two operands, and its reverse
+returns the other operand exactly when it is given one. `chunk` is also
+declared in `<compose>` in `ladder.grammar`, the grammar of the ladder
+configurations, `MM_ladder_idiom.xml` among them, where it is a candidate
+on a pair of constituents that the analysis tiling places in one coarser
+whole, and an admitted chunk is a concept over its member concepts,
+admitted by recurrence. So chunking beyond the word exists already, in that
+grammar; `complete.grammar` has the operator in its perceptual section
+only.
+
+*Claude's answer.* No second operator is needed. `synthesize` is one
+operator and `analyze` is its reverse face, as every operator has a forward
+and a reverse. Keeping `synthesize` in `<compose>` is what serves the
+idiom: "kick the bucket" is synthesized from three words and admitted by
+recurrence as one concept. **One caution.** WholeSpace's analysis, the cut
+of the field by its wholes, is not the reverse of a synthesis. It is a
+different process, and after the rename the word names both.
+
+### 3.2 `sum` and `product`
+
+Alec, 2026-09-29: "Sum (mean) and product over concepts should be provided
+in case the grammar can use them, but I'm not sure what they might
+correspond to in English (even though Boole felt they were paramount)."
+
+*What the code has (read).* `sum` adds its operands and `product`
+multiplies them, dimension by dimension. `sum` recovers one operand exactly
+given the other; `product` raises, since a zero annihilates. `implies`, the
+carrier of item 7's implication rows, is built on `sum`.
+
+*Claude's reading.* "Sum (mean)": the sum is a mean. A mean of two codes
+stays inside the chart, and a sum leaves it; and the mean keeps the exact
+inverse, the other operand being twice the mean less the one given.
+`implies` inherits whatever `sum` becomes, which is to be checked when it
+changes.
+
+*What they may correspond to in English* (Claude's notes; the references
+were checked on 2026-09-29):
+
+| | Boole | in English | reference |
+|---|---|---|---|
+| product | `xy`, "white sheep": election within election | restriction by a modifier or a clause; in compositional distributional semantics "men who like Mary" is the vector of *men* multiplied, dimension by dimension, by what the clause supplies | Boole 1854; Sadrzadeh, Clark & Coecke 2013 |
+| sum | `x + y`, "men and women", of classes with nothing in common | the "and" that makes a plurality: "John and Mary" as the sum of two individuals, a plural being what is closed under sum | Boole 1854; Link 1983 |
+
+If the noun phrase is settled for election (section 4), the product is the
+graded form of what an adjective does, and `intersection` the crisp form.
+
+### 3.3 `bind`
+
+Alec, 2026-09-29: "Should 'bind' be handled within the grammar?"
+
+*What the code has (read).* `bind` is a binary operator of `<compose>`
+whose rule marks its second operand a pronoun. Its forward is a fixed rule:
+it returns the nearest participant to the left. It has no reverse; it
+raises. A second path, a ranking of participants by what the verb
+licenses ("want", "persuade"), is reached only when participants are
+supplied, which the runtime does not do. It also stands for a missing or controlled noun phrase, where there
+is no word at all. Three other things carry the name: the `bind` and `mint`
+candidates of the identity system
+([item 6.5](2026-09-26-independent-components.md#27-tie-to-the-grammatical-derivation)),
+for which "the" is the cue; the binding of a word to an earlier occurrence,
+which two truths §3.5 makes a decision of interpretation; and
+`conceptBinding`, a setting, which is unrelated.
+
+*Claude's answer.* Yes, within the grammar, because it is a choice and the
+chooser makes the choices; and as one mechanism and not four.
+
+* Where there is a word, a pronoun or "the cat", binding is `interpret`'s
+  choice of object. Where there is a description, "the black cat", it is
+  `lower`'s, and it is the same choice (5.2). Two truths §3.5 already says so: the candidates of
+  interpretation are the word's types *and* the earlier occurrences. The
+  identity system's `bind` and `mint` are that choice seen from its side.
+* Where there is no word, the missing subject of "she wants to leave", an
+  operator is still needed to supply the participant, and `bind` is its
+  name.
+* The nearest-to-the-left rule is retired in both cases. The candidates are
+  the live constituents and the frames of the situation, and the choice is
+  learned.
+
+### 3.4 `symbolize` and `conceptualize`
+
+Alec, 2026-09-29: "Quantized can be replaced with Symbolize and
+Conceptualize, but those are lower level operators that might only be
+useful in the thinking grammar."
+
+*What the code has (read).* `quantize` is an identity in `<compose>` and
+`<generate>`. Its thought executor already does both things, by the kind of
+its operand: given a vector it finds the nearest allocated concept, and
+given a reference it returns that concept's vector. The name `symbolize` is
+held today by a binary composition layer that no grammar file declares, and
+is freed by retiring that layer.
+
+*Claude's reading.* One operator with two faces, in `<thought>` only:
+`symbolize` takes content to its symbol and `conceptualize` takes a symbol
+to its content. Reading needs neither: a word arrives as a symbol and
+`interpret` gives its object, and the closing symbolizes an idea.
+
+### 3.5 `expect`
+
+Alec, 2026-09-29: "ARMA should probably be replaced with 'expect', but I
+think that is no longer necessary in the grammar. (?)"
+
+*What the code has (read).* `arma` is an identity in `<compose>` and
+`<generate>`. Its thought executor returns the predictor's estimate of what
+comes next. Its one user is the anticipatory expectation policy, which
+requires `arma` in the thought catalogue when its weight is above zero; the
+weight is `0` in `model.xml` and no configuration sets it. The expectation
+itself is made by the predictor, at the closing, and at every bracket under
+item 6.8, with no operator involved.
+
+*Claude's answer.* It is not needed in `<compose>` or in `<generate>`.
+There it does nothing, and `<compose>` may not read expectation at all,
+which is the purity rule. In `<thought>` it is the one way a thought can
+ask what is expected, and it leaves content, the expected idea, as rule 6
+requires. So the choice is between a thought-only `expect` and nothing
+until the anticipatory policy is wanted again. Question 6 of section 10.
+
+### 3.6 `query`
+
+Alec, 2026-09-29: "'What' and 'lookup' can both be replaced with 'query'.
+Query is mostly the what function, since it returns conceptual content, and
+we can lookup conceptual content by providing what, where, when, but the
+answer (even if it as a query that requires a time or place) should be
+returned as conceptual content."
+
+*What the code has (read).* `what` is unary: an interrogative description
+retrieves frames from the store by cue, or schedules a subgoal. `lookup` is
+binary, over two concepts, returns a set, and has no reverse. `query` is
+already the name of a built-in query that runs `lookup`'s executor, and of
+a legacy layer, a geometric test of parthood that the production grammar
+rejects; the legacy layer is retired to free the name.
+
+**Decided.** One operator, `query`. It is given a what, a where or a when,
+and what it leaves is conceptual content.
+
+*Claude's reading, to confirm.* It is unary: its operand is one description
+with its open roles, and the cue may fill any of what, where and when. When
+several rows answer, what it leaves is their union, which is a temporary
+whole and symbolic
+([6.8 plan §6a](../plans/2026-09-27-item-6-8-one-attention.md#6-questions-for-alec-none-blocking-68-1--6a-and-6b-answered-2026-09-27)).
+A question of when or where is answered by the content of the row found;
+its `.when` and `.where` are the row's address and are not returned in
+place of content. `query` is not the table of definitions, which belongs to
+`interpret`
+([two truths §17.4](2026-09-16-two-truths-ideas-and-relations.md#174-the-table)).
+
+### 3.7 `true` and `exist`
+
+Alec, 2026-09-29: "'True' is reducing a conceptual vector to a scalar, but
+we don't process scalars, so it's really not necessary." And: "'Exist' can
+similarly be reduced to something like true(query), so it is also redundant
+since the mind can understand concepts directly instead of reducing them to
+scalars."
+
+**Decided.** Both are retired, by rule 6.
+
+*Two consequences (read).*
+
+* **Item 7 names `true`.** Its exit criterion in the todo asks for "the
+  `true` operator over the ended clause declared in `<thought>` and
+  executable", and the candidate has it. Item 7 is accepted as it is
+  written; this update retires the operator and that criterion with it.
+* **`exist` is also the grammar's absolute start.** `exist_O1` is the start
+  state named `absolute_truth`; the rule of `<compose>` that closes an
+  absolute sentence is `exist`, an identity; the carriers of `generic` and
+  of the thought operators are built on it; and two truths §3.1 defines
+  fusion as "the grammar's existing reduction of an absolute S to depth 1
+  (the `exist_O1` start)". What is retired without difficulty is its
+  thought face, the check of a description against facts. The start needs
+  another way of being said. *Claude's reading:* none is needed. A sentence
+  is absolute when its sequence has come down to one slot at its closing
+  and relative when it has come down to three, which item 7.5 already
+  decides by when STOP becomes a candidate. Question 7 of section 10.
+
+### 3.8 What was decided earlier in the pass
+
+* **`not` and `non`** (2026-09-28). `not` exchanges the two poles and is
+  its own inverse. `non` sets the expressed pole to zero, is non-affirming,
+  and has no inverse. Both act at any order, on the pole a concept
+  expresses, and on evidence, never on trust. Two defects of the code are
+  logged and are for this update: `NonLayer` computes `1 − x`, which is
+  Boole's complement and affirms; and `ConjunctionLayer` reads the greater
+  of the two poles, which `not` cannot change
+  ([accessible mind §2.6.2](2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-for-concepts-not-percepts-or-symbols)).
+* **The two pairs of connectives** (2026-09-28): "conjunction/disjunction
+  and intersection/union, the prior operate over symbols, and the latter
+  operate over vectors in conceptual space."
+* **`interpret`** (2026-09-29) is a unary that replaces a word by its
+  object, under every binding, and its link is a definition row whose two
+  operands are symbols
+  ([two truths §17](2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29)).
+  The sentence that *states* a definition, and the choice between `Equals`
+  and `Def` for it, are this update's (6.3).
+
+### 3.9 Names that are not parts of speech, and alternatives
+
+Rules 8 and 9 above, both proposed by Alec on 2026-09-29. They continue
+what is decided: no word is anchored to an operator
+([operators have no predefined surface](../../todo.md)), and part of speech
+is a role in a derivation and not a property of a row.
+
+**Which names are parts of speech.** Six: `verb`, `adverb`, `preposition`,
+`tense`, `aspect` and `morphology`. The rest are names of what is
+computed, `intersection`, `lift`, `lower`, `sum`, or of a relation, `part`,
+`equal`, `implies`. The determiner has no operator of its name; it is
+`lower` by a comment in the grammar file.
+
+**Names are not inert in the code today** *(read and counted)*. The code
+tests an operator by its name in about 140 places, 26 of them for the six
+names above. Three kinds of test:
+
+| where | example | what the name decides |
+|---|---|---|
+| the reverse program, `reverse_binary_step` | `if name in ("verb", "adverb")` | which inverse is run |
+| item 7's clause scope and journal | `predicate = form == 'VP' or name == 'verb'` | which constituent of a sentence is its predicate |
+| the same | `name in ('lower', 'bind', 'surface', 'preposition')` | which operand is the head, when the rule does not say |
+
+So to rename an operator today is to change what the code does. *What the
+proposal requires:* whatever the code needs to know of an operator is a
+declared property of its rule, and the name is never consulted. The
+grammar file has such properties already, `clause`, `head` and
+`reference`, and the tests above fall back on the name where a rule has
+not declared them.
+
+**The declared properties are where the parts of speech still are.**
+`clause="VP"`, `clause="S"`, `reference="I2:pronoun"` and
+`reference="I1:generic"` say of an operator what part of speech its result
+or its operand is. Some such declaration is needed, because a row has
+roles: three slots, `row, R, row`, and the closing must know which
+constituent fills which. *Claude's reading:* what is declared is the role
+in the row, subject, relation or object, and the head among the operands;
+and `VP` and `pronoun` are then names for those, not further facts.
+
+**Candidate names**, by what is computed. They are suggestions, and they
+are future work (Alec, 2026-09-29).
+
+| today | what it computes | candidate |
+|---|---|---|
+| `verb` | a gain, read from its second operand, on the values of its first (5.6) | `transform` |
+| `lift` | puts its two operands side by side: where one is silent the other's value stands (5.1) | `extend`, with `project` its reverse (5.4) |
+| `adverb` | scales another operator | `modulate` |
+| `preposition` | relates two operands by place | `relate` |
+| `tense` | shifts the index of time | `shift` |
+| `morphology` | inflects the surface form | `inflect` |
+| `aspect` | nothing; a rewrite is planned | retired, or `rewrite` when it exists |
+
+**Alternatives.** The design already supplies them: item 7.5 is one
+softmax over every operator at every location, so a second implementation
+of an operator is one more candidate. It is also the way to settle 4.4
+without deciding it in advance: both implementations of the verb are
+declared, under two names, and what is chosen is measured. Three things
+bear on "up to a point".
+
+* *Learning chooses only between alternatives that the objective tells
+  apart.* Two operators that fit equally share the credit, and neither is
+  chosen. For the two implementations of the verb the objectives do
+  differ: recovering the two phrases from the stored point favours the one
+  with a reverse that needs no witness, and predicting the next event
+  favours the one that gives the noun phrase as the verb leaves it. So
+  each may be chosen in its own place, which is the proposal of 4.4 as
+  something to be measured.
+* *That the pressure is enough has not been shown.* `XOR_grammar` has
+  `conjunction`, `disjunction` and `not` to choose from, and answers one
+  half to everything
+  ([two truths §15.1](2026-09-16-two-truths-ideas-and-relations.md#151-the-status-of-xor)).
+  An untrained chooser is nearly uniform, its winner at a probability of
+  about .26 (two truths §13 H). And reconstruction is the only objective
+  that shapes representations today
+  ([independent components §1](2026-09-26-independent-components.md#1-the-problem-measured-2026-09-26)).
+  The gate of this update, XOR_grammar, is the test of it.
+* *Every alternative has a cost.* It is one more candidate at every
+  location, so the credit each receives is thinner and ties are likelier;
+  and one alternative is tried in each round, by the explore derivation.
+
+*Claude's proposal for "up to a point".* An alternative is declared
+together with the measurement that would tell it from its rival. The
+receipt reports each operator's share of the choices made, by face, which
+is the measure item 8 introduced. An alternative whose share stays below a
+stated floor once training has converged is retired, by the no-legacy
+rule.
+
+## 4. Noun, adjective, verb and adverb
+
+The noun, the adjective, the compound and the adverb were resolved by Alec
+on 2026-09-29, after the measurements of 4.2 were put to him. What a verb
+phrase is to its noun phrase has a candidate, which holds both of the two
+implementations, each at its own scale (4.4).
+What the word classes mean is in
+[accessible mind §2.0.1](2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention).
+
+### 4.1 What is decided
+
+| | decided | in Alec's words |
+|---|---|---|
+| noun and adjective | the same kind of thing, combined symmetrically and idempotently: a form of intersection | "Nouns and adjectives are roughly the same, nouns having been pre-applied to 'everything'. So symmetry, and of the two [kinds] you previously specified, I think they should be the kind that does not amplify when applied twice (a red red bird is no more red than a red bird), so perhaps a form of intersection." |
+| compound | sub-typing, which is why the order of its nouns matters | "Compounds are subtyping, which explains their order effects." |
+| verb | a modifier of the noun phrase | "We can (and I think already do) model verbs as modifiers" |
+| adverb | a modifier of a modifier, and multiplicative: applied twice it does more | "Adverbs relate to verbs, on the other hand, in a more multiplicative way, since a very, very, fast runner is faster than a fast runner"; "adverbs as modifiers of modifiers" |
+| noun phrase and verb phrase | the candidate: projections within a sentence, and a transformation found by ICA between events (4.4) | "Your previous proposal with both projection and ICA seems like a good candidate" |
+
+Decided earlier, and standing: part of speech is a role in a derivation and
+not a property of a row; the adjective moves from a whole to a part and
+keeps the order; the order drops at the determiner (the words "and
+nowhere else" are withdrawn: Alec, 2026-09-29, "probably wrong"); a set
+is one order above its members and a part keeps its order; a compound
+selects from the determined set and does not determine; a head must have a
+shape; a sentence fuses to one point.
+
+So the answer to "is the adverb to the verb what the adjective is to the
+noun" is no. The adjective and its noun are two of one kind and meet
+symmetrically. The adverb acts on the verb, which itself acts on the noun
+phrase, and the two combine in different ways:
+
+| | combines | applied twice | reverse |
+|---|---|---|---|
+| adjective with noun | by intersection, symmetrically | does nothing more | none that is exact: a search among the words known |
+| adverb on verb | multiplicatively, one acting on the other | does more | exact, given the adverb |
+
+### 4.2 What the operators do today
+
+*Measured.* Each operator was given an operand that speaks on four
+dimensions and is silent, at zero, on four others, and a word with a value
+on all eight.
+
+| operator | what it computes | on the dimensions the operand has | on the dimensions it is silent on |
+|---|---|---|---|
+| `verb` | a gain on the operand, `tanh(e^w ⊙ atanh x)` | changes them | **exactly 0: it cannot write there** |
+| `adverb` | a shift, masked by the operand's own strength | changes them | **exactly 0: it cannot write there** |
+| `lower`, the determiner's fold | the sum of the two in the log chart, then one learned map | changes them | writes |
+| `lift` | the same form, with its own map | changes them | writes |
+
+*Measured,* `intersection` on two codes, `red` and `bird`:
+
+| asked of it by the decision | what the code does |
+|---|---|
+| symmetric | yes |
+| applied twice, nothing more | not in the form in use. The kernel is softened for the gradient, `τ = 0.1`, and the soft minimum of 0.7 and 0.7 is 0.631, and of 0.7 and that, 0.59: a red red bird is *less* red. The hard kernel is exact and idempotent (read). |
+| a noun is "pre-applied to everything": where the adjective is silent the noun's value stands | no. A silent dimension is zero and zero annihilates, so `red` with `bird` keeps only the dimensions on which both speak, and the bird loses what `red` says nothing of. |
+| `everything`, all ones, changes nothing | for positive values only, and exactly so only in the hard kernel (read). A negative value meets one with the opposite sign and collapses to zero. |
+
+### 4.3 What follows, for the update
+
+1. **`intersection` is the noun phrase's operator**, and three things are
+   asked of it that it does not do: the exact minimum in the forward, with
+   the softened one kept for the gradient if it is wanted; a silent
+   dimension of one word leaving the other's value standing, which is what
+   "pre-applied to everything" means; and the same for evidence against as
+   for evidence for. No word is wired to it: which operator serves an
+   adjective and its noun is learned, as for every word
+   ([operators have no predefined surface](../../todo.md)).
+2. **The reverse of a noun phrase is a search.** An idempotent combination
+   has no exact reverse, so the words of a noun phrase are recovered by
+   the bounded search among the words known, which is the grade
+   `intersection` has now. It is the price of "a red red bird is no more
+   red", and it is recorded here so that item 6's measure of recovery is
+   read with it.
+3. **What the verb's operator computes waits for 4.4.** An earlier
+   version of this point said that "the verb's change is added". That was
+   Claude's inference from one of the two implementations and is
+   withdrawn as a consequence of anything decided. What is measured
+   stands: the coded verb acts on the values its noun phrase has and can
+   write nothing where the noun phrase is silent (4.2). Its two constants,
+   `τ = 0.1` and the clamp at `±8`, are hard-coded and are logged for the
+   update whichever implementation is chosen.
+4. **The adverb scales the verb.** *Claude's reading:* it acts on the verb
+   before the verb acts on the noun phrase, and it is a gain, so that it
+   is exact in reverse given the adverb. The coded adverb is a shift
+   masked by the strength of what it is applied to, which is why it has no
+   reverse in closed form.
+5. **The compound is a selection among the head's cases**: reverse sigma
+   to the cases of the head, a selection among them by the modifier, and
+   sigma over what is left
+   ([accessible mind §2.0.1](2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
+   The choice of case on descent is not yet conditioned on a modifier; it
+   is wiring and needs no new parameter.
+
+Claude's proposal of one form for the four word classes, a gain and a
+shift, is withdrawn: the noun and the adjective are an intersection.
+
+Three readings of Claude's in §2.0.1 stay to be confirmed and block
+nothing: the table of adjective, compound and determiner; that a
+particular has a shape one order down, its occurrences, which is why
+"young Felix" works; and that the thought work budget and
+`attentionBudget` are one meter.
+
+### 4.4 The noun phrase and the verb phrase: two implementations, and the candidate
+
+Alec, 2026-09-29, on Claude's "the verb's change is added": "I thought we
+were oscillating between two implementations. One in which we extract
+identity over nouns using ICA, and then (literally) use ICA on the
+differences between one event and the next (thus VP are seen as
+transformations from NP at T1 to the same NP at T2). The other in which
+both nouns and verbs are projections (with an inverse?) from a high-D space
+into two orthogonal subspaces corresponding to space and time (and perhaps
+modality)."
+
+Both are in the record. The first is
+[independent components §2.3](2026-09-26-independent-components.md#23-the-bridge-the-symbol-level-is-the-classical-mixing-model),
+decided on 2026-09-26: an individual is a column of one matrix, fixed over
+the chain of rows, and "a verb is a fixed pattern of change: which object's
+presence flips, whose where band moves, which property appears", a column
+of a second matrix taken over the differences. The second is the
+hypothesis of 2026-09-28 that "words are projection operators onto
+lower-dimensional or smaller subspaces", with the question of that day
+whether conceptual space should be treated "as two orthogonal subspaces".
+Accessible mind §2.0.1 records that question as closed, by "Yes, keep
+concepts opaque". By the statement above Alec does not hold it closed, and
+it is open here.
+
+| | one: a transformation, found by ICA | two: projections onto orthogonal subspaces |
+|---|---|---|
+| the verb phrase is | what takes the same noun phrase from its state at T1 to its state at T2 | a description in dimensions of its own, which the noun phrase is silent on |
+| it acts on | the noun phrase's own values | nothing of the noun phrase's |
+| the sentence's point is | the noun phrase as the verb leaves it | the noun phrase and the verb phrase side by side |
+| time is | between one event and the next | a subspace within the one event |
+| modality would be | alternative continuations of the event | a third subspace |
+| the reverse, from the sentence to its two phrases | needs the state at T1, or the verb, as a witness | the two projections; nothing else is needed |
+| "with an inverse?" | yes, given the witness | a projection alone has none; two projections onto subspaces that are orthogonal and together span the space have one between them, which is their sum |
+| "the ice melted" | the ice is now liquid: its own value has changed | the ice is as it was, and `melted` is said of it; that it is liquid is a consequence drawn afterwards |
+| it asks of conceptual space | nothing: a concept's code stays opaque | two subspaces, or three; opaque only if they are learned and not fixed bands |
+| the coded verb | is of this kind: it acts on what the noun phrase has and needs the verb to reverse | cannot be of this kind: it writes nothing where the noun phrase is silent (4.2) |
+
+Where they differ is one question: whether a verb changes the noun
+phrase's own values, or leaves them and says something beside them.
+
+**The candidate** *(Claude's proposal; Alec, 2026-09-29: "Your previous
+proposal with both projection and ICA seems like a good candidate")*. They
+are not rivals, because they are about two scales.
+
+* **Within a sentence, the second.** The row stores one point for a
+  sentence, and generation must recover the noun phrase and the verb
+  phrase from that point
+  ([two truths §11.1](2026-09-16-two-truths-ideas-and-relations.md#111-a-row-holds-structure-never-a-derivation-decided)).
+  Only the second gives that reverse without a witness, and it is what
+  Alec described on 2026-09-28: "we can recover a NP and VP as the pair
+  that gets us closest to the meaningful point". It is also what "verbs
+  restrict too" and the three indices say, with the noun phrase, the verb
+  phrase and the modal each narrowing along its own index.
+* **Between one event and the next, the first.** What a verb *does* to
+  its noun phrase shows in how the same noun phrase differs at the next
+  event. That difference is what the predictor expects and what ICA on
+  the differences learns, and identity is what did not change. It is the
+  consequence of the verb, which a sentence does not state and the next
+  sentence may.
+* **The two subspaces are learned.** They are spanned by what the first
+  finds: the columns that stay fixed over the chain, and the patterns of
+  change. No band is fixed in a concept's code, so concepts stay opaque.
+
+**Modality is a further projection** *(proposed, Alec, 2026-09-29)*. The
+candidate "also opens the door to the VP adding modality / possibility as
+a subsequent projection (so from a 3d NP to a 4D NP + VP to a 5D
+NP+VP+MP), where the MP is a modal phrase."
+
+| the description | its phrases | what the last of them says | individuated by |
+|---|---|---|---|
+| 3D | NP | which thing | the determiner |
+| 4D | NP + VP | which stretch of time | tense and aspect |
+| 5D | NP + VP + MP | which alternative | the modal |
+
+It is the table of three indices of
+[accessible mind §2.0.1](2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)
+with a phrase for each index.
+
+**Modality is a dimension, not an order** *(decided, Alec, 2026-09-29)*:
+"To square, now: modality is not order, it is dimension; I think these are
+different." The reading of 2026-09-28 in FutureWork, that a modal bundle
+"is a sigma over alternative processes, so modality is order and not a
+fifth dimension", is withdrawn. Three things follow, and none is decided.
+
+* *One operator serves twice.* What puts a verb phrase beside a noun
+  phrase puts a modal phrase beside the two, so it is applied a second time
+  and no operator is added for the modal. *Claude's reading:* it is `lift`,
+  if `lift` is to lift a dimension (5.4).
+* *The reverse stays exact* if the three subspaces are orthogonal to one
+  another and together span the space: a sentence is recovered as its
+  three projections, and none needs a witness.
+* *One thing already written is still to be squared with it* when
+  modality is taken up. Two truths carries "it is certain that P" and "it
+  is doubtful that P" as an operator row over the row of P, so that
+  modality never sets trust (§4, test 9); a modal phrase within the point
+  is a second way of carrying modality, and which sentences take which is
+  to be said. Alec's "1. yes" of 2026-09-29 answered this point; *Claude's
+  reading, to confirm:* the operator row stands for them, as two truths has
+  it.
+
+## 5. `lower`, `generic` and `lift`
+
+Taken on 2026-09-29, after section 4. What the operators compute today
+was measured (5.1). Alec answered the questions of this section the same
+day (questions 9 to 12), and his answers are written into each part.
+
+### 5.1 What `lower` and `lift` do today
+
+*Measured and read.* Two codes were given: `a`, which speaks on four
+dimensions and is silent on four, and `b`, which speaks on all eight.
+
+| | `lower` | `lift` |
+|---|---|---|
+| its rule declares | the second operand is the head, and is referred to as a particular | the result is a sentence |
+| what it computes, as constructed | `(a + b)/(1 + ab)` on every dimension | the same, to the last digit |
+| after training | the sum of the two in the log-odds chart, then a learned map of its own | the same form, with a map of its own |
+| symmetric in its operands | yes | yes |
+| an operand that is silent | changes nothing: the other's value stands, exactly | the same |
+| where both speak | the two values are summed | the same |
+| applied twice | accumulates: 0.6 with 0.6 is 0.88 | the same |
+| reverse, given either operand | exact, to 10⁻⁷ | the same |
+| reverse, given neither | two equal halves, neither of them an operand, and reported as available | the same |
+
+So the two are one computation under two names. What tells the determiner
+from the making of a sentence is what the two rules declare, and the two
+learned maps. Neither changes an order by what it computes: the order of a
+result is declared by its rule, from a table in the grammar's reader in
+which an event is 0, a particular 1 and a kind 2.
+
+### 5.2 `lower`: the determiner
+
+**Decided, and standing** (2026-09-28,
+[accessible mind §2.0.1](2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
+The determiner moves from a set to one of its members, and the order is
+one lower. "A" lowers and mints, "the" lowers and binds, and "every" does
+not lower. The mint and the bind are those of the identity system. The
+determiner needs no noun ("a fake"). Modification acts on the kind, and
+the determiner individuates afterwards.
+
+*Claude's reading of what follows, to confirm.*
+
+1. **What `lower` leaves is the member.** Of a new member nothing is
+   known but the description. Of a member that is bound, what is already
+   known of it is narrowed by the description, which is the noun
+   phrase's own operator (section 4) applied once more. `lower` needs no
+   arithmetic of its own.
+2. **The determiner's word adds nothing to what is described.** It is
+   what tells the model which of the two to do. Today its code is added
+   to the noun phrase's code, so that "the" and "a" are written into the
+   content of the thing.
+3. **It is a choice, and the chooser makes it.**
+   [Item 11c](../plans/2026-09-24-item-11c.md) has it already: "Reverse
+   sigma is a choice of case, the chooser." The candidates are the
+   members of the set that are known, and a new one. It is the choice
+   that `interpret` makes for a single word (3.3), made here for a
+   description: "the black cat" is bound by `lower`, because no one of
+   its words picks the cat out.
+4. **Its reverse is a lookup and a choice.** From a member, the noun
+   phrase is a kind that the member belongs to, found through the part
+   rows and chosen where there are several ("the cat", "the animal").
+   The determiner is chosen by whether the member is already held. No
+   learned map is inverted.
+
+**Alec, 2026-09-29, on question 9:** "'The' implies a bind, 'a' reduces
+order, which might result in applying the inverse of the fold to achieve
+the extension of the set at the lower order?"
+
+*Claude's answer.* Yes, and the pieces exist. The inverse of the fold is
+reverse sigma, which item 11c already names: "Reverse sigma is a choice of
+case, the chooser." Applied to a kind it gives the kind's extension one
+order down, "a possibly discontinuous union of lower regions" (item 11c).
+
+| | what is applied | what it leaves | order |
+|---|---|---|---|
+| "a cat" | the inverse of the fold, on *cat* | the extension of *cat* one order down: any cat | one lower |
+| "the cat" | the same, then a bind among the cats already held | one cat | one lower |
+| "every cat" | nothing | *cat*, at its own order | kept |
+
+*Amended (Alec, 2026-09-30):* "every lowers like all but has a different
+plurality". So "every cat" is lowered like "all cats", and a bare plural
+lowers by an implicit plural determiner, "all" or "some", never "a" or
+"the", which are singular
+([5.5 spec §6](2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers)).
+The row above is superseded.
+
+Two things follow, *Claude's reading, to confirm*. The determiner drops
+the order by the fold's inverse, and not by the arithmetic of `lower`,
+which is the same computation as `lift` (5.1). And "a" need not mint: it
+leaves the extension, and an individual is minted when the discourse goes
+on to treat it as one, by the identity system's mint
+([item 6.5](2026-09-26-independent-components.md#27-tie-to-the-grammatical-derivation)),
+where the decision of 2026-09-28 had "a" lower and mint at once.
+
+Alec, later the same day: "It is possible to raise the order by folding,
+reversing the order (as with a determiner) is non-specific." So the
+determiner's move leaves what is not specific, the extension, and "the"
+makes it specific by binding.
+
+### 5.3 `generic`: the choice not to lower
+
+*Read.* `generic` is a unary that computes nothing. Its rule declares
+that its operand is referred to as a kind, and a sentence whose subject
+is referred to as a kind ends as a relation: "the generic subject
+decides, not the copula"
+([two truths §1](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)).
+It is built on `exist`, which is retired (3.7), and needs a base of its
+own.
+
+*Claude's reading.* It is the alternative to `lower` at the same place,
+and the chooser chooses between them. "A cat is on the mat" lowers; "a
+cat is an animal" does not. So it is not the determiner's word that
+decides whether the order drops. That is learned, as "every" already
+showed. The bare plural is the plain case: Carlson (1977) has it name a
+kind in every one of its uses.
+
+*Amended (Alec, 2026-09-30): the bare plural lowers.* "'Cats' is not 'one
+order up', it is moved down one order because of an implicit determiner",
+and "'Cats purr' means for me that a cat-thing is a purring-thing": the cat
+region part of the purring region, as two truths §1 decided. So the reading
+above, that the bare plural names a kind and is the plain case of not
+lowering, is withdrawn. A generic subject is the region the fold's inverse
+leaves (5.2), named but not bound and no member chosen; "there are cats on
+the lawn" is how its existential is said
+([5.5 spec §6](2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers)).
+The implicit determiner is plural: "all", or "some" (Alec, 2026-09-30).
+
+### 5.4 `lift`: a phrase beside a phrase
+
+*Read.* In `complete.grammar` `lift` is the rule whose result is a
+sentence, `S = lift(NP, VP)`. A comment in the file still calls it "the
+generic order-raising fold", and the file's header says of modality that
+it is "a SECOND lift adding a 5th modal dimension - PLANNED, NOT YET
+BUILT".
+
+**Alec, 2026-09-29, on question 10:** "Lift was intended to be the
+operator that increases order, lower is the inverse that decreases it. But
+perhaps they are better suited to dimensional lifting/lowering." And later
+the same day, of question 17: "Lift/lower and surface/tense can all move
+to future work, or at least after item 6." What follows is kept for then.
+
+*Claude's reading, to confirm.* Both are consistent with what is measured
+and decided, and they divide cleanly:
+
+| | raised by | lowered by |
+|---|---|---|
+| order | the sigma fold over members, symbolized (item 11c) | its inverse: the determiner (5.2) |
+| dimension | `lift`: a phrase put beside the description, NP → NP + VP → NP + VP + MP (4.4) | `lower`: the projection that takes the phrase back out, `lift`'s reverse face |
+
+So `lift` and `lower` would be a pair of inverses, as rule 7 asks, and the
+determiner would leave `lower` for the fold's inverse. What 5.1 measured
+stands: today the two are one symmetric sum, and neither is the other's
+inverse. The rest of this part is the dimensional reading.
+
+`lift` is then the operator that the candidate of 4.4 needs, and no
+operator is added for it.
+
+| asked by the candidate | `lift` today |
+|---|---|
+| the verb phrase is put beside the noun phrase | where one operand is silent the other's value stands, exactly: two phrases that speak on different dimensions are put side by side |
+| each phrase speaks in dimensions of its own | nothing makes it so: where both speak, the two values are summed |
+| the reverse is the two projections, and needs no witness | the reverse needs one operand as a witness; without it, two equal halves |
+| a modal phrase is put beside the two | the same operator, applied again |
+
+What is missing is one thing used twice, the learned subspaces of 4.4:
+to keep each phrase to its own dimensions going in, and to take the
+phrases apart coming out. **Side by side has a price.** The phrases share
+one width, so each has only its share of the dimensions, and the reverse
+is exact only so far as each keeps to its share. How many dimensions a
+trained noun phrase and a trained verb phrase in fact use has not been
+measured.
+
+Raising the order is not `lift`'s. A set is made from its members by the
+sigma fold over them, symbolized
+([item 11c](../plans/2026-09-24-item-11c.md)); in a sentence that is the
+plural `sum` (3.2), or the noun phrase left as a kind (5.3).
+
+*The name.* Under the dimensional reading `lift` and `lower` keep their
+names. The rest is future work (Alec, 2026-09-29).
+
+### 5.5 The order of a sentence
+
+*Read.* Three things bear on it. The grammar's table of orders has the
+event at 0, below the particular at 1 and the kind at 2, and no rule of
+`complete.grammar` refers to an event. The candidate gives a finished
+sentence the highest order among its words, and gives the identity of an
+idea's row the order 1. And item 11c has "order is taxonomic depth
+(event ⊂ individual ⊂ kind)".
+
+*Claude's reading of 2026-09-29, withdrawn the same day in favour of
+Alec's (below).* A sentence is one order below its
+subject. The verb phrase individuates in time as the determiner
+individuates among things. A particular is what stays the same over its
+occurrences, which is how the identity system finds it
+([independent components §2.3](2026-09-26-independent-components.md#23-the-bridge-the-symbol-level-is-the-classical-mixing-model)),
+so it is a set of them, and the sentence is one member.
+
+| step | the word that makes it | from | to | order |
+|---|---|---|---|---|
+| which thing | the determiner | a kind | one of its members, a particular | one lower |
+| which stretch of time | the verb phrase, with its tense | a particular | one of its occurrences, an event | one lower |
+| which alternative | the modal | | | none: modality is a dimension, not an order (4.4) |
+
+**Alec, 2026-09-29, on question 11:** "The sentence 'the order drops at
+the determiner and nowhere else' is probably wrong; remove the part about
+nowhere else." The words are removed where they were written (accessible
+mind §2.0.1, Language, and 4.1 here). What stands is that the adjective
+and the compound do not drop the order. That the verb phrase does, as the
+table above has it, is still Claude's reading, to confirm; it is a step of
+order, and the dimension the verb phrase adds (4.4) is another thing. The
+three levels are Carlson's (1977):
+stages, which are slices of a thing in space and time; objects, each of
+which gathers its stages into one individual; and kinds.
+
+**Alec, 2026-09-29, on question 18:** "The order of the sentence is not
+different from that of its subject, afaik, let's look at an example or
+two." And, of abstract sentences: they "just preserve their order so that
+they are not conflated with low-order sentences."
+
+Two examples:
+
+| sentence | Alec's reading | Claude's reading above |
+|---|---|---|
+| "Felix sleeps." | Felix is a particular, of order 1. "Sleeps" restricts Felix in time as "black" restricts him in kind, and the sentence keeps order 1 | one occurrence of Felix, one order below him: 0, the "event" of item 11c |
+| "Felix slept. Felix woke." | two parts of Felix's history, each of order 1 | two occurrences of Felix, each of order 0; Felix is the set they belong to, one order above them |
+
+The readings differ in how Felix is formed. On Claude's, Felix could be
+folded up from the sentences about him. On Alec's, a sentence is a part of
+Felix and not a member of him, and the order-0 events of item 11c are the
+located readings of what is perceived ("cat!", here and now), not
+sentences. Alec's reading follows from two things already decided: the verb
+restricts (2026-09-28), and a part keeps its order ("blue cats" keeps the
+order of *cats*). The code agrees with it: a finished sentence takes the
+highest order among its words. *Claude recommends Alec's reading; to
+confirm.*
+
+**Alec, 2026-09-29, later:** "WRT Felix, there is a generalization over
+Felix-events which is one order higher, the identity of the word Felix,
+which is nominal or relative." *Claude's reading, to confirm:* "Felix
+sleeps" is a Felix-event, and has the order of its subject, Felix in that
+event. The identity of Felix, what the name picks out (nominal) or what a
+relation picks out, "the cat that sat on the mat" (relative), is the
+generalization over his events, one order higher. **Confirmed by Alec,
+2026-09-29: "correct."** The two readings of the
+table then meet: a sentence has its subject's order, and a particular is
+one order above the events it generalizes, as item 11c has it (event ⊂
+individual ⊂ kind). The word "Felix" addresses both, the identity and the
+event, as item 7's note (c) already says of a word form.
+
+### 5.6 The verb's object
+
+*Measured.* The coded `verb` is a gain, read from its second operand, on
+the values of its first. As constructed it is the identity on the first,
+and the second leaves no trace. What it means depends on what it is
+given:
+
+| given | what it computes | which is |
+|---|---|---|
+| the verb, then its object: `verb(chased, mouse)` | the object's code is a gain on the verb's values | the object says which kind of chasing, and adds no dimensions of its own |
+| a noun phrase, then the verb: `verb(cat, sleeps)` | the verb's code is a gain on the noun phrase's values | the verb changes the noun phrase's own values: the first implementation of 4.4 |
+
+"Chased the mouse", in the order it is read, is the first. The sentence
+`lift(cat, verb(chased, mouse))` then has the cat on the dimensions of
+things and the chasing, as the mouse modifies it, on the verb's: the two
+are side by side, and subject and object cannot be confused. The
+object leaves no trace until its gain is learned: as constructed,
+"chased the mouse" and "chased the dog" are one point. With the
+operands the other way, `lift(cat, verb(mouse, chased))`, both noun
+phrases speak on the dimensions of things and are summed, the verb's own
+dimensions stay empty, and "the cat chased the mouse" and "the mouse
+chased the cat" are one point as constructed. Nothing in the rule says
+which operand is the one modified: `verb` declares that its result is a
+predicate, and no head. Item 7's journal reads the first operand of the
+rule as the verb and the second as its object; the layer's own
+description has them the other way, the noun phrase first.
+
+*Decided, and bearing on it:* "The second NP of 'the cat chased the
+mouse' is a modifier on the VP, not a second operand of the sentence"
+([two truths §1](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)).
+
+*Claude's reading; Alec, 2026-09-29, on question 12: "Sounds correct."* A
+verb's object sub-types the verb, as a compound's modifier sub-types its
+head: "chased the mouse" is a kind of
+chasing, as "gun oil" is a kind of oil. It is the first row of the table,
+and the rule declares the verb its head. The verb phrase then stays in
+its own dimensions and is put beside the subject without meeting it, and
+which mouse it was is kept by reference, as the row keeps the references
+of its subject and its predicate. The coded `verb` computes the sub-type
+as a gain; the selection among the head's cases (4.3, point 5) is the
+other way to compute one, and which serves is for measurement (rule 9).
+
+## 6. The relations
+
+### 6.1 What they do today
+
+*Measured and read.* Each was given the two codes of 5.1.
+
+| operator | what it computes | what that is | its reverse, in the reverse program |
+|---|---|---|---|
+| `part` | its right operand | the whole. The part is dropped | only when the witness is the operand that was dropped |
+| `whole` | its left operand | the whole. The part is dropped | the same |
+| `equal` | `a²b² / (‖a‖‖b‖)` on every dimension | neither operand. It is never negative, and is the same for `a` and for `−a`, so it cannot tell a concept from its opposite. Of `a` with itself it is `a⁴/‖a‖²`, which is not `a` | a search among the concepts known; unavailable without them |
+| `implies` | `a + b` | the sum, which leaves the chart (1.1) | **unavailable in every case.** The reverse program has a case for `sum` by name and none for `implies`, which is built on `sum` and declares a reverse in `<generate>` |
+| `generic` | its operand | | its operand |
+| `operator` | nothing: it has a start state and no rule | the kind of a sentence whose verb takes a truth | |
+
+*What is written (read).* A sentence that ends as a relation is written
+as a row of three slots, `row, R, row`, from the references its slots
+hold, and it has no point: the candidate refuses one ("a relative clause
+has no fused point"). `whole` is written as `part` with its operands
+exchanged, and `equal` as two part rows, one each way. So what a relation
+operator computes is not what is written. It is what stands in the slot
+afterwards, for an enclosing sentence, for the chooser and for the
+predictor: where `part` is the operator chosen, the clause "cats are
+animals" stands as the code of `animal`.
+
+*The thought faces (read).* `part` with both operands given returns a
+number, the support for the relation, from a bounded walk of the
+taxonomy; at order 0 it is read from the geometry of the two codes, with
+a vector beside it. With one operand open it returns the neighbours, up
+or down, which is content. `equal` returns a score.
+
+**Alec, 2026-09-29, on `implies`:** "'Implies' might be a relation
+candidate for LTM, in which case it would not need an inverse." It is a
+kind of row already (two truths §3.2, `REL_IMPLIES`), written by the
+closing. Then the missing case of the reverse program is no defect: the
+row is read back as a row, which 6.2 point 1 says of every relation.
+
+### 6.2 What follows
+
+*Claude's reading, to confirm.* Alec asked of point 1, as it was first
+put (question 13): "What?". It is put more plainly here.
+
+1. **What a relation leaves in its slot is the name of its row.** When
+   the grammar applies `part` to *cats* and *animals*, two things happen.
+   The closing writes a row to LTM, *cats part-of animals*. And something
+   is left in the slot, for the rest of the sentence to use. Today the
+   value left there, which the next operation, the chooser and the
+   predictor see, is one of the two operands, the code of *animals*;
+   *cats* is dropped from it. (The rows are right: the closing writes them
+   from the references it keeps, not from that value.) The proposal is
+   that what is left is the new row's identity, which
+   names the row as a pronoun names what it points to. Two truths §2 has
+   this already for an embedded relative clause: `NP → REF(S)` "pushes the
+   row reference onto the STM as the NP". To take the relation apart is
+   then to read the row, which names both operands and the kind. It needs
+   neither a witness nor a search, and no operator needs an inverse of its
+   own, which is Alec's remark on `implies` (6.1) said of all four.
+2. **One family.** `whole` is `part` exchanged and `equal` is `part`
+   both ways, which the rules declare already (`family`,
+   `permutation`). The kind of a relation is read from the identity in
+   its `REL` slot
+   ([two truths §11.1](2026-09-16-two-truths-ideas-and-relations.md#111-a-row-holds-structure-never-a-derivation-decided)).
+   The code also reads it from the operator's name, in the clause scope
+   and in the journal, and by rule 8 that goes.
+3. **Where each looks** *(Alec, 2026-09-29, on question 14)*: "I
+   expected query to be looking into LTM, and part/whole/equal to look
+   into the symbol codebook." Claude's reading that asking whether a
+   relation holds is a `query` is withdrawn. This is how the code divides
+   them today: the thought face of `part` walks the taxonomy, the fold's
+   part edges among symbols; `equal` compares two codes; and `lookup`, to
+   become `query`, scans the rows of LTM. *To square with rule 6 when the
+   pass reaches it, not blocking:* with both operands given, `part`
+   returns a number, the support. Under rule 6 what it leaves is content:
+   the symbols found, with their evidence.
+4. **The name `operator`** names a kind of row, and it is the word this
+   catalogue uses for every rule. `attitude` is the usual name for the
+   verbs of this kind, those that take a truth: knows, doubts, hopes,
+   and with them said.
+
+### 6.3 The sentence that states a definition
+
+Alec, 2026-09-29: "We would need this already for English sentences (we
+had leveraged partOf, perhaps we need an Equals() or Def() for
+definitions)."
+
+Three sentences with "is", and what each writes:
+
+| sentence | what it says | what is written | status |
+|---|---|---|---|
+| "cats are animals" | one kind lies within another | one part row | decided, two truths §3.2 |
+| "the morning star is the evening star" | two things that are known are one | two part rows, one each way | decided, two truths §3.2 |
+| "a bachelor is an unmarried man", to a reader who does not know the word | what a word names | two part rows, one each way, beside the definition row `interpret` wrote on reading the word | Alec's "I guess we only need equal?", 2026-09-29 |
+
+**Alec, 2026-09-29, on question 15:** "I guess we only need equal?"
+
+*Claude's answer.* Yes. `interpret` gives an unknown word an object of
+which nothing is known, and writes `word DEF object`, as it does for every
+new word. "A bachelor is an unmarried man" is then `equal` between that
+object and the description's: two part rows, one each way (two truths
+§3.2), and the word's object is known through them. `interpret` stays the
+one writer of definitions, and no operator is added. The `define` that
+Claude proposed is withdrawn. As decided, equality merges nothing: the
+word's object and the description's stay two identities joined by the two
+rows. Which of `part` and `equal` an "is" is, is learned
+([operators have no predefined surface](../../todo.md)).
+
+**`equal` has two identities, for this update** *(measured by Claude on
+2026-09-30; left here by Alec: "Leave the 'equal' for the operators
+update")*. Item 7 gives `part` and `implies` one row-free identity, shared
+by the closing and the thought registry
+([two truths §21, AK](2026-09-16-two-truths-ideas-and-relations.md#21-review-round-5-claude-2026-09-30-on-the-candidate-after-20)).
+`equal` is not yet one. The closing writes an equality as two part rows
+under `part`'s identity, as decided; the registry forms an `equal` question
+with an inventory VP of its own (`('sym', 1)` in the test fixture), so a
+stored equality and the same equality asked do not agree in their
+predicate, and even the registry's `clause_reference('equal')` (the part
+identity) and `form('equal')` differ. No test reads it. The update decides
+what an equality question is, two part questions or a check of conceptual
+identity, and the probe comparing the closing's row with `form('equal')`
+becomes its test.
+
+## 7. `surface`
+
+**Alec, 2026-09-29, on question 16:** "No, this was intended to capture a
+surface transformation of the words, like tense and aspect, rather than
+create separate words and syntaxes corresponding to the root lexeme and
+various surface structure shufflings that various languages allow."
+
+Later the same day, of question 19: "Lift/lower and surface/tense can all
+move to future work, or at least after item 6."
+
+So `surface` is the operator of surface form: one lexeme with its inflected
+and reordered forms, so that "ran", "running" and "will run" are one word
+with its transformations and not three words, and a language's freedoms of
+word order are transformations of one structure and not separate syntaxes.
+It goes with tense, morphology and aspect (9). Claude's reading, that
+`surface` is `lift` outside the chart, is withdrawn.
+
+*Taken up (Alec, 2026-09-30)* as item 5.5, with tense, aspect and the
+preposition: one `surface` operator with four declared suboperations
+(absorb, split, insert, transpose), each the reverse of another, trained by
+reconstruction under a parsimony cost
+([5.5 spec §6](2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers)).
+
+*Measured and read, for when the group is taken.* What `surface` computes
+today is `M·marker + content`, with `M` a learned map that is the identity
+as constructed and the content declared the head; given either operand its
+reverse is exact, and given neither the marker is what a small learned
+prior makes of the value. The code gathers four rules by name as "a marker
+and a content with the content the head": `lower`, `bind`, `surface` and
+`preposition`.
+
+## 8. Computations and rules
+
+*Claude's reading.* If the readings of sections 5 to 7 are confirmed, the
+rules are many and the computations few. A rule is a computation together
+with what it declares: its head, the kind of its result, and how its
+operands are referred to.
+
+| computation | the rules that use it | its reverse |
+|---|---|---|
+| intersection | a noun with an adjective; the narrowing of a member that is bound | a search among the words known |
+| the fold's inverse | the determiner (5.2) | the fold |
+| the choice of a member | `interpret`, "the" (5.2), `bind` | a lookup, and a choice |
+| one phrase beside another | `lift`: the sentence, the modal phrase (5.4) | `lower`: the projections |
+| a gain | the object on its verb; the adverb on the verb | exact, given the word |
+| restriction by a clause with an open place | the preposition, making an adjective or an adverb (9) | the clause's row |
+| a row, and its name | `part`, `whole`, `equal`, `implies`, the attitudes | the reading of the row |
+| a surface transformation | `surface`, with tense, morphology and aspect (7) | to be worked out |
+
+## 9. The order of the pass
+
+0. **Item 6.9 first** *(Alec, 2026-09-29)*: XOR_grammar passes, with
+   the refinements it needs
+   ([plan](../plans/2026-09-29-item-6-9-xor-grammar.md)).
+1. Noun, adjective, verb and adverb: section 4. *Resolved on 2026-09-29.*
+2. The determiner, `generic`, `lift` and `lower`: section 5. The
+   relations, with the sentence that states a definition: section 6.
+   `surface`: section 7. *Answered on 2026-09-29 (questions 9 to 16).*
+3. The retirements of section 3. The renames are future work.
+4. **Last** *(decided, 2026-09-29)*: "Let's handle prepositions last", and
+   "'tense · morphology · aspect · null' can be handled last". Later the
+   same day: "Tense, morphology, aspect, need more work before they are
+   included in any grammar." `surface` goes with them (7).
+
+**The preposition** *(proposed by Alec, 2026-09-29: "Preposition can be
+treated as a clausal formula that creates an ADV or ADJ, if you agree";
+Claude agrees)*. "On the mat" is a clause with an open place, *x is on the
+mat*. As a modifier it restricts what it is said of to what fills that
+place: "the cat on the mat" is the cat that is on the mat, an adjective,
+and "sat on the mat" is a sitting that was on the mat, an adverb. It is the
+relative clause of compositional distributional semantics, "men who like
+Mary" as *men* restricted by *like* applied to *Mary* (Sadrzadeh, Clark &
+Coecke 2013), with the preposition in the place of the verb. Which of the
+two it makes is not the preposition's: it is decided by what the phrase
+attaches to, and is learned. One distinction follows, *Claude's reading, to
+confirm*. The adverb a preposition makes restricts, as an adjective does,
+and is not a gain: "very, very fast" is faster than "fast" (4.1), but "on
+the mat, on the mat" says no more than "on the mat". So the decided
+multiplicative adverb is the adverb of degree, and the adverb made from a
+preposition is a further predicate of the event, as in Davidson's account
+of adverbial modifiers (Davidson 1967).
+
+**Closed out** *(decided, Alec, 2026-09-30)*. The preposition is the
+compound of 4.3, point 5: its phrase selects among the cases of what it
+attaches to. There are two attachments and no separate spatial or temporal
+preposition: the head decides what is selected (a noun phrase's cases are
+things, laid out in space; a verb phrase's are phases, laid out in time),
+and the object decides the test (a place compares location, a time or an
+event compares order). The selection above is confirmed: it is idempotent,
+not a gain. Tense and aspect are "VP PP with no P marker", selecting among
+the verb phrase's phases relative to now and to a reference time
+([5.5 spec §4 to §5](2026-09-30-occurrence-tense-aspect.md#4-tense-and-aspect-prepositions-of-the-verb-phrase-with-no-preposition-written-decided)).
+The last group is item 5.5.
+
+The sheet of operators and inverses
+(`doc/diagrams/grammar_operators.svg`, revision 11) is regenerated at the
+end of the pass and not before.
+
+**The last group, as it stands** *(read on 2026-09-29)*. None of the five
+changes a value today: four hand their operand back, and `preposition`
+hands back its second. So taking tense, morphology and aspect out of the
+grammars until they are worked out loses nothing that is computed.
+
+| operator | declared in | what it computes | what would feed it |
+|---|---|---|---|
+| `preposition` | `complete.grammar`, `ladder.grammar` | its second operand. The preposition is dropped | nothing. A comment says it edits the place of its operand, and it does not |
+| `tense` | the same two | its operand, unchanged | a setting, present, past or future, which nothing in the runtime sets |
+| `morphology` | the same two | its operand, unchanged | a table of English verb forms, with irregular verbs, endings and a list of exceptions (`surface_morphology`, `surface_tense`), reached through a token that nothing in the runtime supplies. The tests call it |
+| `aspect` | no grammar file | its operand, unchanged | |
+| `null` | `ladder.grammar` | its operand, unchanged | |
+
+The table of verb forms is a surface given in advance, which
+[operators have no predefined surface](../../todo.md) rules out; it is
+unreached, and is for the no-legacy rule when the group is taken.
+
+**The gate of the update** *(decided, 2026-09-29)*: XOR_grammar's two
+gates pass without a seed
+([two truths §15.4](2026-09-16-two-truths-ideas-and-relations.md#154-questions-for-alec-and-his-answers-2026-09-29)).
+It is item 6.9, taken first (item 0 above).
+
+## 10. Questions for Alec
+
+On the four word classes, answered on 2026-09-29 and written into section
+4: compounds are sub-typing; the noun and the adjective combine
+idempotently, by a form of intersection; the adverb is multiplicative and
+is not to the verb what the adjective is to the noun.
+
+One reading of Claude's follows from those answers and may be corrected
+(4.3, point 4): that the adverb is a gain on the verb.
+
+On the noun phrase and the verb phrase (4.4). Alec took the three together
+as "a good candidate" on 2026-09-29, and added the modal phrase as a
+further projection. They stay as what the measurement is expected to
+show.
+
+1. Within one sentence, is the verb phrase a projection onto dimensions of
+   its own, so that the sentence is its noun phrase and its verb phrase
+   side by side and each is recovered by projection? Claude recommends
+   yes.
+2. Between one event and the next, is the verb's effect the change in the
+   same noun phrase, learned by ICA on the differences? Claude recommends
+   yes.
+3. Are the subspaces learned, and not fixed bands of a concept's code?
+   Claude recommends yes.
+
+On names and alternatives (3.9):
+
+4. Is whatever the code needs to know of an operator to be a declared
+   property of its rule, the name never consulted? **Decided: "Yes".**
+5. Are both implementations of the verb to be declared, under two names,
+   and the choice between them measured and not decided? Answered by the
+   candidate of 4.4: both are kept, one within the sentence and one
+   between events, so they are not rivals for one place. Each is still
+   measured against what it is expected to do.
+
+On the operators, when the pass reaches them:
+
+6. `expect`: kept in `<thought>` alone, or dropped until the anticipatory
+   policy is wanted? Claude recommends kept in `<thought>` alone.
+7. With `exist` retired, is a sentence absolute simply because it has come
+   down to one slot at its closing, with no operator to say so? Claude
+   recommends yes.
+8. `bind`: is binding a word `interpret`'s choice of object, with `bind`
+   kept for the participant that has no word? Claude recommends yes.
+
+On sections 5 to 7, put on 2026-09-29 and answered the same day (written
+into each part): 9, the determiner is the fold's inverse, and "the" binds
+(5.2); 10, `lift` and `lower` were to raise and lower the order, and
+"perhaps" lift and lower a dimension (5.4); 11, "and nowhere else" is
+removed (5.5); 12, "Sounds correct" (5.6); 13, "What?", put more plainly in
+6.2; 14, `part`, `whole` and `equal` look into the symbol codebook and
+`query` into LTM (6.2); 15, only `equal` (6.3); 16, `surface` is the
+operator of surface form (7).
+
+Put later the same day, and answered: 17 and 19, "Lift/lower and
+surface/tense can all move to future work, or at least after item 6"; 18,
+"The order of the sentence is not different from that of its subject,
+afaik, let's look at an example or two". With the examples of 5.5: a
+sentence has its subject's order, and the identity of a particular is one
+order above its events ("correct", Alec, 2026-09-29).
+
+## 11. References
+
+Boole, G. (1854). *An Investigation of the Laws of Thought.* Carlson, G.
+N. (1977). A unified analysis of the English bare plural. *Linguistics and
+Philosophy* 1, 413–457. Carlson, G. N. (1977). *Reference to Kinds in
+English.* Doctoral dissertation, University of Massachusetts, Amherst;
+published by Garland, New York, 1980. Davidson, D. (1967). The logical
+form of action sentences. In N. Rescher (ed.), *The Logic of Decision and
+Action*, University of Pittsburgh Press, 81–95. Link, G.
+(1983). The logical analysis of plurals and mass terms: a
+lattice-theoretical approach. In Bäuerle, Schwarze & von Stechow (eds.),
+*Meaning, Use and Interpretation of Language*, de Gruyter, 302–323.
+Sadrzadeh, M., Clark, S. & Coecke, B. (2013). The Frobenius anatomy of word
+meanings I: subject and object relative pronouns. *Journal of Logic and
+Computation* 23(6), 1293–1317. The claims were checked on 2026-09-29; page
+numbers within the works were not.

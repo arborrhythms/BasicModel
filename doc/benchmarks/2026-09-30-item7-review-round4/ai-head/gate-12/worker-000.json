@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words"
+  ],
+  "completed": [
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words"
+  ],
+  "slow_selected": [
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.007614166941494,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 2.708s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.301s, 100.00%)\r\nTraining throughput: 1 batches in 0.534s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.426s, 100.00%)\r\nTraining throughput: 1 batches in 0.416s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.616s, 100.00%)\r\nTraining throughput: 1 batches in 0.469s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

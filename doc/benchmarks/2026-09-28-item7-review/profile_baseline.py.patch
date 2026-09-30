@@ -1,0 +1,25 @@
+--- doc/benchmarks/2026-09-27-item7/profile_baseline.py
++++ doc/benchmarks/2026-09-28-item7-review/profile_baseline.py
+@@ -1,4 +1,4 @@
+-"""Observational seal timing around the unchanged item-8/item-10 protocol."""
++"""Observational closing timing around the unchanged item-8/item-10 protocol."""
+ import argparse
+ from functools import wraps
+ import importlib.util
+@@ -10,14 +10,14 @@
+ 
+ ROOT = Path(__file__).resolve().parents[3]
+ sys.path[:0] = [str(ROOT / 'bin'), str(ROOT / 'test'),
+-                str(ROOT / 'doc/benchmarks/2026-09-21-item10')]
++                str(Path(__file__).resolve().parent)]
+ 
+ 
+ def main(output):
+     from Models import BasicModel
+     import SentenceCompose
+     spec = importlib.util.spec_from_file_location('reviewed_measure',
+-        ROOT / 'doc/benchmarks/2026-09-26-item8/measure.py')
++        Path(__file__).with_name('measure.py'))
+     reviewed = importlib.util.module_from_spec(spec)
+     spec.loader.exec_module(reviewed)
+     rows, current = [], None

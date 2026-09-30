@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse"
+  ],
+  "completed": [
+    "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1285970420576632,
+      "message": "test/test_stm_relative_sentence_end_state.py:415: in test_actual_operation_trace_supplies_relative_capacity_without_a_reparse\n    assert model._sentence_relative_mask(1).tolist() == [False]\nE   assert [True] == [False]\nE     \nE     At index 0 diff: True != False\nE     Use -v to get more diff",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

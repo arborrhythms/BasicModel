@@ -1,0 +1,42 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_compile_cache_recovery.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_router_fires_per_word.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_order0_attended_field.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_concept_memberships.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_order0_percept_definitions.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_interpretation.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-05/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

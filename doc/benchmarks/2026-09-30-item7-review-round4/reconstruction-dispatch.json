@@ -1,0 +1,5 @@
+{
+  "workers": 1,
+  "reason": "Keep simultaneous memory use bounded while historical XOR diagnostics finish; all eight seeds, the 8 GiB guard and 1200-second deadline are unchanged.",
+  "driver_sha256": "5260528bfe47e8bb3491ac5f2161da6c7da3b925c71bf9f80efaf704a06462dd"
+}

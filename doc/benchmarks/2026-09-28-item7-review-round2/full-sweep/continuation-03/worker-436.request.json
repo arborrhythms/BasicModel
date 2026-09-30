@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_symbolic_iteration.py::test_csleg_one_symbol_apoha_emission",
+    "test/test_symbolic_iteration.py::test_csleg_virgin_fallback_stays_continuous",
+    "test/test_symbolic_iteration.py::test_csleg_adoption_writes_tags_and_is_idempotent",
+    "test/test_symbolic_iteration.py::test_csleg_recon_gather_lands_on_winner_rows",
+    "test/test_symbolic_iteration.py::test_csleg_naming_indices_thread_full_frame",
+    "test/test_symbolic_iteration.py::test_mm20m_second_order_reverse_keys_codebook",
+    "test/test_symbolic_iteration.py::test_forward_body_lifts_csleg_recon"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-436.recycle.json"
+}

@@ -9,15 +9,13 @@
        selects an executor and no second kernel result is attached.
 
        selectedThoughtPolicyWeight trains the normal controller from supplied
-       answer error and actual work. This config alone does not train natural
-       operator wording: partOf is a technical corpus token, not a predefined
-       natural-language meaning. See doc/SelectedMeaning.md. -->
+       answer error and actual work. Reading these plain English truths depends
+       on a trained chooser. A token subject can form an idea while a generic
+       subject forms a part relation; chaining is a learning result.
+       See doc/SelectedMeaning.md. -->
   <architecture>
     <symbolicOrder>0</symbolicOrder>
-    <!-- SERIAL per-word body: the observe-site conversation push (the LTM
-         store-append) lives ONLY in _forward_body_per_word, so <truthSet>
-         provisioning needs it; with the parallel body provision_ltm ran
-         the forwards but landed 0 rows (found 2026-07-12). -->
+    <!-- Provisioning and runtime inference share the sentence driver. -->
     <serial>true</serial>
     <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
@@ -42,8 +40,8 @@
     <!-- A parthood syllogism the reasoner can chain extensionally:
          socrates <= human <= mortal. -->
     <truthSet>
-      <truth text="socrates partOf human" trust="0.9" kind="partOf"/>
-      <truth text="human partOf mortal" trust="0.9" kind="partOf"/>
+      <truth text="socrates is a human" trust="0.9"/>
+      <truth text="humans are mortal" trust="0.9"/>
     </truthSet>
 
     <data>

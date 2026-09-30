@@ -75,8 +75,7 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path):
             policy.bias[choice] = -1.5
             construction = model.reverseOutput(understanding, held)
             lengths = (construction.concepts.abs().amax(-1) > 0).sum(-1)
-        input_lengths = [int(entry.leaves.shape[0])
-                         for entry in understanding.answer_program]
+        input_lengths = model.inputSpace._word_active_mask.sum(-1).tolist()
         assert input_lengths == [1, 1]
         assert lengths.tolist() == [4, 1]
         assert int(lengths[0]) > input_lengths[0]

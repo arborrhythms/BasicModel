@@ -9,6 +9,7 @@ import torch
 from Layers import TernaryTruthStore, WhatInteractionMemory
 from Models import BasicModel, _append_observed_meaning
 from test_selected_relation_meaning import _program_owner
+from reading_fixtures import commit_reading, sentence_state
 
 
 def _nested(monkeypatch, *, outer="whole", question=False):
@@ -46,7 +47,7 @@ def test_nested_compose_preserves_complete_child_roles_without_a_write(monkeypat
     assert leaves.grad is not None and bool(leaves.grad.any())
 
 
-@pytest.mark.parametrize("path", ["eager", "pending", "packed"])
+@pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
 def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
     _cs, registry, language, entry, leaves = _nested(monkeypatch)
     store = _write_selected_observation(language, registry, entry, path)
@@ -57,6 +58,24 @@ def test_nested_observation_writers_retain_children_without_certifying_them(monk
     torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
     assert not child["meaning"].roles.requires_grad
     assert parent["kind"] == "observation"
+
+
+def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
+    _cs, registry, language, entry, _ = _nested(monkeypatch)
+    stores = [_write_selected_observation(language, registry, entry, path)
+              for path in ('forward', 'batch_eval', 'packed')]
+    def addresses(store):
+        def address(cid):
+            row = store.index_of_row(cid)
+            return ('concept', cid) if row is None else ('clause', row)
+        return [tuple(address(int(cid)) for cid in store.refs[row]) for row in range(len(store))]
+    for store in stores[1:]:
+        assert addresses(store) == addresses(stores[0])
+        for name in ('slots', 'rel_type', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'where', 'when'):
+            torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
+        for row in range(len(store)):
+            torch.testing.assert_close(store.meaning_of(row).roles,
+                                       stores[0].meaning_of(row).roles)
 
 
 def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeypatch):
@@ -71,7 +90,7 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         grammatical_thoughts=registry, what_memory=memory, ltm_store=store))
     with model._query_boundary_scope((0,)):
-        results = model._run_selected_program_thoughts((entry,), work_budget=128)
+        results = model._run_selected_sentence_thoughts((sentence_state(language, entry, registry),), work_budget=128)
     assert len(results) == 1
     result = results[0][1]
     assert result.result.result_kind == "subgoal"
@@ -95,35 +114,10 @@ def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_wri
 
 def _write_selected_observation(language, registry, entry, path):
     store = TernaryTruthStore(8, capacity=16)
-    slots = entry.end_state.unsqueeze(0)
-    if path == "eager":
-        meaning = language.program_meaning(entry, registry)
-        assert meaning is not None
-        _append_observed_meaning(store, entry.end_state, 1, meaning=meaning, trust=.9)
-    else:
-        discourse = SimpleNamespace(
-            observe_stm_end_state=lambda *_a: None,
-            predict_and_observe_stm_end_state=lambda *_a, **_k: None,
-            expectation_scope="structured")
-        host = SimpleNamespace(
-            conceptualSpace=SimpleNamespace(_ltm_consolidation=True,
-                stm_end_state_trust=lambda *_a: torch.tensor([.9])),
-            symbolSpace=SimpleNamespace(ltm_store=store, discourse=discourse),
-            languageSpace=language, grammatical_thoughts=registry,
-            _capture_answer_programs=lambda: ((entry,), {0: (entry,)}),
-            _expectation_documents_for_slot=lambda *_a: ["doc"])
-        if path == "pending":
-            host._pending_stm_end_state = (slots, torch.tensor([1]), torch.tensor([True]))
-            BasicModel._drain_pending_stm_end_state(host)
-        else:
-            host._packed_sentence_roots = slots[:, :1]
-            host._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
-            host._tensor_sentence_roots_depth = torch.tensor([[1]])
-            host._tensor_final_end_slots = slots
-            host._tensor_final_end_depth = torch.tensor([1])
-            host.inputSpace = SimpleNamespace(
-                _packed_sentence_slot_end_positions=torch.tensor([[2]]),
-                _packed_sentence_slot_mask=torch.tensor([[True]]),
-                _packed_sentence_counts_host=(1,))
-            BasicModel._drain_packed_stm_end_states(host)
+    from ClauseRow import attach_clause_index
+    host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)
+    attach_clause_index(host, store, registry.space)
+    # Every public entry reaches this common closing; real entry-point parity
+    # is exercised by test_item7_sentence_boundary.
+    commit_reading(language, registry, entry, store, owner=host)
     return store

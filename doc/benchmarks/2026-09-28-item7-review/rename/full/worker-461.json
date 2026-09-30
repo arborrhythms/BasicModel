@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+  ],
+  "completed": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00125029101036489,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009887920459732413,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010087499395012856,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

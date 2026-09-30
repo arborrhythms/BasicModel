@@ -1,0 +1,99 @@
+--- before/bin/Models.py
++++ after/bin/Models.py
+@@ -7480,8 +7480,15 @@
+             return 0
+ 
+         n_before = len(store)
+-        self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+-            origin=store.ORIGIN_PROVISIONED)
++        try:
++            self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
++                origin=store.ORIGIN_PROVISIONED)
++        finally:
++            # Provisioning is outside the live interaction. Reading the
++            # truths creates temporary what context as well as durable rows.
++            memory = self._what_memory()
++            if memory is not None:
++                memory.Reset(hard=True)
+         return max(0, len(store) - n_before)
+ 
+     def _ltm_ingest_truth_texts(self, store, texts, *, trusts=None, origin=None):
+@@ -19269,6 +19276,9 @@
+ 
+         ps_out_slot = self._per_word_percept_contributions
+         cs = self.conceptualSpace
++        # The first compiled push must see the same module layout as later
++        # chunks; otherwise lazy clause state creation invalidates its guard.
++        cs.stm.ensure_clause_state()
+         loss_terms = list(getattr(cs, "_intra_loss_accum", None) or [])
+         loss_weights = list(
+             getattr(cs, "_intra_loss_weight_accum", None) or [])
+@@ -20731,6 +20741,7 @@
+         B, W = active.shape
+         slots = self.inputSpace._packed_sentence_slot_mask
+         feedback = empty_feedback
++        live_root = None
+         for sid in range(slots.shape[1]):
+             present = slots[:, sid].to(torch.bool)
+             if not bool(present.any()):
+@@ -20823,6 +20834,15 @@
+             self._sentence_trial = None
+             self._sentence_trial_costs.append(costs)
+             self._sentence_winners.append(wins)
++            if not self._sentence_training and torch.is_grad_enabled():
++                # Raw forward has not backpropagated. Expose its current
++                # numerical root to callers, while the committed history and
++                # the next sentence's carries remain detached below.
++                buffer, depth = chosen[0][:2]
++                root = buffer[torch.arange(B, device=words.device),
++                              (depth - 1).clamp(0, buffer.shape[1] - 1)]
++                live_root = (root if live_root is None else
++                             torch.where(present[:, None], root, live_root))
+             # Each compose graph has already trained and been freed. The
+             # durable path is discrete history; word activations still expose
+             # the original perception to the separate batch-end answer loss.
+@@ -20850,8 +20870,9 @@
+                     *lang[11:20], self.languageSpace.clause_scope.reset(lang[20], reset), *lang[21:])
+         self._publish_sentence_scratch((stm, lang, feedback))
+         depth = stm[1]
+-        self._stm_single_S = stm[0][torch.arange(B, device=words.device),
+-                                     (depth - 1).clamp(0, stm[0].shape[1] - 1)]
++        self._stm_single_S = (live_root if live_root is not None else
++            stm[0][torch.arange(B, device=words.device),
++                   (depth - 1).clamp(0, stm[0].shape[1] - 1)])
+         final_ids = sentence_ids.amax(-1).clamp_min(0)
+         self._stm_post_depth = lang[14].gather(1, final_ids[:, None]).reshape(B)
+         self._tensor_final_end_slots = lang[13].gather(1,
+@@ -20912,15 +20933,9 @@
+         whole_reference_vectors = getattr(isp, '_ar_whole_reference_vectors', None)
+         readout_coefficients = getattr(isp, '_ar_readout_coefficients', None)
+         whole_reference_presence = getattr(isp, '_ar_whole_reference_presence', None)
+-        if not torch.is_tensor(getattr(isp, '_packed_sentence_end_mask', None)):
+-            positions = torch.arange(width, device=words.device).expand(B, -1)
+-            last = torch.where(active, positions, -1).amax(-1)
+-            isp._packed_sentence_end_mask = active & (positions == last[:, None])
+-            isp._packed_sentence_intermediate_end_mask = torch.zeros_like(active)
+-            isp._packed_sentence_ids = torch.where(active, 0, -1)
+-            isp._packed_sentence_slot_end_positions = last[:, None]
+-            isp._packed_sentence_slot_mask = (last >= 0)[:, None]
+-            isp._packed_sentence_counts_host = tuple((last >= 0).to(torch.long).tolist())
++        # Ordinary batches can differ from provisioning and from each other.
++        # Rebuild their boundaries; packed input validates its staged layout.
++        isp._finalize_sentence_word_layout(active)
+         sentence_end_mask = isp._packed_sentence_end_mask.to(
+             dtype=torch.bool)
+         intermediate_end_mask = (
+@@ -20939,6 +20954,13 @@
+             concept_orders = concept_orders if torch.is_tensor(concept_orders) else empty_rows.clone()
+             object_rows = object_rows if torch.is_tensor(object_rows) else empty_rows.clone()
+             object_orders = object_orders if torch.is_tensor(object_orders) else empty_rows.clone()
++            # Publish the current batch's complete reference slab even when
++            # this path has no native rows. Scratch publication must not keep
++            # the previous (often one-row provisioning) batch's metadata.
++            isp._ar_word_concept_rows = concept_rows
++            isp._ar_word_concept_orders = concept_orders
++            isp._ar_word_object_rows = object_rows
++            isp._ar_word_object_orders = object_orders
+ 
+         percept_dim = int(ps.subspace.muxedSize)
+         whole_dim = int(ws.subspace.muxedSize)

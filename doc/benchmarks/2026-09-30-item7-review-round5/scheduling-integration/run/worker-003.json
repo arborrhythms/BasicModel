@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_admission_retains_every_batch_once_including_recycled_work[24]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005082909483462572,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

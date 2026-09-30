@@ -1,0 +1,259 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]"
+  ],
+  "completed": [
+    "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-05/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-05/worker-000.json"
+      ],
+      "pid": 11131,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 610403768,
+      "elapsed_seconds": 26.095186416991055,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-05/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+        "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+        "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+        "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+        "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]"
+      ],
+      "completed": [
+        "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+        "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+        "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+        "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+        "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.041339167044498026,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005791125004179776,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00208212505094707,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.012480666977353394,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04280795797239989,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.21436933299992234,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.13967858394607902,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017480419483035803,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.748566500027664,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.742250458104536,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.741590957972221,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.623129083076492,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.615163958980702,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.585260750027373,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-05",
+  "elapsed_seconds": 28.1089520000387,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 610403768,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-05/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-05/collect.json"
+    ],
+    "pid": 11127,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180503368,
+    "elapsed_seconds": 1.7802109170006588,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-completion/group-05/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+        "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+        "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+        "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+        "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+        "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

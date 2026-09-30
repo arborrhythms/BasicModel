@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit"
+  ],
+  "completed": [
+    "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027881332905963063,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

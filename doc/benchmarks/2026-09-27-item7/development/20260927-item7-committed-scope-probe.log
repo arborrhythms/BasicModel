@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_committed_stm_uses_one_idea_slot_or_three_relative_slots _________
+
+    def test_committed_stm_uses_one_idea_slot_or_three_relative_slots():
+        from Models import BasicModel
+        from test_item7_storage import idea_clause, part_clause
+        buffer = torch.randn(2, 8, 4)
+        stm = (buffer, torch.ones(2, dtype=torch.long),
+               torch.zeros(2, 8, dtype=torch.long), torch.zeros(2, 8, dtype=torch.long),
+               torch.full((2, 8), -1, dtype=torch.long), torch.ones(2, 8))
+        lang = [torch.zeros(2)] * 22
+        lang[9] = torch.zeros(2, 1, 4)
+        lang[13] = torch.zeros(2, 1, 12)
+        lang[14] = torch.ones(2, 1, dtype=torch.long)
+        lang[20] = torch.zeros(2, 8, 2, dtype=torch.long)
+        idea, relation = idea_clause(), part_clause()
+>       state = BasicModel._sealed_clause_state((stm, tuple(lang), ()), 0, (idea, relation), (10, 11))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'BasicModel' has no attribute '_sealed_clause_state'
+
+test/test_item7_clause_state.py:78: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots
+1 failed, 3 deselected in 2.02s

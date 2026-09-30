@@ -1,0 +1,25 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____________ test_shape_then_recover_categorizes_by_operator_effect ____________
+test/test_semantic_categories_pipeline.py:42: in test_shape_then_recover_categorizes_by_operator_effect
+    ws = _ws_with_ops("conjunction", "disjunction")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_semantic_categories_pipeline.py:33: in _ws_with_ops
+    ws._operation_vectors[name] = ws._seed_operator_vector(name)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'
+_____________ test_recovers_on_transitional_grammar_participation ______________
+test/test_semantic_categories_pipeline.py:75: in test_recovers_on_transitional_grammar_participation
+    g.load_from_grammar_file(os.path.join(
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f"Grammar file not found: {path}")
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar
+=========================== short test summary info ============================
+FAILED test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect
+FAILED test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation
+2 failed in 2.12s

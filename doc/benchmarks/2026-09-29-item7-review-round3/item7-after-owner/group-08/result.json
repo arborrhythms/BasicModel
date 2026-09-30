@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+    "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+    "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind"
+  ],
+  "completed": [
+    "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+    "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+    "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-08/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-08/worker-000.json"
+      ],
+      "pid": 22682,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426558736,
+      "elapsed_seconds": 3.568851083982736,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-08/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+        "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+        "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind"
+      ],
+      "completed": [
+        "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+        "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+        "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.012762999860569835,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010649170726537704,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001074375119060278,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-08",
+  "elapsed_seconds": 6.049831209005788,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 426558736,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-08/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-08/collect.json"
+    ],
+    "pid": 22672,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 259982200,
+    "elapsed_seconds": 2.2474254998378456,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-08/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+        "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+        "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

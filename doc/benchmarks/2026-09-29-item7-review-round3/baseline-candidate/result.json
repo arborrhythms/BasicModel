@@ -1,0 +1,61 @@
+{
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "groups": [
+    {
+      "selector": "test/test_grounded_xor.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-00/result.json"
+    },
+    {
+      "selector": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-01/result.json"
+    },
+    {
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-02/result.json"
+    },
+    {
+      "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-03/result.json"
+    },
+    {
+      "selector": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-04/result.json"
+    },
+    {
+      "selector": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-05/result.json"
+    },
+    {
+      "selector": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "gate-06/result.json"
+    },
+    {
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-07/result.json"
+    },
+    {
+      "selector": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "gate-08/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

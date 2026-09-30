@@ -39,7 +39,7 @@ be mixed into a working MLP.
 Implementation choices made explicit for review: exploit is 90% argmax and 10%
 sampling; an exhausted budget that still exceeds row capacity trains as an
 incomplete forest and is not committed to memory. Parallel rounds use at least
-2N; serial has three rounds per word and at most 2K at the seal (K is STM
+2N; serial has three rounds per word and at most 2K at the closing (K is STM
 capacity), capped by a positive syntacticOrder. Degenerate catalogs that cannot
 supply a distinct legal exploration choice fail explicitly. These choices have
 not been selected against reconstruction or learning scores.
@@ -50,13 +50,13 @@ not been selected against reconstruction or learning scores.
    backward and step; explore then runs its own forward, loss, backward and
    step on the updated parameters. The batch clock and training-step counter
    advance once.
-2. **Commit the better derivation, per sentence, at its seal** (Alec,
+2. **Commit the better derivation, per sentence, at its closing** (Alec,
    2026-09-27: per sentence is the better long-term choice, so it is done
    now, not after a cost breakdown). "Outperforms" means a strictly lower
    training loss on that sentence under the same objective; no label is
    involved. The transaction is per sentence, at the eager sentence
    boundary between compiled word bricks: exploit derives sentence *k* and
-   seals; its cost for *k* is computed there (the reconstruction traversal
+   endings; its cost for *k* is computed there (the reconstruction traversal
    for that sentence and its prediction term); the runtime state is then
    restored to the committed context after *k − 1*; explore re-derives
    sentence *k* from the cached word vectors — perception runs once, only
@@ -69,10 +69,10 @@ not been selected against reconstruction or learning scores.
    under whole-row trials, is excluded. The committed derivation is what
    the discourse chain holds and what the inter-sentence predictor trains
    on. Consequences Codex must implement: the per-sentence reconstruction
-   traversal moves to the seal (the in-loop placement the reverse-loop plan
+   traversal moves to the closing (the in-loop placement the reverse-loop plan
    already provides), the inter-sentence prediction term is kept per row
    and per sentence rather than as one batch scalar, and the two optimizer
-   steps of decision 1 happen at each seal for that sentence index across
+   steps of decision 1 happen at each closing for that sentence index across
    rows; terms that exist only at batch end (the teacher's answer loss)
    keep their existing backward and do not enter the comparison.
 3. **Evaluation runs exploit only.** No explore derivation, no optimizer, and a
@@ -133,10 +133,10 @@ failed (the depth-3 relative campaign, kept red), one expected failure.
    equates distinct logits, and `test_compose_exact_probability_tie_prefers_structure`
    enshrines a logit better by 1e-8 losing to the structural face. Apply
    `structural_argmax` to the logits; withdraw that test's claim.
-3. **Implement decision 2 as amended: per sentence, at the seal.** The
+3. **Implement decision 2 as amended: per sentence, at the closing.** The
    transaction moves from the batch to the eager sentence boundary; explore
    re-derives from cached word vectors; the reconstruction traversal for the
-   sentence runs at its seal; the prediction term is kept per row and per
+   sentence runs at its closing; the prediction term is kept per row and per
    sentence; the winner is committed before the next sentence begins. Never
    choose per batch, and never mix winners inside a row under whole-row
    trials.
@@ -156,14 +156,14 @@ failed (the depth-3 relative campaign, kept red), one expected failure.
    campaign, both XOR_grammar CLI failures and the historical MM result
    visible as they are.
 
-## Review round 2 (Claude, 2026-09-27, on the sentence-seal corrections)
+## Review round 2 (Claude, 2026-09-27, on the sentence-closing corrections)
 
 The September 27 corrections implement decisions 1–6 as amended: the shared
 temperature governs sampling only and defaults to 0; the tie rule is on the
 logits; evaluation is exploit-only and deterministic; the transaction is per
-sentence at the eager seal with cached perception, scratch STM/trace swap and
+sentence at the eager closing with cached perception, scratch STM/trace swap and
 commit before the next perception; the prediction term is per row and per
-sentence; two optimizer steps run at each seal; the batch-end answer loss stays
+sentence; two optimizer steps run at each closing; the batch-end answer loss stays
 separate. The four requested mechanism tests exist and pass. Packed/single
 parity is exact again (.6496902332 both layouts); serial reconstruction
 improves over training again (.1065 → .1001); warmed throughput is .919
@@ -171,7 +171,7 @@ sentences/s, above the item 8 baseline. The sweep is **not green**: ten
 failures, of which eight passed on the committed baseline `206a0146`.
 
 **Finding A — the budget can be spent without progress (structural).** Unary
-operations are eligible in the seal rounds, and nothing compels a reduction.
+operations are eligible in the closing rounds, and nothing compels a reduction.
 Probe on the `test_expectation_off_keeps_every_packed_observation_in_ltm`
 fixture: the first packed sentence used its entire 34-round budget on 4 binary
 and 30 unary operations, ended at depth −1 (incomplete) and wrote no LTM row;
@@ -181,21 +181,21 @@ question-conditioner failure (a multi-slot answer), and it bears on the
 depth-3 campaign. It also conflicts with item 7's contract that one S writes
 one row: under the current eligibility, completion is left to a chooser that
 has not yet learned to reduce.
-*Proposed (awaiting Alec's yes/no):* **seal rounds are reduction-only.** After
+*Proposed (awaiting Alec's yes/no):* **closing rounds are reduction-only.** After
 the online rounds of the last word, the only eligible candidates are binary
 operations at pairs, and STOP once the sequence fits its row; unary
-operations are eligible only in the online rounds after each word. The seal's
+operations are eligible only in the online rounds after each word. The closing's
 purpose is to bring the sentence to its row, and a unary rewrite cannot change
-the depth. With a seal width of 2K ≥ N − 1 this guarantees every sentence
+the depth. With a closing width of 2K ≥ N − 1 this guarantees every sentence
 completes, so every S writes a row. It is still one softmax over the eligible
 candidates: no no-operation candidate, no DP.
 
 **Finding B — the operator-gradient report lost its reconstruction term
-(reporting boundary).** Reconstruction now trains at the seal, so the
+(reporting boundary).** Reconstruction now trains at the closing, so the
 batch-end objective-agreement report sees no reconstruction graph and
 `test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients`
 fails with every `reconstruction_norm` zero. The dissonance measurement
-(per-operator gradient cosine) must aggregate the per-seal reconstruction
+(per-operator gradient cosine) must aggregate the per-closing reconstruction
 gradients into the report rather than read a batch-end graph that no longer
 exists. Fix the report; do not waive the assertion.
 
@@ -210,7 +210,7 @@ depth-3 campaign on the corrected source; the campaign stays red if it stays
 red. One source-matched full sweep; stop for review; keep both XOR_grammar CLI
 failures and the historical MM result visible.
 
-## Decision 7 — reduction pressure and deadlines (Alec, 2026-09-27; supersedes round 2's "reduction-only seal" proposal)
+## Decision 7 — reduction pressure and deadlines (Alec, 2026-09-27; supersedes round 2's "reduction-only closing" proposal)
 
 The retired design had a soft reduction pressure that rose as the number of
 unreduced terms approached STM length, and a full stack of eight words forced a
@@ -221,7 +221,7 @@ sentence ends: every grammar reduces to NP, NP VP or S REL S, so one to three
 slots depending on the derivation.
 
 * **Allowance `a`.** During the sentence, `a = K − 1`: the next word must be
-  admitted. At the seal, `a` is the row's slot count as the derivation
+  admitted. At the closing, `a` is the row's slot count as the derivation
   decides it: an absolute S is **one** slot — NP VP fuses to one point,
   because the primitives of our reality are spacetime events and the
   sentence names one (Alec, 2026-09-27; two truths §1) — and a relative
@@ -229,12 +229,12 @@ slots depending on the derivation.
   on the way to the row, never an allowance of its own.
 * **Required reductions and slack.** With current depth `d`, `n = max(0, d − a)`
   reductions are still required; with `r` rounds remaining in the phase (the
-  online rounds before the next word, or the seal rounds before the row is
+  online rounds before the next word, or the closing rounds before the row is
   written), the slack is `s = r − n`.
 * **Hard deadline.** When `s ≤ 0`, only binary candidates are eligible; unary
   and STOP are masked. This guarantees no overflow (three online rounds cover
   the one reduction a new word can require) and guarantees completion at the
-  seal (seal width `2K ≥ K − 1`), so every S writes a row, which item 7
+  closing (closing width `2K ≥ K − 1`), so every S writes a row, which item 7
   assumes. STOP's existing eligibility rule (only when `d ≤ slots`) stands.
 * **Soft pressure.** A fixed additive term on every binary candidate's logit,
   monotone increasing in occupancy `d / a` and in `n / r`, zero on an empty
@@ -257,18 +257,18 @@ description. Alec confirmed the fused NP VP reading (2026-09-27). The
 **Mechanism tests for decision 7:** (a) with one online round left and the
 stack at `K − 1`, unary and STOP are masked and a binary operation fires, so the
 next word is admitted without overflow; (b) a sentence whose chooser prefers
-unary operations still completes at the seal, and every sentence in a packed
+unary operations still completes at the closing, and every sentence in a packed
 row writes a row; (c) the pressure term is zero on an empty stack, increases
 monotonically with occupancy, and changes the credit probabilities while the
 sampling temperature does not; (d) the three `test_expectation_defaults.py`
-cases pass without fixture changes. The allowance at the seal is one slot for
+cases pass without fixture changes. The allowance at the closing is one slot for
 an absolute S and three for a relative S; a test asserts there is no two-slot
 allowance.
 
 ## Review round 3 (Claude, 2026-09-27, on the reduction-pressure corrections)
 
 Decision 7 and findings B and C are implemented as specified. The allowance is
-`K − 1` online and one or three at the seal, the deadline masks unary and STOP
+`K − 1` online and one or three at the closing, the deadline masks unary and STOP
 when required reductions exhaust the remaining rounds, the pressure
 `reducePressure · (d/a + max(0, d − a)/r)` enters the credit softmax and not
 the sampling draw, and `reducePressure` is a schema element with default 1.
@@ -276,7 +276,7 @@ Twelve new mechanism tests cover the deadline through the two-slot window,
 the overflow assertion, completion under unary preference for both row sizes,
 the one-or-three allowance, pressure monotonicity and credit, early STOP in a
 small relative STM, full-graph capture and the XML element. The operator
-report now sums per-seal gradient vectors per parameter, including the
+report now sums per-closing gradient vectors per parameter, including the
 perception pullback. The four interleave fixtures expect the native context
 read and one serial exploit. Packed/single parity is exact at .1800 with no
 truncation anywhere; serial reconstruction after training is .0989, the best
@@ -306,7 +306,7 @@ identity at initialization, so the parametric operators received nothing. The
 repaired report is therefore correct, and
 `test_normal_batch_logs_named_shared_operator_gradients` passes only on the
 1e-13 score-path residual; its premise belongs to the soft superposition and
-should be restated (assert the report includes the seal contributions, or
+should be restated (assert the report includes the closing contributions, or
 force a parametric selection), not left to pass on noise. This is the
 intended consequence of the decision to drop the soft blend, and it makes the
 explore derivation the sole route by which an unselected operator can ever
@@ -314,9 +314,9 @@ earn credit; at temperature 0 that route is one runner-up per sentence.
 Learning on the FineWeb run will show whether that is enough.
 
 **Observation for Alec — identical derivations tie.** In the same batch
-exploit spent seventeen seal rounds applying `morphology`, an identity at
+exploit spent seventeen closing rounds applying `morphology`, an identity at
 initialization, to a root already at depth one, and never chose STOP; explore
-took STOP at its forced round. Both sealed contents were identical to float
+took STOP at its forced round. Both ended contents were identical to float
 precision, so the costs tied and exploit won by the tie rule. Nothing in the
 objective prefers the shorter derivation. Whether a work term (operations
 charged, as the thought budget already does) should enter the sentence cost

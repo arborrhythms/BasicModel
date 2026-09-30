@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+    "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder"
+  ],
+  "completed": [
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+    "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004213331267237663,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011566607281565666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010112510062754154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.741703979671001e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.691598825156689e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001218749675899744,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

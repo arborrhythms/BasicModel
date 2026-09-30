@@ -1,0 +1,24 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_every_read_word_has_a_concept_and_symbol[MM_xor.xml] ___________
+test/test_item7_word_interpretation.py:33: in test_every_read_word_has_a_concept_and_symbol
+    assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'
+E   AssertionError: derived concepts must have symbol activations
+E   assert tensor(0.) > 0
+E    +  where tensor(0.) = <built-in method sum of Tensor object at 0x1233c7890>()
+E    +    where <built-in method sum of Tensor object at 0x1233c7890> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]).sum
+E    +      where tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x1234d2760>()
+E    +        where <built-in method abs of Tensor object at 0x1234d2760> = tensor([[[-0., -0., 0., -0., -0., -0., -0., -0., 0., -0., 0., -0., -0., 0.],\n         [0., 0., -0., 0., 0., 0., 0., 0....0., -0., -0., -0., 0., -0., 0., -0., -0., 0.],\n         [0., 0., -0., 0., 0., 0., 0., 0., -0., 0., -0., 0., 0., -0.]]]).abs
+=============================== warnings summary ===============================
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+1 failed, 2 passed, 2 warnings in 2.56s

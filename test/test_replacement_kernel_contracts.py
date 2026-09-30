@@ -80,12 +80,14 @@ def test_world_refutation_or_conflict_never_closes_taxonomy_false(trusts):
 
 @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
 def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
+    from index_fixtures import terminal_model_index
     model, registry, store, (a, b, _c, _d) = _world()
     meaning = registry.form('part', a, b, mode='assertive')
+    order = terminal_model_index(model, meaning.role_refs)
     for trust in (positive, -negative):
         if trust:
-            store.append_meaning(meaning, kind='fact', trust=trust)
-    occurrence = store.append_meaning(meaning, kind='unverified', trust=0)
+            store.append_meaning(meaning, kind='fact', trust=trust, order=order)
+    occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
     with model._query_boundary_scope((0,)):
         from QueryWork import QueryWorkBudget
         query = registry.form('exist', store.row(occurrence)['occurrence'],

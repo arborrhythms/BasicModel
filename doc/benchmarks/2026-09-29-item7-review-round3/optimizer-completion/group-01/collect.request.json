@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_partspace_dynamic_capacity.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

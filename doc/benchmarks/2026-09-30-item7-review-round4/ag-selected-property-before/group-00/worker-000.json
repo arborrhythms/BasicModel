@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.017447791062295437,
+      "message": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py:28: in test_selected_property_rows_are_gathered_before_byte_read\n    assert observed_widths == [len(selected)], observed_widths\nE   AssertionError: [513]\nE   assert [513] == [3]\nE     \nE     At index 0 diff: 513 != 3\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

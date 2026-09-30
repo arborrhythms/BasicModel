@@ -319,22 +319,6 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     assert not torch.equal(before, coefficients)
 
 
-def test_meta_fold_support_roundtrips_with_vocab_extras():
-    support = ConceptualSpace._ordered_fold_support(
-        (0, 1, 2), (0, 1, 2))
-    ws = _whole_space()
-    ps_pos = ws.ensure_ps_position(7)
-    ws_pos = ws.insert_whole(init_vec=torch.randn(8))
-    meta = ws.insert_meta(
-        ps_pos, ws_pos, fused_vec=torch.randn(8),
-        fold_support=support)
-    assert ws.meta_fold_support[meta] == support
-
-    blob = ws.vocab_extras()
-    assert blob["meta_fold_support"][meta] == support
-    ws2 = _whole_space()
-    ws2.load_vocab_extras(blob)
-    assert ws2.meta_fold_support[meta] == support
 
 
 def test_concept_fold_support_roundtrips_with_conceptual_extras():
@@ -349,3 +333,8 @@ def test_concept_fold_support_roundtrips_with_conceptual_extras():
     cs2 = model2.conceptualSpaces[0]
     cs2.load_vocab_extras(blob)
     assert cs2.concept_fold_support(17) == expected
+
+
+def test_retired_wholespace_taxonomy_writer_is_absent():
+    from Spaces import WholeSpace
+    assert not hasattr(WholeSpace, "insert_meta")

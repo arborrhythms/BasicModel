@@ -90,7 +90,6 @@
     <invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
-    <propertyBasis>true</propertyBasis>
     <analysis>meronomy</analysis>
     <butterfly>true</butterfly>
     <nInput>8</nInput>

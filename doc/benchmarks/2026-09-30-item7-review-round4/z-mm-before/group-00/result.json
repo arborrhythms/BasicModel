@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-mm-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-mm-before/group-00/worker-000.json"
+      ],
+      "pid": 57468,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 437863648,
+      "elapsed_seconds": 6.415950417052954,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-mm-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.07449595793150365,
+          "message": "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py:92: in test_mm_grammar_part_under_disjunction_closes_at_full_inventory\n    row = f.store.write_clause(clause)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:237: in write_clause\n    index_plan = None if make_index_plan is None else make_index_plan(clause)\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:145: in <lambda>\n    lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ConceptIndex.py:147: in __init__\n    self.validate_rows()\nbin/ConceptIndex.py:175: in validate_rows\n    raise RuntimeError('native conceptual row capacity exhausted before clause admission')\nE   RuntimeError: native conceptual row capacity exhausted before clause admission",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-mm-before/group-00",
+  "elapsed_seconds": 13.912767082918435,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 437863648,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-mm-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-mm-before/group-00/collect.json"
+    ],
+    "pid": 57460,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430654640,
+    "elapsed_seconds": 7.171102999942377,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-mm-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probes_z_corrected.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

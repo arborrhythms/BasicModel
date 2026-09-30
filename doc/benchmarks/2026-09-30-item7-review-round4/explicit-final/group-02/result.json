@@ -1,0 +1,92 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+  ],
+  "completed": [
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-02/worker-000.json"
+      ],
+      "pid": 79757,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1406879832,
+      "elapsed_seconds": 93.3642823328264,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "completed": [
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 83.72704995796084,
+          "message": "torch._subclasses.fake_tensor.DataDependentOutputException: aten.equal.default\n\nThe above exception was the direct cause of the following exception:\ntest/test_reverse_traversal.py:330: in test_packed_rows_reconstruct_each_sentence_separately\n    out = compiled(None)\n          ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.Unsupported: Data dependent operator\nE     Explanation: Operator `aten.equal.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.\nE     Hint: Consider wrapping the operator into a PyTorch-understood custom operator (see https://pytorch.org/tutorials/advanced/custom_ops_landing_page.html)\nE   \nE     Developer debug context: aten.equal.default\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py\", line 325, in <lambda>\nE       lambda _u: m._forward_with_compiled_sentence_state(None),\nE                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 150, in masked\nE       return method(self, *args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8179, in _forward_with_compiled_sentence_state\nE       return self._forward_per_stage(\nE              ^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 23879, in _forward_per_stage\nE       body_result = self._forward_body(\nE                     ^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17776, in _forward_body\nE       return self._forward_body_per_word(\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22055, in _forward_body_per_word\nE       self._run_tensor_peer_word_pipeline(N_words))\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20939, in _run_tensor_peer_word_pipeline\nE       isp._finalize_sentence_word_layout(active)\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 10525, in _finalize_sentence_word_layout\nE       if not torch.equal(\nE              ^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nE       return func(*args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-02",
+  "elapsed_seconds": 99.79800412501208,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1406879832,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-02/collect.json"
+    ],
+    "pid": 79732,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435242208,
+    "elapsed_seconds": 6.024874374968931,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

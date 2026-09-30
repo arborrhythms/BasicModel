@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ TestShamathaInlineGrammar.test_dnf_stack_wired_into_conceptual_space _____
+/Users/arogers/github/WikiOracle/basicmodel/test/test_shamatha_inline_grammar.py:64: in test_dnf_stack_wired_into_conceptual_space
+    m.wholeSpace.propositional_negation, Layers.NotLayer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'propositional_negation'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 8-dim embedding (words added at runtime)
+=========================== short test summary info ============================
+FAILED test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space
+1 failed in 2.28s

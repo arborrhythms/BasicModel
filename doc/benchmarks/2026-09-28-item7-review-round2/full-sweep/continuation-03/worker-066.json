@@ -1,0 +1,333 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_basis_unit_ball_dispatch",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_sphere_uses_cosine",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_torus_uses_wrapped_mse",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_symbolic_back_ref_wired",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_getW_wraps_into_unit_cell",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_get_embedding_returns_perceptual",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_load_wraps_drifted_vectors",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_excludes_emb_params_when_frozen",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_includes_emb_params_when_trainable",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_output_space_text_mode_reads_perceptual",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_reverse_uses_wrapped_mse",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_load_round_trip_wraps_vectors",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_sbow_smoke_keeps_vectors_in_unit_cell",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_symbolic_space_paired_row_api_is_retired",
+    "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_embedding_vectors",
+    "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
+    "test/test_lexicon_ownership.py::test_inputspace_expand_masked_is_gone",
+    "test/test_lexicon_ownership.py::test_outputspace_expand_masked_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_arir_step_retired",
+    "test/test_lexicon_ownership.py::test_inputspace_getbatch_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_peer_embedding_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_predict_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_embed_token_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_get_space_embedding_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_get_mask_embedding_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_lexicon_helper_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_has_lex_batch",
+    "test/test_lexicon_ownership.py::test_inputspace_forward_does_not_stash_raw_input",
+    "test/test_lexicon_ownership.py::test_perceptualspace_embed_reads_subspace_not_raw",
+    "test/test_lexicon_ownership.py::test_perceptualspace_lex_and_embed_renamed_to_embed"
+  ],
+  "completed": [
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_basis_unit_ball_dispatch",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_sphere_uses_cosine",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_torus_uses_wrapped_mse",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_symbolic_back_ref_wired",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_getW_wraps_into_unit_cell",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_get_embedding_returns_perceptual",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_load_wraps_drifted_vectors",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_excludes_emb_params_when_frozen",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_includes_emb_params_when_trainable",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_output_space_text_mode_reads_perceptual",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_reverse_uses_wrapped_mse",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_load_round_trip_wraps_vectors",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_sbow_smoke_keeps_vectors_in_unit_cell",
+    "test/test_lexicon_ownership.py::TestLexiconOwnership::test_symbolic_space_paired_row_api_is_retired",
+    "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_embedding_vectors",
+    "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
+    "test/test_lexicon_ownership.py::test_inputspace_expand_masked_is_gone",
+    "test/test_lexicon_ownership.py::test_outputspace_expand_masked_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_arir_step_retired",
+    "test/test_lexicon_ownership.py::test_inputspace_getbatch_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_peer_embedding_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_predict_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_embed_token_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_get_space_embedding_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_get_mask_embedding_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_lexicon_helper_is_gone",
+    "test/test_lexicon_ownership.py::test_inputspace_has_lex_batch",
+    "test/test_lexicon_ownership.py::test_inputspace_forward_does_not_stash_raw_input",
+    "test/test_lexicon_ownership.py::test_perceptualspace_embed_reads_subspace_not_raw",
+    "test/test_lexicon_ownership.py::test_perceptualspace_lex_and_embed_renamed_to_embed"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_basis_unit_ball_dispatch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002534170635044575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_sphere_uses_cosine",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004652910865843296,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_torus_uses_wrapped_mse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003012500237673521,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03198979201260954,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_symbolic_back_ref_wired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025459166965447366,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_getW_wraps_into_unit_cell",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02666958305053413,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_get_embedding_returns_perceptual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02577895892318338,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_load_wraps_drifted_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023129198234528303,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_excludes_emb_params_when_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02614529093261808,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_includes_emb_params_when_trainable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025651291012763977,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_output_space_text_mode_reads_perceptual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026047416031360626,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_reverse_uses_wrapped_mse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045608298387378454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04521208303049207,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp29rgz5a7/weights.ckpt\r\n[BasicModel] Weights loaded from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp29rgz5a7/weights.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_load_round_trip_wraps_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009944589110091329,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_sbow_smoke_keeps_vectors_in_unit_cell",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09773762500844896,
+      "message": "",
+      "stdout": "Training on cpu\nDebug checks: OFF\nModel compiled (eager, mode=max-autotune, fullgraph=False)\n  Vocab: 257 reserved (NULL + 256 bytes) + 9 corpus = 266 entries (min_count=1)\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_symbolic_space_paired_row_api_is_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02819608396384865,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_embedding_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03674979193601757,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpeg346_89/weights.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03800579102244228,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpd3ol7wni/weights.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_expand_masked_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004220750066451728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_outputspace_expand_masked_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010245793964713812,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_arir_step_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.683298412710428e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_getbatch_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.50830290094018e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_peer_embedding_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020699999295175076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_predict_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.975000284612179e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_embed_token_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.324995335191488e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_get_space_embedding_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.437499102205038e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_get_mask_embedding_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.474996477365494e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_lexicon_helper_is_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.420805145055056e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_has_lex_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.133294224739075e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_forward_does_not_stash_raw_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006254580803215504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_perceptualspace_embed_reads_subspace_not_raw",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005004999693483114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_perceptualspace_lex_and_embed_renamed_to_embed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.445799514651299e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

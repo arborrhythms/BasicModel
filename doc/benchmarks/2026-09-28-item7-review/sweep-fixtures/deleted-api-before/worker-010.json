@@ -1,0 +1,123 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+    "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+    "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+    "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+    "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+    "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+    "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+    "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+    "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+    "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+    "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched"
+  ],
+  "completed": [
+    "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+    "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+    "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+    "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+    "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+    "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+    "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+    "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+    "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+    "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+    "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000325417029671371,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002633749973028898,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001676660031080246,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00012695800978690386,
+      "message": "test/test_serial_stm_split.py:140: in test_shift_pushes_the_semantic_referent\n    ws = _bound_ss(rows)\n         ^^^^^^^^^^^^^^^\ntest/test_serial_stm_split.py:131: in _bound_ss\n    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00011987506877630949,
+      "message": "test/test_serial_stm_split.py:157: in test_unknown_word_shifts_ignorance_placeholder\n    d = ws.shift_word(ss, 0, 99, rows, licensed=False)\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00011691695544868708,
+      "message": "test/test_serial_stm_split.py:173: in test_marker_word_binds_router_and_shifts_nothing\n    d = ws.shift_word(ss, 0, 5, rows, marker=True)\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0002502909628674388,
+      "message": "test/test_serial_stm_split.py:192: in test_mention_shifts_the_word_code_verbatim\n    d = ws.shift_word(ss, 0, 7, rows, mention=True, word_vec=code)\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00010837498120963573,
+      "message": "test/test_serial_stm_split.py:211: in test_one_move_one_workspace_write\n    ws = _bound_ss(rows)\n         ^^^^^^^^^^^^^^^\ntest/test_serial_stm_split.py:131: in _bound_ss\n    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00014483300037682056,
+      "message": "test/test_serial_stm_split.py:239: in test_deref_round_trip_preserves_extent\n    ws.interpret_word(7, licensed=True, object_id=1, extent=ext)\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015915840631350875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001231249189004302,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -77,7 +77,7 @@ def test_lift_lower_stay_invertible_cs_ops():
             f"{cls.__name__} must stay invertible (non-quantized result)")
 
 
-def test_seal_budget_is_fixed_even_when_unary_choices_do_not_shrink(monkeypatch):
+def test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink(monkeypatch):
     m = _model()
     stm = m.conceptualSpace.stm
     stm.begin_forward(1, device=torch.device('cpu'))

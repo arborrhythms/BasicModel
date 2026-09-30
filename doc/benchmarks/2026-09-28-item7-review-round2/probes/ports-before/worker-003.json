@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer"
+  ],
+  "completed": [
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00046845804899930954,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:291: in test_symbolic_lexicon_methods_exist\n    self.assertTrue(hasattr(sym, name),\nE   AssertionError: False is not true : WholeSpace must expose 'train_embeddings' after the lexicon-API migration.",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00020279199816286564,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:312: in test_s_has_syntactic_layer\n    self.assertIsNotNone(\nE   AssertionError: unexpectedly None : WholeSpace must retain its SyntacticLayer (the grammar's canonical dispatch host); missing on WholeSpace(\nE     (subspace): SubSpace()\nE     (_owned_bases): ModuleDict(\nE       (event): Tensor()\nE       (what): Codebook(\nE         (primitive_properties): PrimitiveProperties()\nE       )\nE       (where): Tensor()\nE       (when): Tensor()\nE       (activation): Tensor()\nE     )\nE     (_owned_encoders): ModuleDict(\nE       (activeEncoding): ActiveEncoding()\nE       (objectEncoding): EventEncoding()\nE       (whatEncoding): WhatEncoding()\nE       (wordEncoding): WordEncoding()\nE     )\nE     (layers): ModuleList()\nE   )",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

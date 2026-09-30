@@ -6,6 +6,7 @@ import torch
 
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
+from index_fixtures import append_indexed, one_hot_unfold
 
 
 def _meaning(a=0, b=1, *, width=8, scope=()):
@@ -18,13 +19,13 @@ def _meaning(a=0, b=1, *, width=8, scope=()):
 
 def test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf():
     store = TernaryTruthStore(8, capacity=32)
-    first = store.append_meaning(_meaning(), leaf_codes=((3, 17, 9), (), (6,)))
+    first = append_indexed(store, _meaning(), terms=((3, 17, 9), (), (6,)))
     for i in range(20):
-        store.append_meaning(_meaning(2, 3), leaf_codes=((40 + i,), (), (70 + i,)))
+        append_indexed(store, _meaning(2, 3), terms=((40 + i,), (), (70 + i,)))
     assert store.rows_for_code(17, role=0) == (first,)
     assert store.rows_for_code(17, role=2) == ()
     assert store.rows_for_code(1000) == ()
-    assert store.leaf_terms(first, 0) == (3, 17, 9)
+    assert store.leaf_terms(first, 0) == (3, 9, 17)
 
 
 def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
@@ -32,24 +33,24 @@ def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
     store = TernaryTruthStore(8, capacity=256)
     pointers = set()
     for _ in range(128):
-        store.append_meaning(_meaning(), leaf_codes=((3, 17), (), (6,)))
-        pointers.add(store.leaf_codes.data_ptr())
+        append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
+        pointers.add(id(store._leaf_postings[3, 0]))
     assert len(pointers) <= 5, "append must not copy the entire leaf history"
     checkpoint = io.BytesIO()
     torch.save(store.state_dict(), checkpoint)
     checkpoint.seek(0)
     state = torch.load(checkpoint, weights_only=True)
-    column = state["leaf_codes"]
+    column = state["posting_codes"]
     assert column.numel() == 384
     assert column.untyped_storage().nbytes() == column.numel() * column.element_size()
     restored = TernaryTruthStore(8, capacity=256)
     restored.load_state_dict(state)
     restored.load_semantic_extras(store.semantic_extras())
-    row = restored.append_meaning(_meaning(), leaf_codes=((9,), (), (10,)))
+    row = append_indexed(restored, _meaning(), terms=((9,), (), (10,)))
     assert restored.leaf_terms(127, 0) == (3, 17)
     assert restored.leaf_terms(row, 0) == (9,)
     restored.reset()
-    row = restored.append_meaning(_meaning(), leaf_codes=((11,), (), (12,)))
+    row = append_indexed(restored, _meaning(), terms=((11,), (), (12,)))
     assert restored.leaf_terms(row, 0) == (11,)
 
 
@@ -75,8 +76,8 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
 def test_index_checkpoint_compaction_and_codebook_remap():
     import copy
     store = TernaryTruthStore(8, capacity=8)
-    old = store.append_meaning(_meaning(), leaf_codes=((3, 17), (), (6,)))
-    kept = store.append_meaning(_meaning(2, 3), leaf_codes=((17, 40), (), (70,)))
+    old = append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
+    kept = append_indexed(store, _meaning(2, 3), terms=((17, 40), (), (70,)))
     store.set_origin(old, store.ORIGIN_USER)
     reference = store.occurrence_of(kept)
     restored = TernaryTruthStore(8, capacity=8)
@@ -98,7 +99,7 @@ def test_index_checkpoint_compaction_and_codebook_remap():
 def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
     store = TernaryTruthStore(8, capacity=4)
     calls = []
-    def unfold(idea, limit):
+    def unfold(idea, limit, **kwargs):
         calls.append((idea.clone(), limit))
         return (11, 23), 3, True
     store.configure_leaf_index(unfold=unfold)
@@ -113,7 +114,7 @@ def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
 def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     from QueryWork import QueryWorkBudget
     store = TernaryTruthStore(8, capacity=32)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
     for i in range(12):
         store.append_meaning(_meaning(scope={"where": (i, i + 1)}), stream=0)
     work = QueryWorkBudget(5)
@@ -126,10 +127,10 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
 
 def test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches():
     store = TernaryTruthStore(8, capacity=8)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1)
-    first = store.append_meaning(_meaning(), leaf_codes=((90,), (), (91,)), stream=0)
-    second = store.append_meaning(_meaning(), leaf_codes=((92,), (), (93,)), stream=1)
-    third = store.append_meaning(_meaning(), leaf_codes=((94,), (), (95,)), stream=1)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+    first = append_indexed(store, _meaning(), terms=((90,), (), (91,)), stream=0)
+    second = append_indexed(store, _meaning(), terms=((92,), (), (93,)), stream=1)
+    third = append_indexed(store, _meaning(), terms=((94,), (), (95,)), stream=1)
     cue = _meaning()
     assert not store.cued_rows(cue)['value']
     found = store.cued_rows(cue, primed=(90, 94))['value']
@@ -176,7 +177,7 @@ def test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm():
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
     store = TernaryTruthStore(8, capacity=32)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
     fact = _meaning()
     oldest = store.append_meaning(fact, trust=.2)
     for _ in range(20):
@@ -221,10 +222,24 @@ def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
     model, registry, memory, part, whole = _catalog_world()
     store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
     fact = registry.form('part', part, whole, mode='assertive')
-    oldest = store.append_meaning(fact, trust=.7)
+    from MemoryIndex import configure_model_index
+    from Queries import _existing_row
+    from ClauseRow import predicate_relation
+    configure_model_index(model, store)
+    terms = tuple((_existing_row(registry.space, ref),)
+                  if predicate_relation(ref[1]) == 'operator' else ()
+                  for ref in fact.role_refs)
+    # Force the terminal inverse for these three numerical atoms. The test
+    # concerns retrieval effects, not training a generate policy.
+    def unfold(value, limit, **kwargs):
+        matches = (fact.roles == value).all(-1).nonzero().flatten()
+        return (terms[int(matches[0])], 1, True) if limit and len(matches) else ((), 0, False)
+    store.configure_leaf_index(unfold=unfold)
+    oldest = append_indexed(store, fact, terms=terms, trust=.7)
     for _ in range(20):
-        store.append_meaning(replace(fact, roles=fact.roles + 20,
-                                    role_refs=(('sym', 500), None, ('sym', 501))), trust=.1)
+        append_indexed(store, replace(fact, roles=fact.roles + 20,
+                                    role_refs=(('sym', 500), None, ('sym', 501))),
+                       terms=((500,), (), (501,)), trust=.1)
     cue = replace(fact, mode='interrogative', role_mask=torch.tensor([True, True, False]),
                   role_refs=(part, fact.role_refs[1], None))
     cue_row = store.append_meaning(cue, kind='question')
@@ -298,18 +313,17 @@ def test_codebook_compaction_notifies_the_live_ltm_index(monkeypatch):
     host = SimpleNamespace(conceptualSpace=cs, languageSpace=language,
                            grammatical_thoughts=registry)
     configure_model_index(host, store)
-    store.append_meaning(_meaning(), leaf_codes=((3, 6), (), (9,)))
+    append_indexed(store, _meaning(), terms=((3, 6), (), (9,)))
     cs.similarity_codebook.remove([1, 4])
     assert store.leaf_terms(0, 0) == (2, 4)
     assert store.leaf_terms(0, 2) == (7,)
 
 
-def test_recorded_forest_indexes_each_role_without_unfolding():
-    from MemoryIndex import recorded_leaf_terms
-    program = SimpleNamespace(rows=torch.tensor([6, 8, 10, 12]),
-        actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1],
-                              [0, -1, 2], [0, -1, 3]]))
-    assert recorded_leaf_terms(program, None, 3) == ((10,), (6, 8), (12,))
+def test_completed_forest_indexes_each_actual_slot_by_unfolding():
+    store = TernaryTruthStore(8, capacity=4)
+    field = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool))
+    row = append_indexed(store, field, terms=((10,), (6, 8), (12,)))
+    assert tuple(store.leaf_terms(row, slot) for slot in range(3)) == ((10,), (6, 8), (12,))
 
 
 def test_structural_context_keeps_live_values_but_rejects_owner_escape():
@@ -324,7 +338,7 @@ def test_structural_context_keeps_live_values_but_rejects_owner_escape():
     torch.testing.assert_close(value.grad, torch.ones_like(value))
 
 
-def test_normal_priming_uses_boosted_rows_not_the_identity_mask():
+def test_normal_priming_uses_boosted_rows_not_the_identity_mask(monkeypatch):
     from dataclasses import replace
     from QueryWork import QueryWorkBudget
     from test_normal_thought_controller import _catalog_world
@@ -332,11 +346,11 @@ def test_normal_priming_uses_boosted_rows_not_the_identity_mask():
     model, registry, memory, part, whole = _catalog_world()
     store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=4)
     fact = registry.form('part', part, whole, mode='assertive')
-    store.append_meaning(fact, leaf_codes=((50,), (51,), (52,)))
+    append_indexed(store, fact, terms=((50,), (51,), (52,)))
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
                   role_refs=(part, None, None), mode='interrogative')
     priming = torch.ones(64)
-    model.symbolSpace.taxonomy = SimpleNamespace(priming_enabled=True, priming_mask=lambda **kw: priming)
+    monkeypatch.setattr(model._concept_owner(), 'priming_weights', lambda **kw: priming)
     def retrieve():
         with model._query_boundary_scope((0,)):
             context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(64), continuation=None)
@@ -369,14 +383,16 @@ def test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams(monkey
     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
     meaning = registry.form('part', a, b, mode='assertive')
     original = TernaryTruthStore(8, capacity=4)
-    original.append_meaning(meaning, kind='fact')
-    original.append_meaning(meaning, kind='observation')
+    original.append_meaning(meaning, kind='fact', order=2)
+    original.append_meaning(meaning, kind='observation', order=2)
     state = copy.deepcopy(original.state_dict())
-    for key in ('leaf_codes', 'leaf_offsets', 'leaf_complete', 'index_stream'):
+    for key in ('posting_codes', 'posting_roles', 'posting_rows', 'leaf_complete', 'index_stream'):
         del state[key]
     store = TernaryTruthStore(8, capacity=4)
     store.load_state_dict(state)
     store.load_semantic_extras(original.semantic_extras())
+    from Queries import _existing_row
+    cs.prime_seen(torch.tensor([_existing_row(cs, a), _existing_row(cs, b)]))
     configure_model_index(SimpleNamespace(conceptualSpace=cs, languageSpace=language,
                                          grammatical_thoughts=registry), store)
     from Queries import _existing_row
@@ -393,16 +409,18 @@ def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch
     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
     meaning = registry.form('part', a, b, mode='assertive')
     store = TernaryTruthStore(8, capacity=4)
-    store.append_meaning(meaning)
-    store.append_meaning(meaning, leaf_codes=((3, 7), (), (11,)))
+    store.append_meaning(meaning, order=2)
+    append_indexed(store, meaning, terms=((3, 7), (), (11,)), order=2)
     assert store.leaf_terms(0, 0) == ()
     assert not bool(store.leaf_complete[0, 0])
+    from Queries import _existing_row
+    cs.prime_seen(torch.tensor([_existing_row(cs, a), _existing_row(cs, b)]))
     configure_model_index(SimpleNamespace(conceptualSpace=cs, languageSpace=language,
                                          grammatical_thoughts=registry), store)
     assert store.leaf_terms(0, 0) == (_existing_row(cs, a),)
     assert store.leaf_terms(0, 2) == (_existing_row(cs, b),)
-    assert store.leaf_terms(1, 0) == (3, 7)
-    assert store.leaf_terms(1, 2) == (11,)
+    assert store.leaf_terms(1, 0) == (_existing_row(cs, a),)
+    assert store.leaf_terms(1, 2) == (_existing_row(cs, b),)
 
 
 def test_nested_writes_inherit_stream_isolation():
@@ -411,7 +429,7 @@ def test_nested_writes_inherit_stream_isolation():
     parent = replace(child, role_mask=torch.tensor([True, False, False]),
                      role_refs=(('constituent', 0), None, None), constituents=(child,))
     store = TernaryTruthStore(8, capacity=4)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
     store.append_meaning(parent, kind='observation', stream=2)
     assert store.index_stream[:2].tolist() == [2, 2]
     assert not store.cued_rows(child, stream=0)['value']

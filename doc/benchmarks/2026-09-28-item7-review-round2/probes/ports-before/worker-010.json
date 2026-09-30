@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer"
+  ],
+  "completed": [
+    "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00019683304708451033,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_sparsity_regularizer.py:43: in test_symbolic_space_uses_sparsity_regularizer\n    assert hasattr(WholeSpace, \"_build_sparsity_regularizer\"), \\\nE   AssertionError: WholeSpace should expose a factory for its regularizer\nE   assert False\nE    +  where False = hasattr(<class 'Spaces.WholeSpace'>, '_build_sparsity_regularizer')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

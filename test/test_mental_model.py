@@ -53,7 +53,7 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         # Bivector retirement (2026-05-20) made the PartSpace-
         # space_role SyntacticLayer optional — not all configs wire a
         # ``subsymbolic`` SyntacticLayer, so accept None there.
-        for space in (model.conceptualSpace, model.wholeSpace):
+        for space in (model.conceptualSpace, model.symbolSpace):
             self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
                                  f"{space.name} missing per-space "
                                  f"SyntacticLayer")

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-20/worker-000.recycle.json"
+}

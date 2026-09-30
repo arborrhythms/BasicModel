@@ -1,0 +1,151 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "completed": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-original-api-22iucyu5/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-000.json"
+      ],
+      "pid": 53757,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 500696456,
+      "elapsed_seconds": 4.008230083039962,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+        "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+        "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+      ],
+      "completed": [
+        "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+        "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+        "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0011329170083627105,
+          "message": "test/test_merge_structural_not_operator.py:52: in test_merge_not_inserted_as_operator\n    pos = ws.insert_operations(g)\n          ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0014150839997455478,
+          "message": "test/test_merge_structural_not_operator.py:61: in test_semantic_operators_still_inserted\n    ws.insert_operations(g)\n    ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0009835410164669156,
+          "message": "test/test_merge_structural_not_operator.py:70: in test_only_semantic_operators_in_codebook\n    pos = ws.insert_operations(g)\n          ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-original-api-22iucyu5/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-001.json"
+      ],
+      "pid": 53790,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 433947968,
+      "elapsed_seconds": 3.8504224580246955,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "completed": [
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.002969958004541695,
+          "message": "test/test_semantic_categories_pipeline.py:82: in test_recovers_on_transitional_grammar_participation\n    op_vectors = {m: seed._seed_operator_vector(m)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-original-api-22iucyu5",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before",
+  "elapsed_seconds": 9.792451792047359,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 500696456,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-original-api-22iucyu5/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/collect.json"
+    ],
+    "pid": 53738,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180863840,
+    "elapsed_seconds": 1.7789240840356797,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/grammar-api-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+        "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+        "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

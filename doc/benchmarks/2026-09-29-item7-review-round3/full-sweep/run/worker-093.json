@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+  ],
+  "completed": [
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 887.8103706249967,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n[BasicModel] Activated aligned codebook prefix 32 -> 64 rows (physical capacity 64; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

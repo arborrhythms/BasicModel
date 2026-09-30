@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 6/6 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0126694580540061</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.010548792080953717</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_order0_percept_definitions.py::test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0008153340313583612</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0016299160197377205</pre></td><td><pre>test/test_order0_percept_definitions.py:64: in test_witnesses_write_alternatives_without_conjoining_their_literals
+    A, _, _ = cs.interpret_word([7], [1], key=&#x27;word&#x27;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.08300133293960243</pre></td><td><pre>test/test_order0_percept_definitions.py:92: in test_word_group_becomes_a_recurrent_row_without_changing_its_read
+    A, _, _ = cs.interpret_word(letters, whole, key=&#x27;love&#x27;)
+    ^^^^^^^
+E   ValueError: not enough values to unpack (expected 3, got 2)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018877499969676137</pre></td><td><pre>test/test_order0_percept_definitions.py:125: in test_alternatives_do_not_trigger_conjunctive_overcollection
+    A, _, _ = cs.interpret_word([20 + n], [10 + n], key=&#x27;word&#x27;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr></table></body></html>

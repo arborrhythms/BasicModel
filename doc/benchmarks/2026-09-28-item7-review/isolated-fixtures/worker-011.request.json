@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier"
+  ],
+  "collect": false,
+  "recycle_file": "/private/tmp/item7-isolated-fixtures/worker-011.recycle.json"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy_ladder.py::test_language_space_forward_and_reverse_are_the_entries"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-257.recycle.json"
+}

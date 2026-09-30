@@ -1,0 +1,24 @@
+{
+  "groups": [
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/probe_ac.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/probe_af.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-02/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

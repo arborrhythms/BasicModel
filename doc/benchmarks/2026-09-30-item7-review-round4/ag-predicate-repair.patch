@@ -1,0 +1,99 @@
+--- before/bin/Spaces.py
++++ after/bin/Spaces.py
+@@ -22483,15 +22483,14 @@
+         return self._ATOMIC_COLUMNS + n_rows
+ 
+     def _predicate_slab(self, idx):
+-        """``[B, N, C]`` bool signature slab for a ``[B, N]`` byte grid:
+-        the observed primitive column and the learned property memberships.
+-        Split rows update those same coefficients, with no second definition.
+-        """
+-        idx = idx.detach().to("cpu")
+-        B, N = int(idx.shape[0]), int(idx.shape[1])
++        """Observed predicate values and their original column identities.
++
++        Columns absent everywhere in this input cannot create a boundary or
++        a learning candidate. Gather present columns before expanding over
++        positions; inventory capacity must not multiply the byte grid.
++        """
++        idx = idx.detach().to("cpu").clamp(0, 255)
+         C = self._predicate_column_count()
+-        slab = torch.zeros(B, N, C, dtype=torch.bool, device="cpu")
+-        slab.scatter_(2, idx.clamp(0, 255).unsqueeze(-1), True)
+         lut = self.__dict__.get("_predicate_byte_lut")
+         primitives = getattr(self.subspace.what, 'primitive_properties', None)
+         version = primitives.members._version if primitives is not None else None
+@@ -22500,9 +22499,12 @@
+                    and self.__dict__.get('_predicate_members_version') != version)
+         if lut is None or int(lut.shape[1]) != C - self._ATOMIC_COLUMNS or refresh:
+             lut = self._build_predicate_byte_lut(C - self._ATOMIC_COLUMNS)
+-        if lut is not None and lut.numel():
+-            slab[:, :, self._ATOMIC_COLUMNS:] = lut[idx.clamp(0, 255)]
+-        return slab
++        atoms = idx.unique(sorted=True)
++        properties = lut.index_select(0, atoms).any(0).nonzero().reshape(-1)
++        columns = torch.cat((atoms, properties + self._ATOMIC_COLUMNS))
++        slab = torch.cat((idx[..., None] == atoms,
++                          lut.index_select(1, properties)[idx]), -1)
++        return slab, columns
+ 
+     def _build_predicate_byte_lut(self, n_rows):
+         """Host snapshot of the learned memberships for the eager cut."""
+@@ -22565,12 +22567,13 @@
+         idx = torch.tensor([list(raw)], dtype=torch.long, device="cpu").clamp(0, 255)
+         bw = getattr(self, "begins_weight", None)
+         if torch.is_tensor(bw):
+-            slab = self._predicate_slab(idx)
++            slab, columns = self._predicate_slab(idx)
+             begins_on, ends_on, atom_on, discard_on = (
+                 self._predicate_masks_host_cached())
+             if not bool(begins_on.any() or ends_on.any() or atom_on.any()):
+                 atom_on = torch.ones_like(atom_on)
+-            fine = _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on)
++            fine = _predicate_unit_spans(slab, *(mask[columns] for mask in
++                (begins_on, ends_on, atom_on, discard_on)))
+         else:
+             type_ids = _analysis_type_lut(self)[idx]
+             single = ((type_ids == _TYPE_DIGIT)
+@@ -22584,13 +22587,14 @@
+         """The unit tiling and the slab; the cold start (no column on) is
+         the atomic tiling, every byte a whole."""
+         idx_host = idx.detach().to("cpu")
+-        slab = self._predicate_slab(idx_host)
++        slab, columns = self._predicate_slab(idx_host)
+         begins_on, ends_on, atom_on, discard_on = (
+             m.to("cpu") for m in self._predicate_masks())
+         if not bool(begins_on.any() or ends_on.any() or atom_on.any()):
+             atom_on = torch.ones_like(atom_on)
+-        spans = _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on)
+-        return spans.to(idx.device), slab
++        spans = _predicate_unit_spans(slab, *(mask[columns] for mask in
++            (begins_on, ends_on, atom_on, discard_on)))
++        return spans.to(idx.device), (slab, columns)
+ 
+     def _observe_candidate_tilings(self, byte_idx, slab, current):
+         """Accrue, per candidate boundary type present in the batch, the
+@@ -22602,16 +22606,17 @@
+             return
+         tab = self.__dict__.setdefault("_boundary_evidence", {})
+         vals = byte_idx.tolist()
+-        begins_on, ends_on, atom_on, discard_on = self._predicate_masks()
+-        present = slab.any(dim=(0, 1)).nonzero().reshape(-1).tolist()
++        slab, columns = slab
++        begins_on, ends_on, atom_on, discard_on = (
++            mask[columns] for mask in self._predicate_masks())
+         candidates = [(("current",), current)]
+-        for c in present:
+-            if bool(discard_on[c]):
++        for local, column in enumerate(columns.tolist()):
++            if bool(discard_on[local]):
+                 continue
+             for move in ("begins", "ends", "atom"):
+                 b_, e_, a_ = begins_on.clone(), ends_on.clone(), atom_on.clone()
+-                {"begins": b_, "ends": e_, "atom": a_}[move][c] = True
+-                candidates.append(((move, c), _predicate_unit_spans(slab, b_, e_, a_, discard_on)))
++                {"begins": b_, "ends": e_, "atom": a_}[move][local] = True
++                candidates.append(((move, column), _predicate_unit_spans(slab, b_, e_, a_, discard_on)))
+         for key, spans in candidates:
+             rec = tab.setdefault(key, {"surfaces": {}, "units": 0, "presentations": 0})
+             for b in range(int(spans.shape[0])):

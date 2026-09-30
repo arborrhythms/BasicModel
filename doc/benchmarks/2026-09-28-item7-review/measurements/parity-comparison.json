@@ -1,0 +1,78 @@
+{
+  "means": [
+    0.38411848741816357,
+    0.3841184933844488
+  ],
+  "same_initial_parameters": true,
+  "same_initial_dictionary": true,
+  "sentences": [
+    {
+      "source_row": 0,
+      "equal": {
+        "source_row": true,
+        "text": true,
+        "word_count": true,
+        "byte_cost": true,
+        "root": true,
+        "reference": true,
+        "recovered": true,
+        "dictionary_sha256": true
+      },
+      "costs": [
+        0.4494419991970062,
+        0.4494419991970062
+      ]
+    },
+    {
+      "source_row": 1,
+      "equal": {
+        "source_row": true,
+        "text": true,
+        "word_count": true,
+        "byte_cost": true,
+        "root": true,
+        "reference": true,
+        "recovered": true,
+        "dictionary_sha256": true
+      },
+      "costs": [
+        0.004643341992050409,
+        0.004643341992050409
+      ]
+    },
+    {
+      "source_row": 2,
+      "equal": {
+        "source_row": true,
+        "text": true,
+        "word_count": true,
+        "byte_cost": true,
+        "root": true,
+        "reference": true,
+        "recovered": true,
+        "dictionary_sha256": true
+      },
+      "costs": [
+        1.0818591117858887,
+        1.0818591117858887
+      ]
+    },
+    {
+      "source_row": 3,
+      "equal": {
+        "source_row": true,
+        "text": true,
+        "word_count": true,
+        "byte_cost": false,
+        "root": true,
+        "reference": true,
+        "recovered": true,
+        "dictionary_sha256": true
+      },
+      "costs": [
+        0.0005294966977089643,
+        0.0005295205628499389
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "path": "doc/Philosophy.md",
+  "sha256": "8de73e8832570671f25d4dcea7a2c9b631f305a7cdfa57a6f05f1fd67cf15267",
+  "stale_contracts": [
+    "META node as a generalisation over both the word-concept",
+    "Decision: META concepts",
+    "binding table's one-row-per-word law is replaced by the\n   n-ary META"
+  ],
+  "passed": false
+}

@@ -1,0 +1,60 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_________________________ test_gate_requires_the_knob __________________________
+test/test_search_then_mint.py:49: in test_gate_requires_the_knob
+    ws.interpret_word(3)
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+______________ test_unlicensed_miss_is_a_placeholder_never_a_row _______________
+test/test_search_then_mint.py:60: in test_unlicensed_miss_is_a_placeholder_never_a_row
+    d = ws.interpret_word(7, licensed=False)
+        ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+______________________ test_licensed_miss_mints_then_hits ______________________
+test/test_search_then_mint.py:73: in test_licensed_miss_mints_then_hits
+    d1 = ws.interpret_word(7, licensed=True, object_id=2)
+         ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+_____________ test_licensed_miss_without_object_stays_placeholder ______________
+test/test_search_then_mint.py:90: in test_licensed_miss_without_object_stays_placeholder
+    d = ws.interpret_word(9, licensed=True, object_id=None)
+        ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+______________________ test_mint_gauge_orients_object_row ______________________
+test/test_search_then_mint.py:103: in test_mint_gauge_orients_object_row
+    d = ws.interpret_word(5, licensed=True, object_id=0,
+        ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+___________________ test_mint_shift_pushes_the_oriented_row ____________________
+test/test_search_then_mint.py:138: in test_mint_shift_pushes_the_oriented_row
+    d = ws.shift_word(ss, 0, 9, rows, licensed=True, object_id=1,
+        ^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'shift_word'
+_________________________ test_folds_never_create_rows _________________________
+test/test_search_then_mint.py:157: in test_folds_never_create_rows
+    ws.interpret_word(1, licensed=True, object_id=0)
+    ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'
+=========================== short test summary info ============================
+FAILED test/test_search_then_mint.py::test_gate_requires_the_knob - Attribute...
+FAILED test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row
+FAILED test/test_search_then_mint.py::test_licensed_miss_mints_then_hits - At...
+FAILED test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder
+FAILED test/test_search_then_mint.py::test_mint_gauge_orients_object_row - At...
+FAILED test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row
+FAILED test/test_search_then_mint.py::test_folds_never_create_rows - Attribut...
+7 failed in 2.06s

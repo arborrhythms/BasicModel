@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends"
+  ],
+  "completed": [
+    "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007496671751141548,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

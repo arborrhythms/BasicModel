@@ -1,0 +1,17 @@
+{
+  "stopped_waiters": [
+    {
+      "pid": 71221,
+      "label": "af-head"
+    },
+    {
+      "pid": 72536,
+      "label": "ah-head"
+    },
+    {
+      "pid": 73353,
+      "label": "ai-head"
+    }
+  ],
+  "reason": "HEAD sources are independent; serialize HEAD receipts with each other, not behind candidate diagnostics. No measurement process had started."
+}

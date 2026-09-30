@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_interleave_epoch_reads_a_short_final_group_once"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-114.recycle.json"
+}

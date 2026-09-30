@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-309.recycle.json"
+}

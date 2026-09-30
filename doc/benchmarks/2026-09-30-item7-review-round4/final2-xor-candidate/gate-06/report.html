@@ -1,0 +1,119 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>170.2324842910748</pre></td><td><pre>test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct
+    self.assertGreaterEqual(
+E   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected &gt;=50%). Sample reconstructions: [(&#x27;hello world&#x27;, &#x27;  hello&#x27;), (&#x27;hello there&#x27;, &#x27;  hello&#x27;)]</pre></td><td><pre>
+batch = 0 (Δ=0.492s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.4493
+Epoch [366/400]
+batch = 0 (Δ=0.416s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.3908
+Epoch [367/400]
+batch = 0 (Δ=0.522s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.4497
+Epoch [368/400]
+batch = 0 (Δ=0.544s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.4253
+Epoch [369/400]
+batch = 0 (Δ=0.386s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.4518
+Epoch [370/400]
+batch = 0 (Δ=0.475s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.4514
+Epoch [371/400]
+batch = 0 (Δ=0.391s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.3621
+Epoch [372/400]
+batch = 0 (Δ=0.521s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.4001
+Epoch [373/400]
+batch = 0 (Δ=0.343s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.4612
+Epoch [374/400]
+batch = 0 (Δ=0.564s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.4620
+Epoch [375/400]
+batch = 0 (Δ=0.404s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.3068
+Epoch [376/400]
+batch = 0 (Δ=0.572s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.4624
+Epoch [377/400]
+batch = 0 (Δ=0.547s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.4643
+Epoch [378/400]
+batch = 0 (Δ=0.431s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.4667
+Epoch [379/400]
+batch = 0 (Δ=0.539s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.4677
+Epoch [380/400]
+batch = 0 (Δ=0.407s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3804
+Epoch [381/400]
+batch = 0 (Δ=0.448s, 100.00%)
+Train Loss: output=0.1755, reconstruction=0.4687
+Epoch [382/400]
+batch = 0 (Δ=0.553s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4712
+Epoch [383/400]
+batch = 0 (Δ=0.628s, 100.00%)
+Train Loss: output=0.1754, reconstruction=0.4820
+Epoch [384/400]
+batch = 0 (Δ=0.328s, 100.00%)
+Train Loss: output=0.1754, reconstruction=0.4765
+Epoch [385/400]
+batch = 0 (Δ=0.388s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.3617
+Epoch [386/400]
+batch = 0 (Δ=0.553s, 100.00%)
+Train Loss: output=0.1759, reconstruction=0.3811
+Epoch [387/400]
+batch = 0 (Δ=0.437s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.3558
+Epoch [388/400]
+batch = 0 (Δ=0.790s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.4584
+Epoch [389/400]
+batch = 0 (Δ=0.395s, 100.00%)
+Train Loss: output=0.1767, reconstruction=0.4859
+Epoch [390/400]
+batch = 0 (Δ=0.459s, 100.00%)
+Train Loss: output=0.1755, reconstruction=0.4854
+Epoch [391/400]
+batch = 0 (Δ=0.523s, 100.00%)
+Train Loss: output=0.1770, reconstruction=0.3870
+Epoch [392/400]
+batch = 0 (Δ=0.416s, 100.00%)
+Train Loss: output=0.1771, reconstruction=0.4826
+Epoch [393/400]
+batch = 0 (Δ=0.483s, 100.00%)
+Train Loss: output=0.1759, reconstruction=0.3896
+Epoch [394/400]
+batch = 0 (Δ=0.347s, 100.00%)
+Train Loss: output=0.1788, reconstruction=0.3940
+Epoch [395/400]
+batch = 0 (Δ=0.428s, 100.00%)
+Train Loss: output=0.1765, reconstruction=0.4889
+Epoch [396/400]
+batch = 0 (Δ=0.464s, 100.00%)
+Train Loss: output=0.1776, reconstruction=0.4833
+Epoch [397/400]
+batch = 0 (Δ=0.472s, 100.00%)
+Train Loss: output=0.1803, reconstruction=0.3848
+Epoch [398/400]
+batch = 0 (Δ=0.502s, 100.00%)
+Train Loss: output=0.1762, reconstruction=0.4823
+Epoch [399/400]
+batch = 0 (Δ=0.377s, 100.00%)
+Train Loss: output=0.1795, reconstruction=0.5248
+Epoch [400/400]
+batch = 0 (Δ=0.442s, 100.00%)
+Train Loss: output=0.1820, reconstruction=0.5247
+Final Stats:
+=== Selected operation grammar ===
+batch = 0 (Δ=0.393s, 100.00%)
+=== Input Reconstruction (test) ===
+  row[0] input=&#x27;hello world&#x27; -&gt; reconstructed=&#x27;hello hello&#x27; label=0.0000 predicted=0.4954 MISMATCH
+  row[1] input=&#x27;hello there&#x27; -&gt; reconstructed=&#x27;&#x27; label=1.0000 predicted=0.4975 MISMATCH
+  row[2] input=&#x27;loving world&#x27; -&gt; reconstructed=&#x27;&#x27; label=1.0000 predicted=0.4957 MISMATCH
+  row[3] input=&#x27;loving there&#x27; -&gt; reconstructed=&#x27;&#x27; label=0.0000 predicted=0.5013 MISMATCH
+</pre></td></tr></table></body></html>

@@ -46,19 +46,28 @@ def test_shared_grammar_operators_belong_to_the_diagnostic_set():
     assert {id(p) for p in shared} == {id(p) for p in op.parameters()}
 
 
-def test_packed_prediction_teardown_records_each_observation_once():
+def test_packed_prediction_teardown_records_each_observation_once(monkeypatch):
     from Models import BasicModel
-
+    from Layers import InterSentenceLayer
+    from reading_fixtures import commit_reading
+    from test_item7_acceptance import SentenceFixture
+    fixture = SentenceFixture(monkeypatch)
+    discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='structured')
     calls = []
-    owner = SimpleNamespace(
-        inputSpace=SimpleNamespace(_sentence_pack_enabled=True),
-        _packed_sentence_roots=torch.ones(1, 2, 3),
-        _drain_packed_stm_end_states=lambda: calls.append('observe'),
-        symbolSpace=None, wholeSpaces=[], spaces=[])
+    observe = discourse.observe_stm_end_state
+    def record(*args, **kwargs):
+        calls.append('observe')
+        return observe(*args, **kwargs)
+    monkeypatch.setattr(discourse, 'observe_stm_end_state', record)
+    def present(owner=None):
+        return commit_reading(fixture.language, fixture.registry, fixture.program('cat'),
+            None, discourse=discourse, owner=owner)[0]
+    owner = present()
     BasicModel._end_step(owner)
     BasicModel._end_step(owner)
     assert calls == ['observe'], "teardown must not invent a second observation"
-    BasicModel._start_spaces_for_forward(owner)
+    present(owner)
     BasicModel._end_step(owner)
     assert calls == ['observe', 'observe'], "a new presentation must be observable"
 
@@ -364,17 +373,17 @@ def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeyp
     assert any(not torch.equal(a, b) for a, b in zip(before, answer_only))
 
 
-def test_real_intermediate_and_final_seals_have_same_canonical_roles(tmp_path):
+def test_real_intermediate_and_final_ends_have_same_canonical_roles(tmp_path):
     from test_meronomy_ladder import _build_ladder_variant
     from test_reverse_traversal import _stage_packed
     meanings = []
     for i, rows in enumerate(([["1 plus 2", "3 plus 4"]], [["1 plus 2 "]])):
-        model = _build_ladder_variant(tmp_path, f"seal_layout_{i}", [
+        model = _build_ladder_variant(tmp_path, f"closing_layout_{i}", [
             ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
             ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
             ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
         ])
-        # This probes the seal layout on a completed derivation. Select one
+        # This probes the closing layout on a completed derivation. Select one
         # known binary operation and STOP when eligible; random unary loops
         # can exhaust the budget and correctly leave an incomplete forest.
         chooser = model.symbolSpace.languageLayer.operation_layer.chooser
@@ -390,10 +399,8 @@ def test_real_intermediate_and_final_seals_have_same_canonical_roles(tmp_path):
         model._chart_compose_per_word = lambda: None
         model._install_unit_span_fn()
         try:
-            _stage_packed(model, rows)
             with torch.no_grad():
-                result = model._forward_with_compiled_sentence_state(None)
-            model._publish_compiled_sentence_state(result)
+                model(model.inputSpace.prepPackedInput(rows))
             discourse = model.symbolSpace.discourse
             if i == 0:
                 payload = model._tensor_sentence_roots_live[0, 0].reshape(3, -1)

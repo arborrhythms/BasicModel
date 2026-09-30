@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules"
+  ],
+  "completed": [
+    "test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.14771187503356487,
+      "message": "test/test_stm_relative_sentence_end_state.py:249: in test_relative_mask_sees_cs_role_rules\n    assert not bool(m.any())\nE   assert not True\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method any of Tensor object at 0x1288c0140>()\nE    +      where <built-in method any of Tensor object at 0x1288c0140> = tensor([ True, False,  True]).any",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

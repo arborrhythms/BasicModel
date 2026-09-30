@@ -1,0 +1,4 @@
+[collect] 4 selectors; limit 1800s, 8.0 GiB
+[collect] exit 4; 1.3s; peak 0.04 GiB
+Result: collection_exit, exit 4; 0/0 cases completed.
+output/tests/20260927-item7-native-taxonomy/result.json

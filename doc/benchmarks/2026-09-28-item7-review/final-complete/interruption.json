@@ -1,0 +1,7 @@
+{
+  "reason": "A caller audit and isolated failing probes found five failures in three fixtures that still expected scalar trust to manufacture evidence. The complete-sweep attempt was stopped before source edits. Runtime is unchanged; fixture ports follow the September 28 amendment.",
+  "selected": 5020,
+  "completed": 10,
+  "elapsed_seconds": 145.83209816599265,
+  "source_unchanged": true
+}

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-121.recycle.json"
+}

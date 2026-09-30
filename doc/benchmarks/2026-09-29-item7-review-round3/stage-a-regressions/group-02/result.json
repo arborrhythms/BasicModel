@@ -1,0 +1,207 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+    "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+    "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+    "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+    "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+    "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+    "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+    "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+    "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+    "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts"
+  ],
+  "completed": [
+    "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+    "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+    "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+    "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+    "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+    "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+    "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+    "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+    "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+    "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-02/worker-000.json"
+      ],
+      "pid": 6428,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 442828096,
+      "elapsed_seconds": 3.9888758750166744,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+        "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+        "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+        "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+        "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+        "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+        "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+        "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+        "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+        "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts"
+      ],
+      "completed": [
+        "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+        "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+        "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+        "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+        "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+        "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+        "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+        "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+        "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+        "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.029888916993513703,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006572090787813067,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009514792007394135,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005420419620350003,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010585624957457185,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.2807280420092866,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.017384208971634507,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0037529999390244484,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02643950004130602,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00100229203235358,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-02",
+  "elapsed_seconds": 7.737323957961053,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 442828096,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-02/collect.json"
+    ],
+    "pid": 6418,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428688584,
+    "elapsed_seconds": 3.5205960830207914,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-regressions/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+        "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+        "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+        "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+        "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+        "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+        "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+        "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+        "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+        "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

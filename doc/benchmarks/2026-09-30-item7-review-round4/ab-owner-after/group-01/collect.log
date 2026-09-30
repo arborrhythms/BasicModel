@@ -1,0 +1,3 @@
+test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero
+
+1 test collected in 2.26s

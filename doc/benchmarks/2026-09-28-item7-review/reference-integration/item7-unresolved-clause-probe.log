@@ -1,0 +1,27 @@
+Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+READING [-1, -1, -1] None [[0, -1, 0], [0, -1, 1], [1, 0, -1], [0, -1, 2], [1, 0, -1]] CLAUSE {'relation': None, 'refs': ['-1', '-1', '-1'], 'children': []}
+READING [-1, -1, -1] None [[0, -1, 0], [0, -1, 1], [1, 0, -1], [0, -1, 2], [1, 0, -1]] CLAUSE {'relation': None, 'refs': ['-1', '-1', '-1'], 'children': []}
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+  warnings.warn(
+READING [-1, -1, -1] None [[0, -1, 0], [0, -1, 1], [1, 0, -1], [0, -1, 2], [1, 0, -1]] CLAUSE {'relation': None, 'refs': ['-1', '-1', '-1'], 'children': []}
+READING [-1, -1, -1] None [[0, -1, 0], [0, -1, 1], [1, 0, -1], [0, -1, 2], [1, 0, -1]] CLAUSE {'relation': None, 'refs': ['-1', '-1', '-1'], 'children': []}
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+  warnings.warn(
+/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+  warnings.warn(
+COMPLETE

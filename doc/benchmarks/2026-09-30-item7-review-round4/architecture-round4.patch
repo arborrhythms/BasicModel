@@ -1,0 +1,32 @@
+--- before/doc/Architecture.md
++++ after/doc/Architecture.md
+@@ -362,8 +362,9 @@
+ #### Relation-table entry contract
+ 
+ The [two-truths clause closing](specs/2026-09-16-two-truths-ideas-and-relations.md)
+-uses the shared native allocator for concept and clause addresses. Each LTM
+-row has `row_ids`, three `refs`, an `order` stamp, independent
++uses the native concept allocator for word and object addresses. An ended
++clause's identity is its occurrences in LTM, tied by the references in their
++slots; it takes no concept inventory row. Each LTM row has `row_ids`, three `refs`, an `order` stamp, independent
+ `c_plus`/`c_minus` identification evidence, a separate scalar source `trust`,
+ and the ended field's four-coordinate `.where` and `.when`. Trust concerns
+ the event's veridicality; changing it never replaces the evidence pair.
+@@ -379,9 +380,14 @@
+ `word DEF object`. Its operands name native identities in `refs[0]` and
+ `refs[2]`; their vector slots are null, and the middle slot has the fixed
+ DEF atom. Learning either concept's code cannot redirect the definition.
+-Definitions and clause endings allocate identities from the grammar registry's
+-same ConceptualSpace, including bodies with independent stage dictionaries.
+-An integer from another stage's allocator cannot name a row in this store.
++Word and object operands belong to the grammar registry's ConceptualSpace,
++including bodies with independent stage dictionaries; another stage's allocator
++cannot supply their identities. The DEF utterance and each ended clause have
++LTM occurrence identities. A grammar predicate has one identity per operation,
++tied by the relation slots in which it occurs, without an inventory row. A
++referenced phrase likewise keeps its point in its LTM row. An identity-to-row
++cache locates these occurrences. A full inventory refuses optional
++symbolization atomically and the reading continues.
+ Only `interpret` writes definitions; only the closing writes what a sentence
+ asserts. A definition has its own `.when`, remains in recency, and may be
+ forgotten. Re-reading refreshes its timestamp without moving its `.when`.

@@ -1,0 +1,3 @@
+test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths
+
+1 test collected in 1.96s

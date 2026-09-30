@@ -1,0 +1,9 @@
+{
+  "data/XOR_grammar.xml": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d",
+  "test/test_mm_xor.py": "f31b7717533ebe163c0f1d6c9460fb8095415295b8ffc88737908d094fab382a",
+  "test/test_packed_reconstruction_parity.py": "9837d850071739bddc4e9c388b16a25201c692182ea5f136eb38fa20b41d8159",
+  "bin/Layers.py": "052b9f44c9b24a5e1b4dbbdba2594571210a312ea7b41bd081abfbbd83d63c3f",
+  "bin/ClauseRow.py": "3da43bd9c6e7be7376b7851a46f9f8ae52e5d0547ff850e3d200849af5aa065f",
+  "bin/ConceptIndex.py": "be630e3b411cf33c7ad29409a92233b30344a11cd4adc7aa442c634d31522e65",
+  "test/test_item7_taxonomy.py": "bd4f565c6e6995cc34733f4e420e41cffd7fcc67abaabdea624dd9c444de1653"
+}

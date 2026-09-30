@@ -1,0 +1,6 @@
+[collect] 4 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.46 GiB
+[worker-000] 35 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 1; 4.4s; peak 0.87 GiB
+Result: test_failure, exit 1; 35/35 cases completed.
+output/tests/20260927-item7-meta-lifecycle/result.json

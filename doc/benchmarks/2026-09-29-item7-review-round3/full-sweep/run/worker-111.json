@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 90.45912970905192,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

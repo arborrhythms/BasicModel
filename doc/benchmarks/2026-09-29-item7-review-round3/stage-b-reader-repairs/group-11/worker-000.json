@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.014376249979250133,
+      "message": "test/test_item9b_interpret.py:190: in test_testimony_and_its_later_definition_are_read_by_the_parallel_field\n    assert field[slot, 0, 0, 0] > 0\nE   assert tensor(0., grad_fn=<SelectBackward0>) > 0",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

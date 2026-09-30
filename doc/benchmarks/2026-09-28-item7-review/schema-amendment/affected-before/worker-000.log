@@ -1,0 +1,32 @@
+.........F.F.                                                            [100%]
+=================================== FAILURES ===================================
+______________ test_07_equality_writes_two_independent_part_rows _______________
+test/test_item7_acceptance.py:171: in test_07_equality_writes_two_independent_part_rows
+    assert f.store.row(1)['evidence'] == pytest.approx((.7, 0.))
+E   assert (0.0, 0.0) == approx((0.7 ±....0 ± 1.0e-12))
+E     
+E     comparison failed. Mismatched elements: 1 / 2:
+E     Max absolute difference: 0.7
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     0     | 0.0      | 0.7 ± 7.0e-07
+_____ test_09_attribution_cannot_assert_its_child_and_negation_is_content ______
+test/test_item7_acceptance.py:190: in test_09_attribution_cannot_assert_its_child_and_negation_is_content
+    assert f.store.row(0)['evidence'] == pytest.approx((0., .6))
+E   assert (0.0, 0.0) == approx((0.0 ±....6 ± 6.0e-07))
+E     
+E     comparison failed. Mismatched elements: 1 / 2:
+E     Max absolute difference: 0.6
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     1     | 0.0      | 0.6 ± 6.0e-07
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows
+FAILED test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content
+2 failed, 11 passed, 1 warning in 2.11s

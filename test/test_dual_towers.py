@@ -198,7 +198,7 @@ def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
     raw = raw[:, 0] if raw.ndim == 3 else raw
     for b, row in enumerate(raw):
         word = bytes(row[row != 0].tolist()).decode()
-        cid = cs0._word_obj_meta[word][0]
+        cid = cs0.definitions.deref(cs0.definitions.word(form=word))
         ids = carrier._concept_ids
         ids = ids[:, b] if ids.ndim == 2 else ids
         slots = (ids == cid).nonzero().flatten()

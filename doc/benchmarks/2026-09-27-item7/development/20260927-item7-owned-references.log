@@ -1,0 +1,12 @@
+[collect] 4 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.6s; peak 0.40 GiB
+[worker-000] 3 selectors; limit 1796s, 8.0 GiB
+[worker-001] 4 selectors; limit 1796s, 8.0 GiB
+[worker-002] 3 selectors; limit 1796s, 8.0 GiB
+[worker-000] exit 0; 4.2s; peak 0.41 GiB
+[worker-001] exit 0; 5.2s; peak 0.40 GiB
+[worker-002] exit 0; 6.2s; peak 0.45 GiB
+[worker-003] 5 selectors; limit 1790s, 8.0 GiB
+[worker-003] exit 0; 3.6s; peak 0.40 GiB
+Result: passed, exit 0; 15/15 cases completed.
+output/tests/20260927-item7-owned-references/result.json

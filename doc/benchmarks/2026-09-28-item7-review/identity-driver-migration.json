@@ -1,0 +1,8 @@
+{
+  "copied_from": "doc/benchmarks/2026-09-27-item7/measure_identity.py",
+  "original_sha256": "37e5fde5d9948814643ac2a15de66b2378c28995803a3d17e4e6c49f30f64d49",
+  "driver": "doc/benchmarks/2026-09-28-item7-review/measure_identity.py",
+  "sha256": "f06660878042c2a436269e7dff2a3e6f6b9f386806654cf3e2c2e79dbc85a288",
+  "unchanged": "Seed 42, predictor initialization, four literal-sum cases, 240 updates per condition, kind cases, evaluation formulas.",
+  "adaptation": "Read the explicit numerical operands from the open journal; write_clause stores the end state; the forced reference is resolved before the fixture literal sum. No completed row stores actions."
+}

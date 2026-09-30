@@ -1,0 +1,153 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_has_model_wide_only",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+    "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nOutput",
+    "test/test_config_scoping.py::TestCreateFromConfig::test_reads_space_nOutput",
+    "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_guard_retired",
+    "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_ok_when_false",
+    "test/test_config_scoping.py::TestValidateConfig::test_symbol_dim_must_match_concept_dim",
+    "test/test_config_scoping.py::TestInferValidation::test_non_ir_infer_modes_raise_not_implemented"
+  ],
+  "completed": [
+    "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_has_model_wide_only",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+    "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nOutput",
+    "test/test_config_scoping.py::TestCreateFromConfig::test_reads_space_nOutput",
+    "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_guard_retired",
+    "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_ok_when_false",
+    "test/test_config_scoping.py::TestValidateConfig::test_symbol_dim_must_match_concept_dim",
+    "test/test_config_scoping.py::TestInferValidation::test_non_ir_infer_modes_raise_not_implemented"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012170779518783092,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011029094457626343,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.749992750585079e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.104213677346706e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_architecture_has_model_wide_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001158339437097311,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.708385914564133e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.420886635780334e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.183306246995926e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nOutput",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.525008499622345e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestCreateFromConfig::test_reads_space_nOutput",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025493333116173744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_guard_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014816690236330032,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_ok_when_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011479086242616177,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestValidateConfig::test_symbol_dim_must_match_concept_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015258300118148327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestInferValidation::test_non_ir_infer_modes_raise_not_implemented",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001299581490457058,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

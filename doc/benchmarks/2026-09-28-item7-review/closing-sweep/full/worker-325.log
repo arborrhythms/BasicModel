@@ -1,0 +1,20 @@
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+test/test_partition_pos_codebook.py::test_pos_codebook_shape
+test/test_partition_pos_codebook.py::test_pos_codebook_lookup_deterministic
+test/test_partition_pos_codebook.py::test_category_stack_push_pop_roundtrip
+test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count
+test/test_partition_pos_codebook.py::test_category_stack_flatten_shape
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1740: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_partition_pos_codebook.py::test_pos_codebook_shape
+test/test_partition_pos_codebook.py::test_pos_codebook_lookup_deterministic
+test/test_partition_pos_codebook.py::test_category_stack_push_pop_roundtrip
+test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count
+test/test_partition_pos_codebook.py::test_category_stack_flatten_shape
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 10 warnings in 2.36s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-head/gate-08/worker-000.recycle.json"
+}

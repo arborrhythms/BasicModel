@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 1,
+  "reason": "completed",
+  "peak_memory_bytes": 17997772840,
+  "elapsed_seconds": 12.220608000061475
+}

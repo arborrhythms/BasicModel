@@ -128,7 +128,7 @@
       <seed>42</seed>
       <!-- Each of 28 contiguous corpus streams packs consecutive complete
            sentences into a W256 brick. Sentences remain chronological within
-           a row, and row-local soft reset seals every sentence boundary. -->
+           a row, and row-local soft reset endings every sentence boundary. -->
       <batchSize>28</batchSize>
       <packSentences>true</packSentences>
       <!-- One CPU producer thread with a two-tick in-flight budget: one tick
@@ -248,7 +248,6 @@
        Dynamic property discovery may grow this inventory later at an explicit
        optimizer/compiled-graph reset boundary. -->
   <WholeSpace>
-    <propertyBasis>true</propertyBasis>
     <analysis>meronomy</analysis>
     <!-- Per-vector invertible membership coupling. This is not the optional
          parallel CS mixing matrix and never mixes word/location slots. -->

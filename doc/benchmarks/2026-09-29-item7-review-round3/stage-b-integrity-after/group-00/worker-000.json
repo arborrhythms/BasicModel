@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.5275779579533264,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17321983294095844,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6898806249955669,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

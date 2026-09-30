@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_af.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

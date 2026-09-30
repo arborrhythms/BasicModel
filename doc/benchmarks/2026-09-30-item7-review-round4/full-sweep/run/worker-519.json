@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ps_analyze_routed.py::test_routed_known_word_is_one_terminal",
+    "test/test_ps_analyze_routed.py::test_routed_analysis_round_trips",
+    "test/test_ps_analyze_routed.py::test_routed_terminal_view_consumable"
+  ],
+  "completed": [
+    "test/test_ps_analyze_routed.py::test_routed_known_word_is_one_terminal",
+    "test/test_ps_analyze_routed.py::test_routed_analysis_round_trips",
+    "test/test_ps_analyze_routed.py::test_routed_terminal_view_consumable"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_analyze_routed.py::test_routed_known_word_is_one_terminal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001680250046774745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_analyze_routed.py::test_routed_analysis_round_trips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007621250115334988,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_analyze_routed.py::test_routed_terminal_view_consumable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005866661667823792,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]"
+  ],
+  "completed": [
+    "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2815752080641687,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

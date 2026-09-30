@@ -1,0 +1,12 @@
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_closing_part_and_implies_never_ask_thought_authorization
+doc/benchmarks/2026-09-30-item7-review-round4/probes_z.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 tests collected in 4.85s

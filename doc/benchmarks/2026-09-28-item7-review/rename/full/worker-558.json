@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "completed": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "slow_selected": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_conceptualize.py::test_conceptualize_dispatch",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.483308970928192e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptualize.py', 31, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

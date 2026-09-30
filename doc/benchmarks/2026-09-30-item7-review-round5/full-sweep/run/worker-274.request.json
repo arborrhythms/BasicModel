@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_input_word_cursor.py::test_yields_words_one_per_call_in_T_order_then_null_ends"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-274.recycle.json"
+}

@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_contextual_bind.py::test_subject_control_picks_subject",
+    "test/test_contextual_bind.py::test_object_control_picks_object_not_nearer_subject",
+    "test/test_contextual_bind.py::test_subject_control_does_not_grab_nearer_object",
+    "test/test_contextual_bind.py::test_unknown_licensing_falls_back_to_locality",
+    "test/test_contextual_bind.py::test_no_participants_is_unresolved",
+    "test/test_contextual_bind.py::test_resolves_nearest_left_from_slab",
+    "test/test_contextual_bind.py::test_resolves_object_control_from_participants",
+    "test/test_contextual_bind.py::test_no_context_passes_marker_through",
+    "test/test_contextual_bind.py::test_clear_bind_context_reverts_to_passthrough",
+    "test/test_contextual_bind.py::test_class_contract",
+    "test/test_contextual_bind.py::test_reduction_layer_stashes_live_slab_on_bind"
+  ],
+  "completed": [
+    "test/test_contextual_bind.py::test_subject_control_picks_subject",
+    "test/test_contextual_bind.py::test_object_control_picks_object_not_nearer_subject",
+    "test/test_contextual_bind.py::test_subject_control_does_not_grab_nearer_object",
+    "test/test_contextual_bind.py::test_unknown_licensing_falls_back_to_locality",
+    "test/test_contextual_bind.py::test_no_participants_is_unresolved",
+    "test/test_contextual_bind.py::test_resolves_nearest_left_from_slab",
+    "test/test_contextual_bind.py::test_resolves_object_control_from_participants",
+    "test/test_contextual_bind.py::test_no_context_passes_marker_through",
+    "test/test_contextual_bind.py::test_clear_bind_context_reverts_to_passthrough",
+    "test/test_contextual_bind.py::test_class_contract",
+    "test/test_contextual_bind.py::test_reduction_layer_stashes_live_slab_on_bind"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_contextual_bind.py::test_subject_control_picks_subject",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011958298273384571,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_object_control_picks_object_not_nearer_subject",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010391580872237682,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_subject_control_does_not_grab_nearer_object",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.229197166860104e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_unknown_licensing_falls_back_to_locality",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.275018237531185e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_no_participants_is_unresolved",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.637504652142525e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_resolves_nearest_left_from_slab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032587512396275997,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_resolves_object_control_from_participants",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018812483176589012,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_no_context_passes_marker_through",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001116669736802578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_clear_bind_context_reverts_to_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014829193241894245,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_class_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.52079426497221e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_reduction_layer_stashes_live_slab_on_bind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012872910592705011,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

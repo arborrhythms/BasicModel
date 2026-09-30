@@ -1,0 +1,35 @@
+{
+  "source_files": 712,
+  "source_digest": "49d5d59d5b4e75fd3d249fd00aa94a35121f1458dc85faeb5cc2e86d6b993601",
+  "changed_since_sweep": [
+    "test/index_fixtures.py",
+    "test/test_accessible_mind.py",
+    "test/test_arithmetic_isolation.py"
+  ],
+  "runtime_and_configuration_unchanged": true,
+  "all_other_assertions_unchanged": true,
+  "results": {
+    "cases": {
+      "passed": 6,
+      "seconds": 7.792644750094041,
+      "receipt": "cases/run/result.json"
+    },
+    "files": {
+      "passed": 59,
+      "seconds": 848.9002642910928,
+      "receipt": "files/run/result.json"
+    },
+    "item7": {
+      "passed": 202,
+      "seconds": 32.68045258289203,
+      "receipt": "item7/run/result.json"
+    },
+    "docs": {
+      "passed": 169,
+      "seconds": 249.69872837513685,
+      "receipt": "docs/run/result.json"
+    }
+  },
+  "original_full_sweep": "../full-sweep/summary.json",
+  "no_new_full_sweep": true
+}

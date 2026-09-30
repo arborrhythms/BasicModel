@@ -229,9 +229,9 @@ def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypat
         construction = model._last_answer_construction
         loss = recorded["output"]
         assert loss.requires_grad and float(loss.detach()) > 0
-        assert all(not program.end_state.requires_grad
-                   for program in construction.derivation.program if program is not None)
-        # The committed program is detached at its seal. Keep the actual
+        assert all(not field.end_state.requires_grad
+                   for field in construction.derivation.sentence_states if field is not None)
+        # The committed field is detached at its closing. Keep the actual
         # pre-commit tensors to check that answer loss cannot revisit them.
         sources = [value for value in sentence_sources if value.requires_grad]
         assert sources, "the sentence trials must carry live compose conclusions"

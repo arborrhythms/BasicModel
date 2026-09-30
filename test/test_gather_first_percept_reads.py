@@ -126,56 +126,6 @@ def test_radix_active_searches_do_not_read_physical_reserve(monkeypatch):
     assert store.reverse(torch.tensor([0.9, 0.1])) == b"left"
 
 
-def test_symbolize_uses_radix_occupied_prefix_without_full_read(monkeypatch):
-    import Spaces
-    from Language import SymbolizeLayer
-    from Layers import RadixLayer
-
-    monkeypatch.setattr(Spaces, "meronomy_enabled", lambda: True)
-    store = RadixLayer(dim=2, initial_cap=16)
-    store.insert(b"word", init_vector=torch.tensor([0.9, 0.1]))
-    store._basis.is_percept_store = True
-    _forbid_full_read(monkeypatch, store._basis)
-
-    ws_rows = torch.nn.Parameter(torch.tensor([[0.1, 0.9], [0.8, 0.2]]))
-
-    class _WholeSpace:
-        def __init__(self):
-            self.subspace = SimpleNamespace(
-                what=SimpleNamespace(active_prototypes=lambda: ws_rows))
-            self._ws_pos_to_row = {}
-            self.ps_row = None
-
-        def ensure_ps_position(self, row):
-            self.ps_row = int(row)
-            return 10 + int(row)
-
-        @staticmethod
-        def ensure_ws_position(row, kind="ws"):
-            return 20 + int(row)
-
-        def insert_meta(self, ps_pos, ws_pos, fused_vec=None):
-            self._ws_pos_to_row[30] = 0
-            return 30
-
-        @staticmethod
-        def record_lbg_pull(ws_pos, vec):
-            return None
-
-        @staticmethod
-        def maybe_split_lbg(ws_pos):
-            return None
-
-    ws = _WholeSpace()
-    layer = SymbolizeLayer(
-        nInput=2,
-        nOutput=2,
-        wholeSpace=ws,
-        perceptualSpace=SimpleNamespace(percept_store=store),
-    )
-
-    layer.forward(torch.tensor([0.9, 0.1]), torch.tensor([0.1, 0.9]))
-    assert ws.ps_row == 0
 
 
 def test_post_step_projection_is_embedding_only(monkeypatch):

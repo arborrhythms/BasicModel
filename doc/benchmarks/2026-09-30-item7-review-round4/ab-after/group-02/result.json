@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+  ],
+  "completed": [
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-work-82i12gz7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-02/worker-000.json"
+      ],
+      "pid": 67538,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 601884160,
+      "elapsed_seconds": 5.198612791951746,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+      ],
+      "completed": [
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5692642498761415,
+          "message": "test/test_fineweb_preflight.py:145: in test_checkpoint_restores_optimizer_counters_and_rng\n    assert restored.load_weights(str(path), require_match=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5696: in load_weights\n    self._restore_structural_extras(\nbin/Models.py:4914: in _restore_structural_extras\n    layer = owner_space._concept_allocator.layer(0)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8846/test_checkpoint_restores_optim0/resume.ckpt\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-work-82i12gz7",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-02",
+  "elapsed_seconds": 7.333016459131613,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 601884160,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-work-82i12gz7/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-02/collect.json"
+    ],
+    "pid": 67528,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181175088,
+    "elapsed_seconds": 1.9605515841394663,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ab-after/group-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_record_lbg_pull]",
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_maybe_split_lbg]",
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[insert_meta]"
+  ],
+  "completed": [
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_record_lbg_pull]",
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_maybe_split_lbg]",
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[insert_meta]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_record_lbg_pull]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001081250375136733,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_maybe_split_lbg]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.679095819592476e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[insert_meta]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.491601329296827e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

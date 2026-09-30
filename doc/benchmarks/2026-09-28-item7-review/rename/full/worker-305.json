@@ -1,0 +1,95 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_where_tiling.py::test_many_parts_covering_one_whole_routes_sigma",
+    "test/test_where_tiling.py::test_one_part_covered_by_immediate_wholes_routes_pi",
+    "test/test_where_tiling.py::test_exact_object_settles_and_remains_part_of_larger_whole",
+    "test/test_where_tiling.py::test_gap_raises_instead_of_inventing_boundary",
+    "test/test_where_tiling.py::test_routes_are_per_row_not_batch_amax",
+    "test/test_where_tiling.py::test_refinement_schedule_reaches_exact_identity",
+    "test/test_where_tiling.py::test_curated_utf8_corpus_is_exact",
+    "test/test_where_tiling.py::test_model_callosum_carries_tiling_to_final_cs"
+  ],
+  "completed": [
+    "test/test_where_tiling.py::test_many_parts_covering_one_whole_routes_sigma",
+    "test/test_where_tiling.py::test_one_part_covered_by_immediate_wholes_routes_pi",
+    "test/test_where_tiling.py::test_exact_object_settles_and_remains_part_of_larger_whole",
+    "test/test_where_tiling.py::test_gap_raises_instead_of_inventing_boundary",
+    "test/test_where_tiling.py::test_routes_are_per_row_not_batch_amax",
+    "test/test_where_tiling.py::test_refinement_schedule_reaches_exact_identity",
+    "test/test_where_tiling.py::test_curated_utf8_corpus_is_exact",
+    "test/test_where_tiling.py::test_model_callosum_carries_tiling_to_final_cs"
+  ],
+  "slow_selected": [
+    "test/test_where_tiling.py::test_model_callosum_carries_tiling_to_final_cs"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_where_tiling.py::test_many_parts_covering_one_whole_routes_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008692910196259618,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_one_part_covered_by_immediate_wholes_routes_pi",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004683330189436674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_exact_object_settles_and_remains_part_of_larger_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004505419638007879,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_gap_raises_instead_of_inventing_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004306669579818845,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_routes_are_per_row_not_batch_amax",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004467499675229192,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_refinement_schedule_reaches_exact_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012949579395353794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_curated_utf8_corpus_is_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03575895796529949,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_model_callosum_carries_tiling_to_final_cs",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011341704521328211,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_where_tiling.py', 123, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

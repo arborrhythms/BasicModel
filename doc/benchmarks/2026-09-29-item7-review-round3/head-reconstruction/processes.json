@@ -1,0 +1,146 @@
+{
+  "0": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "0",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-0.json"
+    ],
+    "pid": 13125,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7098685968,
+    "elapsed_seconds": 867.2111975830048,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-0.log"
+  },
+  "1": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "1",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-1.json"
+    ],
+    "pid": 13124,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7168252456,
+    "elapsed_seconds": 869.2256760420278,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-1.log"
+  },
+  "2": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "2",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-2.json"
+    ],
+    "pid": 13741,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 6915054120,
+    "elapsed_seconds": 862.3552860419732,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-2.log"
+  },
+  "3": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "3",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-3.json"
+    ],
+    "pid": 14216,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 6439115064,
+    "elapsed_seconds": 861.8425040829461,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-3.log"
+  },
+  "4": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "4",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-4.json"
+    ],
+    "pid": 14531,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 6971873784,
+    "elapsed_seconds": 861.8500094580231,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-4.log"
+  },
+  "5": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "5",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-5.json"
+    ],
+    "pid": 15277,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 6610622920,
+    "elapsed_seconds": 864.38995087496,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-5.log"
+  },
+  "6": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "6",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-6.json"
+    ],
+    "pid": 16399,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 6542809520,
+    "elapsed_seconds": 857.83679983404,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-6.log"
+  },
+  "7": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/measure_reconstruction.py",
+      "--revision",
+      "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "--seed",
+      "7",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-7.json"
+    ],
+    "pid": 17042,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7473126144,
+    "elapsed_seconds": 863.36760937504,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/head-reconstruction/seed-7.log"
+  }
+}

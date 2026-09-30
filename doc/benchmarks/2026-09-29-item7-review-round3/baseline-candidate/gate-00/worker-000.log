@@ -1,0 +1,63 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+________________________ test_native_unseeded_xor[0-4] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:130: in learn_grounded_xor
+    assert len(rows) == 4
+E   assert 0 == 4
+E    +  where 0 = len([])
+________________________ test_native_unseeded_xor[0-8] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:130: in learn_grounded_xor
+    assert len(rows) == 4
+E   assert 0 == 4
+E    +  where 0 = len([])
+________________________ test_native_unseeded_xor[1-4] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:130: in learn_grounded_xor
+    assert len(rows) == 4
+E   assert 0 == 4
+E    +  where 0 = len([])
+________________________ test_native_unseeded_xor[1-8] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:130: in learn_grounded_xor
+    assert len(rows) == 4
+E   assert 0 == 4
+E    +  where 0 = len([])
+________________________ test_native_unseeded_xor[2-4] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:130: in learn_grounded_xor
+    assert len(rows) == 4
+E   assert 0 == 4
+E    +  where 0 = len([])
+________________________ test_native_unseeded_xor[2-8] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:130: in learn_grounded_xor
+    assert len(rows) == 4
+E   assert 0 == 4
+E    +  where 0 = len([])
+=============================== warnings summary ===============================
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-4] - assert 0 == 4
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-8] - assert 0 == 4
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-4] - assert 0 == 4
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-8] - assert 0 == 4
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-4] - assert 0 == 4
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-8] - assert 0 == 4
+6 failed, 2 warnings in 7.48s

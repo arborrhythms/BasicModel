@@ -1,0 +1,53 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_pending_field_word_reservation_survives_checkpoint",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_migrated_meta_has_no_live_identity_or_inventory_row"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_pending_field_word_reservation_survives_checkpoint",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_migrated_meta_has_no_live_identity_or_inventory_row"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.5176910000154749,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:19: in test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting\n    assert cs.word_surface_for_row(row) is None\nE   AssertionError: assert b'hello' is None\nE    +  where b'hello' = word_surface_for_row(0)\nE    +    where word_surface_for_row = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).word_surface_for_row",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_pending_field_word_reservation_survives_checkpoint",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.051384667051024735,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:32: in test_pending_field_word_reservation_survives_checkpoint\n    fresh._restore_structural_extras(saved)\nbin/Models.py:4983: in _restore_structural_extras\n    store.load_semantic_extras(saved)\nbin/Layers.py:9454: in load_semantic_extras\n    raise ValueError(\"truth semantic checkpoint occurrence namespace differs\")\nE   ValueError: truth semantic checkpoint occurrence namespace differs",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.007692874991334975,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:46: in test_taxonomy_keeps_the_forms_derived_from_definition_rows\n    assert parent in cs.word_concepts('animal')\nE   AssertionError: assert 5 in (1, 2)\nE    +  where (1, 2) = word_concepts('animal')\nE    +    where word_concepts = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).word_concepts",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0041335830464959145,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:62: in test_migrated_meta_has_no_live_identity_or_inventory_row\n    assert meta not in alloc.placement\nE   assert 3 not in {1: 0, 2: 1, 3: 0}\nE    +  where {1: 0, 2: 1, 3: 0} = <Layers.ConceptAllocator object at 0x1401b1dc0>.placement",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

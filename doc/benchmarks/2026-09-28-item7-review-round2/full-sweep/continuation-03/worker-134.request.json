@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_lexicon_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ws_analysis_knob_accepted"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-134.recycle.json"
+}

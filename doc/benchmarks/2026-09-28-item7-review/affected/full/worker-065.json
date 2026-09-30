@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+  ],
+  "completed": [
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 258.23834574990906,
+      "message": "test/test_generation_catalog.py:261: in test_normal_supervised_output_respects_gradient_contract\n    model.runBatch(train=True, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:13921: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14092: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:15230: in _run_batch_once\n    self._backward_training_loss(\ntest/test_generation_catalog.py:233: in check_gradients\n    for program in construction.derivation.program if program is not None)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'AnswerDerivation' object has no attribute 'program'",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

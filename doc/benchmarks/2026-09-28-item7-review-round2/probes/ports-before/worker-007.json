@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols"
+  ],
+  "completed": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.025079207960516214,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:134: in test_forward_keeps_continuous_symbols\n    self.assertGreater(symbols.std().item(), 1e-6,\nE   AssertionError: 0.0 not greater than 1e-06 : Symbolic activation collapsed to a single VQ prototype after the per-stage forward.",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

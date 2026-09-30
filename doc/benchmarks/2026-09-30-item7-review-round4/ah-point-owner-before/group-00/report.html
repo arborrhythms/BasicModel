@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01149087492376566</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py:16: in test_program_meaning_reads_ended_points_from_their_rows
+    meaning = LanguageSpace.program_meaning(f.language, entry, f.registry)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13627: in program_meaning
+    values[i] = registry._payload((&#x27;sym&#x27;, int(native_ids[i]))).to(leaves)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1992: in _payload
+    row = _existing_row(self.space, reference)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:477: in _existing_row
+    raise ValueError(&#x27;query concept reference is unavailable&#x27;)
+E   ValueError: query concept reference is unavailable</pre></td><td><pre></pre></td></tr></table></body></html>

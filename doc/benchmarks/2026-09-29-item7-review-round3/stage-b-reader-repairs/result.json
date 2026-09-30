@@ -1,0 +1,78 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_definition_integrity.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_admission.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_item7_taxonomy.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_cs_symbol_table.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_word_store.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_iterated_symbolic_wave.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "selector": "test/test_relevance_bases.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    },
+    {
+      "selector": "test/test_wholespace_property_migration.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-07/result.json"
+    },
+    {
+      "selector": "test/test_sparse_concept_e2e.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-08/result.json"
+    },
+    {
+      "selector": "test/test_radix_layer_reverse.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-09/result.json"
+    },
+    {
+      "selector": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-10/result.json"
+    },
+    {
+      "selector": "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-11/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

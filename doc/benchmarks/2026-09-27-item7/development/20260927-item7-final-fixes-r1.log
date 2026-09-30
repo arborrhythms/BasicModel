@@ -1,0 +1,259 @@
+........................................................................ [ 72%]
+.....F.......s.....F......F.                                             [100%]
+=================================== FAILURES ===================================
+_________ test_streaming_and_packed_boundary_use_same_full_roles[True] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12a1e6d20>
+consolidated = True
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
+        from Models import BasicModel as Model
+        from ClauseSeal import clause_from_program
+        from test_item7_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+                   for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
+        meanings = [clause_from_program(f.language, entry, registry=f.registry).meaning
+                    for entry in entries]
+        torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
+        assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
+        packed = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+        streaming = copy.deepcopy(packed)
+        packed._ltm_store = f.store if consolidated else None
+        snapshots = torch.stack([entry.end_state for entry in entries])[None]
+        isp = SimpleNamespace(
+            _packed_sentence_slot_end_positions=torch.tensor([[0, 1]]),
+            _packed_sentence_slot_mask=torch.tensor([[True, True]]),
+            _packed_sentence_counts_host=(2,))
+        host = f.model
+        host.inputSpace = isp
+        host.conceptualSpace = f.cs
+        f.cs._ltm_consolidation = consolidated
+        host.symbolSpace = SimpleNamespace(discourse=packed, ltm_store=packed._ltm_store)
+        host._packed_sentence_roots = snapshots[:, :, 0]
+        host._tensor_sentence_roots_live = snapshots.reshape(1, 2, 24)
+        host._tensor_sentence_roots_depth = torch.tensor([[1, 1]])
+        host._tensor_final_end_slots = snapshots[:, -1]
+        host._tensor_final_end_depth = torch.tensor([1])
+        host._expectation_documents = (("a", "a"),)
+        host._capture_answer_programs = lambda: ((entries[-1],), {i: (entry,) for i, entry in enumerate(entries)})
+        host._expectation_documents_for_slot = lambda t, batch: ["a"]
+>       Model._drain_packed_stm_end_states(host)
+
+test/test_sentence_expectation.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14172: in _drain_packed_stm_end_states
+    row = _append_observed_meaning(
+bin/Models.py:173: in _append_observed_meaning
+    return store.seal_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:780: in seal_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:664: in write
+    estimate_index = self.append_estimate(estimate,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9819: in append_estimate
+    index = self.append_meaning(
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9747: in append_meaning
+    terms, complete = (self._meaning_leaf_terms(meaning) if leaf_codes is None else
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:90: in _meaning_leaf_terms
+    return visit(meaning)
+           ^^^^^^^^^^^^^^
+bin/MemoryIndex.py:78: in visit
+    if work is not None else self._index_unfold(value.roles[role].detach(), allowance))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:427: in unfold
+    result = unfold_idea(language, _basis(space), value, limit, work=work)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+language = namespace(_compose_binary_rules=(RuleDef(space_role='CS', canonical='part_O1 -> part.forward(part_I1, part_I2)', arity...als>.<lambda> at 0x14648bce0>, forward_unary_step=<function SentenceFixture.__init__.<locals>.<lambda> at 0x146489440>)
+basis = tensor([[-0.3407,  0.0047, -0.1257,  ..., -0.1409, -0.5030,  0.3590],
+        [-0.3835, -0.2481,  0.4461,  ..., -0.241...9, -0.3951,  0.7012],
+        [-0.0224, -0.2963,  0.4193,  ..., -0.2359,  0.0237,  0.7340]],
+       requires_grad=True)
+idea = tensor([-0.0921, -0.1669,  0.0448,  0.1191,  0.2439,  0.0362, -0.0650,  0.0056])
+limit = 128, work = None
+
+    @torch.no_grad()
+    def unfold_idea(language, basis, idea, limit, *, work=None):
+        """Unfold a detached idea with the current generate MLP and tied faces.
+    
+        Neither recorded actions nor expected leaf codes are inputs. Stops count
+        as recovered codes only within numerical tolerance of a dictionary row;
+        stopping on an off-codebook root is an explicit failure, not root snapping.
+        """
+        limit = min(int(limit), 128)
+>       binary, unary = language._generate_binary_ops, language._generate_unary_ops
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_ops'
+
+bin/MemoryIndex.py:326: AttributeError
+__________ test_grammar_resolution_distinguishes_particular_and_kind ___________
+
+    def test_grammar_resolution_distinguishes_particular_and_kind():
+        cs, interpret = _operator()
+        word = interpret.lookup_word([7], [1], form='cat')
+        particular = interpret.forward(word, order=1)
+        kind = cs.new_concept()
+        _concept_alloc_of(cs).reference_orders[kind] = 2
+        cs.bind_word_concept('cat', kind)
+        assert particular != kind
+        assert cs._concept_source_order(particular) == 1
+        assert cs._concept_source_order(kind) == 2
+>       assert interpret.forward(word, order=2) == kind
+E       assert 5 == 4
+E        +  where 5 = forward(1, order=2)
+E        +    where forward = InterpretLayer().forward
+
+test/test_item9b_interpret.py:44: AssertionError
+__________ test_selected_generic_grammar_seals_the_interpreted_kinds ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12a1b2f00>
+
+    def test_selected_generic_grammar_seals_the_interpreted_kinds(monkeypatch):
+        """The selected generic reading of 'cats are animals' owns kind refs.
+    
+        This tests the declared grammar interface, not untrained English parsing.
+        The seal receives resolved objects and never performs lexical resolution.
+        """
+        from dataclasses import replace
+        from Layers import TernaryTruthStore
+        from Models import _append_observed_meaning
+        from test_selected_relation_meaning import _program_owner
+        cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch)
+        words = [cs.interpret.lookup_word([part], [], form=form)
+                 for part, form in ((7, 'cats'), (8, 'animals'))]
+        objects = [cs.interpret.forward(word, order=1) for word in words]
+        # Grammar resolves existing associations; it cannot mint a second object
+        # merely because the first has a different order.
+        for form in ('cats', 'animals'):
+            kind = cs.new_concept()
+            _concept_alloc_of(cs).reference_orders[kind] = 2
+            cs.bind_word_concept(form, kind)
+        leaves = torch.stack([registry._payload(('sym', obj)) for obj in objects])
+        entry = make_program(values=leaves, refs=tuple(('sym', obj) for obj in objects))
+        rules = list(language._compose_binary_rules)
+        selected = int(entry.actions[-1, 1])
+        rules[selected] = rules[selected]._replace(reference_orders=(('I1', 2), ('I2', 2)))
+        language._compose_binary_rules = rules
+        word_rows = torch.tensor([cs._csw_row_of(word) for word in words])
+        refs, orders = language.resolve_lexical_references(cs, word_rows, entry.concept_ids, entry.actions)
+        assert orders.tolist() == [2, 2]
+>       assert refs.tolist() == [cs.interpret.forward(word, order=2) for word in words]
+E       assert [19, 20] == [21, 22]
+E         
+E         At index 0 diff: 19 != 21
+E         Use -v to get more diff
+
+test/test_item9b_interpret.py:169: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+FAILED test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind
+FAILED test/test_item9b_interpret.py::test_selected_generic_grammar_seals_the_interpreted_kinds
+3 failed, 96 passed, 1 skipped, 34 warnings in 4.34s

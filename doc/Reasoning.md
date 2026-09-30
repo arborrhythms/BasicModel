@@ -15,6 +15,32 @@ Truth-aware model methods plus the query-reasoning helpers in
 the one query controller. Builds on the TruthLayer infrastructure
 ([Logic.md](Logic.md)) and grammar composition ([Language.md](Language.md)).
 
+## Completed clauses and row readers
+
+[Clause endings](specs/2026-09-16-two-truths-ideas-and-relations.md) admit idea
+points and three-slot relations into one LTM owner. `relation_operands`
+resolves native references; `consequents_by_row` and `evaluate_rows` read
+relations whose operands are themselves relations. Such operands have no
+point and cannot be compared by a fabricated vector. Existing vector readers
+remain meaningful for concept and idea operands.
+
+Part is directed. Whole swaps its operands; equality writes both part
+directions, each with its own evidence. Implication relates truth rows.
+Operator rows preserve attribution and its external provenance without
+asserting the referenced content. Reasserting that content directly joins
+its evidence separately. The declared `<thought>` operator `true` can check
+an ended occurrence and return both evidence poles; a compose rule does not
+thereby acquire permission to execute a thought. Luminosity includes idea
+rows only.
+
+The September 28 row amendment keeps source trust as a separate scalar:
+`exist` uses that supplied event authority, while `true` reads the ended
+clause's two identification poles. Updating or withdrawing trust does not
+rewrite either pole. The row's stored order bounds sigma-inverse descent
+when an abstract concept is unfolded; named abstractions and their recovered
+lower-order witnesses may both contribute retrieval terms within the same
+work budget.
+
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
 Reasoning is the point where BasicModel uses explicit structure instead of
@@ -234,17 +260,16 @@ argument/return order.
 | `<reasoningIterations>` | `<architecture>` | 1 | Shared work allowance for explicit `reason_about` / `answer_query`; `0` disables those APIs. |
 | `<queryReasoning>` | `<architecture>` | false | Deprecated alias; `true` maps to ten work units when `reasoningIterations` is unset. |
 | `<parserBackend>` | `<SymbolSpace>` | — | **RETIRED** (Stage 3, 2026-05-27): the chart and STM parsers are gone; the signal router (`LanguageLayer`) is the only parser. Setting this (or `routerKind` / `chartTau` / `chartTopK` / `chartNoiseEps`) raises a loud `ValueError` at config load. |
-| `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
+| `truthCriterion` | retired | — | The XML setting, `truth_criterion` and the multiplicative relation learn-score gate are removed. The grammatical clause closing admits every completed S; provenance and evidence determine its two poles. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `answerLossWeight` | `<training>` | 0.0 | Retired; nonzero values are rejected. Use the one `selectedThoughtPolicyWeight` objective. |
 | `predictNextLossWeight` | `<training>` | 0.0 | Retired; nonzero values are rejected. Thought selection uses the normal controller. |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 | `routerWireSerial` | `<architecture>` | both | Per-word router-fire gating on the serial path (`per-word` / `boundary` / `both` / `off`). See [STM.md Section 7](STM.md#7-per-word-router-firing). |
-| `ltmCapacity` | `<SymbolSpace>` | 1024 | LTM chain capacity (`InterSentenceLayer` deque of STM end-states). See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+| `ltmCapacity` | `<SymbolSpace>` | 1024 | Shared clause-store capacity. Admission preflights the whole clause tree before publishing rows. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
 
-The relative-vs-absolute end-state machinery, the content-aware
-learn-score gate, and the tetralemma trust 4-tuple carried on accepted
-relative META edges are documented in
+The clause-level closing, relative and absolute row layouts, and independent
+positive/negative evidence are documented in
 [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states).
 
 ## Contemplative Awareness Methods
@@ -285,7 +310,7 @@ defines the replacement for conflicting, mixed and bounded-unknown statuses.
 
 ## Expectation evidence
 
-The ordinary chooser also reads the seal's conceived NP1/VP/NP2 values.
+The ordinary chooser also reads the closing's conceived NP1/VP/NP2 values.
 `expectationGain=0` exposes the raw observation; prediction still trains. A
 negative image of an absent role is evidence only. `not` can execute only if
 declared in the model's `<thought>` catalogue and produces an inference in

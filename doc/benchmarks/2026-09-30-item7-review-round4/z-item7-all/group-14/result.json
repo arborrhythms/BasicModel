@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "completed": [
+    "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-14/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-14/worker-000.json"
+      ],
+      "pid": 61406,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436258160,
+      "elapsed_seconds": 3.9867157090920955,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-14/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+      ],
+      "completed": [
+        "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0037887501530349255,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-14",
+  "elapsed_seconds": 8.054387249983847,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 436258160,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-14/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-14/collect.json"
+    ],
+    "pid": 61361,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 422757576,
+    "elapsed_seconds": 3.8594669171143323,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-14/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

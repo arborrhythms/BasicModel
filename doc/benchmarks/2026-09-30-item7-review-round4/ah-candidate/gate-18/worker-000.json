@@ -1,0 +1,12 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+  "device": "cpu"
+}

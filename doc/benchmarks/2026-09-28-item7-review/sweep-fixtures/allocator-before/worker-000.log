@@ -1,0 +1,36 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___________ TestSymbolSpaceAllocatePosition.test_allocate_monotonic ____________
+test/test_where_encoding_recovery.py:86: in test_allocate_monotonic
+    positions = [ws.allocate_position() for _ in range(8)]
+                 ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'allocate_position'
+_ TestSymbolSpaceAllocatePosition.test_allocate_position_persists_via_vocab_extras _
+test/test_where_encoding_recovery.py:96: in test_allocate_position_persists_via_vocab_extras
+    ws.allocate_position()
+    ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'allocate_position'
+_________ TestSymbolSpaceAllocatePosition.test_allocate_starts_at_one __________
+test/test_where_encoding_recovery.py:80: in test_allocate_starts_at_one
+    self.assertEqual(ws.allocate_position(), 1)
+                     ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'allocate_position'
+_ TestSymbolSpaceAllocatePosition.test_load_vocab_extras_without_counter_defaults_to_one _
+test/test_where_encoding_recovery.py:127: in test_load_vocab_extras_without_counter_defaults_to_one
+    ws.load_vocab_extras(legacy_blob)
+    ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'load_vocab_extras'
+=========================== short test summary info ============================
+FAILED test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_monotonic
+FAILED test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_position_persists_via_vocab_extras
+FAILED test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_starts_at_one
+FAILED test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one
+4 failed in 3.17s

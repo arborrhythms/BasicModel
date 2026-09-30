@@ -1,0 +1,8 @@
+{
+  "source_manifest": "full/source-manifest.json",
+  "validated_files": 699,
+  "archive": "source.tar.gz",
+  "archive_sha256": "aa08cd5ac1ddffa63d27ce856ecfeb6b36b73598fcfa40677b0cb20eabd95b57",
+  "source_digest": "b80600c495f656f405d4f8cb15ee742368c2ef94b4fbb1d47e6347778b7dfecd",
+  "validated_source_matches_archive": true
+}

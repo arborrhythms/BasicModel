@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.7998615419492126,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

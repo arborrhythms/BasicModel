@@ -1,0 +1,2979 @@
+{
+  "groups": {
+    "final-item7": {
+      "reason": "passed",
+      "attempts": 202,
+      "pytest_outcomes": {
+        "passed": 202
+      },
+      "missing": [],
+      "failures": [],
+      "diagnostic_only": []
+    },
+    "final-thought-reasoning": {
+      "reason": "passed",
+      "attempts": 320,
+      "pytest_outcomes": {
+        "passed": 315,
+        "skipped": 5
+      },
+      "missing": [],
+      "failures": [],
+      "diagnostic_only": []
+    },
+    "final-graph-release": {
+      "reason": "passed",
+      "attempts": 1,
+      "pytest_outcomes": {
+        "passed": 1
+      },
+      "missing": [],
+      "failures": [],
+      "diagnostic_only": []
+    },
+    "final-xor-candidate": {
+      "reason": "failed",
+      "attempts": 49,
+      "pytest_outcomes": {
+        "passed": 44,
+        "failed": 5
+      },
+      "missing": [],
+      "failures": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+          "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-05/worker-000.log"
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', '  \\x00'), ('hello there', '  \\x00')]",
+          "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-06/worker-000.log"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "phase": "call",
+          "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=1721880159, epochs=160, wall_s_per_epoch=0.5863860144379472, output_loss=....5874410409014672, 0.5856005840469152, 0.586981541942805, 0.5863163338508457, 0.5875006669666618, 0.5870700418017805]}).exact_match_rate",
+          "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-22/worker-000.log"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "phase": "call",
+          "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=1114691336, epochs=160, wall_s_per_epoch=0.5870231548778174, output_loss=...5871323752216995, 0.5898863750044256, 0.5893919579684734, 0.5910649590659887, 0.5932872910052538, 0.5911008748225868]}).exact_match_rate",
+          "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-23/worker-000.log"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "phase": "call",
+          "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.25 == 1.0\nE    +  where 0.25 = RunRecord(config='data/MM_20M_xor.xml', seed=225162328, epochs=160, wall_s_per_epoch=0.5880494853423076, output_loss=0...5917877911124378, 0.5918474579229951, 0.5917760001029819, 0.5870129999238998, 0.5897746249102056, 0.5904434169642627]}).exact_match_rate",
+          "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-24/worker-000.log"
+        }
+      ],
+      "diagnostic_only": []
+    }
+  },
+  "case_attempts": [
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+      "outcome": "passed",
+      "receipt": "final-item7/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns",
+      "outcome": "passed",
+      "receipt": "final-item7/group-01/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+      "outcome": "passed",
+      "receipt": "final-item7/group-02/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+      "outcome": "passed",
+      "receipt": "final-item7/group-02/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+      "outcome": "passed",
+      "receipt": "final-item7/group-02/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+      "outcome": "passed",
+      "receipt": "final-item7/group-02/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+      "outcome": "passed",
+      "receipt": "final-item7/group-02/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+      "outcome": "passed",
+      "receipt": "final-item7/group-03/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+      "outcome": "passed",
+      "receipt": "final-item7/group-03/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-03/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots",
+      "outcome": "passed",
+      "receipt": "final-item7/group-03/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+      "outcome": "passed",
+      "receipt": "final-item7/group-04/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+      "outcome": "passed",
+      "receipt": "final-item7/group-04/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+      "outcome": "passed",
+      "receipt": "final-item7/group-04/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+      "outcome": "passed",
+      "receipt": "final-item7/group-04/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+      "outcome": "passed",
+      "receipt": "final-item7/group-04/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+      "outcome": "passed",
+      "receipt": "final-item7/group-05/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+      "outcome": "passed",
+      "receipt": "final-item7/group-05/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words",
+      "outcome": "passed",
+      "receipt": "final-item7/group-05/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+      "outcome": "passed",
+      "receipt": "final-item7/group-06/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+      "outcome": "passed",
+      "receipt": "final-item7/group-07/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+      "outcome": "passed",
+      "receipt": "final-item7/group-08/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+      "outcome": "passed",
+      "receipt": "final-item7/group-09/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+      "outcome": "passed",
+      "receipt": "final-item7/group-09/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind",
+      "outcome": "passed",
+      "receipt": "final-item7/group-09/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+      "outcome": "passed",
+      "receipt": "final-item7/group-10/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles",
+      "outcome": "passed",
+      "receipt": "final-item7/group-10/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+      "outcome": "passed",
+      "receipt": "final-item7/group-11/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+      "outcome": "passed",
+      "receipt": "final-item7/group-12/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+      "outcome": "passed",
+      "receipt": "final-item7/group-12/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_point_owners.py::test_program_meaning_reads_ended_points_from_their_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-13/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-14/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-15/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-15/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-15/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-15/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-15/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-15/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_cache_release.py::test_property_diagnostic_releases_its_graph_at_tick_end",
+      "outcome": "passed",
+      "receipt": "final-item7/group-16/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+      "outcome": "passed",
+      "receipt": "final-item7/group-17/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+      "outcome": "passed",
+      "receipt": "final-item7/group-17/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties",
+      "outcome": "passed",
+      "receipt": "final-item7/group-17/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-18/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-18/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-18/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-18/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+      "outcome": "passed",
+      "receipt": "final-item7/group-18/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_property_read_storage.py::test_property_read_and_gradient_compile_as_one_graph",
+      "outcome": "passed",
+      "receipt": "final-item7/group-18/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+      "outcome": "passed",
+      "receipt": "final-item7/group-19/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+      "outcome": "passed",
+      "receipt": "final-item7/group-19/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind",
+      "outcome": "passed",
+      "receipt": "final-item7/group-19/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+      "outcome": "passed",
+      "receipt": "final-item7/group-20/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+      "outcome": "passed",
+      "receipt": "final-item7/group-21/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+      "outcome": "passed",
+      "receipt": "final-item7/group-22/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+      "outcome": "passed",
+      "receipt": "final-item7/group-22/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+      "outcome": "passed",
+      "receipt": "final-item7/group-22/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+      "outcome": "passed",
+      "receipt": "final-item7/group-22/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses",
+      "outcome": "passed",
+      "receipt": "final-item7/group-22/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row",
+      "outcome": "passed",
+      "receipt": "final-item7/group-23/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read",
+      "outcome": "passed",
+      "receipt": "final-item7/group-24/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-25/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-25/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-25/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+      "outcome": "passed",
+      "receipt": "final-item7/group-26/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles",
+      "outcome": "passed",
+      "receipt": "final-item7/group-27/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+      "outcome": "passed",
+      "receipt": "final-item7/group-28/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+      "outcome": "passed",
+      "receipt": "final-item7/group-29/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+      "outcome": "passed",
+      "receipt": "final-item7/group-29/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
+      "outcome": "passed",
+      "receipt": "final-item7/group-29/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+      "outcome": "passed",
+      "receipt": "final-item7/group-30/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+      "outcome": "passed",
+      "receipt": "final-item7/group-30/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface",
+      "outcome": "passed",
+      "receipt": "final-item7/group-30/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "outcome": "passed",
+      "receipt": "final-item7/group-31/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-32/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-33/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-33/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "outcome": "passed",
+      "receipt": "final-item7/group-33/result.json"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+      "outcome": "passed",
+      "receipt": "final-item7/group-33/result.json"
+    },
+    {
+      "nodeid": "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_part_layer_registered",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_part_structural_forward_passes_parent",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_part_dispatches_its_declared_pure_structural_face",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_ispart_query_dispatch.py::test_retired_rule_query_attribute_fails_loudly",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_multiple_ordinary_thoughts_at_root_do_not_finish_or_make_qa_pairs",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_nested_and_sibling_returns_restore_parent_scope_and_pending_roles",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_return_underflow_and_new_episode_do_not_corrupt_history",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_replay_and_checkpoint_preserve_active_contexts_and_row_isolation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_episode_gradients_reach_earlier_roles_then_detach_after_step",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_active_history_cannot_be_trimmed_or_silently_reinterpreted_as_parity",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_primitives_knob_is_retired",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax",
+      "outcome": "skipped",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax",
+      "outcome": "skipped",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb",
+      "outcome": "skipped",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_exist_executor_limits_native_fact_reads_and_reports_incompleteness",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_zero_quantize_budget_does_not_fetch_a_named_concept_payload",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_distinct_lookup_returns_complete_record_and_does_not_admit_observation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_what_preserves_the_complete_question_and_schedules_same_controller",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_grammar_copy.py::test_copied_grammar_keeps_its_immutable_structural_thought_catalogue",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_grammar_loader.py::test_order_expansion_preserves_non_rule_lists_and_expands_only_rule_bodies",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[complete.grammar]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[ladder.grammar]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[default.grammar]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[shamatha.grammar]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[equal-roles0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[what-roles1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[exist-roles2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[compose]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[reconstruct]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[generate]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_checked_execution_requires_a_completed_answer_boundary",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_resolution_opens_only_completed_rows_and_closes_after_return",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_resolution_exception_cannot_leave_permission_open",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_nested_resolution_cannot_override_an_active_sentence_phase",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_tied_input_reconstruction_must_finish_before_opening_query_boundary",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[answer_query]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[reason_about]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[think_about]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[explicit_state]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[understand_executor]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[what_executor]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_operand_occurrence_reads_require_permission_before_preparation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_reconstruction_completion_keeps_query_executors_masked",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_nested_boundary_can_narrow_but_not_widen_completed_rows",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_nested_sentence_restores_the_outer_completed_boundary",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_held_completed_understanding_owns_its_readiness_after_later_staging",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_uncommitted_or_empty_program_rows_do_not_open_queries",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[False]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[True]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[unimplementedTool(X)]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X)]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y, Z)]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isTrue()]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[query(X)]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[tense(X)]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y) trailing]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_checked_operations_share_grammar_owned_identity_and_explicit_roles",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestReason::test_reverse_with_no_target",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+      "outcome": "skipped",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_query_compose.py::test_thought_capable_rule_dispatches_the_same_pure_compose_face[part]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_query_compose.py::test_thought_capable_rule_dispatches_the_same_pure_compose_face[equal]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_query_compose.py::test_language_owns_rule_meaning_for_each_local_compose_action",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-part-order0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-whole-order1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-equal-order2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-part-order0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-whole-order1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-equal-order2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_changed_part_operand_remains_distinguishable_when_folded_root_is_identical",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[part]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[equal]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_unreduced_lexical_converse_uses_its_anchored_grammar_form",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_unary_description_operation_does_not_invent_an_occurrence",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_capture_reads_anchored_form_from_retained_word_rows",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_capture_does_not_invent_anchoring_for_an_unresolved_word",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[True]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_native_addresses_do_not_become_semantic_operand_values",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_owned_local_rule_meaning_survives_global_grammar_reconfiguration",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[not-False]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[non-False]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_serve_thinking.py::test_thinking_payload_is_attached_for_a_thinking_model",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_serve_thinking.py::test_thought_free_request_opens_no_dialogue",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_serve_thinking.py::test_non_thinking_model_has_no_payload",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+      "outcome": "skipped",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_open_relation_answer_preserves_every_member_without_another_reader",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_subgoal_carries_the_typed_child_result_into_the_answer",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_checkpoint_credit.py::test_checkpoint_question_prompt_is_detached_without_cutting_live_credit",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_checkpoint_credit.py::test_episode_end_releases_question_and_trace_credit_together",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_integrated_checkpoint_retains_the_one_memory_owner_and_active_history",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_integrated_checkpoint_restores_a_typed_checked_result",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_typed_result_checkpoint_rehydrates_nested_meaning_evidence",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_restored_active_episode_keeps_new_computations_live_until_optimizer_boundary",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_credit_boundary_cannot_detach_an_unfinished_thought_episode",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_nested_meaning_cannot_silently_change_concept_width",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[skip_level]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[duplicate_id]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[extra_budget]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[bad_namespace]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_occurrence_reads_are_row_local_and_keep_live_payloads",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_history_boundaries.py::test_trim_cannot_remove_an_occurrence_referenced_by_the_active_root",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_open_variable",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_surface_normalization",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_unknown_surface_raises",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_absent_idea_is_unknown",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_activation_without_fact_evidence_remains_unknown",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_negative_trust_single_idea",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_positive_trust_single_idea",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_distinct_is_unknown",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_shared_parts_and_wholes",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_direct_true",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_unknown",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_false",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_true",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_unknown",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_equal_isomorphic_vs_norm",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_exist_is_isTrue",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_noop_without_store",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_snaps_to_nearest_idea",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one",
+      "outcome": "passed",
+      "receipt": "final-thought-reasoning/run/result.json"
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "outcome": "passed",
+      "receipt": "final-graph-release/group-00/result.json"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-00/result.json"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-00/result.json"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-00/result.json"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-00/result.json"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-00/result.json"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-00/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-01/result.json"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-02/result.json"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-02/result.json"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-02/result.json"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-02/result.json"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-02/result.json"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-02/result.json"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-02/result.json"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-03/result.json"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-04/result.json"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "outcome": "failed",
+      "receipt": "final-xor-candidate/gate-05/result.json"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "outcome": "failed",
+      "receipt": "final-xor-candidate/gate-06/result.json"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSPNN::test_xor_training",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-07/result.json"
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-08/result.json"
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-09/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-10/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-11/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-12/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-13/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-14/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-15/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-16/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-17/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-18/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-19/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-20/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-21/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "failed",
+      "receipt": "final-xor-candidate/gate-22/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "failed",
+      "receipt": "final-xor-candidate/gate-23/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "failed",
+      "receipt": "final-xor-candidate/gate-24/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-25/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-26/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-27/result.json"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "outcome": "passed",
+      "receipt": "final-xor-candidate/gate-28/result.json"
+    }
+  ],
+  "failures": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "phase": "call",
+      "message": "test/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-05/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "phase": "call",
+      "message": "test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct\n    self.assertGreaterEqual(\nE   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', '  \\x00'), ('hello there', '  \\x00')]",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-06/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "call",
+      "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=1721880159, epochs=160, wall_s_per_epoch=0.5863860144379472, output_loss=....5874410409014672, 0.5856005840469152, 0.586981541942805, 0.5863163338508457, 0.5875006669666618, 0.5870700418017805]}).exact_match_rate",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-22/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "call",
+      "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=1114691336, epochs=160, wall_s_per_epoch=0.5870231548778174, output_loss=...5871323752216995, 0.5898863750044256, 0.5893919579684734, 0.5910649590659887, 0.5932872910052538, 0.5911008748225868]}).exact_match_rate",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-23/worker-000.log"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "call",
+      "message": "test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.25 == 1.0\nE    +  where 0.25 = RunRecord(config='data/MM_20M_xor.xml', seed=225162328, epochs=160, wall_s_per_epoch=0.5880494853423076, output_loss=0...5917877911124378, 0.5918474579229951, 0.5917760001029819, 0.5870129999238998, 0.5897746249102056, 0.5904434169642627]}).exact_match_rate",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-24/worker-000.log"
+    }
+  ],
+  "diagnostic_only": [],
+  "pytest_outcomes": {
+    "passed": 562,
+    "skipped": 5,
+    "failed": 5
+  },
+  "attempts": 572,
+  "source_matches_current": true
+}

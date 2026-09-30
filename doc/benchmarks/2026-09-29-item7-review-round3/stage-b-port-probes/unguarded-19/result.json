@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 21967208960,
+  "elapsed_seconds": 10.434832000057213
+}

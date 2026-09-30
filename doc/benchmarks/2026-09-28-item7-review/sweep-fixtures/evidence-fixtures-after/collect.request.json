@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_truth_criterion_gates_learning.py",
+    "test/test_relative_sentence_codebook_insertion.py",
+    "test/test_lies_can_be_learned.py",
+    "test/test_item7_storage.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

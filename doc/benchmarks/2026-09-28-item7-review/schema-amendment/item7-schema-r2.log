@@ -1,0 +1,277 @@
+............F...F.F...FFF.....F..F.........                              [100%]
+=================================== FAILURES ===================================
+__________________ test_relation_rows_never_enter_luminosity ___________________
+
+    def test_relation_rows_never_enter_luminosity():
+        store = TernaryTruthStore(4, capacity=8)
+        idea = store.append_idea(torch.tensor([1., 0., 0., 0.]), trust=.6)
+        relation = store.append_relation(torch.ones(4), torch.ones(4),
+            torch.ones(4), rel_type=store.REL_PARTOF, trust=1.)
+        store.set_origin(idea, store.ORIGIN_PROVISIONED)
+        store.set_origin(relation, store.ORIGIN_PROVISIONED)
+        light = TruthLayer(4, max_truths=8)
+        light.attach_ltm(store)
+>       assert light.sync_from_ltm() == 1
+E       assert 0 == 1
+E        +  where 0 = sync_from_ltm()
+E        +    where sync_from_ltm = TruthLayer(nDim=4, truths=0/8).sync_from_ltm
+
+test/test_item7_storage.py:48: AssertionError
+_ test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it _
+
+    def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it():
+        store, _ = clause_store()
+        child = part_clause()
+        roles = child.meaning.roles.clone()
+        roles[2].zero_()
+        outer = Clause(replace(child.meaning, roles=roles), relation='operator',
+                       refs=(4, 1, ('clause', 0)), children=(child,))
+        assert store.write_clause(outer, trust=.65) == 1
+        assert store.row(0)['evidence'] == (0., 0.)
+        assert store.refs[1, 2] == store.row_ids[0]
+        assert not bool(store.slots[1, 2].any())
+        assert store.write_clause(child, trust=.8) == 0
+        assert len(store) == 2
+>       assert store.row(0)['evidence'] == pytest.approx((.8, 0.))
+E       assert (0.0, 0.0) == approx((0.8 ±....0 ± 1.0e-12))
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.8
+E         Max relative difference: inf
+E         Index | Obtained | Expected     
+E         0     | 0.0      | 0.8 ± 8.0e-07
+
+test/test_item7_storage.py:127: AssertionError
+_____ test_equality_is_two_independent_part_rows_and_never_merges_operands _____
+
+    def test_equality_is_two_independent_part_rows_and_never_merges_operands():
+        store, points = clause_store()
+        source = part_clause()
+        converse = replace(source, refs=(2, 3, 1),
+                           meaning=replace(source.meaning, roles=source.meaning.roles[[2, 1, 0]]))
+        value = replace(source, companions=(converse,))
+        store.write_clause(value, trust=.75)
+        assert store.relations(store.REL_PARTOF).tolist() == [0, 1]
+        assert store.refs[:2].tolist() == [[1, 3, 2], [2, 3, 1]]
+        store.set_evidence(0, .2, .7)
+>       assert store.row(1)['evidence'] == pytest.approx((.75, 0.))
+E       assert (0.0, 0.0) == approx((0.75 ....0 ± 1.0e-12))
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.75
+E         Max relative difference: inf
+E         Index | Obtained | Expected      
+E         0     | 0.0      | 0.75 ± 7.5e-07
+
+test/test_item7_storage.py:159: AssertionError
+_____ test_negation_contributes_negative_evidence_without_erasing_positive _____
+
+    def test_negation_contributes_negative_evidence_without_erasing_positive():
+        store, _ = clause_store()
+        store.write_clause(part_clause(), trust=.8)
+        store.write_clause(part_clause(polarity=False), trust=.7)
+        assert len(store) == 1
+>       assert store.row(0)['evidence'] == pytest.approx((.8, .7))
+E       assert (0.0, 0.0) == approx((0.8 ±....7 ± 7.0e-07))
+E         
+E         comparison failed. Mismatched elements: 2 / 2:
+E         Max absolute difference: 0.8
+E         Max relative difference: inf
+E         Index | Obtained | Expected     
+E         0     | 0.0      | 0.8 ± 8.0e-07
+E         1     | 0.0      | 0.7 ± 7.0e-07
+
+test/test_item7_storage.py:203: AssertionError
+___________ test_clause_end_state_and_evidence_checkpoint_roundtrip ____________
+
+    def test_clause_end_state_and_evidence_checkpoint_roundtrip():
+        import copy
+        store, _ = clause_store()
+        clause = idea_clause()
+        row = store.write_clause(clause, trust=.6)
+        restored, _ = clause_store()
+        restored.load_state_dict(copy.deepcopy(store.state_dict()))
+        restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+        torch.testing.assert_close(restored.meaning_of(row).roles[0], clause.point)
+>       assert restored.row(row)['evidence'] == pytest.approx((.6, 0.))
+E       assert (0.0, 0.0) == approx((0.6 ±....0 ± 1.0e-12))
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.6
+E         Max relative difference: inf
+E         Index | Obtained | Expected     
+E         0     | 0.0      | 0.6 ± 6.0e-07
+
+test/test_item7_storage.py:215: AssertionError
+_______ test_migration_drops_catch_all_rows_and_initializes_missing_refs _______
+
+    def test_migration_drops_catch_all_rows_and_initializes_missing_refs():
+        store = TernaryTruthStore(4, capacity=8)
+        store.append_idea(torch.ones(4), trust=.5)
+        store.append_relation(torch.ones(4), torch.ones(4), torch.ones(4))
+        state = store.state_dict()
+        for key in ('truth_schema', 'refs', 'row_ids', 'where', 'when', 'c_plus', 'c_minus'):
+            state.pop(key)
+        restored = TernaryTruthStore(4, capacity=8)
+        with pytest.warns(UserWarning, match='legacy REL_OTHER'):
+            restored.load_state_dict(state)
+        assert len(restored) == 1
+        assert bool((restored.refs == -1).all())
+>       assert restored.row(0)['evidence'] == (.5, 0.)
+E       assert (0.0, 0.0) == (0.5, 0.0)
+E         
+E         At index 0 diff: 0.0 != 0.5
+E         Use -v to get more diff
+
+test/test_item7_storage.py:231: AssertionError
+_______________ test_full_store_can_update_an_existing_relation ________________
+
+    def test_full_store_can_update_an_existing_relation():
+        store, points = clause_store()
+        store.write_clause(part_clause(), trust=.2)
+        for _ in range(store.capacity - 1):
+            store.append_idea(points[1])
+        assert store.write_clause(part_clause(), trust=.8) == 0
+        assert len(store) == store.capacity
+>       assert store.row(0)['evidence'] == pytest.approx((.8, 0.))
+E       assert (0.0, 0.0) == approx((0.8 ±....0 ± 1.0e-12))
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.8
+E         Max relative difference: inf
+E         Index | Obtained | Expected     
+E         0     | 0.0      | 0.8 ± 8.0e-07
+
+test/test_item7_storage.py:301: AssertionError
+______ test_truthset_asserts_only_outer_ends_including_deduplicated_roots ______
+
+    def test_truthset_asserts_only_outer_ends_including_deduplicated_roots():
+        store, _ = clause_store()
+        child = part_clause()
+        outer = Clause(child.meaning, relation='operator', refs=(4, 3, ('clause', 0)),
+                       children=(child,))
+        with store.clause_assertions(trust=.7, origin=store.ORIGIN_USER,
+                                    text='he said cats are animals') as rows:
+            assert store.write_clause(outer) == 1
+        assert rows == [1]
+        assert store.row(0)['kind'] == 'unverified'
+        assert store.row(0)['evidence'] == (0., 0.)
+        assert store.row(1)['kind'] == 'fact'
+>       assert store.row(1)['evidence'] == pytest.approx((.7, 0.))
+E       assert (0.0, 0.0) == approx((0.7 ±....0 ± 1.0e-12))
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.7
+E         Max relative difference: inf
+E         Index | Obtained | Expected     
+E         0     | 0.0      | 0.7 ± 7.0e-07
+
+test/test_item7_provenance.py:31: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:13590: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 25 gets records only, no weighted reading (overflow #26)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 27 gets records only, no weighted reading (overflow #28)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 26 gets records only, no weighted reading (overflow #29)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 28 gets records only, no weighted reading (overflow #31)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 30 gets records only, no weighted reading (overflow #33)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-schema-2upa5bj9/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 29 gets records only, no weighted reading (overflow #34)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_storage.py::test_relation_rows_never_enter_luminosity
+FAILED test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it
+FAILED test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands
+FAILED test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive
+FAILED test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip
+FAILED test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs
+FAILED test/test_item7_storage.py::test_full_store_can_update_an_existing_relation
+FAILED test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots
+8 failed, 35 passed, 24 warnings in 3.49s

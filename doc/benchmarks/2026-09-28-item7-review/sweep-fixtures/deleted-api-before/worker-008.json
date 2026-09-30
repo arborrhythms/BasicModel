@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+  ],
+  "completed": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001787920482456684,
+      "message": "test/test_merge_structural_not_operator.py:48: in test_merge_not_inserted_as_operator\n    ws, g = _ws_and_grammar()\n            ^^^^^^^^^^^^^^^^^\ntest/test_merge_structural_not_operator.py:40: in _ws_and_grammar\n    g.load_from_grammar_file(grammar_file)\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001177499070763588,
+      "message": "test/test_merge_structural_not_operator.py:60: in test_semantic_operators_still_inserted\n    ws, g = _ws_and_grammar()\n            ^^^^^^^^^^^^^^^^^\ntest/test_merge_structural_not_operator.py:40: in _ws_and_grammar\n    g.load_from_grammar_file(grammar_file)\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00011912500485777855,
+      "message": "test/test_merge_structural_not_operator.py:69: in test_only_semantic_operators_in_codebook\n    ws, g = _ws_and_grammar()\n            ^^^^^^^^^^^^^^^^^\ntest/test_merge_structural_not_operator.py:40: in _ws_and_grammar\n    g.load_from_grammar_file(grammar_file)\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

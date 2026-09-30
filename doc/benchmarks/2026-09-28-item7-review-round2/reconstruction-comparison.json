@@ -1,0 +1,220 @@
+{
+  "protocol": "4 validation, 7 training (2 warmup + 5 measured), 4 validation; batch 2; seeds 0,1,2 for both trees",
+  "all_six_complete": true,
+  "runs": [
+    {
+      "tree": "head",
+      "seed": 0,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/measure_reconstruction.py",
+          "--revision",
+          "1678ee1fb79c474ffaee5725fd035716de5f1913",
+          "--seed",
+          "0",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/head-reconstruction/seed-0.json"
+        ],
+        "pid": 78242,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 6734387584,
+        "elapsed_seconds": 853.4920111250831,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/head-reconstruction/seed-0.log"
+      },
+      "phases": {
+        "before_training": 0.10109798796474934,
+        "training": 0.10676387846469879,
+        "after_training": 0.10851452872157097
+      },
+      "atom_prefix": "bdc952b665db9575349a1e63dfd193e83e852ff2ff016d07d4bd93968fd2e66d"
+    },
+    {
+      "tree": "head",
+      "seed": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/measure_reconstruction.py",
+          "--revision",
+          "1678ee1fb79c474ffaee5725fd035716de5f1913",
+          "--seed",
+          "1",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/head-reconstruction/seed-1.json"
+        ],
+        "pid": 79203,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 6543890816,
+        "elapsed_seconds": 869.3586520000827,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/head-reconstruction/seed-1.log"
+      },
+      "phases": {
+        "before_training": 0.12225494161248207,
+        "training": 0.12108714878559113,
+        "after_training": 0.11884608678519726
+      },
+      "atom_prefix": "0cabb8c917fae9be5de028e2e678c44936687990ae484d288b057bbadffe792e"
+    },
+    {
+      "tree": "head",
+      "seed": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/measure_reconstruction.py",
+          "--revision",
+          "1678ee1fb79c474ffaee5725fd035716de5f1913",
+          "--seed",
+          "2",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/head-reconstruction/seed-2.json"
+        ],
+        "pid": 79510,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 6638787040,
+        "elapsed_seconds": 864.4842628330225,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/head-reconstruction/seed-2.log"
+      },
+      "phases": {
+        "before_training": 0.12085173651576042,
+        "training": 0.11721641272306442,
+        "after_training": 0.11443525180220604
+      },
+      "atom_prefix": "6c775bdc5f88ac6dee791e96f542c8cab04aa839a2f471bf1956ad91a2420bb4"
+    },
+    {
+      "tree": "candidate",
+      "seed": 0,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/measure_reconstruction.py",
+          "--revision",
+          "1678ee1fb79c474ffaee5725fd035716de5f1913+item7-review-round2",
+          "--seed",
+          "0",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/candidate-reconstruction/seed-0.json"
+        ],
+        "pid": 78591,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7826840872,
+        "elapsed_seconds": 1013.7091813749867,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/candidate-reconstruction/seed-0.log"
+      },
+      "phases": {
+        "before_training": 0.11899799481034279,
+        "training": 0.12726160734891892,
+        "after_training": 0.1202953364700079
+      },
+      "atom_prefix": "bdc952b665db9575349a1e63dfd193e83e852ff2ff016d07d4bd93968fd2e66d"
+    },
+    {
+      "tree": "candidate",
+      "seed": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/measure_reconstruction.py",
+          "--revision",
+          "1678ee1fb79c474ffaee5725fd035716de5f1913+item7-review-round2",
+          "--seed",
+          "1",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/candidate-reconstruction/seed-1.json"
+        ],
+        "pid": 79307,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7498456216,
+        "elapsed_seconds": 1009.277501582983,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/candidate-reconstruction/seed-1.log"
+      },
+      "phases": {
+        "before_training": 0.10920221544802189,
+        "training": 0.12857372760772706,
+        "after_training": 0.14874988794326782
+      },
+      "atom_prefix": "0cabb8c917fae9be5de028e2e678c44936687990ae484d288b057bbadffe792e"
+    },
+    {
+      "tree": "candidate",
+      "seed": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/measure_reconstruction.py",
+          "--revision",
+          "1678ee1fb79c474ffaee5725fd035716de5f1913+item7-review-round2",
+          "--seed",
+          "2",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/candidate-reconstruction/seed-2.json"
+        ],
+        "pid": 79741,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7694458104,
+        "elapsed_seconds": 941.6542661670828,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/candidate-reconstruction/seed-2.log"
+      },
+      "phases": {
+        "before_training": 0.11641757376492023,
+        "training": 0.1136824518442154,
+        "after_training": 0.11692877672612667
+      },
+      "atom_prefix": "6c775bdc5f88ac6dee791e96f542c8cab04aa839a2f471bf1956ad91a2420bb4"
+    }
+  ],
+  "spread": {
+    "before_training": {
+      "head_min": 0.10109798796474934,
+      "head_max": 0.12225494161248207,
+      "head_mean": 0.11473488869766395,
+      "candidate_min": 0.10920221544802189,
+      "candidate_max": 0.11899799481034279,
+      "candidate_mean": 0.1148725946744283,
+      "each_candidate_inside_head_spread": [
+        true,
+        true,
+        true
+      ],
+      "candidate_mean_inside_head_spread": true
+    },
+    "training": {
+      "head_min": 0.10676387846469879,
+      "head_max": 0.12108714878559113,
+      "head_mean": 0.11502247999111812,
+      "candidate_min": 0.1136824518442154,
+      "candidate_max": 0.12857372760772706,
+      "candidate_mean": 0.12317259560028712,
+      "each_candidate_inside_head_spread": [
+        false,
+        false,
+        true
+      ],
+      "candidate_mean_inside_head_spread": false
+    },
+    "after_training": {
+      "head_min": 0.10851452872157097,
+      "head_max": 0.11884608678519726,
+      "head_mean": 0.11393195576965809,
+      "candidate_min": 0.11692877672612667,
+      "candidate_max": 0.14874988794326782,
+      "candidate_mean": 0.1286580003798008,
+      "each_candidate_inside_head_spread": [
+        false,
+        false,
+        true
+      ],
+      "candidate_mean_inside_head_spread": false
+    }
+  },
+  "baseline_changed": false,
+  "timing": "Concurrent bounded diagnostic lanes; elapsed throughput is not a controlled performance comparison."
+}

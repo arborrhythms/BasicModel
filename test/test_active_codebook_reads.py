@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
-import types
 
-import pytest
 import torch
 
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -16,7 +14,7 @@ _BIN = os.path.join(_PROJECT, "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-from Spaces import Codebook, ConceptualSpace, WholeSpace
+from Spaces import Codebook
 
 
 def _codebook(rows, active):
@@ -37,17 +35,6 @@ def _codebook(rows, active):
     return cb
 
 
-def _whole_space(cb):
-    ws = object.__new__(WholeSpace)
-    torch.nn.Module.__init__(ws)
-    object.__setattr__(ws, "subspace", types.SimpleNamespace(what=cb, basis=cb))
-    object.__setattr__(ws, "_codebook", "quantize")
-    ws.vq_chunk_budget = 1 << 20
-    ws._next_position = 1
-    ws._pos_kind = {}
-    ws._ws_pos_to_row = {}
-    ws._ws_row_to_pos = {}
-    return ws
 
 
 def test_active_prototypes_and_reverse_ignore_inactive_exact_match():
@@ -74,40 +61,8 @@ def test_standalone_default_remains_all_active():
     assert torch.equal(cb.reverse(query)[0, 0], cb.getW()[2])
 
 
-def test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match():
-    cb = _codebook(
-        [[0.0, 0.0], [0.5, 0.0], [-0.5, 0.0], [0.8, 0.8]],
-        active=2,
-    )
-    ws = _whole_space(cb)
-    query = torch.tensor([0.8, 0.8])
-
-    row, _distance = ws.nearest_ws_row(query)
-    assert 0 <= row < 2
-
-    target = ws._nearest_symbol_target(query.reshape(1, 1, 2))
-    assert any(torch.equal(target[0, 0], active) for active in cb.getW()[:2])
-    assert not torch.equal(target[0, 0], cb.getW()[3])
-
-    snapped, indices = ws._snap_to_terminal_ste(query.reshape(1, 2), cb)
-    assert int(indices.item()) < 2
-    assert not torch.equal(snapped[0], cb.getW()[3])
 
 
-def test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation():
-    cb = _codebook(
-        [[0.0, 0.0], [0.5, 0.0], [-0.5, 0.0], [0.8, 0.8]],
-        active=2,
-    )
-    ws = _whole_space(cb)
-
-    before = (ws._next_position, dict(ws._pos_kind), dict(ws._ws_row_to_pos))
-    with pytest.raises(ValueError, match="cannot bind an inactive WS row 3"):
-        ws.ensure_ws_position(3)
-    assert (ws._next_position, ws._pos_kind, ws._ws_row_to_pos) == before
-
-    pos = ws.ensure_ws_position(1)
-    assert ws._ws_row_to_pos[1] == pos
 
 
 def test_membership_read_is_independent_of_active_and_inactive_codes():
@@ -120,35 +75,3 @@ def test_membership_read_is_independent_of_active_and_inactive_codes():
         cs.similarity_codebook.getW().normal_()
     after = cs.cs_read_memberships(native, extents)
     torch.testing.assert_close(after, before, atol=0, rtol=0)
-
-
-def test_topk_priming_scores_only_active_rows():
-    cb = _codebook(
-        [[1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]],
-        active=1,
-    )
-    ws = _whole_space(cb)
-    ws._intent_boosts = torch.ones(4)
-    # Position 0 is an exact match only for inactive row 1. Position 1 is the
-    # best match to the sole active row and therefore must survive top-k.
-    act = torch.tensor([[[0.0, 1.0], [0.8, 0.2]]])
-
-    mask = ws._topk_priming_mask(act)
-    assert mask.reshape(-1).tolist() == [0.0, 1.0]
-
-
-def test_semantic_arrangement_is_invariant_to_inactive_tail():
-    cb = _codebook(
-        [[1.0, 0.0], [0.0, 1.0], [10.0, 10.0], [-10.0, -10.0]],
-        active=2,
-    )
-    ws = _whole_space(cb)
-    ws.analysis_store = cb
-    ws.semantic_arrangement_weight = 1.0
-
-    first = ws.semantic_arrangement_loss(torch.tensor([0]))
-    with torch.no_grad():
-        cb.getW()[2:].copy_(torch.tensor([[1000.0, -3.0], [-500.0, 700.0]]))
-    second = ws.semantic_arrangement_loss(torch.tensor([0]))
-
-    assert torch.equal(first, second)

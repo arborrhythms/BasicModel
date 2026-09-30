@@ -1,0 +1,31 @@
+...FF....                                                                [100%]
+=================================== FAILURES ===================================
+_________________ test_gated_off_by_default_stores_no_collapse _________________
+test/test_category_collapse.py:70: in test_gated_off_by_default_stores_no_collapse
+    ws.enable_category_codebook(_load(_TRANSITIONAL))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+____________________ test_gated_on_runs_collapse_at_enable _____________________
+test/test_category_collapse.py:78: in test_gated_on_runs_collapse_at_enable
+    ws.enable_category_codebook(_load(_TRANSITIONAL))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'
+=============================== warnings summary ===============================
+test/test_category_collapse.py::test_gated_off_by_default_stores_no_collapse
+test/test_category_collapse.py::test_gated_on_runs_collapse_at_enable
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_collapse.py::test_consumption_is_clean_noop_in_serial_mode_on_live_grammar
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7852: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_collapse.py::test_gated_off_by_default_stores_no_collapse
+FAILED test/test_category_collapse.py::test_gated_on_runs_collapse_at_enable
+2 failed, 7 passed, 3 warnings in 2.58s

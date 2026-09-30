@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_primitive_properties.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

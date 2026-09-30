@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+    "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+  ],
+  "completed": [
+    "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+    "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12/worker-000.json"
+      ],
+      "pid": 15980,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435619136,
+      "elapsed_seconds": 4.349877458997071,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+        "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+      ],
+      "completed": [
+        "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+        "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.015759709058329463,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008967374917119741,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12",
+  "elapsed_seconds": 8.678871416952461,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435619136,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12/collect.json"
+    ],
+    "pid": 15966,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430834888,
+    "elapsed_seconds": 4.043254917021841,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-item7/group-12/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+        "test/test_item7_nested_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

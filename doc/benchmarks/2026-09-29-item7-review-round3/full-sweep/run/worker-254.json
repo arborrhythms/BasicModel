@@ -1,0 +1,173 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_arity_is_two",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_invertible",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_is_grammarlayer_subclass",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_rule_name",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_space_role_is_CS",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterRegistration::test_meta_registers_with_word_subspace_authority",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_builds_meta_layer_for_cs_space_role",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_registers_meta_when_grammar_uses_it",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_inf_right",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_nan_left",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_host_layer_registry_resolves_meta_after_attach",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward",
+    "test/test_symbolize_layer.py::TestPureSymbolize::test_composition_retains_both_operand_gradients_without_a_memory_write",
+    "test/test_symbolize_layer.py::TestPureSymbolize::test_reverse_is_pure_with_attached_stores"
+  ],
+  "completed": [
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_arity_is_two",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_invertible",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_is_grammarlayer_subclass",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_rule_name",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_space_role_is_CS",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterRegistration::test_meta_registers_with_word_subspace_authority",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_builds_meta_layer_for_cs_space_role",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_registers_meta_when_grammar_uses_it",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_inf_right",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_nan_left",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_host_layer_registry_resolves_meta_after_attach",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward",
+    "test/test_symbolize_layer.py::TestPureSymbolize::test_composition_retains_both_operand_gradients_without_a_memory_write",
+    "test/test_symbolize_layer.py::TestPureSymbolize::test_reverse_is_pure_with_attached_stores"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_arity_is_two",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000171625055372715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010866695083677769,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_is_grammarlayer_subclass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.683310054242611e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_rule_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010104198008775711,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_space_role_is_CS",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.63329803198576e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterRegistration::test_meta_registers_with_word_subspace_authority",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012475019320845604,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_builds_meta_layer_for_cs_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.054625208023935556,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_registers_meta_when_grammar_uses_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016204197891056538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_inf_right",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026031792163848877,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_nan_left",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02586387493647635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026388792088255286,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026363292010501027,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_host_layer_registry_resolves_meta_after_attach",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026406083023175597,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026527374982833862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestPureSymbolize::test_composition_retains_both_operand_gradients_without_a_memory_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.037915832828730345,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::TestPureSymbolize::test_reverse_is_pure_with_attached_stores",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023087509907782078,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

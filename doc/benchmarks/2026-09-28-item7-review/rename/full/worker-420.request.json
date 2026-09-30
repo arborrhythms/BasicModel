@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_compact_concept_codebook_state.py::test_vector_quantize_legacy_default_keeps_full_ema_state",
+    "test/test_compact_concept_codebook_state.py::test_vector_quantize_compact_mode_omits_ema_and_rejects_ema_ops",
+    "test/test_compact_concept_codebook_state.py::test_codebook_compact_contract_preserves_w_active_mask_and_checkpoint",
+    "test/test_compact_concept_codebook_state.py::test_indexed_conceptual_stages_share_one_compact_dictionary",
+    "test/test_compact_concept_codebook_state.py::test_codebook_ema_policy_cannot_change_after_construction"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-420.recycle.json"
+}

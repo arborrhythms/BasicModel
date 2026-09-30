@@ -1,0 +1,162 @@
+{
+  "reason": "test_failure",
+  "pytest_outcomes": {
+    "passed": 4793,
+    "skipped": 322,
+    "failed": 6,
+    "xfailed": 1
+  },
+  "selected": 5122,
+  "completed": 5122,
+  "complete_unique_coverage": true,
+  "missing": [],
+  "duplicate_completed": {},
+  "unreported": [],
+  "failures": [
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+      "phase": "call",
+      "message": "test/test_replacement_kernel_contracts.py:86: in test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees\n    order = terminal_model_index(model, meaning.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-038.log"
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+      "phase": "call",
+      "message": "test/test_taxonomy_policy.py:33: in test_unrelated_true_episode_cannot_establish_the_next_parent_relation\n    order = terminal_model_index(model, fact.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/index_fixtures.py:19: in terminal_model_index\n    rows = torch.tensor([_existing_row(space, reference) for reference in references\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-068.log"
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+      "phase": "call",
+      "message": "test/test_accessible_mind.py:228: in test_normal_what_effect_enters_recency_and_detached_knowing\n    terms = tuple((_existing_row(registry.space, ref),) for ref in fact.role_refs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_accessible_mind.py:228: in <genexpr>\n    terms = tuple((_existing_row(registry.space, ref),) for ref in fact.role_refs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-101.log"
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+      "phase": "call",
+      "message": "test/test_arithmetic_isolation.py:77: in test_renamed_native_vocabulary_preserves_checked_relation_answers\n    assert all(a != b for a, b in zip(x.role_refs, y.role_refs))\nE   assert False\nE    +  where False = all(<generator object test_renamed_native_vocabulary_preserves_checked_relation_answers.<locals>.<genexpr> at 0x109e50790>)",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-103.log"
+    }
+  ],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "elapsed_seconds": 5378.561051292112,
+  "peak_worker_memory_bytes": 5650945568,
+  "peak_aggregate_memory_bytes": 20582982664,
+  "resource_stops": [],
+  "diagnostic_only": [],
+  "compile_cache_retries": [],
+  "round4_three_failures": {
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]": "passed",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]": "passed",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds": "passed"
+  },
+  "round3_thirteen_failures": {
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]": "passed",
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths": "passed",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root": "passed",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model": "passed",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration": "passed",
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence": "passed",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation": "passed",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream": "passed",
+    "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes": "passed",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode": "passed",
+    "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero": "passed",
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng": "passed",
+    "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field": "passed"
+  },
+  "changed_outcomes": [
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+      "before": "passed",
+      "after": "failed"
+    }
+  ],
+  "new_selectors": {
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/findings-in-progress.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/README.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/validation-runtime.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-30-occurrence-tense-aspect.md]": "passed",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]": "passed",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]": "passed",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]": "passed",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]": "passed",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]": "passed",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]": "passed",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]": "passed",
+    "test/test_item7_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]": "passed",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question": "passed",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies": "passed"
+  },
+  "removed_selectors": [],
+  "source_matches_current": true
+}

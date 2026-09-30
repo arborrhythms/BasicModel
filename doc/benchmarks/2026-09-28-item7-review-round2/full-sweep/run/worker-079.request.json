@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/run/worker-079.recycle.json"
+}

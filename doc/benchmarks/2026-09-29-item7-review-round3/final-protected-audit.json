@@ -1,0 +1,18 @@
+{
+  "protected_gates_unchanged": {
+    "test/test_grounded_xor.py": true,
+    "test/test_concept_output.py": true,
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "test/test_thinking_kernel.py": true,
+    "test/test_packed_reconstruction_parity.py": true
+  },
+  "deferred_methods_unchanged": {
+    "NonLayer.forward": true,
+    "ConjunctionLayer.forward": true
+  },
+  "diff_check_exit": 0,
+  "damaged_todo_links": [],
+  "source_digest": "c573224ffd71917af1932208e298170fd2dd9bde206bf47a391275029095a70a",
+  "graph_release_gate_body_unchanged_from_HEAD": true
+}

@@ -1,0 +1,14 @@
+[collect] 5 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.8s; peak 0.46 GiB
+[worker-000] 3 selectors; limit 1796s, 8.0 GiB
+[worker-001] 29 selectors; limit 1796s, 8.0 GiB
+[worker-002] 18 selectors; limit 1796s, 8.0 GiB
+[worker-000] exit 0; 4.2s; peak 0.40 GiB
+[worker-002] exit 0; 5.2s; peak 0.40 GiB
+[worker-003] 4 selectors; limit 1791s, 8.0 GiB
+[worker-004] 3 selectors; limit 1791s, 8.0 GiB
+[worker-003] exit 0; 4.4s; peak 0.42 GiB
+[worker-004] exit 0; 5.4s; peak 0.45 GiB
+[worker-001] exit 1; 497.8s; peak 2.52 GiB
+Result: test_failure, exit 1; 57/57 cases completed.
+output/tests/20260927-item7-retention/result.json

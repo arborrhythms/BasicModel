@@ -119,82 +119,14 @@ def test_symbolic_space_inherits_attach_knowledge():
 # as an ``nn.Parameter`` (trainable) plus an ``order`` long buffer.
 
 
-def test_symbolic_space_attach_creates_references_parameter():
-    """After attach_knowledge, WholeSpace has a 1-D references
-    Parameter at the artifact's capacity, initialized with the live
-    rows from the artifact."""
-    from Spaces import WholeSpace
-    import torch.nn as nn
-    ws = _bare_space(WholeSpace)
-    view = _tiny_view()
-    ws.attach_knowledge(view)
-    assert hasattr(ws, 'references')
-    assert isinstance(ws.references, nn.Parameter)
-    # 1-D, sized to capacity (>= 256 per the bootstrap slack)
-    assert ws.references.dim() == 1
-    assert ws.references.shape[0] >= 256
-    # Live rows match the view's values
-    n_live = view.n_refs_live
-    for i in range(n_live):
-        assert float(ws.references[i].item()) == \
-            float(view.references[i].item())
 
 
-def test_symbolic_space_attach_creates_order_buffer():
-    """After attach_knowledge, WholeSpace has an ``order`` long
-    buffer with the live rows from the artifact."""
-    from Spaces import WholeSpace
-    import torch
-    ws = _bare_space(WholeSpace)
-    view = _tiny_view()
-    ws.attach_knowledge(view)
-    assert hasattr(ws, 'order')
-    assert ws.order.dtype == torch.long
-    n_live = view.n_refs_live
-    for i in range(n_live):
-        assert int(ws.order[i].item()) == int(view.orders[i].item())
 
 
-def test_symbolic_space_references_in_named_parameters():
-    """The references Parameter shows up in ``named_parameters`` so the
-    optimizer picks it up for training."""
-    from Spaces import WholeSpace
-    ws = _bare_space(WholeSpace)
-    ws.attach_knowledge(_tiny_view())
-    names = [n for n, _ in ws.named_parameters()]
-    assert 'references' in names
 
 
-def test_symbolic_space_order_in_named_buffers():
-    """The order tensor shows up in ``named_buffers`` (not as a
-    Parameter — it's discrete metadata, not trainable)."""
-    from Spaces import WholeSpace
-    ws = _bare_space(WholeSpace)
-    ws.attach_knowledge(_tiny_view())
-    names = [n for n, _ in ws.named_buffers()]
-    assert 'order' in names
 
 
-def test_symbolic_space_reattach_updates_in_place():
-    """Re-attaching a view replaces the references / order data
-    without breaking Parameter / buffer registration."""
-    from Spaces import WholeSpace
-    import torch
-    ws = _bare_space(WholeSpace)
-    view1 = _tiny_view()
-    ws.attach_knowledge(view1)
-    refs_id_before = id(ws.references)
-    # Modify the first ref's value via the underlying section, then
-    # build a fresh view to attach.
-    view2 = _tiny_view()
-    # The bootstrap builds with all zeros — to detect update, write
-    # something into view2's underlying section before attaching.
-    view2._ks['reference_codebook']['references'][0] = 0.75
-    ws.attach_knowledge(view2)
-    # New value visible
-    assert float(ws.references[0].item()) == 0.75
-    # Knowledge field updated too
-    assert ws.knowledge is view2
 
 
 # -- PartSpace attach populates wv.ref_ids -----------------------

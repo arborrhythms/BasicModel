@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+    "test/test_word_grain_attention.py::test_word_rows_restrict_when_attention_off",
+    "test/test_word_grain_attention.py::test_off_without_word_store_is_plain_reverse",
+    "test/test_word_grain_attention.py::test_heat_rows_take_precedence_over_word_rows",
+    "test/test_word_grain_attention.py::test_retrieval_failure_degrades_to_word_rows",
+    "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming"
+  ],
+  "completed": [
+    "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+    "test/test_word_grain_attention.py::test_word_rows_restrict_when_attention_off",
+    "test/test_word_grain_attention.py::test_off_without_word_store_is_plain_reverse",
+    "test/test_word_grain_attention.py::test_heat_rows_take_precedence_over_word_rows",
+    "test/test_word_grain_attention.py::test_retrieval_failure_degrades_to_word_rows",
+    "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018287500133737922,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_word_rows_restrict_when_attention_off",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006431250367313623,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_off_without_word_store_is_plain_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005874159978702664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_heat_rows_take_precedence_over_word_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008425419218838215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_retrieval_failure_degrades_to_word_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005598749266937375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001127209048718214,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

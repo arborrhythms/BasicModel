@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+    "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+    "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+    "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+    "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+    "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-27/worker-000.recycle.json"
+}

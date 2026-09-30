@@ -1,20 +1,6 @@
-"""The two truth sets and the absolute corpus's duties (GrammarOpsPass
-§6; author sign-off 2026-06-11).
+"""Ideas enter luminosity; shared-store relations constrain referenced rows.
 
-Absolute truths are IDEAS — region constraints, luminosity-evaluable,
-stored in ``TruthLayer``. Relative truths are RELATIONS BETWEEN IDEAS —
-two ideas and a relation, modeled as ``NP = VP NP`` with ``VP(NP)``
-never collapsed: all three components stored in the sibling
-``RelativeTruthStore`` and enforced as a structural constraint over
-references. Relative truths NEVER enter the luminosity measure.
-
-The absolute set is a CONSISTENT CORPUS governing admission: it
-(1) governs admissibility of new truths/beliefs, (2) grounds causal
-reasoning (the sibling store's consequents/evaluate), and (3) provides
-user feedback on the truth of a statement. The conflict region
-``min(T_k, F_k)`` is measured, never stored; the trigger statistic is
-its PER-DIMENSION MAX (one sharply contested witness interrupts), with
-threshold + hysteresis on the preemption latch.
+Conflict statistics retain independent support poles and hysteresis.
 """
 
 import os
@@ -40,8 +26,8 @@ def _truth_layer():
 
 
 def _relative_store():
-    from Layers import RelativeTruthStore
-    return RelativeTruthStore(_D, max_triples=16)
+    from Layers import TernaryTruthStore
+    return TernaryTruthStore(_D, capacity=16)
 
 
 def _vec(*vals):
@@ -148,9 +134,9 @@ def test_triples_stored_uncollapsed_and_separate_from_luminosity():
     tl.record(_vec(0.9), degree=1.0)
     lum_before = tl.luminosity()
     np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
-    idx = rs.record_triple(np1, vp, np2, degree=1.0)
+    idx = rs.append_relation(np1, vp, np2, trust=1.0)
     assert idx == 0 and len(rs) == 1
-    s1, sv, s2 = rs.triple(0)
+    s1, sv, s2 = rs.slots[0].unbind()
     assert torch.allclose(s1, np1) and torch.allclose(sv, vp) \
         and torch.allclose(s2, np2)
     assert len(tl) == 1
@@ -162,14 +148,14 @@ def test_relational_evaluation_not_coverage():
     triple, not a permuted one — and degrades gradedly."""
     rs = _relative_store()
     np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
-    rs.record_triple(np1, vp, np2)
-    assert rs.evaluate(np1, vp, np2) == pytest.approx(1.0, abs=1e-5)
+    rs.append_relation(np1, vp, np2, trust=1., evidence=(1., 0.))
+    assert rs.evaluate(np1, vp, np2)[0] == pytest.approx(1.0, abs=1e-5)
     # Swapped consequent: the relation never licensed it.
-    assert rs.evaluate(np1, vp, _vec(0.0, 0.0, -1.0)) == pytest.approx(
+    assert rs.evaluate(np1, vp, _vec(0.0, 0.0, -1.0))[0] == pytest.approx(
         0.0, abs=1e-5)
     # Graded: a nearby antecedent scores between.
     near = _vec(1.0, 0.3)
-    mid = rs.evaluate(near, vp, np2)
+    mid = rs.evaluate(near, vp, np2)[0]
     assert 0.5 < mid < 1.0
 
 
@@ -178,7 +164,7 @@ def test_consequents_drive_the_reasoning_step():
     yields that relation's consequent; below threshold, nothing."""
     rs = _relative_store()
     np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
-    rs.record_triple(np1, vp, np2)
+    rs.append_relation(np1, vp, np2, trust=1., evidence=(1., 0.))
     out = rs.consequents(_vec(0.95, 0.05))
     assert len(out) == 1
     idx, match, vp_row, np2_row = out[0]
@@ -194,25 +180,20 @@ def test_structural_constraint_residuals():
     two relations with agreeing (np1, vp) but disagreeing consequents
     show a residual; a functionally consistent corpus shows none."""
     rs = _relative_store()
-    rs.record_triple(_vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0))
-    rs.record_triple(_vec(0.0, 0.0, 0.0, 1.0), _vec(0.0, 1.0),
+    rs.append_relation(_vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0))
+    rs.append_relation(_vec(0.0, 0.0, 0.0, 1.0), _vec(0.0, 1.0),
                      _vec(0.0, 0.0, 0.0, 0.0, 1.0))
     res = rs.constraint_residuals()
     assert res.shape == (2,)
     assert torch.all(res < 0.1), "distinct antecedents: no constraint"
     # Same antecedent and change, contradictory consequent.
-    rs.record_triple(_vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, -1.0))
+    rs.append_relation(_vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, -1.0))
     res = rs.constraint_residuals()
     assert float(res.max()) > 1.0, "functional inconsistency must show"
     rs.reset()
     assert len(rs) == 0 and rs.constraint_residuals().numel() == 0
 
 
-def test_wordsubspace_owns_both_stores():
-    """The sibling store rides next to the absolute store on the
-    SymbolSpace (created with the truth layer)."""
-    import Language
-    assert hasattr(Language, 'RelativeTruthStore') or True
-    from Layers import RelativeTruthStore
-    src = open(os.path.join(_BIN, 'Language.py')).read()
-    assert 'self.relative_store = RelativeTruthStore(' in src
+def test_retired_relative_store_is_absent():
+    import Layers
+    assert not hasattr(Layers, 'RelativeTruthStore')

@@ -1,0 +1,80 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[legacy]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]"
+  ],
+  "completed": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[legacy]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]"
+  ],
+  "slow_selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[legacy]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.929097723215818e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_config_matrix.py', 54, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.587504271417856e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_config_matrix.py', 54, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[legacy]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.029192056506872e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_config_matrix.py', 54, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.845791358500719e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_config_matrix.py', 54, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.850005593150854e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_config_matrix.py', 54, 'Skipped: heaviest grammar variant; make test_all (RUN_SLOW) runs it')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.708293221890926e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_config_matrix.py', 54, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier",
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-421.recycle.json"
+}

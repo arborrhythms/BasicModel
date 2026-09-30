@@ -1,0 +1,52 @@
+{
+  "primary_receipt_reproduced_exactly": true,
+  "source_sha256": "ff99b5f4ba209dac5161cf82868413394c57e9f7645a91ee14a488a3707a0728",
+  "sentence": 3,
+  "word": "1",
+  "packed_word_column": 10,
+  "single_word_column": 4,
+  "packed_candidate_columns": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    22,
+    23,
+    24,
+    25,
+    26
+  ],
+  "single_candidate_columns": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    16,
+    17,
+    18,
+    19,
+    20
+  ],
+  "equal_recovered_idea": true,
+  "equal_normalized_candidates": true,
+  "equal_candidate_logits": true,
+  "equal_assignments": false,
+  "max_assignment_difference": 1.1920928955078125e-07,
+  "null_probabilities": [
+    4.5342574594542384e-05,
+    4.534257095656358e-05
+  ],
+  "costs": [
+    0.000750092207454145,
+    0.0007502115331590176
+  ],
+  "column_shift_only": {
+    "shift": -6,
+    "equal_logits": true,
+    "equal_assignments": true,
+    "equal_byte_probabilities": true,
+    "cost": 0.0007502115331590176
+  }
+}

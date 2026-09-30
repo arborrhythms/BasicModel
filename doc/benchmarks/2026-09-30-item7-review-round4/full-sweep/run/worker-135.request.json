@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[gpu]",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[mps]",
+    "test/test_training_device.py::test_explicit_training_device_is_preserved[cuda:0]",
+    "test/test_training_device.py::test_slow_training_defaults_to_a_required_accelerator",
+    "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+    "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+    "test/test_training_device.py::test_parallel_pool_keeps_one_accelerator_training_lane"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-135.recycle.json"
+}

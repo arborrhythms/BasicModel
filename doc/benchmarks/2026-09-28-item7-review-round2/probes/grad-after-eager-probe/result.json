@@ -1,0 +1,173 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+  ],
+  "completed": [
+    "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-000.json"
+      ],
+      "pid": 75407,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 634816480,
+      "elapsed_seconds": 5.69235425000079,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract"
+      ],
+      "completed": [
+        "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.9528873329982162,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-001.json"
+      ],
+      "pid": 75417,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4735374400,
+      "elapsed_seconds": 961.896431082976,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+      ],
+      "completed": [
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 944.0902455829782,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-002.json"
+      ],
+      "pid": 76515,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4933277048,
+      "elapsed_seconds": 1434.6114628330106,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+      ],
+      "completed": [
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 145.2703329580836,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=63.208s)\r\n"
+        },
+        {
+          "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1274.3680698749376,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 1 (\u0394=388.224s)\r\nbatch = 0 (\u0394=287.886s)\r\nbatch = 1 (\u0394=223.021s)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe",
+  "elapsed_seconds": 2406.0675515829353,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 4933277048,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/collect.json"
+    ],
+    "pid": 75397,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 427934920,
+    "elapsed_seconds": 3.557930791983381,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after-eager-probe/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

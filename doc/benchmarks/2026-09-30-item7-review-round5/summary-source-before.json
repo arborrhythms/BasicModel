@@ -1,0 +1,8 @@
+{
+  "probe": "final XOR table must read the final source receipt",
+  "outcome": "failed",
+  "actual": [
+    "read(HERE / 'xor-candidate/summary.json')"
+  ],
+  "expected": "read(HERE / 'final-xor-candidate/summary.json')"
+}

@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_wholespace_has_no_taxonomy_or_truth_writer ________________
+
+    def test_wholespace_has_no_taxonomy_or_truth_writer():
+        from Spaces import WholeSpace
+        for name in ('insert_meta', 'insert_relation', 'taxonomy_children', 'taxonomy_parent',
+                     '_migrate_signed_int_taxonomy', '_record_truth_activations'):
+>           assert not hasattr(WholeSpace, name), name
+E           AssertionError: insert_meta
+E           assert not True
+E            +  where True = hasattr(<class 'Spaces.WholeSpace'>, 'insert_meta')
+
+test/test_item7_taxonomy.py:67: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer
+1 failed in 2.03s

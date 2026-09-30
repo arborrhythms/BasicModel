@@ -1,0 +1,845 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+    "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+    "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+    "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+    "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+    "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+    "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+    "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+    "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+    "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+    "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+    "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+    "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+    "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+    "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+    "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+    "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+    "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+    "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+    "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+    "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+    "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+    "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+    "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+    "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+    "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+    "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+    "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+    "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-000.json"
+      ],
+      "pid": 77257,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 696108592,
+      "elapsed_seconds": 4.267768833087757,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+      ],
+      "completed": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.059738292009569705,
+          "message": "test/test_item7_word_interpretation.py:33: in test_every_read_word_has_a_concept_and_symbol\n    assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'\nE   AssertionError: derived concepts must have symbol activations\nE   assert tensor(0.) > 0\nE    +  where tensor(0.) = <built-in method sum of Tensor object at 0x1233c7890>()\nE    +    where <built-in method sum of Tensor object at 0x1233c7890> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]).sum\nE    +      where tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x1234d2760>()\nE    +        where <built-in method abs of Tensor object at 0x1234d2760> = tensor([[[-0., -0., 0., -0., -0., -0., -0., -0., 0., -0., 0., -0., -0., 0.],\\n         [0., 0., -0., 0., 0., 0., 0., 0....0., -0., -0., -0., 0., -0., 0., -0., -0., 0.],\\n         [0., 0., -0., 0., 0., 0., 0., 0., -0., 0., -0., 0., 0., -0.]]]).abs",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.1808429170632735,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.14500762498937547,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-001.json"
+      ],
+      "pid": 77269,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 442385728,
+      "elapsed_seconds": 4.011496667051688,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.034794791019521654,
+          "message": "test/test_mm_xor.py:126: in test_forward_keeps_continuous_symbols\n    self.assertGreater(symbols.std().item(), 1e-6,\nE   AssertionError: 0.0 not greater than 1e-06 : Symbolic activation collapsed to a single VQ prototype after the per-stage forward.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-002.json"
+      ],
+      "pid": 77280,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 533906848,
+      "elapsed_seconds": 5.983722083969042,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06027258303947747,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04675425007008016,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03238212503492832,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04368354193866253,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03362641599960625,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4273482080316171,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03326829196885228,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08459879190195352,
+          "message": "",
+          "stdout": "eak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.0.routing_proj\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.0.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.4\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.5.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.6\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.6.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.perceptualSpace._percept_store.byte_fallback\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.0\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.1\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.2\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}}\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03102524997666478,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.07539850007742643,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06187320896424353,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.013s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03085645893588662,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.03772362496238202,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_output_synthesis.py:339: in test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only\n    assert not torch.allclose(first.actual, out_after)        # answer path moved\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: assert not True\nE    +  where True = <built-in method allclose of type object at 0x10ef653a0>(tensor([[[0.]],\\n\\n        [[0.]]]), tensor([[[0.]],\\n\\n        [[0.]]]))\nE    +    where <built-in method allclose of type object at 0x10ef653a0> = torch.allclose\nE    +    and   tensor([[[0.]],\\n\\n        [[0.]]]) = AnswerConstruction(actual=tensor([[[0.]],\\n\\n        [[0.]]]), derivation=AnswerDerivation(answer_symbol=tensor([[[-0., ...ceptual', 'shape': (2, 8, 14), 'selections': ()}, {'operation': 'output:from_percepts', 'shape': (2, 1, 1)}), texts=()).actual",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06871458399109542,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04802149999886751,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03069687495008111,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.1182664999505505,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03542108298279345,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05949812498874962,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.18764395802281797,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.013s)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8206/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8206/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8206/test_synthesized_answer_checkp0/synth.ckpt\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0705300000263378,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.013s)\r\nbatch = 0 (\u0394=0.013s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05895008298102766,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.037473415955901146,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08082158293109387,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.014s, 50.00%)\r\nbatch = 2 (\u0394=0.016s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=False).\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013694124994799495,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08544775005429983,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-003.json"
+      ],
+      "pid": 77313,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 475497816,
+      "elapsed_seconds": 4.181270000059158,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+        "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+        "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+        "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+        "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+        "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+        "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+        "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+        "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+        "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+        "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+        "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+        "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+        "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+        "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+      ],
+      "completed": [
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+        "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+        "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+        "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+        "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+        "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+        "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+        "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+        "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+        "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+        "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+        "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+        "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+        "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+        "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.022605041041970253,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011385874939151108,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.019877750077284873,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011198249994777143,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.019630166934803128,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01142745791003108,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006963166990317404,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010107291047461331,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0056730000069364905,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01025945891160518,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0055532080586999655,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009982625022530556,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0025235420325770974,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002825249917805195,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003240042016841471,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004052584059536457,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.031262542004697025,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05157441599294543,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00412366702221334,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002161041018553078,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0019525419920682907,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004160334006883204,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003810583963058889,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002670833026058972,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after",
+  "elapsed_seconds": 22.819296917063184,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 696108592,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/collect.json"
+    ],
+    "pid": 77243,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 500598008,
+    "elapsed_seconds": 4.066279749968089,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+        "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+        "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+        "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+        "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+        "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+        "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+        "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+        "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+        "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+        "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+        "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+        "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+        "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+        "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+        "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+        "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

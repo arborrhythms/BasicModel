@@ -1,0 +1,25 @@
+F...FF                                                                   [100%]
+=================================== FAILURES ===================================
+______ TestAutobindMovedFromPSToCS.test_conceptualspace_defines_autobind _______
+test/test_autobind_from_cs.py:81: in test_conceptualspace_defines_autobind
+    self.assertTrue(
+E   AssertionError: False is not true : ConceptualSpace must define _maybe_autobind_meta after Task G.
+______ TestAutobindFiresFromCS.test_autobind_creates_meta_taxonomy_entry _______
+test/test_autobind_from_cs.py:137: in test_autobind_creates_meta_taxonomy_entry
+    cs._maybe_autobind_meta(pid_grid, vec_event,
+    ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?
+__________ TestAutobindFiresFromCS.test_autobind_skips_negative_pids ___________
+test/test_autobind_from_cs.py:160: in test_autobind_skips_negative_pids
+    cs._maybe_autobind_meta(pid_grid, vec_event)
+    ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_maybe_autobind_meta'. Did you mean: '_maybe_autobind_words'?
+=========================== short test summary info ============================
+FAILED test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids
+3 failed, 3 passed in 2.12s

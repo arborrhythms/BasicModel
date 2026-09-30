@@ -1,0 +1,22 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "group-00/result.json"
+    }
+  ],
+  "diagnostic_only": [
+    {
+      "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 1,
+      "reason": "completed",
+      "peak_memory_bytes": 18266355968,
+      "elapsed_seconds": 12.556909417035058
+    }
+  ],
+  "reason": "failed"
+}

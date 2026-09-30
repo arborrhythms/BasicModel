@@ -1,0 +1,24 @@
+{
+  "selectors": [
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_attribute_exists",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_is_an_int",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_value_is_non_negative",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_order_above_one_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_parallel_override_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_serial_override_sticks",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_negative_value_raises",
+    "test/test_two_mode_dispatch.py::TestSymbolicOrderInvalidRaisesLoud::test_non_integer_raises",
+    "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_exists",
+    "test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_is_bool",
+    "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_false_skips_per_word_body",
+    "test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_true_dispatches_to_per_word_body",
+    "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_parallel_mode_implies_per_word_enabled_false",
+    "test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_serial_mode_implies_per_word_enabled_true",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_one_defaults_serial",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_two_defaults_serial_for_legacy_configs",
+    "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_zero_defaults_parallel",
+    "test/test_two_mode_dispatch.py::TestConfigsHaveExplicitOrder::test_grammar_config_default_derives_serial"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-220.recycle.json"
+}

@@ -224,61 +224,31 @@ remain open; these foundations do not complete those migrations.
 
 ### 2.1 Nested clauses and phrases
 
-> **Superseded in part (2026-09-16):** embedded clauses collapse unless they
-> contain a relative truth, which forces a reference. See
-> [Two truths in LTM: ideas collapse, relations refer](../specs/2026-09-16-two-truths-ideas-and-relations.md)
-> §2; the `p0`/`p1`/`p2` example below describes the relative case only.
+The [two-truths spec §2](../specs/2026-09-16-two-truths-ideas-and-relations.md#2-collapse-versus-reference-decided)
+is the clause contract. One grammatical S writes one row. An absolute S
+fuses NP and VP into one idea point, retaining only its end state and cached
+operand references. The September 28 decision removes durable derivations;
+pre-fusion roles train prediction while reading, and later readback generates
+from the stored field.
+`NP → S` collapses an absolute embedded clause into its enclosing idea,
+while retaining a row for each S. “He said she said it is beautiful” is
+therefore an idea for each clause, not a chain of operator relations.
 
-The **1–3-slot bound is local to a grammatical node**, not a bound on the
-information in an entire sentence. Each thought retains a structured root,
-directly or by a stable reference. An occupied slot may reference a
-typed compound phrase or clause whose own roles remain addressable. Thus a
-relational node still has `[NP1, VP, NP2]`, with the VP in the middle; an
-NP-position argument may denote an entity, event or proposition without
-erasing those semantic types. Compound VPs likewise retain their derivation,
-not merely the name of a primitive tool.
+A relative S has no point. `NP → REF(S)` carries it by reference, so its
+enclosing clause is also relative and remains three slots. “He said cats
+are animals” writes a part row and an operator row referring to it. “She
+said he said cats are animals” adds another operator row. Implication may
+reference two relative rows; equality is two directed part rows. A generic
+subject is relative independently of the surface verb. Phrase composition
+alone does not create another LTM row.
 
-For "he said that she said P":
-
-```text
-p0 = P
-p1 = [she, said, reference(p0)]
-p2 = [he,  said, reference(p1)]
-thought root = reference(p2)
-```
-
-Retain stable node/occurrence references, ordered role-labelled constituent
-references, bindings and grammatical scope. Semantic vectors support
-illumination and retrieval; they are not the sole record from which arbitrary
-nesting must be inverted. A compound occurrence need not become a newly
-admitted lexical concept. Reuse/extend the existing conceptual and occurrence
-reference storage, not an independent semantic store. This builds on
-[Architecture's relation-table contract](../Architecture.md#relation-table-entry-contract),
-[Spaces' typed reference ownership](../Spaces.md#symbolspace-and-languagespace-reference-grammar-and-scheduling),
-and the [fold-ladder plan](2026-09-10-meronomy-fold-ladder.md)
-contracts 1, 6 and 7 on constituent witnesses, occurrence identity and phrases;
-those mechanisms alone do not establish this nested-LTM guarantee.
-
-Scope and evidence attach to the occurrence: support for `p2` does not assert
-`p1` or `p0`. Preserve quotation/reporting, negation, variable binding and
-where/when scope. A quoted or embedded question is content, not an instruction
-to execute it. Creating a subordinate clause does not enter a thinking level;
-syntactic nesting and the execution context level are distinct. The existing
-[What interaction stack](../STM.md#13-interaction-ltm-and-the-what-stack)
-is the legacy Q/A mechanism being replaced, not the definition of hierarchy.
-Only a selected boundary action changes the execution level. Record semantic
-constituent references when committing each external or internal composition;
-neither speculative candidates nor ordinary backward references push or pop.
-
-Specify node-count, depth and traversal limits separately from field width
-and thought-stack depth. The bounded attended field exposes selected nodes
-without deleting their stored structure. Preserve reachable constituents
-across save/load and memory trimming; detect cycles or unavailable references
-and report incomplete structure explicitly rather than silently flattening or
-rebinding it. Reconstruction follows the input's retained derivation; output
-generation realizes the answer's own structure and cannot borrow a hidden
-input witness. These references and traversals remain subject to the
-[Symbol Firewall](../SymbolFirewall.md#principle) and declared work limits.
+Every clause owns its selected reconstruction program, grammatical scope,
+field coordinates and independent evidence poles. Embedded content registers
+without assertion; external provenance supplies the outer assertion. A
+question inside reported content does not execute. Thought permission and
+syntactic clause nesting remain separate. References are stable native
+addresses, not copies of relation vectors. Retention and checkpointing must
+preserve reachable dependencies or report unavailable structure explicitly.
 
 ## 3. Execution, memory and credit
 
@@ -569,14 +539,14 @@ These decisions supersede conflicting proposals in that plan; they are target
 requirements, not a claim that the loops have been implemented or benchmarked.
 
 1. **Reconstruct the completed sentence, not just its local folds.**
-   `reverseReconstruct()` starts from the completed, sealed structured
+   `reverseReconstruct()` starts from the completed, ended structured
    representation and its permitted compose-derivation/constituent evidence
    (§2.1). Immediate per-word recovery cannot establish that later folds and
-   seals retained the earlier input. It must not replace end-to-end sentence
-   reconstruction or justify leaving seals outside the fidelity checks.
+   endings retained the earlier input. It must not replace end-to-end sentence
+   reconstruction or justify leaving endings outside the fidelity checks.
    Input targets are available only for scoring, not as reconstruction inputs.
    Test one-word sentences, deferred/no-fold words, unary changes and final
-   seals, including cases where local recovery succeeds but completed-state
+   endings, including cases where local recovery succeeds but completed-state
    information has been lost.
 
    Surface fidelity includes word termination: a candidate matching the
@@ -601,7 +571,7 @@ requirements, not a claim that the loops have been implemented or benchmarked.
 
 3. **Run input reconstruction once per completed sentence.**
    When reconstruction is enabled, run one bounded compiled traversal after
-   that sentence's forward composition and seals have completed, not a reverse
+   that sentence's forward composition and endings have completed, not a reverse
    at each forward word index. A traversal may contain multiple constituent
    and word-level reverse steps; "once" does not mean one primitive operation.
    Packed rows retain separate sentence boundaries and loss accounting.
@@ -893,7 +863,7 @@ allocation, use identical sentence byte/unit streams including joining
 spaces, and take no optimizer steps. Over four sentences, the mean tied
 byte cost is **0.7866926491260529 packed** and **0.6838697642087936 single**.
 All retained leaf slabs match, but reconstructed leaves differ; the first
-sentence's sealed state matches in each row, while later sealed states differ.
+sentence's ended state matches in each row, while later ended states differ.
 **Parity is not demonstrated.** This is a measured baseline gap, not a passed
 learning gate; its cause must be accounted for before the item 9 learning
 comparisons. The [comparison record](../benchmarks/2026-09-21-item10/final-source/parity-comparison.json)
@@ -928,11 +898,13 @@ independent role vectors and occupancy logits. Its objective is occupied-role
 MSE plus mean presence binary cross entropy. Current-step source encodings
 remain live, while targets and durable observations are detached
 ([Layers.py:9499](../../bin/Layers.py#L9499),
-[Layers.py:10096](../../bin/Layers.py#L10096)). This does not yet implement the
-retained compound-reference prediction required by §§2.1 and 10.5.
+[Layers.py:10096](../../bin/Layers.py#L10096)). The compound-reference ambiguity is closed by the two-truths definition in
+§2.1: ideas collapse, relations refer. Its runtime acceptance remains open
+until the twenty-one item-7 tests, mixed-kind learning measurement and
+source-matched reconstruction receipt have passed review.
 
-Packed draining uses the existing sealed three-slot/depth outputs and final
-seal state. Explicit STM/infix adapters keep the same local roles in both
+Packed draining uses the existing ended three-slot/depth outputs and final
+closing state. Explicit STM/infix adapters keep the same local roles in both
 memory modes. Cursor source addresses identify each packed sentence's document;
 the first document transition is applied before priming, and later transitions
 at their individual boundaries. The single-sentence cursor preserves a
@@ -1039,7 +1011,7 @@ only effects on the accessible mind, so the gradient factorizes:
    observed. At `w = 0` codes are placed only by what occurred. At `w > 0`
    preconceptions shape where meanings settle, as they do in people: the step
    toward what occurred shrinks to `(1 − w)`, the rest goes toward what was
-   already believed, and at `w = 1` learning is sealed. Perfect learning
+   already believed, and at `w = 1` learning is ended. Perfect learning
    needs the preconception dropped — the learning-side sense of beginner's
    mind ([Philosophy](../Philosophy.md#beginners-mind)).
 3. **On-manifold hand-off.** What thought hands to generate is a
@@ -1312,7 +1284,7 @@ target. "Future" describes its relationship to that prior context; the caller
 does not need to supply a second, future input to train the first prediction.
 
 **How the estimate enters comprehension (Alec, 2026-09-20).** As a *negative
-image*: the predicted idea, sign-reversed, is added to the sealed idea after
+image*: the predicted idea, sign-reversed, is added to the ended idea after
 composition, so what is conceived is what was not predicted, and nothing of
 the estimate ever enters composition. This sharpens steps 2 and 4 below and
 is specified in the
@@ -1594,6 +1566,17 @@ claims that the code gaps have been fixed by consolidation.
 
 ## 10. Consolidated implementation and verification order
 
+**Item 7 milestone (September 27, pending review).** Implement
+[two truths](../specs/2026-09-16-two-truths-ideas-and-relations.md) with the
+amendments in [todo.md](../../todo.md): one row per S, independent evidence,
+field coordinates, object-level sigma taxonomy and predictor-carried identity.
+Exit requires all twenty-one §7 tests and §8 documentation, the declared
+`true` thought, and the reviewed reconstruction baseline unchanged unless
+explicitly re-baselined. Publish a failing probe, its fix, affected-file
+results and one source-matched full receipt. Keep the depth-three campaign
+and XOR/MM results visible and stop for Claude before committing this item.
+
+
 **September 17 OS checkpoint:** implementation of this spec is unfinished.
 Alec requested a pushed checkpoint, deferring the full-suite-green gate for this
 checkpoint only. Completing this session and this spec is the next task in
@@ -1833,15 +1816,15 @@ Required (Alec's rule: the codebase does not keep legacy paths in source):
   [STM.md:1002](../STM.md#L1002)) and the Params.md rows to the single owner;
   correct this plan's §8.2 table row that calls the member "legacy".
 
-### 11.4 Intermediate packed slots: assert the seal layout (decided)
+### 11.4 Intermediate packed slots: assert the closing layout (decided)
 
 The packed drain reshapes `_tensor_sentence_roots_live[b, t]` to `[3, D]`
-and adapts it with the same newest-at-0 STM permutation as the final seal
+and adapts it with the same newest-at-0 STM permutation as the final closing
 from `_final_end_state` ([Models.py:12497](../../bin/Models.py#L12497)).
 The parity test builds both banks from one tensor, so it cannot detect a
-layout mismatch between the intermediate bank and the seal. Add one
+layout mismatch between the intermediate bank and the closing. Add one
 real-brick assertion in `test_joint_objectives.py`: when a brick ends
-exactly on sentence `t`, the intermediate slot `t` and the final seal yield
+exactly on sentence `t`, the intermediate slot `t` and the final closing yield
 the same canonical `[NP1, VP, NP2]` and occupancy for that row.
 
 ### 11.5 Stale references (decided)
@@ -1906,7 +1889,7 @@ the current implementation.
 - The packed LTM sink also runs when no expectation head exists, and ignores
   masked storage slots. A real off-start input previously stored only its final
   sentence; the regression now requires both observations.
-- The real intermediate/final-seal regression checks canonical roles and
+- The real intermediate/final-closing regression checks canonical roles and
   occupancy from separately executed packed bricks, rather than constructing
   both banks from one test tensor.
 
@@ -2047,7 +2030,7 @@ amplitude of an otherwise identical concept direction; this objective must
 not be described as exact continuous-state reconstruction.
 
 Gradients pass from the byte objective through the recovered ideas, selected
-compose inverses and live sealed input representation. The compose path owns
+compose inverses and live ended input representation. The compose path owns
 the learned transforms; reconstruction adds no decoder parameters. Targets,
 dictionary snapshots and occurrence-specific constituent witnesses are
 detached. Reverse trace indices are constants. The forward chooser retains its

@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 10501792240,
+  "elapsed_seconds": 7.202611916931346
+}

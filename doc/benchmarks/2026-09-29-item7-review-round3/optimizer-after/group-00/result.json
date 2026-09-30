@@ -1,0 +1,181 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable",
+    "test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config",
+    "test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config",
+    "test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound",
+    "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+    "test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards",
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+    "test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step"
+  ],
+  "completed": [
+    "test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable",
+    "test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config",
+    "test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config",
+    "test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound",
+    "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+    "test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards",
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+    "test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-after/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-after/group-00/worker-000.json"
+      ],
+      "pid": 11868,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 605291936,
+      "elapsed_seconds": 4.5103750000707805,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-after/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable",
+        "test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config",
+        "test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config",
+        "test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound",
+        "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+        "test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards",
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+        "test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step"
+      ],
+      "completed": [
+        "test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable",
+        "test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config",
+        "test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config",
+        "test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound",
+        "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+        "test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards",
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+        "test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003469999646767974,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00013749999925494194,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009192499564960599,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005682919872924685,
+          "message": "",
+          "stdout": "\n=== Phase 1: Skipped (lexer=raw, no word embeddings) ===\r\n\n=== Phase 2: Training model ===\r\n"
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00033716706093400717,
+          "message": "",
+          "stdout": "\n=== Syncing weights with trainer ===\r\n\n=== Syncing to trainer ===\r\n\n=== Running training on trainer ===\r\n\n=== Pulling generated weights from trainer ===\r\n"
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0014912920305505395,
+          "message": "",
+          "stdout": "Loading text: 2 shard(s), max 20 docs from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8486/test_document_splits_do_not_le0\nLoaded 20 docs -> 40 sentences (32 train, 4 val, 4 test)\n"
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.47839366691187024,
+          "message": "bin/Models.py:3113: in getOptimizer\n    remapped = remap_optimizer_state_by_name(\nbin/checkpoint_migrations.py:739: in remap_optimizer_state_by_name\n    raise ValueError(\"optimizer parameter-group layout differs\")\nE   ValueError: optimizer parameter-group layout differs\n\nThe above exception was the direct cause of the following exception:\ntest/test_fineweb_preflight.py:146: in test_checkpoint_restores_optimizer_counters_and_rng\n    opt = restored.getOptimizer(lr=1e-4)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:3129: in getOptimizer\n    raise ValueError(message) from exc\nE   ValueError: [BasicModel] Optimizer checkpoint was not restored: optimizer parameter-group layout differs",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8486/test_checkpoint_restores_optim0/resume.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8486/test_checkpoint_restores_optim0/resume.ckpt\r\n"
+        },
+        {
+          "nodeid": "test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00013191706966608763,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_fineweb_preflight.py', 170, 'Skipped: set RUN_FINEWEB_STEP=1 for the real N=64 optimizer-step gate')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-after/group-00",
+  "elapsed_seconds": 6.506568207987584,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 605291936,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-after/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-after/group-00/collect.json"
+    ],
+    "pid": 11854,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180798280,
+    "elapsed_seconds": 1.7782295419601724,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/optimizer-after/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable",
+        "test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config",
+        "test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config",
+        "test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound",
+        "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+        "test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards",
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+        "test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

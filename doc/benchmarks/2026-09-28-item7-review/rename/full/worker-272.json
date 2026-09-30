@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_conceptualSpaces_is_module_list_len_order",
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_active_residual_cache",
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_sigma_layers"
+  ],
+  "completed": [
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_conceptualSpaces_is_module_list_len_order",
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_active_residual_cache",
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_sigma_layers"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_conceptualSpaces_is_module_list_len_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02865145797841251,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_active_residual_cache",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016152874915860593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_sigma_layers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015891749993897974,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

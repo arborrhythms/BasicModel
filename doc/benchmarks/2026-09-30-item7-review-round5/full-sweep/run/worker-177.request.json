@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reasoning.py::TestReason::test_reverse_with_no_target"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-177.recycle.json"
+}

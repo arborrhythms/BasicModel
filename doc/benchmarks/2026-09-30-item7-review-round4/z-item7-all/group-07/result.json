@@ -1,0 +1,220 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+  ],
+  "completed": [
+    "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-07/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-07/worker-000.json"
+      ],
+      "pid": 61083,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 580306360,
+      "elapsed_seconds": 4.722490707878023,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-07/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+        "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+        "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+        "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+        "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+        "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+        "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+        "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+      ],
+      "completed": [
+        "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+        "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+        "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+        "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+        "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+        "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+        "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+        "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05611812509596348,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.027107625035569072,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0271356669254601,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.18581008398905396,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.026342500001192093,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.025820459006354213,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.045266333036124706,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.16441391594707966,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.14827870880253613,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.026907499879598618,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08556779194623232,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-07",
+  "elapsed_seconds": 6.762310332851484,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 580306360,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-07/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-07/collect.json"
+    ],
+    "pid": 61079,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 182764360,
+    "elapsed_seconds": 1.832288624951616,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-07/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_definitions.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+        "test/test_item7_definitions.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+        "test/test_item7_definitions.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+        "test/test_item7_definitions.py::test_26_full_store_refuses_the_whole_word_transaction",
+        "test/test_item7_definitions.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+        "test/test_item7_definitions.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+        "test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+        "test/test_item7_definitions.py::test_34_learning_codes_cannot_change_definition_identity",
+        "test/test_item7_definitions.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

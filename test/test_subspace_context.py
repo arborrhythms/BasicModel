@@ -238,9 +238,10 @@ def test_output_space_carries_symbolSpace(model):
 
 
 def test_pipeline_spaces_carry_symbolSpace(model):
-    """Every pipeline Space holds a routing pointer to the model's SymbolSubSpace."""
+    """Grammar participants route to SS; the property basis owns no grammar."""
     _run_one_forward(model)
     assert model.perceptualSpace.symbolSpace is model.symbolSpace
     assert model.conceptualSpace.symbolSpace is model.symbolSpace
-    assert model.wholeSpace.symbolSpace is model.symbolSpace
+    assert model.languageSpace._symbol_space is model.symbolSpace
+    assert not hasattr(model.wholeSpace, 'symbolSpace')
     assert model.outputSpace.symbolSpace is model.symbolSpace

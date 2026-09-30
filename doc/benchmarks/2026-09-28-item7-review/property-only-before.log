@@ -1,0 +1,108 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_configuration_without_property_element_binds_at_first_sentence ______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7921/test_configuration_without_pro0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ef12030>
+
+    def test_configuration_without_property_element_binds_at_first_sentence(tmp_path, monkeypatch):
+        from test_meronomy_ladder import _build_ladder_variant
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+>       model = _build_ladder_variant(tmp_path, 'properties_by_definition', [
+            ('<propertyBasis>true</propertyBasis>', ''),
+            ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>')])
+
+test/test_item7_property_only.py:11: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7243: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:2690: in create_from_config
+    self._configure_contextual_concept_codebooks()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...t(
+    (0-3): 4 x _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+
+    def _configure_contextual_concept_codebooks(self):
+        """Select detached rotational ownership for the shared CS dictionary.
+    
+        The canonical serial path has one physical concept table shared by
+        every ConceptualSpace stage. Construction initially uses a Parameter
+        so the aligned-capacity builders can finish their normal VQ wiring;
+        this method then converts that one storage object into a persistent
+        non-grad buffer. The post-sentence contextual reducer is its sole
+        mutation owner.
+    
+        This is deliberately configured before checkpoint autoload.  Loading
+        copies checkpoint values into the already-owned buffer and cannot
+        accidentally restore optimizer ownership.
+        """
+        rate = float(getattr(
+            self, "contextual_concept_learning_rate", 0.0) or 0.0)
+        if rate <= 0.0:
+            self._contextual_concept_codebooks = ()
+            return ()
+    
+        codebooks = []
+        seen = set()
+        for cs in list(getattr(self, "conceptualSpaces", None) or ()):
+            cb = getattr(cs, "similarity_codebook", None)
+            if not isinstance(cb, Codebook) or id(cb) in seen:
+                continue
+            seen.add(id(cb))
+            W = getattr(cb, "W", None)
+            if not isinstance(W, nn.Parameter) or W.ndim != 2:
+                raise RuntimeError(
+                    "contextual ConceptualSpace learning requires each "
+                    "dictionary to own a 2-D nn.Parameter W")
+            vq = getattr(cb, "vq", None)
+            if vq is not None and bool(getattr(vq, "ema_update", False)):
+>               raise ValueError(
+                    "conceptualContextLearningRate requires a ConceptualSpace "
+                    "dictionary with VQ EMA updates disabled")
+E               ValueError: conceptualContextLearningRate requires a ConceptualSpace dictionary with VQ EMA updates disabled
+
+bin/Models.py:3309: ValueError
+______ test_retired_property_element_is_a_load_error_naming_the_decision _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7921/test_retired_property_element_0')
+
+    def test_retired_property_element_is_a_load_error_naming_the_decision(tmp_path):
+        from util import XMLConfig
+        source = Path('data/MM_ladder.xml').read_text()
+        source = source.replace('<propertyBasis>true</propertyBasis>', '')
+        source = source.replace('<WholeSpace>', '<WholeSpace><propertyBasis>false</propertyBasis>')
+        path = tmp_path / 'retired_property.xml'
+        path.write_text(source)
+>       with pytest.raises(ValueError, match='11.4'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_item7_property_only.py:38: Failed
+=============================== warnings summary ===============================
+test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence
+FAILED test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision
+2 failed, 1 warning in 2.55s

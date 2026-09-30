@@ -1,0 +1,78 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____________ test_idea_decode_uses_the_field_and_a_fresh_carrier ______________
+
+    def test_idea_decode_uses_the_field_and_a_fresh_carrier():
+        seed = torch.tensor([[[1., 2., 3., 4.], [0., 0., 0., 0.], [0., 0., 0., 0.]]])
+        generated = torch.tensor([[[4., 3., 2., 1.], [1., 1., 1., 1.]]])
+        carrier = SubSpace([1, 4], [1, 4], nInputDim=4, nOutputDim=4)
+        carrier.set_event(seed[:, :1])
+        before = carrier.materialize().clone()
+        calls = []
+        def generate(value, budget, stamped_events):
+            calls.append((value, budget, stamped_events))
+            return generated, torch.tensor([2]), torch.tensor([False]), torch.tensor(0.)
+        owner = SimpleNamespace(
+            conceptualSpace=SimpleNamespace(subspace=carrier),
+            _sentence_end_state=lambda _: seed,
+            _walk_operand=lambda value: value,
+            _walk_budget=lambda: 2,
+            _output_generate_walk=generate)
+>       result = BasicModel._run_idea_decode_generate(owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_idea_decode_owner.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(conceptualSpace=namespace(subspace=SubSpace(
+  (activeEncoding): ActiveEncoding()
+  (objectEncoding): EventE... _output_generate_walk=<function test_idea_decode_uses_the_field_and_a_fresh_carrier.<locals>.generate at 0x126013740>)
+
+    @torch.compiler.disable
+    def _run_idea_decode_generate(self):
+        """Run the grammar ``<generate>`` reverse (idea -> symbol expansion ->
+        concept) on the SYNTACTIC WholeSpace and return its result (Stage D3).
+        Runs ``WholeSpace.reverse`` -> ``SyntacticLayer.reverse`` (the generate
+        rules) -> ``reverseSymbols`` -> ``reverseEnd``. Best-effort: any failure
+        returns ``None`` so the reconstruction path is never broken."""
+>       ws = self._idea_decode_ws()
+             ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_idea_decode_ws'
+
+bin/Models.py:23079: AttributeError
+__________ test_idea_decode_without_a_completed_field_has_no_operand ___________
+
+    def test_idea_decode_without_a_completed_field_has_no_operand():
+        owner = SimpleNamespace(_sentence_end_state=lambda _: None)
+>       assert BasicModel._run_idea_decode_generate(owner) is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_idea_decode_owner.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(_sentence_end_state=<function test_idea_decode_without_a_completed_field_has_no_operand.<locals>.<lambda> at 0x1260660c0>)
+
+    @torch.compiler.disable
+    def _run_idea_decode_generate(self):
+        """Run the grammar ``<generate>`` reverse (idea -> symbol expansion ->
+        concept) on the SYNTACTIC WholeSpace and return its result (Stage D3).
+        Runs ``WholeSpace.reverse`` -> ``SyntacticLayer.reverse`` (the generate
+        rules) -> ``reverseSymbols`` -> ``reverseEnd``. Best-effort: any failure
+        returns ``None`` so the reconstruction path is never broken."""
+>       ws = self._idea_decode_ws()
+             ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_idea_decode_ws'
+
+bin/Models.py:23079: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier
+FAILED test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand
+2 failed in 2.96s

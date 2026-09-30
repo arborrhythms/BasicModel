@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+    "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/integration/worker-033.recycle.json"
+}

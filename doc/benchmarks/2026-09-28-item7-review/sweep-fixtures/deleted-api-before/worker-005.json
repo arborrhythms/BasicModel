@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "completed": [
+    "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0007738749263808131,
+      "message": "test/test_semantic_categories_pipeline.py:42: in test_shape_then_recover_categorizes_by_operator_effect\n    ws = _ws_with_ops(\"conjunction\", \"disjunction\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_semantic_categories_pipeline.py:33: in _ws_with_ops\n    ws._operation_vectors[name] = ws._seed_operator_vector(name)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0010789170628413558,
+      "message": "test/test_semantic_categories_pipeline.py:75: in test_recovers_on_transitional_grammar_participation\n    g.load_from_grammar_file(os.path.join(\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

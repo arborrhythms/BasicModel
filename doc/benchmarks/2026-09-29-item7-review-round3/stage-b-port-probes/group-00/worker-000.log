@@ -1,0 +1,44 @@
+...FFF                                                                   [100%]
+=================================== FAILURES ===================================
+_____ test_witnesses_write_alternatives_without_conjoining_their_literals ______
+test/test_order0_percept_definitions.py:64: in test_witnesses_write_alternatives_without_conjoining_their_literals
+    A, _, _ = cs.interpret_word([7], [1], key='word')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+______ test_word_group_becomes_a_recurrent_row_without_changing_its_read _______
+test/test_order0_percept_definitions.py:92: in test_word_group_becomes_a_recurrent_row_without_changing_its_read
+    A, _, _ = cs.interpret_word(letters, whole, key='love')
+    ^^^^^^^
+E   ValueError: not enough values to unpack (expected 3, got 2)
+_________ test_alternatives_do_not_trigger_conjunctive_overcollection __________
+test/test_order0_percept_definitions.py:125: in test_alternatives_do_not_trigger_conjunctive_overcollection
+    A, _, _ = cs.interpret_word([20 + n], [10 + n], key='word')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+=============================== warnings summary ===============================
+test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+FAILED test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read
+FAILED test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection
+3 failed, 3 passed, 1 warning in 2.54s

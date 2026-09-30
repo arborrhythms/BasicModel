@@ -1,0 +1,9 @@
+{
+  "doc/benchmarks/2026-09-27-item7/measure_identity.py": "37e5fde5d9948814643ac2a15de66b2378c28995803a3d17e4e6c49f30f64d49",
+  "doc/benchmarks/2026-09-27-item7/package_receipt.py": "945d31096b68fe5a4665eab7c91c46eeb6b8c92936e19e8180e7af2218c0f67a",
+  "doc/benchmarks/2026-09-27-item7/profile_baseline.py": "10bd5e99c919915c073e1f19df80ac4000cda48211af79d1a328334d127b9d89",
+  "doc/benchmarks/2026-09-27-item7/run_explicit.py": "5cc0576cbf50007c7003fb1adbcb972bf8af889307c9a43024dc3c65eeaa7515",
+  "doc/benchmarks/2026-09-27-item7/run_full.py": "4f8d3b92d9d673a8952a89a4cf5124f3603250ad11edd1bd1fa7d9dc57f133d8",
+  "doc/benchmarks/2026-09-27-item7/run_measurements.py": "b037905e5304ac5826305d351d2f8b37905088d82d1b51320774096d958f41b0",
+  "doc/benchmarks/2026-09-27-item7/run_validation.py": "5c2f0a6ad65ad9784c3254f1ba06cf91f7a7783bf57500f22ad4d1574db22324"
+}

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_row_local_concept_optimizer.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,19 @@
+.............                                                            [100%]
+=============================== warnings summary ===============================
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13590: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 7 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 8 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+13 passed, 6 warnings in 7.55s

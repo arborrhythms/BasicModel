@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_record_lbg_pull]",
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_maybe_split_lbg]",
+    "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[insert_meta]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-614.recycle.json"
+}

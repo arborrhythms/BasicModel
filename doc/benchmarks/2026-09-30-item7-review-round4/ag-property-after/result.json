@@ -1,0 +1,52 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_property_read_storage.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_item7_property_cache_release.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_primitive_properties.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_item11c_membership_folds.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_concept_memberships.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "group-05/result.json"
+    }
+  ],
+  "diagnostic_only": [
+    {
+      "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 14608707440,
+      "elapsed_seconds": 20.673331582918763
+    }
+  ],
+  "reason": "failed"
+}

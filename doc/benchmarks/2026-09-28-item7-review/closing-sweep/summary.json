@@ -1,0 +1,1004 @@
+{
+  "reason": "test_failure",
+  "exit_code": 1,
+  "selected": 5028,
+  "completed": 5028,
+  "pytest_outcomes": {
+    "passed": 4675,
+    "skipped": 322,
+    "failed": 30,
+    "xfailed": 1
+  },
+  "coverage_complete_unique": true,
+  "missing": [],
+  "duplicate_completed": {},
+  "elapsed_seconds": 8715.63724345807,
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "peak_worker_memory_bytes": 7772985848,
+  "peak_aggregate_memory_bytes": 17512596472,
+  "compile_cache_retries": [],
+  "source_files": 694,
+  "source_matches_current": true,
+  "supporting_inputs": {
+    "test/fixtures/transitional_pos.grammar": "43bf934bf153a293851c96e851e26f8b302d70f2fa8bef48843c117795a7cfa9",
+    "test/fixtures/where_tiling_corpus.jsonl": "f5c959f65ee59a7b0a62c9cb273551025a25d90ee554f52649003049c09f61d0"
+  },
+  "source_digest": "64a48544242ffcf014f819e6ddcc5927f11c5f6edc9d8f3422c29a7659c73bc3",
+  "resource_failures": [],
+  "changed_outcomes": [
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_enable_noop_without_roles",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_collapse.py::test_gated_off_by_default_stores_no_collapse",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_collapse.py::test_gated_on_runs_collapse_at_enable",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_cursor_universal.py::test_xor_runs_through_trial_cursor",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_init_scale.py::test_whole_space_init_scale_wiring",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_intra_routing_for_predict_returns_real_tensor",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_routing_state_built_with_rule_probs",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_no_eos_sync.py::test_reset_fires_even_when_end_of_stream_is_all_false",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_full_forward_runs_recurrent_cell",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_terminal_conceptual_exposes_views",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+      "before": "failed",
+      "after": "skipped"
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_run_record_schema_smoke",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_role_collapsed_grammar.py::test_symbolicspace_owns_its_starts",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_cs_cache_not_present_after_forward",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_ws_cache_not_present_after_forward",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_runBatch_reverse_path_does_not_depend_on_cs_cache",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_terminal_stm_snapshot_available_after_forward",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_relative_sentence_end_state.py::test_absolute_sentence_still_collapses_to_depth_one",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_stm_relative_sentence_end_state.py::test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state",
+      "before": "failed",
+      "after": "skipped"
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+      "before": "passed",
+      "after": "failed"
+    }
+  ],
+  "new_cases": {
+    "test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary": "passed",
+    "test/test_abstraction_order_canonical.py::test_property_passes_never_mint_symbolic_word_winners": "passed",
+    "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding": "passed",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review/README.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[todo.md]": "passed",
+    "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading": "passed",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field": "skipped",
+    "test/test_idea_decode_owner.py::test_idea_decode_uses_the_field_and_a_fresh_carrier": "passed",
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand": "passed",
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets": "passed",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs": "passed",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows": "passed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator": "passed",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion": "passed",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding": "passed",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed": "passed",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path": "passed",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary": "passed",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot": "passed",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references": "passed",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity": "passed",
+    "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence": "passed",
+    "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties": "passed",
+    "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision": "passed",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind": "passed",
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids": "passed",
+    "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung": "passed",
+    "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither": "passed",
+    "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program": "passed",
+    "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority": "passed",
+    "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order": "passed",
+    "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust": "passed",
+    "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row": "passed",
+    "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value": "passed",
+    "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order": "passed",
+    "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order": "passed",
+    "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole": "passed",
+    "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence": "passed",
+    "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification": "passed",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]": "passed",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]": "passed",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]": "passed",
+    "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip": "passed",
+    "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target": "passed",
+    "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program": "passed",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english": "passed",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields": "passed",
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema": "passed",
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value": "passed",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed": "passed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface": "passed",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands": "passed",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]": "passed",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]": "passed",
+    "test/test_live_references.py::test_cold_reference_is_exact_and_pronoun_proposal_is_maskable": "passed",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator": "passed",
+    "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal": "passed",
+    "test/test_live_references.py::test_occurrence_is_operand_and_predictor_gradient_is_live": "passed",
+    "test/test_live_references.py::test_operation_runs_on_the_selected_occurrence_eager_and_compiled": "passed",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write": "passed",
+    "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind": "passed",
+    "test/test_positive_int_taxonomy.py::TestNativeAddresses::test_idea_address_resolves_to_its_native_row": "passed",
+    "test/test_positive_int_taxonomy.py::TestNativeAddresses::test_word_concept_returns_a_positive_stable_address": "passed",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]": "passed",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]": "passed",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]": "passed",
+    "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect": "passed",
+    "test/test_subspace_what_stm_contract.py::test_property_forward_does_not_compose": "passed",
+    "test/test_subspace_what_stm_contract.py::test_property_reverse_does_not_call_grammar": "passed",
+    "test/test_subspace_what_stm_contract.py::test_shared_compose_does_not_dispatch_a_cursor": "passed",
+    "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack": "failed",
+    "test/test_subspace_what_stm_contract.py::test_stack_router_gate_is_retired": "passed",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog": "passed",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_declared_operator": "passed",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_does_not_touch_generate_rules": "passed",
+    "test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory": "passed",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole": "passed",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows": "passed",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_distinct_occurrences_get_distinct_addresses": "passed",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_word_concept_has_positive_id_and_owned_percept_inverse": "passed",
+    "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary": "passed",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut": "passed",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows": "passed",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train": "passed",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild": "passed",
+    "test/test_where_encoding_recovery.py::test_allocate_monotonic": "passed",
+    "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras": "passed",
+    "test/test_where_encoding_recovery.py::test_allocate_starts_at_one": "passed",
+    "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one": "passed",
+    "test/test_wholespace_fixed_capacity.py::test_property_reads_are_rng_neutral_and_admit_no_rows": "passed",
+    "test/test_wholespace_fixed_capacity.py::test_property_split_uses_an_unused_row_without_replacing_parameters": "passed",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties": "passed"
+  },
+  "removed_cases": {
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi": "passed",
+    "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot": "passed",
+    "test/test_accessible_mind.py::test_recorded_forest_indexes_each_role_without_unfolding": "passed",
+    "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation": "passed",
+    "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail": "passed",
+    "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows": "passed",
+    "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match": "passed",
+    "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe": "passed",
+    "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop": "passed",
+    "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop": "passed",
+    "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions": "passed",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary": "passed",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target": "passed",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_depth_two_and_skips_masked_rows": "passed",
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_on_syntactic_ws": "skipped",
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_program_and_reconstruction_targets": "passed",
+    "test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids": "passed",
+    "test/test_item7_provenance.py::test_xml_kind_cannot_retag_a_different_grammatical_closing": "passed",
+    "test/test_item7_storage.py::test_clause_derivation_and_evidence_checkpoint_roundtrip": "passed",
+    "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_with_factored_derivation": "passed",
+    "test/test_item7_storage.py::test_observation_without_selected_clause_cannot_guess_a_relation": "passed",
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator": "passed",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook": "passed",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted": "passed",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops": "passed",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context": "passed",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes": "passed",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook": "passed",
+    "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook": "passed",
+    "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_percept_returns_positive_position": "passed",
+    "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_whole_returns_positive_position": "passed",
+    "test/test_positive_int_taxonomy.py::test_meta_members_are_positive_native_concept_ids": "passed",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded": "passed",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition": "passed",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding": "passed",
+    "test/test_search_then_mint.py::test_folds_never_create_rows": "passed",
+    "test/test_search_then_mint.py::test_gate_requires_the_knob": "passed",
+    "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits": "passed",
+    "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder": "passed",
+    "test/test_search_then_mint.py::test_mint_gauge_orients_object_row": "passed",
+    "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row": "passed",
+    "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row": "passed",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[eager]": "passed",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[pending]": "passed",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[pending]": "passed",
+    "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect": "passed",
+    "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent": "passed",
+    "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing": "passed",
+    "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim": "passed",
+    "test/test_serial_stm_split.py::test_one_move_one_workspace_write": "passed",
+    "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent": "passed",
+    "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder": "passed",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations": "passed",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent": "passed",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols": "passed",
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook": "passed",
+    "test/test_subspace_what_stm_contract.py::test_flag_off_does_not_call_stack_route_forward": "passed",
+    "test/test_subspace_what_stm_contract.py::test_stack_route_forward_runs_and_writes_subspace_what": "passed",
+    "test/test_subspace_what_stm_contract.py::test_stack_router_dispatches_via_syntactic_layer_execute": "passed",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_codebook": "passed",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_language_layer_reverse": "passed",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_off_does_not_call_language_layer": "passed",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules": "passed",
+    "test/test_subspace_what_stm_contract.py::test_use_stack_router_flag_default_false": "passed",
+    "test/test_subspace_what_stm_contract.py::test_v_sym_wired_into_grammar_from_symbolic_space": "passed",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged": "passed",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none": "passed",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop": "passed",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash": "passed",
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash": "passed",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_lowers_trust": "passed",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts": "passed",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random": "passed",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row": "passed",
+    "test/test_type_run_spans.py::test_byte_mode_builds_no_type_subspace": "passed",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_tags_and_cut": "passed",
+    "test/test_type_run_spans.py::test_live_ws_has_type_subspace_with_four_tagged_rows": "passed",
+    "test/test_type_run_spans.py::test_type_subspace_is_idempotent_on_rebuild": "passed",
+    "test/test_type_run_spans.py::test_type_subspace_is_not_a_parameter_and_survives_a_backward": "passed",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_monotonic": "passed",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_position_persists_via_vocab_extras": "passed",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_starts_at_one": "passed",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one": "passed",
+    "test/test_wholespace_fixed_capacity.py::test_legacy_fixed_reserve_is_rng_neutral_and_logically_lazy": "passed",
+    "test/test_wholespace_fixed_capacity.py::test_legacy_insert_reveals_reserved_row_without_replacing_parameter": "passed",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_quarantined_not_loaded_as_properties": "passed"
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 939.8873417499708,
+      "message": "vert_frame.py:2038: in _compile\n    raise_unimplemented_cache_limit_exceeded()\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2022: in raise_unimplemented_cache_limit_exceeded\n    unimplemented(\n.venv/lib/python3.12/site-packages/torch/_dynamo/exc.py:775: in unimplemented\n    raise Unsupported(msg, gb_type, skip_frame)\nE   torch._dynamo.exc.Unsupported: Dynamo recompile limit exceeded\nE     Explanation: Dynamo attempted to recompile the code object too many times, exceeding the recompile_limit cache size limit (currently set to 8). Excessive recompilations can degrade performance due to the compilation overhead of each recompilation.\nE     Hint: To monitor recompilations, enable TORCH_LOGS=recompiles. If recompilations are expected, consider increasing torch._dynamo.config.recompile_limit to an appropriate value.\nE     Hint: See https://docs.pytorch.org/docs/main/user_guide/torch_compiler/compile/programming_model.recompilation.html for tips on dealing with recompilations.\nE   \nE     Developer debug context: Limit type: recompile_limit\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0039.html\n\nThe above exception was the direct cause of the following exception:\ntest/test_item9b_schedule.py:60: in test_native_interleave_supplies_context_then_reads_the_same_sentences\n    model.runBatch(train=True, optimizer=optimizer, batchNum=step,\nbin/Models.py:13928: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14100: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14467: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9257: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10735: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8956: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23741: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17672: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21917: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21459: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20702: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:146: in sentence_pair\n    explore = compose(cache, exploit)\n              ^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20675: in compose\n    current_lang, current_stm, current_feedback = compose_word(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1261: in compile_wrapper\n    result = fn(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2649: in __call__\n    result = self._torchdynamo_orig_backend(\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:778: in __call__\n    result = _compile(\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2045: in _compile\n    raise FailOnRecompileLimitHit(\nE   torch._dynamo.exc.FailOnRecompileLimitHit: Hard failure due to fullgraph=True",
+      "stdout": "batch = 0 (warm-up)\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-030.log"
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 839.1331368749961,
+      "message": "test/test_gradient_factorization.py:141: in test_normal_batch_logs_named_shared_operator_gradients\n    assert any(entry[\"output_norm\"] > 0 for entry in report.values())\nE   assert False\nE    +  where False = any(<generator object test_normal_batch_logs_named_shared_operator_gradients.<locals>.<genexpr> at 0x1239e7440>)",
+      "stdout": "\"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.2.layers.5.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.3.layers.0.pi.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.3.layers.0.routing_proj\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.3.layers.0.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.conceptualSpaces.3.layers.5.sigma.layer\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.perceptualSpace._percept_store.byte_fallback\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.0\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.1\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.2\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}, \"shared.wholeSpaces.3\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": null, \"output_negative_streak\": 0, \"output_norm\": 0.0, \"output_reconstruction_norm_ratio\": null, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 0.0, \"reconstruction_output_cosine\": null}}\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-060.log"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.1254389999667183,
+      "message": "test/test_compiled_word_chunk.py:308: in test_chunk_views_keep_one_graph_across_part_and_bucket_widths\n    assert len(graphs) == 1\nE   assert 2 == 1\nE    +  where 2 = len([GraphModule(), GraphModule()])",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-078.log"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 136.4330186659936,
+      "message": "torch._dynamo.exc.ObservedRuntimeError: raised exception RuntimeError('no grad anchor for cpu torch.float32: call _ensure_grad_anchors before compiling')\n\nThe above exception was the direct cause of the following exception:\ntest/test_compiled_word_chunk.py:440: in test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks\n    legacy_result = legacy.forward(legacy_input)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23741: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17672: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21917: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21459: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20702: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20686: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20339: in _sentence_path_cost\n    reconstruction = self._compiled_reconstruct()(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.Unsupported: Observed exception\nE     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.\nE     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(\"force_eager\")`. \nE     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\nE   \nE     Developer debug context: raised exception RuntimeError('no grad anchor for cpu torch.float32: call _ensure_grad_anchors before compiling')\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12494, in _reconstruct_sentences\nE       cond_a, body_a, _carries_with_grad(\nE                       ^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 423, in _carries_with_grad\nE       raise RuntimeError(\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-078.log"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1496629579924047,
+      "message": "test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root\n    assert root is not None and root.grad_fn is not None\nE   assert (tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]) is not None and None is not None)\nE    +  where None = tensor([[ 0.0166, -0.0672,  0.2419,  0.1564, -0.1227,  0.0363,  0.1036,  0.2829,\\n          0.0744,  0.2010,  0.2164, -... -0.4126,  0.2286, -0.0627, -0.0186,\\n         -0.2813, -0.4848,  0.0331, -0.0518, -0.0821,  0.1709, -0.0468,  0.0284]]).grad_fn",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-078.log"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.48395729099866,
+      "message": "test/test_reasoning_cde_model.py:60: in test_training_step_uses_the_normal_policy_configuration\n    self.m.runEpoch(optimizer=opt, batchSize=6, split='train',\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16150: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13928: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14100: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14467: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9257: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10735: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8956: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23741: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17672: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21917: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21459: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20702: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20686: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20352: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20319: in _sentence_observation\n    _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13079: in _capture_reading_programs\n    self._program_entries(program, leaves, rows, word_rows, activations, end,\nbin/Models.py:13136: in _program_entries\n    **{name: value[b].index_select(0, pos.to(value.device))\n             ^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   IndexError: index 1 is out of bounds for dimension 0 with size 1",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-091.log"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.04046204104088247,
+      "message": "test/test_output_synthesis.py:339: in test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only\n    assert not torch.allclose(first.actual, out_after)        # answer path moved\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: assert not True\nE    +  where True = <built-in method allclose of type object at 0x10b1193a0>(tensor([[[0.]],\\n\\n        [[0.]]]), tensor([[[0.]],\\n\\n        [[0.]]]))\nE    +    where <built-in method allclose of type object at 0x10b1193a0> = torch.allclose\nE    +    and   tensor([[[0.]],\\n\\n        [[0.]]]) = AnswerConstruction(actual=tensor([[[0.]],\\n\\n        [[0.]]]), derivation=AnswerDerivation(answer_symbol=tensor([[[0., 0...ceptual', 'shape': (2, 8, 14), 'selections': ()}, {'operation': 'output:from_percepts', 'shape': (2, 1, 1)}), texts=()).actual",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-112.log"
+    },
+    {
+      "nodeid": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.114280709065497,
+      "message": "test/test_space_equiv_selfcheck.py:25: in test_identity_candidate_passes\n    n = run_space_gate(Spaces.PartSpace, \"_embed_bpe\",\ntest/space_equiv.py:104: in run_space_gate\n    m.runEpoch(optimizer=opt, batchSize=batch_size, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16150: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13928: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14100: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14467: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9257: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10735: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8956: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8768: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23741: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17672: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21917: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21459: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20702: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20686: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20352: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20323: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:208: in _boundary_observation_view\n    clause = finish_clause(language, entry, meaning=meaning,\nbin/ClauseJournal.py:100: in finish_clause\n    raise ValueError('a completed field must have one or three slots')\nE   ValueError: a completed field must have one or three slots",
+      "stdout": "Loading text: 1 shard(s), max 64 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 64 docs -> 2558 sentences (1927 train, 317 val, 314 test)\nStarting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-134.log"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.09591920801904052,
+      "message": "test/test_runtime_split_ingestion.py:103: in test_store_truths_idempotent_clear_then_record\n    self.assertGreater(int(tl.count.item()), 0)\nE   AssertionError: 0 not greater than 0",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-137.log"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.09282604197505862,
+      "message": "test/test_runtime_split_ingestion.py:94: in test_store_truths_records_truths\n    self.assertGreater(int(tl.count.item()), 0)\nE   AssertionError: 0 not greater than 0",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-137.log"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.644989375025034,
+      "message": "test/test_compose_pair_driver.py:91: in test_pair_trains_twice_and_commits_once\n    torch.testing.assert_close(m._reconstruction_stack()._choice_actions, chosen)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 63 / 608 (10.4%)\nE   Greatest absolute difference: 5 at index (0, 0)\nE   Greatest relative difference: inf at index (0, 3)",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-155.log"
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.6099699169863015,
+      "message": "test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode\n    assert memory.get_what_slots(b=0) == []\nE   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []\nE     \nE     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0917, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2129, 1.9925,\\n          0.4234, 1.9584, 0.04... 'iteration': 0, 'closure_pressure': 0.0, 'forced': False, 'temporal': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))\nE     Use -v to get more diff",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/256 docs\n[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-163.log"
+    },
+    {
+      "nodeid": "test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.14004345901776105,
+      "message": "test/test_mental_model.py:57: in test_grammar_has_syntactic_layers\n    self.assertIsNotNone(getattr(space, 'syntacticLayer', None),\nE   AssertionError: unexpectedly None : Whole percepts missing per-space SyntacticLayer",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-174.log"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00019845797214657068,
+      "message": "test/test_perceptual_loopback.py:291: in test_symbolic_lexicon_methods_exist\n    self.assertTrue(hasattr(sym, name),\nE   AssertionError: False is not true : WholeSpace must expose 'train_embeddings' after the lexicon-API migration.",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-209.log"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00017141608987003565,
+      "message": "test/test_perceptual_loopback.py:312: in test_s_has_syntactic_layer\n    self.assertIsNotNone(\nE   AssertionError: unexpectedly None : WholeSpace must retain its SyntacticLayer (the grammar's canonical dispatch host); missing on WholeSpace(\nE     (subspace): SubSpace()\nE     (_owned_bases): ModuleDict(\nE       (event): Tensor()\nE       (what): Codebook(\nE         (primitive_properties): PrimitiveProperties()\nE       )\nE       (where): Tensor()\nE       (when): Tensor()\nE       (activation): Tensor()\nE     )\nE     (_owned_encoders): ModuleDict(\nE       (activeEncoding): ActiveEncoding()\nE       (objectEncoding): EventEncoding()\nE       (whatEncoding): WhatEncoding()\nE       (wordEncoding): WordEncoding()\nE     )\nE     (layers): ModuleList()\nE   )",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-209.log"
+    },
+    {
+      "nodeid": "test/test_init_scale.py::test_whole_space_init_scale_wiring",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.05472179199568927,
+      "message": "test/test_init_scale.py:131: in test_whole_space_init_scale_wiring\n    assert ws.analysis_store.init_scale == pytest.approx(0.02)\n           ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-282.log"
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002198665984906256,
+      "message": "test/test_subspace_what_stm_contract.py:1312: in test_shared_operation_writes_the_caller_owned_stack\n    assert out[1].tolist() == [1]\nE   assert [2] == [1]\nE     \nE     At index 0 diff: 2 != 1\nE     Use -v to get more diff",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-284.log"
+    },
+    {
+      "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.030496958061121404,
+      "message": "test/test_shamatha_inline_grammar.py:64: in test_dnf_stack_wired_into_conceptual_space\n    m.wholeSpace.propositional_negation, Layers.NotLayer)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'propositional_negation'",
+      "stdout": "Starting with dynamic 8-dim embedding (words added at runtime)\n",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-299.log"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0280652919318527,
+      "message": "test/test_mm_xor.py:134: in test_forward_keeps_continuous_symbols\n    self.assertGreater(symbols.std().item(), 1e-6,\nE   AssertionError: 0.0 not greater than 1e-06 : Symbolic activation collapsed to a single VQ prototype after the per-stage forward.",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-320.log"
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0043739170068874955,
+      "message": "test/test_subspace_context.py:245: in test_pipeline_spaces_carry_symbolSpace\n    assert model.wholeSpace.symbolSpace is model.symbolSpace\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'symbolSpace'",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-323.log"
+    },
+    {
+      "nodeid": "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0057301250053569674,
+      "message": "test/test_bivector_retirement_state.py:88: in test_symbolic_references_parameter_attached_via_knowledge\n    assert hasattr(sym, 'references')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Codebook(\\n      (...ing()\\n    (whenEncoding): WhenStartDurationEncoding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (layers): ModuleList()\\n), 'references')",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-333.log"
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_symbol_history_projection",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003566791070625186,
+      "message": "test/test_relevance_bases.py:215: in test_symbol_history_projection\n    assert cs._csw_row_of(C1) is None\nE   assert 32 is None\nE    +  where 32 = _csw_row_of(3)\nE    +    where _csw_row_of = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n)._csw_row_of",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-365.log"
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_symbolic_space_uses_sparsity_regularizer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00016070797573775053,
+      "message": "test/test_sparsity_regularizer.py:43: in test_symbolic_space_uses_sparsity_regularizer\n    assert hasattr(WholeSpace, \"_build_sparsity_regularizer\"), \\\nE   AssertionError: WholeSpace should expose a factory for its regularizer\nE   assert False\nE    +  where False = hasattr(<class 'Spaces.WholeSpace'>, '_build_sparsity_regularizer')",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-376.log"
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_round_trip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002613208955153823,
+      "message": "test/test_phase2_end_to_end.py:99: in test_phase2_end_to_end_round_trip\n    assert isinstance(ws.references, nn.Parameter)\n                      ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-395.log"
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_reattach_after_extend",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00133200001437217,
+      "message": "test/test_phase2_end_to_end.py:213: in test_phase2_end_to_end_reattach_after_extend\n    refs_param_id_1 = id(ws.references)\n                         ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-395.log"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0003007079940289259,
+      "message": "test/test_word_space_attach_knowledge.py:131: in test_symbolic_space_attach_creates_references_parameter\n    assert hasattr(ws, 'references')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'references')",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-439.log"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0003233749885112047,
+      "message": "test/test_word_space_attach_knowledge.py:151: in test_symbolic_space_attach_creates_order_buffer\n    assert hasattr(ws, 'order')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'order')",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-439.log"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00032525009009987116,
+      "message": "test/test_word_space_attach_knowledge.py:165: in test_symbolic_space_references_in_named_parameters\n    assert 'references' in names\nE   AssertionError: assert 'references' in []",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-439.log"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00029270804952830076,
+      "message": "test/test_word_space_attach_knowledge.py:175: in test_symbolic_space_order_in_named_buffers\n    assert 'order' in names\nE   AssertionError: assert 'order' in []",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-439.log"
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0002607919741421938,
+      "message": "test/test_word_space_attach_knowledge.py:186: in test_symbolic_space_reattach_updates_in_place\n    refs_id_before = id(ws.references)\n                        ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": "",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-439.log"
+    }
+  ]
+}

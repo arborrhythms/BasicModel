@@ -79,7 +79,7 @@ def _sum_gradients(left, right):
 
 
 def accumulate_objective_gradients(destination, objectives, groups, *, gradient_fn=None):
-    """Save weighted gradient vectors before a seal's training graph is freed.
+    """Save weighted gradient vectors before a closing's training graph is freed.
 
     Sum vectors in each parameter's coordinates, not norms or cosines. Values
     are detached snapshots; sparse gradients retain only their touched entries.
@@ -109,7 +109,7 @@ def objective_agreement(objectives, groups, *, accumulated=None):
     ``groups`` maps stable operator names to parameter sequences.
     Missing and zero gradients have no cosine (None), rather than agreement.
     ``autograd.grad`` leaves optimizer .grad buffers and parameters unchanged.
-    When supplied, ``accumulated`` contains actual gradients from earlier seal
+    When supplied, ``accumulated`` contains actual gradients from earlier closing
     updates. Their sum describes the batch's training directions across those
     versions; it is not a gradient re-evaluated at the batch-end parameters.
     """

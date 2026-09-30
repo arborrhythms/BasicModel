@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+  ],
+  "completed": [
+    "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+    "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-09/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-09/worker-000.json"
+      ],
+      "pid": 22701,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426460480,
+      "elapsed_seconds": 3.600101624848321,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-09/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+        "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+      ],
+      "completed": [
+        "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+        "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001985125010833144,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001360410824418068,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-09",
+  "elapsed_seconds": 7.338225749786943,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 426919160,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-09/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-09/collect.json"
+    ],
+    "pid": 22693,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 426919160,
+    "elapsed_seconds": 3.505465833004564,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/item7-after-owner/group-09/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+        "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

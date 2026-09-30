@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_codebook_update_law.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

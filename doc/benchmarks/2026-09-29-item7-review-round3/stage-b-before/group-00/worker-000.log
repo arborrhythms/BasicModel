@@ -1,0 +1,158 @@
+FFFFFFFFFFF                                                              [100%]
+=================================== FAILURES ===================================
+____ test_22_new_word_replaces_one_inventory_row_and_writes_one_definition _____
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:23: in test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+    alloc = cs._concept_allocator
+            ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+_________ test_24_index_is_bidirectional_and_rebuilds_from_saved_rows __________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:45: in test_24_index_is_bidirectional_and_rebuilds_from_saved_rows
+    index = cs.definitions
+            ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+__ test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index ___
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:67: in test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index
+    cs.interpret.define(word, second)
+    ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'InterpretLayer' object has no attribute 'define'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+____________ test_26_full_store_refuses_the_whole_word_transaction _____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:81: in test_26_full_store_refuses_the_whole_word_transaction
+    alloc = cs._concept_allocator
+            ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+___ test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append ___
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:96: in test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append
+    r0 = cs.definitions.row(*first)
+         ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_________ test_28_forgotten_definition_does_not_survive_in_any_lookup __________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:113: in test_28_forgotten_definition_does_not_survive_in_any_lookup
+    row = cs.definitions.row(word, obj)
+          ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_ test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml] _
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:133: in test_31_read_words_have_definition_rows_without_changing_the_configuration
+    word = cs.definitions.word(form=form)
+           ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+_ test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml] _
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:133: in test_31_read_words_have_definition_rows_without_changing_the_configuration
+    word = cs.definitions.word(form=form)
+           ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_ test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml] _
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:133: in test_31_read_words_have_definition_rows_without_changing_the_configuration
+    word = cs.definitions.word(form=form)
+           ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+___________ test_34_learning_codes_cannot_change_definition_identity ___________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:145: in test_34_learning_codes_cannot_change_definition_identity
+    row = cs.definitions.row(word, obj)
+          ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+_____________ test_32_head_meta_checkpoint_migrates_to_definitions _____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:167: in test_32_head_meta_checkpoint_migrates_to_definitions
+    assert cs.definitions.objects(word) == (obj,)
+           ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions
+11 failed, 14 warnings in 2.87s

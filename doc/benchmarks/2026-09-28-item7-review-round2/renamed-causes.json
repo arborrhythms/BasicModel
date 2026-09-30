@@ -1,0 +1,25 @@
+{
+  "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root": {
+    "previous": "Missing selected-clause/shared-index observation raised before the root assertion.",
+    "round2": "The sentence driver detaches the selected compose state before commit and again between sentences; _stm_single_S is indexed from that detached STM. Raw forward therefore returns a root with grad_fn=None, and the test fails its precondition before it can check the detached reverse student.",
+    "source": [
+      "bin/Models.py::_run_sentence_word_bricks",
+      "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+    ],
+    "disposition": "Named as requested; assertion and reverse behavior not changed in this pass.",
+    "confirmed_in_full_sweep": true,
+    "full_sweep_log": "full-sweep/run/worker-067.log"
+  },
+  "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration": {
+    "previous": "Provisioning rejected an explicitly declared TruthSet kind before training.",
+    "round2": "The live program has multiple batch rows after one-row provisioning, while the optional SymbolSpace word-reference orders/evidence still have one batch row. _publish_sentence_scratch replaces these slabs only when both staged object and concept rows are tensors; this noncanonical path supplies neither. _program_entries checks that the optional values are tensors but not that their batch matches, and indexes value[1] in a one-row slab.",
+    "source": [
+      "bin/Models.py::_publish_sentence_scratch",
+      "bin/Models.py::_program_entries",
+      "bin/Language.py::SymbolSpace.commit_word_reference_slab"
+    ],
+    "disposition": "Named as requested; no shape waiver or unrelated repair.",
+    "confirmed_in_full_sweep": true,
+    "full_sweep_log": "full-sweep/continuation-03/worker-001.log"
+  }
+}

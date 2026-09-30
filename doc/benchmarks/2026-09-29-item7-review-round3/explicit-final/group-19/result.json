@@ -1,0 +1,116 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+  ],
+  "completed": [
+    "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19/worker-000.json"
+      ],
+      "pid": 21099,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 512771464,
+      "elapsed_seconds": 4.292752583045512,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+        "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+        "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+      ],
+      "completed": [
+        "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+        "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+        "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5404552498366684,
+          "message": "test/test_item7_provenance.py:11: in test_provisioning_retains_completed_fields_and_shared_row_ids\n    assert len(store) == 3\nE   assert 9 == 3\nE    +  where 9 = len(TernaryTruthStore())",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0021790829487144947,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003447500057518482,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19",
+  "elapsed_seconds": 8.040191250154749,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 512771464,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19/collect.json"
+    ],
+    "pid": 21091,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 424264928,
+    "elapsed_seconds": 3.508062958950177,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-final/group-19/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+        "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+        "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

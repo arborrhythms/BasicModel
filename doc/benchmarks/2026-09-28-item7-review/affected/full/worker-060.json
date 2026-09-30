@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]"
+  ],
+  "completed": [
+    "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6807457910617813,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7969/test_shared_generation_weights0/shared_catalog.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7969/test_shared_generation_weights0/shared_catalog.ckpt\r\n[BasicModel] optimizer checkpoint remapped by parameter name: restored 6 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7969/test_shared_generation_weights0/shared_catalog.ckpt\n  Keys in model but missing from file: 1 (initialized fresh)\r\n[BasicModel] Warning: cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7969/test_shared_generation_weights0/shared_catalog.ckpt: Error(s) in loading state_dict for BasicModel:\n\tMissing key(s) in state_dict: \"conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L\". \r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

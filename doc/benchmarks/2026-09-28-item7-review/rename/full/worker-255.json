@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded"
+  ],
+  "completed": [
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05020762502681464,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019422875018790364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01895387494005263,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

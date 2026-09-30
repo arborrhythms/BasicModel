@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_padded_rows_no_op.py::test_valid_mask_propagates_via_copy_context",
+    "test/test_padded_rows_no_op.py::test_valid_mask_cleared_on_subspace_reset",
+    "test/test_padded_rows_no_op.py::test_loss_mask_matches_stem_valid_mask",
+    "test/test_padded_rows_no_op.py::test_symbolic_act_masking_zeros_invalid_cells"
+  ],
+  "completed": [
+    "test/test_padded_rows_no_op.py::test_valid_mask_propagates_via_copy_context",
+    "test/test_padded_rows_no_op.py::test_valid_mask_cleared_on_subspace_reset",
+    "test/test_padded_rows_no_op.py::test_loss_mask_matches_stem_valid_mask",
+    "test/test_padded_rows_no_op.py::test_symbolic_act_masking_zeros_invalid_cells"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_padded_rows_no_op.py::test_valid_mask_propagates_via_copy_context",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01016041706316173,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_padded_rows_no_op.py::test_valid_mask_cleared_on_subspace_reset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002514160005375743,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_padded_rows_no_op.py::test_loss_mask_matches_stem_valid_mask",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.03612812492065132,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_padded_rows_no_op.py', 99, 'Skipped: _ar_valid_pos not populated in this branch')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_padded_rows_no_op.py::test_symbolic_act_masking_zeros_invalid_cells",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0150603330694139,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

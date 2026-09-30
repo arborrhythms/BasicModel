@@ -1,0 +1,77 @@
+{
+  "pid": 15553,
+  "phase": "explicit",
+  "jobs": {
+    "final-xor-candidate": {
+      "pid": 15554,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_xor_matched.py",
+        "final-xor-candidate",
+        "/Users/arogers/github/WikiOracle/basicmodel"
+      ],
+      "log": "final-xor-candidate-driver.log",
+      "status": "running",
+      "started_at": "2026-09-30T19:04:04.075828+00:00"
+    },
+    "final-mm-grammar-candidate": {
+      "pid": 15555,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_final_mm_grammar.py",
+        "/Users/arogers/github/WikiOracle/basicmodel",
+        "final-mm-grammar-candidate"
+      ],
+      "log": "final-mm-grammar-candidate-driver.log",
+      "status": "running",
+      "started_at": "2026-09-30T19:04:04.077075+00:00"
+    },
+    "final-item7": {
+      "pid": 15556,
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/run_checks_matched.py",
+        "final-item7",
+        "/Users/arogers/github/WikiOracle/basicmodel",
+        "test/test_item7_acceptance.py",
+        "test/test_item7_byte_columns.py",
+        "test/test_item7_clause_program.py",
+        "test/test_item7_clause_state.py",
+        "test/test_item7_closing_identities.py",
+        "test/test_item7_context.py",
+        "test/test_item7_definition_integrity.py",
+        "test/test_item7_definitions.py",
+        "test/test_item7_end_state_storage.py",
+        "test/test_item7_expectation.py",
+        "test/test_item7_grammar.py",
+        "test/test_item7_lesson_gradients.py",
+        "test/test_item7_nested_references.py",
+        "test/test_item7_point_owners.py",
+        "test/test_item7_predicate_identity.py",
+        "test/test_item7_predicate_storage.py",
+        "test/test_item7_property_cache_release.py",
+        "test/test_item7_property_only.py",
+        "test/test_item7_property_read_storage.py",
+        "test/test_item7_provenance.py",
+        "test/test_item7_reduction_deadline.py",
+        "test/test_item7_references.py",
+        "test/test_item7_retention.py",
+        "test/test_item7_row_schema.py",
+        "test/test_item7_selected_property_rows.py",
+        "test/test_item7_sentence_boundary.py",
+        "test/test_item7_sentence_gradients.py",
+        "test/test_item7_storage.py",
+        "test/test_item7_taxonomy.py",
+        "test/test_item7_truth_text.py",
+        "test/test_item7_unfold_index.py",
+        "test/test_item7_unindexed_relations.py",
+        "test/test_item7_word_admission.py",
+        "test/test_item7_word_interpretation.py"
+      ],
+      "log": "final-item7-driver.log",
+      "status": "running",
+      "started_at": "2026-09-30T19:04:04.078633+00:00"
+    }
+  },
+  "updated_at": "2026-09-30T19:04:04.078653+00:00"
+}

@@ -1,0 +1,181 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-13/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-13/worker-000.json"
+      ],
+      "pid": 9121,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2060470984,
+      "elapsed_seconds": 250.26627045904752,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-13/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+        "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+        "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+        "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+        "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+        "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "completed": [
+        "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+        "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+        "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+        "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+        "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+        "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0040772081119939685,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002578499959781766,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018422920256853104,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.120795246213675e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018468750640749931,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 244.06511737499386,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.008831124985590577,
+          "message": "test/test_item9b_interpret.py:147: in test_selected_generic_grammar_ends_the_interpreted_kinds\n    meaning = language.program_meaning(entry, registry)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:13627: in program_meaning\n    values[i] = registry._payload(('sym', int(native_ids[i]))).to(leaves)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:1992: in _payload\n    row = _existing_row(self.space, reference)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:490: in _existing_row\n    raise ValueError('query concept has no allocated payload row')\nE   ValueError: query concept has no allocated payload row",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.01289358304347843,
+          "message": "test/test_item9b_interpret.py:188: in test_testimony_and_its_later_definition_are_read_by_the_parallel_field\n    assert field[slot, 0, 0, 0] > 0\nE   assert tensor(0., grad_fn=<SelectBackward0>) > 0",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-13",
+  "elapsed_seconds": 253.99639612494502,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 2060470984,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-13/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-13/collect.json"
+    ],
+    "pid": 9113,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428442824,
+    "elapsed_seconds": 3.5036185830831528,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-13/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+        "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+        "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+        "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+        "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+        "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ps_byte_fallback_utf8.py::test_routed_byte_fallback_round_trips_non_ascii",
+    "test/test_ps_byte_fallback_utf8.py::test_routed_byte_terminals_preserve_offsets_and_dont_overlap",
+    "test/test_ps_byte_fallback_utf8.py::test_split_multibyte_glyph_has_no_replacement_char",
+    "test/test_ps_byte_fallback_utf8.py::test_known_word_with_byte_fallback_mix_round_trips"
+  ],
+  "completed": [
+    "test/test_ps_byte_fallback_utf8.py::test_routed_byte_fallback_round_trips_non_ascii",
+    "test/test_ps_byte_fallback_utf8.py::test_routed_byte_terminals_preserve_offsets_and_dont_overlap",
+    "test/test_ps_byte_fallback_utf8.py::test_split_multibyte_glyph_has_no_replacement_char",
+    "test/test_ps_byte_fallback_utf8.py::test_known_word_with_byte_fallback_mix_round_trips"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_byte_fallback_utf8.py::test_routed_byte_fallback_round_trips_non_ascii",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004036832833662629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_byte_fallback_utf8.py::test_routed_byte_terminals_preserve_offsets_and_dont_overlap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009972089901566505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_byte_fallback_utf8.py::test_split_multibyte_glyph_has_no_replacement_char",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003671250306069851,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_byte_fallback_utf8.py::test_known_word_with_byte_fallback_mix_round_trips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009629579726606607,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

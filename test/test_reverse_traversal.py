@@ -181,7 +181,7 @@ def _replay_operand_rows(m):
     ids = m.inputSpace._packed_sentence_ids
     rows = m._word_symbol_rows()
     width = int(active.shape[1])
-    seal_width = 2 * int(m.conceptualSpace.stm.capacity)
+    closing_width = 2 * int(m.conceptualSpace.stm.capacity)
     expected = {}
     for b in range(int(active.shape[0])):
         words = active[b].nonzero().flatten().tolist()
@@ -208,8 +208,8 @@ def _replay_operand_rows(m):
                 fold(3 * w + 1)
                 fold(3 * w + 2)
             hi = sentence[-1]
-            base = 3 * width if hi == words[-1] else 3 * width + (hi + 1) * seal_width
-            for k in range(seal_width):
+            base = 3 * width if hi == words[-1] else 3 * width + (hi + 1) * closing_width
+            for k in range(closing_width):
                 fold(base + k)
             assert len(stack) == 1, (b, sid, stack)
     return expected
@@ -217,7 +217,7 @@ def _replay_operand_rows(m):
 
 @pytest.mark.slow
 def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, monkeypatch):
-    """Codex item 4: real packed seals retain the operands of the fold,
+    """Codex item 4: real packed endings retain the operands of the fold,
     including a known leaf beside a composite, before reducing the stack."""
     m = _build_ladder_variant(tmp_path, "operand_rows", [
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>32</serialWordCapacity>"),
@@ -229,7 +229,7 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
     try:
         _stage_packed(m, [["aa bb cc dd ee", "ff gg hh ii jj"], ["kk ll mm", "nn oo"]])
         # Keep the final lexical leaf beside an older unary-rewritten
-        # constituent until the seal. Every active round still applies a
+        # constituent until the closing. Every active round still applies a
         # legal joint choice; there is no per-position unary/no-op layer.
         from Spaces import LanguageOperationChoice
         language = m.languageSpace
@@ -268,11 +268,11 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
         recorded = set(map(tuple, (mask.bool() & (arities == 2)).nonzero().tolist()))
         assert set(expected) == recorded
         width = int(m.inputSpace._word_active_mask.shape[1])
-        seal_width = 2 * int(m.conceptualSpace.stm.capacity)
+        closing_width = 2 * int(m.conceptualSpace.stm.capacity)
         assert any(slot < 3 * width for _, slot in expected)  # per-word folds
-        assert any(3 * width <= slot < 3 * width + seal_width for _, slot in expected)
+        assert any(3 * width <= slot < 3 * width + closing_width for _, slot in expected)
         intermediate = {key: value for key, value in expected.items()
-                        if key[1] >= 3 * width + seal_width}
+                        if key[1] >= 3 * width + closing_width}
         assert intermediate and any(min(pair) < 0 <= max(pair)
                                     for pair in intermediate.values())
         for (b, slot), pair in expected.items():
@@ -490,9 +490,9 @@ def test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score(tmp_path):
 
 
 @pytest.mark.slow
-def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
+def test_closing_chain_of_chunks_unwinds_to_the_words(tmp_path):
     """Constituent routing (Codex, 2026-09-14): three words a, b, c pushed
-    in order and folded by two chunk seals (newest-first: c+b, then
+    in order and folded by two chunk endings (newest-first: c+b, then
     a+(b+c)) unwind to [a, b, c] at their positions, no truncation."""
     m = _traversal_model(tmp_path)
     _run(m, ["12 plus 1", "3 plus 4"])                      # staging: trace, tables, atoms
@@ -512,7 +512,7 @@ def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
         active.zero_(); active[:, :3] = True
         trace._choice_mask.zero_(); trace._choice_rule_ids.fill_(-1); trace._choice_arities.zero_()
         trace._choice_left_rows.fill_(-1); trace._choice_right_rows.fill_(-1)   # a synthetic trace: no operand rows
-        for k in range(2):                                   # the two seals, in the order recorded
+        for k in range(2):                                   # the two endings, in the order recorded
             trace._choice_rule_ids[:, 3 * W + k] = chunk_id
             trace._choice_arities[:, 3 * W + k] = 2
             trace._choice_mask[:, 3 * W + k] = True
@@ -527,9 +527,9 @@ def test_seal_chain_of_chunks_unwinds_to_the_words(tmp_path):
         assert torch.allclose(rec[:, w], want, atol=1e-4), (w, float((rec[:, w] - want).abs().max()))
     assert float(idea.max()) < 1e-6
     # Compound operand (the reviewer's (a+b)+c): a per-word fold joined a
-    # and b when b was pushed, then one seal joined the composite (left)
+    # and b when b was pushed, then one closing joined the composite (left)
     # with c (right).  The recorded operand rows route the residuals: the
-    # seal's known word is on the right, the per-word fold's on the right.
+    # closing's known word is on the right, the per-word fold's on the right.
     rows = torch.arange(3).reshape(1, 3).expand(B, 3).clone() + 100     # symbol rows a, b, c
     object.__setattr__(isp, "_ar_word_concept_rows", torch.full((B, W), -1, dtype=torch.long))
     object.__setattr__(isp, "_ar_word_object_rows", torch.full((B, W), -1, dtype=torch.long))

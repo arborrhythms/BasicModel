@@ -1,0 +1,21 @@
+--- a/test/test_relative_rule_detection_collapsed.py
++++ b/test/test_relative_rule_detection_collapsed.py
+@@ -3,7 +3,8 @@
+ doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
+ §6: relative-rule detection replaces the transitional
+ ``{isEqual, queryPart, assertPart, part, REL_T}`` set with the canonical
+-``{equal, part, whole}`` structural family plus the WholeSpace relative-start
++``{equal, part, whole}`` structural family, extended by item 7's ``implies``,
++plus the grammar's relative-start
+ role states (the ``<start name="relative_truth">`` outputs). A relative
+ truth is a binary predicate end-state (the equal / part family); its serial
+ sentence-boundary reduce stops at the depth-3 ``[predicate, idea1, idea2]``
+@@ -75,7 +76,7 @@
+ def test_relative_op_names_are_canonical_structural_forms():
+     """The relative family is structural, not a legacy query alias table."""
+     from Language import Grammar
+-    assert Grammar._RELATIVE_OP_NAMES == frozenset({"equal", "part", "whole"})
++    assert Grammar._RELATIVE_OP_NAMES == frozenset({"equal", "part", "whole", "implies"})
+ 
+ 
+ def test_relative_start_categories_from_named_starts(monkeypatch, tmp_path):

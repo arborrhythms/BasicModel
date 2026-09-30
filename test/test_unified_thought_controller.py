@@ -142,6 +142,7 @@ def test_policy_charges_shared_episode_work_not_the_number_of_choices():
 
 
 def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch):
+    from dataclasses import replace
     from test_output_walk import _model, _capture_program_probe
     from What import What
     model = _model()
@@ -152,9 +153,21 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch):
             understood = _capture_program_probe(model, ['12 plus 1', '3 plus 4'])
         model._staged_in_sub = None
         registry = model.grammatical_thoughts
-        ref = ('sym', int(understood.answer_program[0].concept_ids[0]))
+        # The controller-credit mechanism needs an explicit native operand;
+        # learned segmentation is not a fixture for the spelling "12".
+        owner = model._concept_owner()
+        ref = ('sym', owner.new_concept())
+        owner._csw_concept_row(0, ref[1])
         query = registry.form('equal', ref, ref)
-        monkeypatch.setattr(model.languageSpace, 'program_meaning', lambda *_a: query)
+        capture = model._capture_understanding
+        def supplied_query(*args, **kwargs):
+            # Supply this controller mechanism's question on the completed
+            # fields. The test makes no claim about learned interrogative
+            # parsing; a completed row no longer carries a compose program.
+            understanding = capture(*args, **kwargs)
+            return replace(understanding, sentence_states=tuple(
+                replace(field, query=query) for field in understanding.sentence_states))
+        monkeypatch.setattr(model, '_capture_understanding', supplied_query)
         model.selected_thought_policy_weight = 1
         model.selected_thought_budget = 64
         observed = []

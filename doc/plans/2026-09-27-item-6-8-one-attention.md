@@ -69,7 +69,7 @@ is this one mechanism seen at different bracket widths.
   bracket) are candidates in that softmax at the bracket's location,
   chosen and credited the same way as the grammar's operators. Built
   before 7.5, the policy would need a chooser 7.5 replaces.
-- **7 supplies the terminal encoding.** The seal makes the sentence
+- **7 supplies the terminal encoding.** The closing makes the sentence
   bracket's reading a row with its `.where` and `.when`
   ([two truths §3.1](../specs/2026-09-16-two-truths-ideas-and-relations.md#31-idea-rows-decided)),
   which the level-indexed predictor needs at the row level and which pins
@@ -149,8 +149,67 @@ sentences remains the throughput lever (item 1).
   `armaScale`, `interContrastiveWeight`) become per-level.
 
 **What stays.** The grammar catalogs and their faces; `interpret`; the
-seal; STM; the tied reconstruction; the field's folds; the where registry
+closing; STM; the tied reconstruction; the field's folds; the where registry
 and the two-rung ladders; every 9b contract.
+
+## 3a. The word whole (Alec, 2026-09-29; taken up with this item)
+
+"We can predefine a word whole that is a cut of non-white space letters
+if that would help our certainty with Lexing words." It was offered
+during the review of item 7
+([two truths §17.7](../specs/2026-09-16-two-truths-ideas-and-relations.md#177-a-word-is-a-concept-its-object-replaces-it-and-no-row-is-added))
+and placed here the same day: "Waiting for 6.8 is fine, as long as it's
+written down. That's next anyway." Item 7 builds none of it.
+
+**What it is.** A whole, predefined in WholeSpace, whose extent is a
+word by the common definition: a maximal run of letters. **Decided
+(Alec, 2026-09-29):** "In the word whole, punctuation and digits also
+separate words; use the common definition." White space, punctuation and
+digits all separate; a word then has one whole that is its own extent.
+
+**Why it belongs to this item.** 6.8-1 pins its stop at the word bracket
+(§3). The word whole is the property whose run is that bracket, so the
+bracket a word is read at and the whole a word has are one extent.
+
+**What it is for.**
+
+- *A whole that learning does not move.* The wholes a word has today are
+  the character classes that hold on its surface. WholeSpace names eight
+  of them, `letter`, `digit`, `whitespace`, `punctuation`, `capital`,
+  `control`, `high_byte` and `pad`, and their memberships are learned, so
+  a word's wholes can change while it is being learned ("hello" has
+  `letter`; "abc123" has `letter` and `digit`). Measured in the item 7
+  review: the property rows of one word read as `(1, 9)`, `(1, 8, 9)`,
+  `(8, 9)`, `(9,)` and `()` over one training run.
+- *One cut.* WholeSpace cuts its field where a learned property changes,
+  and the reader cuts words by a fixed rule (`Meronomy.word_spans`). The
+  word whole makes the two agree.
+
+**To settle in this item** (Claude's notes; nothing here is decided).
+
+1. *The reader's rule changes with it.* `Meronomy.word_spans` separates
+   at white space and punctuation and not at digits, so today "abc123"
+   is read as one word and "01" as a word. By the decision above
+   "abc123" holds the word "abc" and a run of digits, and "01" is not a
+   word. One rule is to serve the reader and WholeSpace both.
+2. *The proofs of XOR read digits.* XOR_exact and the grounded XOR read
+   "00", "01", "10" and "11". When digits separate words these are runs
+   of digits and not words, so what reads a run of digits, and what
+   concept it is given, has to be said before the word whole is built,
+   and every proof of XOR is measured before and after it
+   (two truths §15.1; they run in every receipt).
+3. *Fixed or learned.* "Predefine" is read as fixed: the word whole's
+   membership is not a learned coefficient. The other eight stay
+   learned.
+4. *It does not say where a word is.* Every word has the word whole, so
+   it cannot by itself keep a word from being read where only its whole
+   is. Item 7 requires that of the read: a word is evidenced only where
+   its part is read (two truths §17.7, test 29).
+
+**Tests, proposed.** On every sentence of the evaluation corpus the runs
+of the word whole are the reader's word brackets; the word whole's
+membership is the same after training as before it; and a word's
+definition holds the word whole beside its other wholes.
 
 ## 4. Tests and measurements
 
@@ -189,7 +248,7 @@ re-declared from item 9 at the word bracket.
   knobs; removed knobs listed as rejected.
 - [Language](../Language.md): the bracket candidates in the operator
   catalog with their three faces (`divide`/`descend`/`gloss` have no
-  generate face; their reverse is the seal's bracket).
+  generate face; their reverse is the closing's bracket).
 - [Accessible mind spec](../specs/2026-09-20-accessible-mind-subsystems.md):
   §2.2–2.4 restated as bracket widths; §4's table gains the bracket
   candidates' row.
@@ -200,13 +259,60 @@ re-declared from item 9 at the word bracket.
 - [FutureWork](../FutureWork.md): 6.8-2, already recorded.
 - [Testing](../Testing.md) and a receipt under `doc/benchmarks/`.
 
+**The conceptual counterpart of the bracket (Alec, 2026-09-28).** "Words are
+a formula for narrowing attention." The bracket narrows the input; the words
+narrow the **domain of discourse**, Boole's universe of discourse, which the
+situation seeds and each word restricts. They are two attentions that meet
+in one chooser:
+`divide`, `descend` and `gloss` choose the next bracket, and the
+restrictors — nouns, adjectives, verbs and adverbs, one kind of operator,
+each a projection onto a smaller subspace — choose the next domain, all as
+candidates in the 7.5 softmax. The criterion of this plan, that the field's
+operations are the order-independent ones, is derived from the
+representation in
+[accessible mind §2.0](../specs/2026-09-20-accessible-mind-subsystems.md#20-fields-codes-and-ideas),
+and the language mechanics are in
+[§2.0.1](../specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention).
+Expectation at every bracket has a counterpart at every index — the next
+thing, the next time, the next alternative — of which only the first two
+have machinery
+([FutureWork](../FutureWork.md#modality-as-the-third-index-noted-2026-09-28)).
+**`attentionBudget` does not meter the words** *(Alec, 2026-09-28)*: "words
+do narrow attention, but I think the main use of the attention budget is
+prior to grammatical analysis, so they would not figure in." The budget is
+the number of bracket operations an input may cost (§3); the words'
+narrowing of the domain is grammatical analysis and has no budget of
+attention; 7.5's static round count is the shape of a compiled loop. Nor must a reading narrow the domain at all: "percepts are not
+necessarily limiting because they may direct us to the symbol 'everything',
+which has no narrowing effect" — the conceptual counterpart of the open
+read.
+**What the budget does cover** *(Alec, 2026-09-28)*: "we regard symbols as
+percepts. So perceptual attention may exclude perception or higher order
+thought; and there is good evidence that both of those do share a single
+attentional budget." A bracket may therefore be over the input or over
+symbols, and both draw on `attentionBudget`. "The conceptual narrowing is
+different, and probably needs a Ground in order to make its Figure
+meaningful": perceptual attention discards what it excludes, while the
+words keep the domain they elect from
+([accessible mind §2.0.1](../specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
+**The budget is for percepts** *(Alec, 2026-09-28)*: "I think there is a
+budget for percepts, not for conceptual space (although thoughts do shape
+the latter)." *Claude's reading, to confirm:* the thought work budget
+(accessible mind 2.8) and `attentionBudget` are then one meter, since a
+thought operation attends to symbols and symbols are percepts. They are
+separate today, the first built and the second not; this item is where they
+would be joined.
+
 ## 6. Questions for Alec (none blocking 6.8-1) — 6a and 6b answered 2026-09-27
 
 **6a, decided (Alec, amended 2026-09-27).** Some operators require a
 **single prominent symbol** to operate on. **All Boolean operators** —
 `and`, `or`, `not` — **operate on a field of concepts at one time**: a
 plural bracket is aggregated by them directly (a union of the field's
-concepts is a temporary whole in conceptual space) and no separate
+concepts is a temporary whole — *symbolic*, not conceptual, since it is a
+superposition of symbol values; corrected 2026-09-28,
+[accessible mind §2.0](../specs/2026-09-20-accessible-mind-subsystems.md#20-fields-codes-and-ideas))
+and no separate
 multi-argument operator is declared for it. The non-Boolean
 (order-dependent) operations of a grammar are operable only once a
 single concept has been identified.

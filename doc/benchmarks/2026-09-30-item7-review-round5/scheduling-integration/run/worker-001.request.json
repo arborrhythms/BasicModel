@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item7-review-round5/test_resource_schedule.py::test_large_batches_wait_and_small_batches_use_remaining_capacity"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/scheduling-integration/run/worker-001.recycle.json"
+}

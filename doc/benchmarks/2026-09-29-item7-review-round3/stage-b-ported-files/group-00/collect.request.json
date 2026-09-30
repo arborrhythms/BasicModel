@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_order0_percept_definitions.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

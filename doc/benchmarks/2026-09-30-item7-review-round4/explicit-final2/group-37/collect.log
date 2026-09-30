@@ -1,0 +1,6 @@
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]
+test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field
+
+4 tests collected in 1.48s

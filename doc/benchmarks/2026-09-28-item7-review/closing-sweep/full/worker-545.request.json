@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_mm_boolean.py::TestMMBoolean::test_encode_decode_by_best_fit",
+    "test/test_mm_boolean.py::TestMMBoolean::test_explicit_test_sentences"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-545.recycle.json"
+}

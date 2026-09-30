@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_all_rows",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_clear_single_row",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_custom_capacity",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_default_capacity_is_8",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_ensure_batch_resizes",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_independent_rows",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_is_full_at_capacity",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_peek_does_not_remove",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_pop_round_trip",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_when_full_raises",
+    "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_size_and_is_empty",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_conceptualSpace_has_stm_attribute",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_initial_state_is_empty",
+    "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_is_buffer_not_parameter",
+    "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_hard_reset_clears_stm",
+    "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_soft_reset_clears_only_selected_stm_row"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-484.recycle.json"
+}

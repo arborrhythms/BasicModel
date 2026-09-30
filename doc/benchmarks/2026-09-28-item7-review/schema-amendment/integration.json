@@ -1,0 +1,82 @@
+{
+  "files": {
+    "bin/ClauseJournal.py": {
+      "before": "f9fb4f21a61850f58e8337ae1aa4761a3336fb86cff60a66bb5dda510765fa39",
+      "after": "fdb7cccfb448799f1423ddcb757a1031c5d03f1d09a0ccdef02d0397db8ad985"
+    },
+    "bin/ClauseRow.py": {
+      "before": "c155b2b78d3a961793314271c26d54c87372f455fdd73eb7dcc0a28896cc6c48",
+      "after": "3da43bd9c6e7be7376b7851a46f9f8ae52e5d0547ff850e3d200849af5aa065f"
+    },
+    "bin/Language.py": {
+      "before": "55bf0446a1953407859a804aca0f1fa212b70546f9a65ae8abc90c5b81b60e98",
+      "after": "795503ed775334d014922fb24aef67d2ff5d3bc1e127df43588d6bdb5a05e48a"
+    },
+    "bin/Layers.py": {
+      "before": "e979fcca9f58108d4f8e2ee9e3a2c5d998b34da7f5d2053b5481a4677a42adae",
+      "after": "8cd13be6a0f82cb6b9b23b323b2970cf760db2b5d7de0177da96f23104d1f2ed"
+    },
+    "bin/MemoryIndex.py": {
+      "before": "1c6b2b0fadb03c50b36869b114a7ead15946978d8e50ae19d5dc8934dcbb0c24",
+      "after": "dac750b9089f00cd22816e027563d7d24549383cc2f292f9b0f40ceffe3a8a20"
+    },
+    "bin/Models.py": {
+      "before": "6b4760374668a6cc49e9859e762cbc7e60b582eb45118d76757f466836a6bf84",
+      "after": "d6850de212ca74cd46d48d049a6c84f5d28dc9173f61953a94b1100780b3d477"
+    },
+    "bin/Queries.py": {
+      "before": "184d5bd10933e290c71538b1b502808b5802b98862b06ed8558c47ff124df054",
+      "after": "7ab83aa8d0584589c6c0cd8f3a03a627939c7233199bfefa0c0d689a6d9f5e12"
+    },
+    "bin/Understanding.py": {
+      "before": "d2ca22df0cc36fd815ca77e19f80f76d07511a0897146e37e64ee13dc1bae0a7",
+      "after": "7d73d2f4b620516bccd1cb694a936c373fd88a10a9ef6a7be5852d9aa940dd30"
+    },
+    "test/test_accessible_mind.py": {
+      "before": "55670a1db4183be171e8ac9f9ceb02d6286c06e732b914b202de4998f7e102d9",
+      "after": "4853ca0720ccf585507c10c479fd640f8e86171a2816f7fc598649f28c045dd3"
+    },
+    "test/test_item7_acceptance.py": {
+      "before": "d8dd467f9ac7f0ec053ed5a018e47711b14888aed71c3551deb58e37e2b04d5d",
+      "after": "9738470000e0875e347b8fa313afd6a1fdff33e899c155c2fa674991ee2aeb22"
+    },
+    "test/test_item7_provenance.py": {
+      "before": "76ed5ff7233b8ae9d0e5dcbc26965083ba4db2deaed6a11c187cd19ed6823854",
+      "after": "b7ec012abc8a904104da6118ff5f51e0d6f6e227bb255df179c13208241b7b6a"
+    },
+    "test/test_item7_retention.py": {
+      "before": "1d32e1d709834a78a7cecdfb75d766e3a47dffdc59f50d3a94b68254dc634312",
+      "after": "afb461dbd6a10621a5dcc7c58c807492726c89dba170f2467ac1fd9396bd2e46"
+    },
+    "test/test_item7_storage.py": {
+      "before": "cb19562acf31e4a00d158f2efd3b84673606b79ad0297d2a1e842781ba9c5961",
+      "after": "d52786cf28960e208029ab5c094434b814d0811290407c253518b12e574dea45"
+    },
+    "test/test_item7_unfold_index.py": {
+      "before": "00de08b0eb1e01ca79fd71544bdf0b30ab50428d78d21cb15783fed73bee04d1",
+      "after": "ced0334a30c4923df319ee5127c77e180cf4cce399c5064451468d71ab8d4d15"
+    },
+    "test/test_ltm_consolidation.py": {
+      "before": "612dbaf901e930cc4755c2e345796442af499ce927f82aebc0f454230563dc1c",
+      "after": "5829f3c9b3fb2f9af159f29359ba82b99d4770b256d6a78e37a43a9433eebf86"
+    },
+    "test/test_query_executors.py": {
+      "before": "36141bbb5d139f79214169fbfb0882f29f359f61d8f9e7bebcf71c336b409b3d",
+      "after": "b1135dc5b7caa114e83e4475b2e5609fbfbbb99d9fa3ee1713b68b4721d7343d"
+    },
+    "test/test_item7_row_schema.py": {
+      "before": null,
+      "after": "be92468e303793d93f14acdadf79e91709295ccfd2151695566458ba93a9e527"
+    }
+  },
+  "assertion_predicates_unchanged_except_explicit_fixture_evidence": {
+    "test/test_accessible_mind.py": true,
+    "test/test_item7_acceptance.py": true,
+    "test/test_item7_provenance.py": true,
+    "test/test_item7_retention.py": true,
+    "test/test_item7_storage.py": true,
+    "test/test_item7_unfold_index.py": true,
+    "test/test_ltm_consolidation.py": true,
+    "test/test_query_executors.py": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-011.recycle.json"
+}

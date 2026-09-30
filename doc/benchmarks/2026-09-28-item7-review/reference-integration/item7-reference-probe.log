@@ -1,0 +1,93 @@
+F
+=================================== FAILURES ===================================
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7954/test_public_reading_fuses_the_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c1b8050>
+
+    def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path,monkeypatch):
+        from test_meronomy_ladder import _build_ladder_variant
+        from LiveReferences import ReferenceBank
+        import util
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        model=_build_ladder_variant(tmp_path,'live_identity',[
+            ('<architecture>','<architecture><ltmConsolidation>true</ltmConsolidation>')])
+        model._tensor_peer_while_eager=True
+        model._chart_compose_per_word=lambda:None
+        model._install_unit_span_fn()
+        model.reconstruct_in_loop=False
+        model.loss.reconstruction_scale=0.
+        language=model.languageSpace
+        rules=list(language._compose_binary_rules)
+        op=next(i for i,r in enumerate(rules) if r.method_name=='lift')
+        rules[op]=rules[op]._replace(reference_orders=(('I1',1),),reference_kinds=(('I1','particular'),))
+        language._compose_binary_rules=tuple(rules)
+        layer=language._tree_layer(2)
+        original=layer.forward
+        def forced(x,**kwargs):
+            stop=(x.shape[1]-1)*layer.r_reduce+x.shape[1]*layer.r_apply
+            kwargs['replay_action']=torch.where(kwargs['depth']>=2,op,stop)
+            return original(x,**kwargs)
+        monkeypatch.setattr(layer,'forward',forced)
+        width=model.conceptualSpace.stm.concept_dim
+        prior=torch.nn.functional.normalize(torch.arange(1,width+1,dtype=torch.float32),dim=0)
+        query=torch.nn.Parameter(prior.clone())
+        from ClauseRow import Clause
+        from Meaning import ConceptualMeaning
+        store=model.symbolSpace.ltm_store
+        from ClauseRow import attach_clause_index
+        attach_clause_index(model,store,model._concept_owner())
+        index=store.write_clause(Clause(ConceptualMeaning.from_description(prior),point=prior))
+        cid=int(store.row_ids[index])
+        def held(active,like):
+            B=active.shape[0]
+            return ReferenceBank(torch.full((B,1),cid,dtype=torch.long),prior[None,None].expand(B,1,width),
+                torch.ones(B,1,dtype=torch.bool),torch.zeros(B,1,dtype=torch.bool),
+                query[None].expand(B,width),torch.ones(B,dtype=torch.bool))
+        monkeypatch.setattr(model,'_sentence_reference_bank',held)
+        observed=[]
+        observation=model._sentence_observation
+        def capture(*a,**kw):
+            view=observation(*a,**kw)
+            if not kw.get('admit',False): observed.append(view)
+            return view
+        monkeypatch.setattr(model,'_sentence_observation',capture)
+        try:
+            model(model.inputSpace.prepInput(['alpha beta']))
+            view=observed[-1]
+            entry=view['entries'][0]
+            clause=view['clauses'][0]
+            actions=entry.actions[:,0]==1
+>           assert int(actions.sum())==1
+E           assert 2 == 1
+E            +  where 2 = int(tensor(2))
+E            +    where tensor(2) = <built-in method sum of Tensor object at 0x12613eb70>()
+E            +      where <built-in method sum of Tensor object at 0x12613eb70> = tensor([False, False,  True, False,  True]).sum
+
+/tmp/test_item7_reference_public_probe.py:120: AssertionError
+=============================== warnings summary ===============================
+test_item7_reference_public_probe.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/test_meronomy_ladder.py:541: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test_item7_reference_public_probe.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/test_meronomy_ladder.py:622: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test_item7_reference_public_probe.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/test_meronomy_ladder.py:706: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test_item7_reference_public_probe.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-reference-_olqknpg/test/test_meronomy_ladder.py:743: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+test_item7_reference_public_probe.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../../../../../tmp/test_item7_reference_public_probe.py::test_public_reading_fuses_the_reference_before_capture_and_write
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 5 warnings in 2.78s

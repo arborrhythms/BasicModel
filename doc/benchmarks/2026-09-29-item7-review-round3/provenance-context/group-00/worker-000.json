@@ -1,0 +1,83 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.1005261668469757,
+      "message": "test/test_ltm_consolidation.py:693: in test_resubmit_replaces_user_rows_only\n    self.assertEqual(len(user_rows), 1, \"resubmit replaces, not appends\")\nE   AssertionError: 3 != 1 : resubmit replaces, not appends",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20805816701613367,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.22673870786093175,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.36137079098261893,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 1 (\u0394=0.072s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=False).\r\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.24037204100750387,
+      "message": "test/test_ltm_consolidation.py:643: in test_user_rows_land_alongside_provisioned\n    self.assertEqual(\nE   AssertionError: Lists differ: [1, 5, 8] != [0, 1, 2]\nE   \nE   First differing element 0:\nE   1\nE   0\nE   \nE   - [1, 5, 8]\nE   + [0, 1, 2]",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23742312495596707,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.27901437506079674,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,9 +1,4 @@
-"""Mereological order-raising (doc/specs/mereological-order-raising.md), gated dark
-behind <mereologyRaise>. Unit-level: the link-removal API (delete_meta /
-unlink_child / ps_children_of_whole), SigmaLayer.synthesize_over_set, and the
-native spans and conceptual run geometry. Flag-off
-byte-identity is covered by the full suite.
-"""
+"""Sigma composition and native span geometry after WholeSpace taxonomy retirement."""
 
 import os
 import sys
@@ -36,23 +31,6 @@ def _whole_space(nS=128):
     return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
 
 
-def _vec():
-    return torch.randn(_D)
-
-
-def _bind_parts(ws, n_parts, *, whole=None):
-    """Bind ``n_parts`` distinct PS parts to one whole via insert_meta; return
-    (whole_pos, [meta_pos...])."""
-    if whole is None:
-        whole = ws.insert_whole(init_vec=_vec())
-    metas = []
-    for i in range(n_parts):
-        ps_pos = ws.ensure_ps_position(100 + i)
-        m = ws.insert_meta(ps_pos, whole, fused_vec=_vec())
-        metas.append(m)
-    return whole, metas
-
-
 # -- SigmaLayer.synthesize_over_set ---------------------------------------
 
 def test_synthesize_over_set_shape_and_binary_equivalence():
@@ -67,47 +45,6 @@ def test_synthesize_over_set_shape_and_binary_equivalence():
     viaset = sig.synthesize_over_set(pair.unsqueeze(0))     # [1, 2, D] -> [1, D]
     viacompose = sig.compose(pair[0:1], pair[1:2])
     assert torch.allclose(viaset, viacompose, atol=1e-5)
-
-
-# -- delete_meta / unlink_child -------------------------------------------
-
-def test_delete_meta_inverts_insert_meta():
-    ws = _whole_space()
-    ps_pos = ws.ensure_ps_position(7)
-    ws_pos = ws.insert_whole(init_vec=_vec())
-    meta = ws.insert_meta(ps_pos, ws_pos, fused_vec=_vec())
-    # populated
-    assert ws.taxonomy[meta] == [ps_pos, ws_pos]
-    assert ws.taxonomy_parent_map[ps_pos] == meta
-    assert ws.meta_pair_to_idx[(ps_pos, ws_pos)] == meta
-    assert ws._pos_kind[meta] == "meta"
-    # delete + assert clean
-    assert ws.delete_meta(meta) is True
-    assert meta not in ws.taxonomy
-    assert ws.taxonomy_parent_map.get(ps_pos) != meta
-    assert (ps_pos, ws_pos) not in ws.meta_pair_to_idx
-    assert ws._pos_kind.get(meta) != "meta"
-    # idempotent
-    assert ws.delete_meta(meta) is False
-
-
-def test_unlink_child_then_collapse():
-    ws = _whole_space()
-    ps_pos = ws.ensure_ps_position(9)
-    ws_pos = ws.insert_whole(init_vec=_vec())
-    meta = ws.insert_meta(ps_pos, ws_pos, fused_vec=_vec())
-    # removing the last-but-one then the last child collapses the meta.
-    assert ws.unlink_child(meta, ps_pos) is True
-    assert ws.unlink_child(meta, ws_pos) is True
-    assert meta not in ws.taxonomy           # collapsed via delete_meta
-
-
-def test_ps_children_of_whole_counts_parts():
-    ws = _whole_space()
-    whole, _metas = _bind_parts(ws, 5)
-    parts = ws.ps_children_of_whole(whole)
-    assert len(parts) == 5
-    assert all(ws._pos_kind.get(int(p)) == "ps" for p in parts)
 
 
 # Geometry is owned by the conceptual field. Native WS spans are inputs.
@@ -157,3 +94,8 @@ def test_stage_analysis_spans_is_structural_only():
     concepts = torch.tensor([[97, 98, 32, 99, 100]], dtype=torch.long)
     spans = ws.stage_analysis_spans(concepts)
     assert spans is not None
+
+
+def test_retired_wholespace_taxonomy_writer_is_absent():
+    from Spaces import WholeSpace
+    assert not hasattr(WholeSpace, "insert_meta")

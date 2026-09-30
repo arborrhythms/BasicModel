@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-sweep/full/worker-314.recycle.json"
+}

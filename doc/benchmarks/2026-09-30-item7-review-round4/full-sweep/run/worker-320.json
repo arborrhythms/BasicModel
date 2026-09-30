@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+    "test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts",
+    "test/test_concept_sigma_pi.py::test_unwritten_alternative_receives_credit_from_present_witness",
+    "test/test_concept_sigma_pi.py::test_attribution_selects_a_case_and_demands_all_conjunctive_parts",
+    "test/test_concept_sigma_pi.py::test_weak_disjuncts_do_not_accumulate",
+    "test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept",
+    "test/test_concept_sigma_pi.py::test_sparse_growth_preserves_adam_and_pending_credit",
+    "test/test_concept_sigma_pi.py::test_recycled_edge_cannot_receive_pending_gradient",
+    "test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit",
+    "test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth",
+    "test/test_concept_sigma_pi.py::test_pi_edges_are_rejected_above_the_field"
+  ],
+  "completed": [
+    "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+    "test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts",
+    "test/test_concept_sigma_pi.py::test_unwritten_alternative_receives_credit_from_present_witness",
+    "test/test_concept_sigma_pi.py::test_attribution_selects_a_case_and_demands_all_conjunctive_parts",
+    "test/test_concept_sigma_pi.py::test_weak_disjuncts_do_not_accumulate",
+    "test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept",
+    "test/test_concept_sigma_pi.py::test_sparse_growth_preserves_adam_and_pending_credit",
+    "test/test_concept_sigma_pi.py::test_recycled_edge_cannot_receive_pending_gradient",
+    "test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit",
+    "test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth",
+    "test/test_concept_sigma_pi.py::test_pi_edges_are_rejected_above_the_field"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010919250082224607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012969749979674816,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_unwritten_alternative_receives_credit_from_present_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015055958181619644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_attribution_selects_a_case_and_demands_all_conjunctive_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0035641249269247055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_weak_disjuncts_do_not_accumulate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0046012920793145895,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01184270903468132,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_sparse_growth_preserves_adam_and_pending_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001082833157852292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_recycled_edge_cannot_receive_pending_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034312508068978786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006037209182977676,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00678929197601974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_pi_edges_are_rejected_above_the_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020720420870929956,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

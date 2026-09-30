@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_pending_field_word_reservation_survives_checkpoint ____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py:35: in test_pending_field_word_reservation_survives_checkpoint
+    assert target.interpret._pending == cs.interpret._pending
+E   AssertionError: assert {} == {1: {'forms':...holes': (1,)}}
+E     
+E     Right contains 1 more item:
+E     {1: {'forms': ('00',), 'parts': ((48, 48),), 'wholes': (1,)}}
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint
+1 failed, 1 warning in 1.94s

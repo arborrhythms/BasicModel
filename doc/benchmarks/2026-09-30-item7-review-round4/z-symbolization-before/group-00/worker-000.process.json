@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-symbolization-before/group-00/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-symbolization-before/group-00/worker-000.json"
+  ],
+  "pid": 58688,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 437208288,
+  "elapsed_seconds": 5.778080082964152,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-symbolization-before/group-00/worker-000.log"
+}

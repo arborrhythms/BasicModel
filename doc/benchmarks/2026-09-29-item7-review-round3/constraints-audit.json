@@ -1,0 +1,21 @@
+{
+  "item7_seed_calls": [],
+  "configuration_changes_since_round3_baseline": [],
+  "required_head_config_comparison": {
+    "data/MM_xor.xml": {
+      "head_sha256": "9b72bae4ce082fe944a6ca64854d40736695d7f72db5161cb947c960fda35539",
+      "current_sha256": "9b72bae4ce082fe944a6ca64854d40736695d7f72db5161cb947c960fda35539",
+      "byte_identical_except_retired_propertyBasis": true
+    },
+    "data/MM_grammar.xml": {
+      "head_sha256": "a7a880cdc8b07fc2081e37d1ae2e37a2d8db99f73036d30c9345b02434e62386",
+      "current_sha256": "2b441706f9b35bcd3d4b89a8b2a48fd86df72bc3679825fc7175d601c5225a47",
+      "byte_identical_except_retired_propertyBasis": true
+    },
+    "data/XOR_grammar.xml": {
+      "head_sha256": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d",
+      "current_sha256": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d",
+      "byte_identical_except_retired_propertyBasis": true
+    }
+  }
+}

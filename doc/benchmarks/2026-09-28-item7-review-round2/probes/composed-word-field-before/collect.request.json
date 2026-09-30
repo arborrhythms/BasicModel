@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,39 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_selected_anaphor_form_binds_to_its_own_sealed_particular _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1231281d0>
+
+    def test_selected_anaphor_form_binds_to_its_own_sealed_particular(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        prior = f.store.seal_clause(f.clause(('lift', 'cat', 'runs')))
+        entry = f.program(('lift', 'he', 'rests'))
+        refs = entry.concept_ids.clone()
+        refs[0] = f.store.row_ids[prior]
+        values = entry.leaves.clone()
+        values[0] = f.store.point_of_row(int(refs[0]))
+        entry = replace(entry, reference_ids=refs, reference_orders=torch.tensor([1, -1]),
+                        reference_values=values)
+        clause = clause_from_program(f.language, entry, registry=f.registry)
+        row = f.store.seal_clause(clause)
+>       assert int(f.store.row_ids[row]) in f.cs.word_concepts('he')
+E       AssertionError: assert 23 in (17, 18)
+E        +  where 23 = int(tensor(23))
+E        +  and   (17, 18) = word_concepts('he')
+E        +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E        +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_item7_acceptance.SentenceFixture object at 0x122bfe8a0>.cs
+
+tmp/item7_presented_form_probe.py:19: AssertionError
+=============================== warnings summary ===============================
+test/test_basicmodel.py:450
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+tmp/item7_presented_form_probe.py::test_selected_anaphor_form_binds_to_its_own_sealed_particular
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tmp/item7_presented_form_probe.py::test_selected_anaphor_form_binds_to_its_own_sealed_particular
+1 failed, 2 warnings in 2.06s

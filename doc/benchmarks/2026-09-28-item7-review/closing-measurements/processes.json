@@ -1,0 +1,52 @@
+{
+  "serial-baseline": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/profile_baseline.py",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-measurements/serial-baseline.json"
+    ],
+    "pid": 58898,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 7678352632,
+    "elapsed_seconds": 881.4229759160662,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-measurements/serial-baseline.log"
+  },
+  "packed": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/probe.py",
+      "--config",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/parity.xml",
+      "--parity",
+      "packed",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-measurements/packed.json"
+    ],
+    "pid": 59486,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 5606872584,
+    "elapsed_seconds": 331.84899854206014,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-measurements/packed.log"
+  },
+  "single": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/probe.py",
+      "--config",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/parity.xml",
+      "--parity",
+      "single",
+      "--out",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-measurements/single.json"
+    ],
+    "pid": 59620,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 5628089960,
+    "elapsed_seconds": 544.9575856670272,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/closing-measurements/single.log"
+  }
+}

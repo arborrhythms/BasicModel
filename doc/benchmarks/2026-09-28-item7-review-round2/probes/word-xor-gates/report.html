@@ -1,0 +1,110 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 2/2 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.6773757919436321</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:247: in test_xor_class_accuracy
+    model = _run_xor_grammar_in_process()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process
+    results = ModelFactory.run(&quot;data/XOR_grammar.xml&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24998: in run
+    return ModelFactory._run_hydrated(config_path, arch, dat, trn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:25105: in _run_hydrated
+    m.run(_t(&quot;numTrials&quot;, 1),
+bin/Models.py:3887: in run
+    acc[trial, :] = self.runTrial(
+bin/Models.py:11044: in runTrial
+    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=&quot;train&quot;)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16256: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15530: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16655: in _autobind_property_concepts
+    formed = ConceptualSpace.interpret_word(self, parts, prop_rows, key=key)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19172: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key, reserve=3)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:53: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes))
+bin/Spaces.py:18220: in _populate_concept_weights
+    self.add_concept_edge(c_row, target, 1.)
+bin/Spaces.py:17299: in add_concept_edge
+    source0 = self._order0_inventory_row(int(col))
+                                         ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not &#x27;NoneType&#x27;</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+</pre></td></tr><tr><td><pre>test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.2892241249792278</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct
+    model = _run_xor_grammar_in_process()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process
+    results = ModelFactory.run(&quot;data/XOR_grammar.xml&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24998: in run
+    return ModelFactory._run_hydrated(config_path, arch, dat, trn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:25105: in _run_hydrated
+    m.run(_t(&quot;numTrials&quot;, 1),
+bin/Models.py:3887: in run
+    acc[trial, :] = self.runTrial(
+bin/Models.py:11044: in runTrial
+    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=&quot;train&quot;)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16256: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:15530: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16413: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16515: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16723: in _maybe_autobind_meta
+    return self._autobind_property_concepts(
+bin/Spaces.py:16655: in _autobind_property_concepts
+    formed = ConceptualSpace.interpret_word(self, parts, prop_rows, key=key)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19172: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key, reserve=3)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:53: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes))
+bin/Spaces.py:18220: in _populate_concept_weights
+    self.add_concept_edge(c_row, target, 1.)
+bin/Spaces.py:17299: in add_concept_edge
+    source0 = self._order0_inventory_row(int(col))
+                                         ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not &#x27;NoneType&#x27;</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+batch = 0 (warm-up, 100.00%)
+</pre></td></tr></table></body></html>

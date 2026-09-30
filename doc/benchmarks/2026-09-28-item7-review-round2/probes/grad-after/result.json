@@ -1,0 +1,61 @@
+{
+  "exit_code": 130,
+  "reason": "interrupted",
+  "selected": [
+    "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+  ],
+  "completed": [],
+  "workers": [],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after",
+  "elapsed_seconds": 315.09279658296145,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 2574765536,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after/collect.json"
+    ],
+    "pid": 75124,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 494093560,
+    "elapsed_seconds": 3.6333264160202816,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/grad-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]",
+        "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

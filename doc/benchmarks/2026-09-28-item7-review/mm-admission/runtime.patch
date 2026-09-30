@@ -1,0 +1,33 @@
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -184,13 +184,19 @@
+         role_nodes = (node, None, None)
+ 
+         def operand(item, *, sentence=False):
+-            if sentence or is_clause(item):
++            reference = concept(item) if not is_clause(item) else None
++            # An unindexed numerical NP (e.g. an embedding input) still
++            # has a field. If a relative S needs its address, close that NP
++            # as an unasserted one-slot S before the parent refers to it.
++            # Do not invent a concept ID or infer one from its vector.
++            needs_row = (relation is not None or not root['has_point']) and reference == -1
++            if sentence or is_clause(item) or needs_row:
+                 child = recover(item)
+                 ref = ('clause', len(children))
+                 children.append(child)
+                 owned.add(id(item))
+                 return child.point, ref
+-            return value(item) if item['has_point'] else None, concept(item)
++            return value(item) if item['has_point'] else None, reference
+ 
+         relation = operator if operator in relative else None
+         operands = node['children']
+@@ -298,7 +304,7 @@
+         roles = []
+         for slot, node in enumerate(stack):
+             node = head(node)
+-            if slot != 1 and is_clause(node):
++            if slot != 1 and (is_clause(node) or concept(node) == -1):
+                 references.append(('clause', len(children)))
+                 child = recover(node)
+                 children.append(child)

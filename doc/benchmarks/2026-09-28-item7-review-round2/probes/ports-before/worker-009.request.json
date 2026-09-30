@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_bivector_retirement_state.py::test_symbolic_references_parameter_attached_via_knowledge"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/ports-before/worker-009.recycle.json"
+}

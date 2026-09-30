@@ -1,0 +1,398 @@
+{
+  "audited_at": "2026-09-30T17:38:10.226036+00:00",
+  "acceptance_not_claimed": true,
+  "source_files": 711,
+  "source_digest": "7c39afedbecb75dbc4b1541aa3462c2b51af37c0963c74e9787b93b65d8c5312",
+  "full_sweep_and_explicit_source_match": true,
+  "supporting_inputs_match": true,
+  "xor": {
+    "baseline": {
+      "HEAD": {
+        "receipt": "baseline-head",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 45,
+          "failed": 4
+        }
+      },
+      "candidate": {
+        "receipt": "baseline-candidate",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 21,
+        "diagnostic_runs": 21,
+        "guarded_outcomes": {
+          "passed": 26,
+          "failed": 2,
+          "memory": 21
+        }
+      }
+    },
+    "Z": {
+      "HEAD": {
+        "receipt": "z-head",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 45,
+          "failed": 4
+        }
+      },
+      "candidate": {
+        "receipt": "z-candidate",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 21,
+        "diagnostic_runs": 21,
+        "guarded_outcomes": {
+          "passed": 26,
+          "failed": 2,
+          "memory": 21
+        }
+      }
+    },
+    "AE": {
+      "HEAD": {
+        "receipt": "ae-head",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 44,
+          "failed": 5
+        }
+      },
+      "candidate": {
+        "receipt": "ae-candidate",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 21,
+        "diagnostic_runs": 21,
+        "guarded_outcomes": {
+          "passed": 26,
+          "failed": 2,
+          "memory": 21
+        }
+      }
+    },
+    "AF": {
+      "HEAD": {
+        "receipt": "af-head",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 44,
+          "failed": 5
+        }
+      },
+      "candidate": {
+        "receipt": "af-candidate",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 21,
+        "diagnostic_runs": 21,
+        "guarded_outcomes": {
+          "passed": 26,
+          "failed": 2,
+          "memory": 21
+        }
+      }
+    },
+    "AH": {
+      "HEAD": {
+        "receipt": "ah-head",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 45,
+          "failed": 4
+        }
+      },
+      "candidate": {
+        "receipt": "ah-candidate",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 21,
+        "diagnostic_runs": 21,
+        "guarded_outcomes": {
+          "passed": 26,
+          "failed": 2,
+          "memory": 21
+        }
+      }
+    },
+    "AI": {
+      "HEAD": {
+        "receipt": "ai-head",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 45,
+          "failed": 4
+        }
+      },
+      "candidate": {
+        "receipt": "ai-candidate",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 21,
+        "diagnostic_runs": 21,
+        "guarded_outcomes": {
+          "passed": 26,
+          "failed": 2,
+          "memory": 21
+        }
+      }
+    },
+    "final": {
+      "HEAD": {
+        "receipt": "final-xor-head",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 44,
+          "failed": 5
+        }
+      },
+      "candidate": {
+        "receipt": "final3-xor-candidate",
+        "attempts": 49,
+        "exact_roundtrips": 15,
+        "guard_stops": 0,
+        "diagnostic_runs": 0,
+        "guarded_outcomes": {
+          "passed": 46,
+          "failed": 3
+        }
+      }
+    }
+  },
+  "reconstruction": {
+    "HEAD_seeds": 8,
+    "candidate_seeds": 8,
+    "all_completed_under_8_GiB": true,
+    "original_candidate_deadline_stops_retained": [
+      0,
+      1
+    ]
+  },
+  "mm_grammar": {
+    "HEAD": {
+      "receipt": "final-mm-grammar-head",
+      "completed_trials": 10,
+      "epochs_each": 900,
+      "all_unseeded": true
+    },
+    "candidate": {
+      "receipt": "final3-mm-grammar-candidate",
+      "completed_trials": 10,
+      "epochs_each": 900,
+      "all_unseeded": true
+    }
+  },
+  "test_29_31_fresh_process_passes": 140,
+  "full_sweep": {
+    "selected": 5100,
+    "completed": 5100,
+    "pytest_outcomes": {
+      "passed": 4774,
+      "skipped": 322,
+      "failed": 3,
+      "xfailed": 1
+    },
+    "complete_unique_coverage": true,
+    "missing": [],
+    "resource_stops": [],
+    "diagnostic_only": [],
+    "elapsed_seconds": 9282.19544204208,
+    "peak_worker_memory_bytes": 7773428288,
+    "peak_aggregate_memory_bytes": 12095043576
+  },
+  "all_thirteen_round3_failures_pass": true,
+  "three_new_failures_preserved": true,
+  "basicmodel_HEAD": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "WikiOracle_HEAD": "850798fc0f4b1be5d115f5322dcc83d198b0bd0a",
+  "validation_complete": true,
+  "ready_for_Claude_review": true,
+  "final_documentation_links": {
+    "pytest_receipt": "final-doc-links/group-00/result.json",
+    "passed": 158,
+    "post_metadata_edit_targets_rechecked": true
+  },
+  "final_git_state": "final-git-state.json",
+  "test_port_bodies_rechecked": 6,
+  "final_documentation_sha256": {
+    "doc/AccessibleMind.md": "a42ddf57110446d61664bf306ff610e8fdcad9340109090a995dd05c198ac08d",
+    "doc/Architecture.md": "972a01737c2952fe8644b51ce1bed2e9949b119d9d0f6bf4de80ee77143f4887",
+    "doc/BasicModel.md": "8874fa7d0a3958312c2343823ed02f89fbfebef3dd1c2f5d8fdb5914a1da9db7",
+    "doc/BasicModelStabilityPlan.md": "987c3671f06115444b2a618e21a3a80136641235b74e83715470c942329c9ea9",
+    "doc/Componentization.md": "7b22c8fb025ebeafdd978d01ab1b47fa5c5d54ec8c9b64f307b5b9fbf6333b49",
+    "doc/Ergodic.md": "a943d23e6f691d2a1a3761640ded356b680affa56a3c705fa0fab6af74b123a8",
+    "doc/ExistenceEvidence.md": "68e1c4e1d8e5707f6b004e6221dc5e47a3dbf70c62269876e1e68d5de2a7ca70",
+    "doc/ExpectationRetention.md": "f5e7b4479b41248107ed8ad526d1328d6f9ebcca358bffd7b5e6d8a8d65af652",
+    "doc/FutureWork.md": "300b47b43cf2d01f605a283ca4fc695513b25ae703601b1240743c984604529b",
+    "doc/GradientFlow.md": "952c819a85e5ee292ceee43a40eb117a3c2a79a5ed459feff1c0b70c53d5b76d",
+    "doc/Installation.md": "1f56c82302857d9ce003c588ab34a603995cc4ed70a2625050f71c63d612d517",
+    "doc/KernelRetirement.md": "d900badac1a99f9be118e7e53b3ebb874018149bc970d8ff4f8105ce603a338c",
+    "doc/LLMEquivalence.md": "e05a95fcdd5099f0bc8e7f8d61c7f1f1990d0028f178dc9ccf1471a3644dcd4b",
+    "doc/Language.md": "36b37e3f7e9ddb80c7fcb457a6609b2108de42c1ab81fbed9d7500efb3677ff8",
+    "doc/Lexicon.md": "7eef48ae24e774aa7573fbfa6402dd6f8574ee972d78abaf19ace2311d990443",
+    "doc/Logic.md": "8c14c89965da917f8877684ce03be53f25b97dd75f0c4acdd43607a1ed02c1b4",
+    "doc/MachineMinds.md": "750fd0ceea24cf3afbb97db9ac75b8c9b86a60f6e6469299613a2c54551241b8",
+    "doc/Mereology.md": "b1fb1128cdd62a53216c740a13986644f1f0ce32acb2c674d90ea8b1289f1259",
+    "doc/NanoChatGrammarPilot.md": "c53d4f290e0079284449693d36b07686525c7595bffa2f954edc0b1e28325229",
+    "doc/NestedRetention.md": "697171e27e2e3c9000c346eb6b36b694dec4665a7d1b85719492a124b7e96a67",
+    "doc/Params.md": "ce04a1059a3ed87dd21a61d830b2c9c4cf3661fc700ddb75e88e36ccfdf89639",
+    "doc/Philosophy.md": "94d38d516e3a4185b370f581f4180323801b7d74d1d51cbb3cb3843885f6765d",
+    "doc/QueryContracts.md": "a585c837cea05d2c66223fde4da7ebfc4593963d7194144724c6c10ec2c04c09",
+    "doc/QueryPhases.md": "6d25fbc51a29a7ccbd6bad89b6aff542f1694e6d6251f7e27ed549fd0be42b3a",
+    "doc/QueryWork.md": "90ed38102d3d0748a4cfc61206c671ab7837d49b648e32ca91717375d799784a",
+    "doc/Reasoning.md": "53dcea8108c5f88a6f0fa9f49a7a395dac76e97aa37bf44956ad0154495085aa",
+    "doc/STM.md": "93fdda2ba154176b215d8f0fde2451bc2fcc9a3e19ced4622a8150a96d67324d",
+    "doc/SelectedMeaning.md": "d5d8b585b3bf8f279407171e5e8f60dfba64a55a1e962c5ad2a2885945e8edc5",
+    "doc/Spaces.md": "f644e3af2e2ea06faa3a7c98e33deb8ab26de4b7c4b3f424a065227b8489e7d2",
+    "doc/SymbolFirewall.md": "8423d6039cefb24456e594a06396056adf17c7bef6c7f3e7aee2ddca26fe63d6",
+    "doc/TaxonomyQueries.md": "df1f1c3b185eb3a74350427cddc823c6bfd69dcd67d370f32cfc8b2b6ec696a8",
+    "doc/Testing.md": "8bfa99e2895166bc2bc7e6594144095eb78208a76f9ed34dbb56d4cc07e0b2ab",
+    "doc/ThoughtHistory.md": "35bf126e107a5c159c25e3892b1f88b3aad5fd9863281a9ae4f2a86244f37874",
+    "doc/Training.md": "1e328fd7a8dbd00fcd8521d1fba7c3f32374f8ebd3460a44e3976864f4f375c6",
+    "doc/WhatSpacetimeDesign.md": "4fb758d3d0ccfc5642740371b1562ceb0a9b6d7dfeb9fa494cd6a66b8ac85972",
+    "doc/benchmarks/2026-07-27-pre-teacher-baseline.md": "b9a670840af56abbf97a940379121b668edfe5839e6baf4f790558779a3de7f4",
+    "doc/benchmarks/2026-07-27-teacher-reconstruction-b24.md": "c940b56d7f2f09dbe76993e43c4be2c758e6bb01fd9ad7e16ce69d0a1e113b34",
+    "doc/benchmarks/2026-09-09-math-thinking-pilot.md": "d903b7fb9004d2dbaca34cbabb57953b5da6aba3de360888ac449b3b25cdefc3",
+    "doc/benchmarks/2026-09-11-fold-ladder-throughput.md": "ed9ec2a50fd3dcb7c4522bd0433cb560b4a2b73b0f98575622b3a4cb500eccec",
+    "doc/benchmarks/2026-09-16-sentence-expectation.md": "d522143520450c3feb2ebcf143b73581875314b0899811e91634f3e78a6b3519",
+    "doc/benchmarks/2026-09-16-tied-input-reconstruction.md": "3d1eeb89f90532d06118ad0fe73144c711777e16349564cc9c280e102b925f6c",
+    "doc/benchmarks/2026-09-21-item10/README.md": "f58420d7d365ed881809fa5d1ab5a59a690e5d94f749ac77056c9507a5d07631",
+    "doc/benchmarks/2026-09-21-item11/README.md": "dda339bfd1163eac83bdd6c059565c2ed3316f5dad91457741c04007f3b7c251",
+    "doc/benchmarks/2026-09-21-item12/README.md": "f688cb5db30bd7f3c18d4225703945e426a13b0566e70de646b65185b463aa25",
+    "doc/benchmarks/2026-09-21-item2/README.md": "6fe7d5042639ae7ed64a48f39dddc821a331704e0420af073c1c9ecc0234d3cc",
+    "doc/benchmarks/2026-09-22-item11/README.md": "36822643f043bae4b7b15052c5a49cc2f534dedc3c9de38f2590f70c0fa7e734",
+    "doc/benchmarks/2026-09-23-item11/README.md": "ea8badf1c8dbbf0aad143176ec0744d69f3a40bae088a425640d7b66166e8db7",
+    "doc/benchmarks/2026-09-23-item11a/README.md": "2450da25ada073a15b3412bd2c338c9ce829cb09f588a25b4841c9eedb329c41",
+    "doc/benchmarks/2026-09-23-item11a/spec.md": "4ef123fa60b912c298d481f381583b57b8125b7094b27304c3e971278c9a0578",
+    "doc/benchmarks/2026-09-23-item11b/README.md": "dc0a160a820645cda2f4d93fb036e6f2e22d1432f351d91408b7e64ab2f68875",
+    "doc/benchmarks/2026-09-23-item11b/spec.md": "f9524cef78caf4b2a5ada6f4137b53086fe4736bfb82ffda4b2df8da37dd1bb3",
+    "doc/benchmarks/2026-09-24-item10/README.md": "c86ca9f2d4fbf82b829d9933df183f43ee710d62306bb36272906f783ee3ba30",
+    "doc/benchmarks/2026-09-24-item11b-corrections/README.md": "c7d9f0096172e9b93184c4a46100a9bb47cd7135b30afb6551d24df7840b74f9",
+    "doc/benchmarks/2026-09-24-item11b-extent/README.md": "d3d10c8f698fcc61efd83adfb5c93e6bf6c00343f504220fbbb151293d2fdc50",
+    "doc/benchmarks/2026-09-24-item11b-review/README.md": "5d74963a4378c09e4c2143c1039ce7d119ca30fd9f9bb117e6c2c9e629677999",
+    "doc/benchmarks/2026-09-24-item11c/README.md": "cb0446c33be34bd1ea2931257a0f744ae1cecb733241b11dc015713d6fbd5672",
+    "doc/benchmarks/2026-09-25-item10-forward/README.md": "c6042235b78aede83a97e6f89eee4c598fdf555be715b199833e5d712b482ff6",
+    "doc/benchmarks/2026-09-25-item10-resolution/README.md": "ce13aebce0254f661219aa4fe880f38e4087be09591f21550b4d7eac756baa0d",
+    "doc/benchmarks/2026-09-25-item9-bank/README.md": "ff31e20877057d8a9556337ad56f1c660cb5b8b3f1c739803912af7ea349e785",
+    "doc/benchmarks/2026-09-25-item9-bank-sync/README.md": "4d0552a8733c29fa516ebe694f9ff179b46d4d98a70241bc62dc83c3533547c6",
+    "doc/benchmarks/2026-09-25-item9-parity/README.md": "524201390d4016bc54991c1987dd459a1c76c2b366645181ec29a73119fda801",
+    "doc/benchmarks/2026-09-25-item9b/README.md": "551c93335978de6d16e8139e80fbd746df135277a4a43a44e6545d84cfd642a8",
+    "doc/benchmarks/2026-09-25-item9b/erosion-table.md": "75da7d6c60b246523b8f29005c6666a656c0e23c4b01dd86d4258e855dc18ec6",
+    "doc/benchmarks/2026-09-25-item9b-followup/README.md": "e6656976972674634eea8af2ba5eea3248103b31fa5cad028c82cc8b99b25198",
+    "doc/benchmarks/2026-09-25-item9b-followup/review.md": "d7f079ad2b7bc6ce6e71d9f58d7a439a83a6b6adbb4021344bfa508ce1be243a",
+    "doc/benchmarks/2026-09-25-item9b-start/README.md": "31c9a6cd85aeb330985820b5186f59f531801e13a0e9d22a619bc6652d0cd275",
+    "doc/benchmarks/2026-09-26-item7-5/README.md": "ab528e21db814f9c5e4bc3a956378d3fa8ed8dd5b96c8e9d5a9f7a403a7be16c",
+    "doc/benchmarks/2026-09-26-item8/PROTOCOL.md": "59e20230f1c25181f2ad048de0dfbd000b4f598a5927a28e19aed21087ad29de",
+    "doc/benchmarks/2026-09-26-item8/README.md": "1defd7b2eaceba61e18472955887d381ce9cfc68df508d1b2800b7cefefca5de",
+    "doc/benchmarks/2026-09-26-item8-review/README.md": "6378d072e057eb8dd9e4a632587cdec2be6449d297f02eeacdc51e726bb86c7a",
+    "doc/benchmarks/2026-09-26-item9/PROTOCOL.md": "83f957c72f5d116efb99d9a58af748311610eb91820c4bbf05444d49f07974df",
+    "doc/benchmarks/2026-09-26-item9/README.md": "c52bf45fa2ec6f52a8c941a5ed3c9b44090fc020a26436bd74a1937062e0420c",
+    "doc/benchmarks/2026-09-26-item9-followup/PROTOCOL.md": "8d8e26cc23362f5ea31e44f115f846f1976abf7e80f8f55b8d75000a9df4d790",
+    "doc/benchmarks/2026-09-26-item9-followup/README.md": "a45592ebd50ee21b4f9083602b9741248b11f05485222b0bc7c42d0930993605",
+    "doc/benchmarks/2026-09-26-item9b-corrections/README.md": "267bcd8d3fa6ce664678246048b6c7224f9f76cae0b36d686f3ca76ffc995d18",
+    "doc/benchmarks/2026-09-26-item9b-occurrence-fix/PROTOCOL.md": "4ae0a676c59459028d440e72aaf32e2319c08d6729b133cd54fa4cb64e4aa8a3",
+    "doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md": "cb457bb5b417f9d99bb8f4d3503c827dae292befcfa413ebd4f6de485d06bcb1",
+    "doc/benchmarks/2026-09-27-item7/README.md": "aa8e11e696bccc16cffb679db49a3f13edb333f7b7a76574abe89569c90c65ef",
+    "doc/benchmarks/2026-09-27-item7-5-landing/README.md": "2afd12ec360a80201cfbfe154b933e7b23a2950ae4f4676712fcff359d957edb",
+    "doc/benchmarks/2026-09-27-item7-5-pressure/README.md": "b8a483d77e153588ba9e9814a4e27c04a523793d2f970659edceb2a68b3b3d18",
+    "doc/benchmarks/2026-09-27-item7-5-pressure/reviewed-spec.md": "05afa7c5d1d364f00a7a19fbaa43fa58f2af015e3fa9dfa2e394656a85337f28",
+    "doc/benchmarks/2026-09-27-item7-5-review/README.md": "5d3601e5d00653c2fde371a7170f4da03be3d214f964785c02a9746440c010ee",
+    "doc/benchmarks/2026-09-27-item7-5-review/reviewed-spec.md": "d263bfc8fafb9314a8b9c98e082138614d021343daf4876b8eae45aa2ffca9e8",
+    "doc/benchmarks/2026-09-27-item7-5-seals/README.md": "c0258f0e330c0cfbfa7947c56c7188e96081c85d579eeb39b0679c73f0f59d80",
+    "doc/benchmarks/2026-09-27-item7-5-seals/reviewed-spec.md": "5422e4c918a11a174ac2ef86127cc0e6e26e9e39c3c2f67fd6c467fbedf623ea",
+    "doc/benchmarks/2026-09-28-item7-review/README.md": "798e64f74b3cb083eb1f0fd4e45c8d4c51d73a3b27045a4f48c814565339df7e",
+    "doc/benchmarks/2026-09-28-item7-review-round2/README.md": "fcaae44ad308139b4a28814af5f53bd3f57b2c3445fcb452a05569410f68a6e9",
+    "doc/benchmarks/2026-09-29-item7-review-round3/README.md": "7a16e54b1bc24da4af720d7011acb1f4c26af292b30dc0d0169d9efbe84c475f",
+    "doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md": "5664ad787156564996b8103cfb195e1d3211129e588b71c2679659381aee2e85",
+    "doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table-final.md": "75805b04c379463b5173fc60f44850d40dcc31075e8abd987a0866bb927189c7",
+    "doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table.md": "39093e48f7ba4a539fde657ed9f6205a6b1856bd1f1c711749a56c073482de86",
+    "doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table-final.md": "f304a8f7d9d6ef2786d4fa98e2c7d28c1ddddf162dfafe718d9f9c7ff3782731",
+    "doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table.md": "27c9fd3da049f87c33979afcb3b581cb00bde7b9339cc6fe95748d67b33e8c5b",
+    "doc/benchmarks/2026-09-30-item7-review-round4/README.md": "57a1208faf10b98c8ed5f9e6b2d35daebf55c0a67e3218ce2f72d5f8cc37c209",
+    "doc/benchmarks/2026-09-30-item7-review-round4/ae-candidate/table.md": "e1ce13505ec76569336b712b98754595b852317c2e71efed93728dbafd339a4c",
+    "doc/benchmarks/2026-09-30-item7-review-round4/ae-head/table.md": "a955b6b7a909136f7fbcc752d6b87adae062a125e341c4efd99dbce92b291407",
+    "doc/benchmarks/2026-09-30-item7-review-round4/af-candidate/table.md": "e40b9ea52c0de9b28df341aaeb9eea8d8f9ff4aadd8c07b207adf60bbf3f2abe",
+    "doc/benchmarks/2026-09-30-item7-review-round4/af-head/table.md": "6823579394ebf5a8ece335594242b48d60b654ed730faa9d6b230620b587d82b",
+    "doc/benchmarks/2026-09-30-item7-review-round4/ah-candidate/table.md": "43f3955029eaa499108036b64ab4b795b13d3acf92682306552fee878bc8d8ff",
+    "doc/benchmarks/2026-09-30-item7-review-round4/ah-head/table.md": "e9d342ad9f402b7075df13508e620e022f80736f854f06274a47e20a79d038d8",
+    "doc/benchmarks/2026-09-30-item7-review-round4/ai-candidate/table.md": "665664fc0bfd46a3eb7969e58500dda0cf26fac7c9d6ee5bbd98cacd6d4a4e05",
+    "doc/benchmarks/2026-09-30-item7-review-round4/ai-head/table.md": "b71bacf31a982f71acac727eb042a7b3cd7e9a0dfd7f3d7a05ef2ae40dda4ee8",
+    "doc/benchmarks/2026-09-30-item7-review-round4/baseline-candidate/table.md": "7fdf330495a97612f72d6aa5d635d52735cee83e7938fcde86e7befc9bdc5672",
+    "doc/benchmarks/2026-09-30-item7-review-round4/baseline-head/table.md": "1aa1cbc17775354ffee1eca51f5dec60073b40adae3870e85c12079f7ff108bb",
+    "doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-table.md": "8eb357e76f6be174013697daf8af7d9d0c3bc16c8ef6e12a96e20b6e5e4d2746",
+    "doc/benchmarks/2026-09-30-item7-review-round4/final-reconstruction-table.md": "60b79122014f63e1bc70fe815ae836319839a86288cdcbc7db32e2c92647d047",
+    "doc/benchmarks/2026-09-30-item7-review-round4/final-xor-head/table.md": "2fddbafac5a3eefae5c64e21bf34fe598d207e42554a4c46a21902601d62fc0b",
+    "doc/benchmarks/2026-09-30-item7-review-round4/final3-xor-candidate/table.md": "cddf13df102856760af15f9c3da137aab59cb32a32fa17f5e9d7c51aa1056fd5",
+    "doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/comparison.md": "2599e8f31c073633d7a54c9411714082d5c2f615ff1d20aac8bf14fd38e5c556",
+    "doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md": "ddae82e7add6937fb11f587f92b07ecba49b0bec4b312fd7db144a9e107910df",
+    "doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/findings-in-progress.md": "62007dedee3a2f72340b71b20b37489248efd3f18b3d9a472a07682a5135eaed",
+    "doc/benchmarks/2026-09-30-item7-review-round4/memory-owners.md": "ea77dde367862622576f8d4558f62116791696bae58a592e28c819d5fe377820",
+    "doc/benchmarks/2026-09-30-item7-review-round4/review-map.md": "ca59ace1deedb8b2ecf1b5fec8c201dd039f510b675d15fd5c22d038c2e04bb0",
+    "doc/benchmarks/2026-09-30-item7-review-round4/xor-ae-comparison.md": "553ed22159f68ad51d58f7fa751430a49d37262b8ce4daec30c56915721c6ac0",
+    "doc/benchmarks/2026-09-30-item7-review-round4/xor-af-comparison.md": "479367479c13a97ee69ec341065ea5fa97218b3f391f865fc82ac646a56aef67",
+    "doc/benchmarks/2026-09-30-item7-review-round4/xor-ah-comparison.md": "4ae3554464ab9127f62c978fb11190603ad17481f05cf9662056a7ac60c39acd",
+    "doc/benchmarks/2026-09-30-item7-review-round4/xor-ai-comparison.md": "8789a208cd01260a5630efa49bc0ef8c3dd1ea8bb8f9839d4d3cd7281a8f9a82",
+    "doc/benchmarks/2026-09-30-item7-review-round4/xor-baseline-comparison.md": "c9a8e847d08ee53238772dfeef719c46fde8ae5cb1abb7744f4cdfe24760d7a3",
+    "doc/benchmarks/2026-09-30-item7-review-round4/xor-final-comparison.md": "24b3a53da6f2098b4785fdb01af49899c90f29fd1068b5b7e460b39d46d4b75d",
+    "doc/benchmarks/2026-09-30-item7-review-round4/xor-z-comparison.md": "f22661cc5f412d61c1c74bb333cad76ed176f16d9f97fceba64f5038d24af5ab",
+    "doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/table.md": "5f87db8105865e60179f1a3922942e29ac8f95b7a9fce9210b883efd455ebc4e",
+    "doc/benchmarks/2026-09-30-item7-review-round4/z-head/table.md": "b0193dcc5dd4b38a55cbed6f6cdeca77e8807ac9d12e090f88f37807dfccdb10",
+    "doc/benchmarks/2026-09-30-item7-review-round4/z-mm-grammar-table.md": "82e2710d51b90c857a7a0a896c6e02d6488e8f1259aaba04947fd4a6b27d45c0",
+    "doc/checkpoints/2026-09-17-production-spec/README.md": "6cb41932e32e6721c39a0c90d1bb2896233d187b2f9c697d1c065ee47bb871a8",
+    "doc/plans/2026-07-16-sparse-subspace-carrier-design.md": "e1b9d4af02fb65015dd2f12ffe5d22ffb02e568cf303fe6e016134b395fa026e",
+    "doc/plans/2026-09-08-what-spec-deliverables.md": "2e72c22ff72dc610a1e18ca9e49cfd625524e3d5ce28248865f9db4f2b468cd0",
+    "doc/plans/2026-09-09-mathematical-thinking-codex-draft.md": "e150dd8e5e5ccc9740f556b46ebaa07c82ec343171a21e8fd36ede97963ef830",
+    "doc/plans/2026-09-09-mathematical-thinking.md": "9aa3bae5c05d4466686f4770e9bc9ebd9656529558e708a80be11477d210460d",
+    "doc/plans/2026-09-10-meronomy-fold-ladder.md": "68b3b8cb50471c4934b72cde504b90c1607592358f1a4db3fa80e0d0f5a12b13",
+    "doc/plans/2026-09-12-compiled-reverse-loops.md": "37032a782384471e9963762327fa0f9a000da52809eb314118366a53507d77a8",
+    "doc/plans/2026-09-14-answer-path-ownership-and-training.md": "c6d063bc7159ef1817d5595a5b18a62b7e5862e3a10a4ceaf285d8d01532694f",
+    "doc/plans/2026-09-15-next-sentence-as-the-production-objective.md": "3b5d901a3499ac8aba19d74d9d27e312b8650f3cf8d97eb8199e9027695092f4",
+    "doc/plans/2026-09-17-bounded-fixture-reuse.md": "a42eac511529ea2d3e48ce97c8fb8bbc81c10ad6d271a056fab9e152559c5441",
+    "doc/plans/2026-09-18-thought-operator-unification.md": "6f663dcc8fba094d2259e1ab47bf90669c613b67eb52b335c9659b38bb2f547c",
+    "doc/plans/2026-09-20-selected-thought-completion.md": "2277252b38950b98a4e780397e5bd2dfcbde700606080e34d844acce1059308e",
+    "doc/plans/2026-09-24-item-11c.md": "50a5f6404895be287eab4a25d1899aac6088966f4b71dbb4c54e9d1c950c9105",
+    "doc/plans/2026-09-25-item-9b-mode-sharing-and-interpret.md": "b4b1ce16c615555c8a44a09b7dac9a9f1ea10a78cd1e0fb200ca01f094dcdaa6",
+    "doc/plans/2026-09-27-item-6-8-one-attention.md": "1cbeff39383775a24cf4e494411e8e07e832985b213a9c332e3b9f1eec3db84f",
+    "doc/plans/2026-09-29-item-6-9-xor-grammar.md": "bdd69fe05b5c7f39d072909b80a09bfb5cfe7544fe2d5db6fbd1d17a6f66bf2d",
+    "doc/research/2017-jang-gumbel-softmax.md": "52c306355413a54e1c76f51f6d6694cb3d0632dd53cc4e39e6c6c86588cb928c",
+    "doc/research/2019-kim-compound-pcfg.md": "47ab120af4780d6279d22398c3c7cf3f03d7285e6486bfaa0a3fef8aef2304d6",
+    "doc/research/2022-yang-rank-space-pcfg.md": "948a31ea98cb073d36416844faac699a52f8f86f9d7e23686c95a5bd5586dae1",
+    "doc/research/attention.md": "4bf596a45e887a631f55e23913004305dde8a91120788a10a7e12ec7154e677e",
+    "doc/research/forest-regularization.md": "2a11ed7b14fecfc6eb3f8d07abf5864baa0fd912bf093c84e3a80955c753b56b",
+    "doc/research/three-surfaces.md": "291d025e96a163d78592a9408b4bcc5251f81a0c156a685e1fb02c8862b89986",
+    "doc/specs/2026-07-27-teaching-modes-and-next-iteration.md": "2b2cbc98a91397dc444e55d97e6b7cc2e04a5dd0edf9c18a1019e4d37946d4ea",
+    "doc/specs/2026-09-09-mathematical-thinking.md": "1d2a4b0a5102a163ad056c837ad045df46fdf6d285be437b929a56824894fa2e",
+    "doc/specs/2026-09-11-sentence-boundary-thinking.md": "f3988b97827f69cb190879e21a98d381cfeaa7580cef228070eac1a5594820ef",
+    "doc/specs/2026-09-16-forgetting.md": "88b3ef73e8076f929b8a14218bb89d32fc0e4e400e7869ba10d81d0123e91081",
+    "doc/specs/2026-09-16-two-truths-ideas-and-relations.md": "635c724f65195d119cac5f74609b890a59c9b8f2d0224b963cdc6a164bad9e7c",
+    "doc/specs/2026-09-18-thought-operations-in-compose.md": "8c688ddc985621d342a0f1901e4ab13ad42773e0756caeb61b0472c89ff65e47",
+    "doc/specs/2026-09-20-accessible-mind-subsystems.md": "da0427124e612dcc68ebd5c38f41fa896d376e5e334044da7508dbbf8fb4d3fb",
+    "doc/specs/2026-09-26-independent-components.md": "60c7b95675ca575a0cd7d3fd6a16b2ec25039e705a1787bc869ae39d9dda62b9",
+    "doc/specs/2026-09-26-one-operation-per-round.md": "0e1d7db12316f63c83d88abc77ba276772357ef38f3ee5b98db4885bd15c71b2",
+    "doc/specs/2026-09-29-operator-catalogue.md": "8f61ebe3e80824d90419028cb0ff3676693b591de219c830eefc486bc2faa72c",
+    "doc/specs/2026-09-30-occurrence-tense-aspect.md": "267037bbffb3058ff2c0dc3bd81a69df6f150ae91a81533147047c511dc0f082",
+    "README.md": "9ab78dae803b668d09df978e56ccdc6cc605a9055eee9073d695525f6da5a674",
+    "todo.md": "56ce7a1c9a31bfe2a5092727889483a16ab381dc8bf3eb10e7ad51fe3b060c0f"
+  }
+}

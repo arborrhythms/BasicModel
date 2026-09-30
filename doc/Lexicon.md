@@ -9,57 +9,17 @@ Analysis appears when word/object rows are bound into the part/whole concept
 order; DisCoCat appears when those lexical vectors participate in typed grammar
 reductions rather than only in distributional similarity.
 
-> **2026-05-29 deltas:**
->
-> - **Two-codebook split (Stage 8, 2026-05-27).** PartSpace owns
->   the orthographic Lexicon Embedding (`PS.subspace.what`, learned
->   surface-keyed); WholeSpace owns a separate VQ-quantized
->   prototype Codebook (`SS.subspace.what`). The two are bound
->   per-row via the META cross-codebook taxonomy
->   (`(ps_row, ss_row) -> meta_row`), populated by
->   `ConceptualSpace._maybe_autobind_meta` at stage 0.
-> - **LBG-style splitting on SS codebook (2026-05-29 Task C).** The
->   SS Codebook is updated under Gray (1990) EMA with per-row
->   running-variance tracking. When a row's per-coordinate variance
->   exceeds a threshold, it splits along the unit-norm **mean
->   displacement** direction (the principal "pull" the accumulated
->   binding vectors exert on the row --- no eigendecomposition or SVD
->   involved); new prototypes are seeded around the parent
->   $\pm \varepsilon \cdot \hat{d}$, where $\hat{d}$ is that unit
->   displacement direction. EMA continues independently on each
->   child. This replaces the previous random-direction VQ init,
->   which landed too many prototypes in degenerate basins on
->   small-codebook configs.
-> - **Embedding unit-ball normalization in train loop.** PS's
->   Embedding is unit-ball-projected via `Lexicon.normalize()` after
->   each `optimizer.step()` so joint training doesn't drift the rows
->   off the ball.
-> - **PartSpace's VQ snap is hardwired off.** PartSpace's `<codebook>`
->   element was retired from the schema (2026-06-09 asymmetric-VQ
->   plan): PS is unconditionally `codebook_mode="none"` in code, not
->   via an XML tag, so the butterfly cascade weights actually train.
->   `MM_xor.xml` carries no `<codebook>` tag at all; `XOR_exact.xml`
->   does set `<codebook>none</codebook>`, but that tag is on
->   `WholeSpace`, not PartSpace. The orthographic Lexicon Embedding
->   remains live regardless; only the VQ snap on top is retired.
-> - See the 2026-05-29 clean-stack STM/basis-arg RadixLayer proposal.
+PartSpace owns the orthographic lexicon and its embedding APIs. ConceptualSpace
+owns word-concepts, object-concepts and their native reference index.
+WholeSpace is only the learned property basis: it owns no word dictionary,
+META dictionary or grammar decoder. Grammar composition and generation share
+the operations declared in SymbolSpace.
 
-The Lexicon's narrative description and distance math have moved into
-[Spaces.md --- Lexicon (Projective Unit Ball)](Spaces.md#lexicon-projective-unit-ball),
-co-located with the Codebook Similarity Metric and the per-space
-geometry discussion (PartSpace, ConceptualSpace, WholeSpace).
-
-> **Lexicon ownership: API on WholeSpace, physical Embedding on
-> PartSpace.** Post-2026-05-12 the orthographic-lexicon **API**
-> (the `vocabulary` property, `train_embeddings`, `sbow_loss`,
-> `reconstruct_data`, `reconstruct_to_buffer`, `get_recovered_word`,
-> `_snapshot_embeddings`, `set_embedding_sigma`) lives on
-> `WholeSpace`. The Embedding *tensor* still lives on
-> `PartSpace.subspace.what` because `InputSpace`'s
-> `_peer_perceptual.vocabulary` wiring at the lexer is too deeply
-> integrated to relocate without a separate refactor. S accesses the
-> Embedding via its `perceptualSpace_ref` back-reference. The full
-> codebook-as-lexicon physical unification is a deferred follow-up.
+The Lexicon's distance math is described in
+[Spaces — Lexicon (Projective Unit Ball)](Spaces.md#lexicon-projective-unit-ball).
+PartSpace's VQ snap is disabled; its orthographic embedding remains trainable.
+After an optimizer step, its normalization projects the rows onto the unit
+ball.
 
 > **BPE as the option-flipped lexicon mode.** `<synthesis>bpe</synthesis>`
 > on PartSpace makes the chunker produce byte-aligned BPE units
@@ -70,11 +30,11 @@ geometry discussion (PartSpace, ConceptualSpace, WholeSpace).
 
 ## Word forms and concept orders
 
-A form addresses a set of persistent concept ids across orders.
-`ConceptAllocator.word_forms` keeps those associations; `bind_word_concept`
-records an observed association to an existing identity. Word admission and
-surface association write this index, and checkpoints preserve it. There is
-no fixed order per spelling and no permanent attended row identity.
+A form or fused unit resolves to its word concept through the index derived
+from `REL_DEF` rows. The same index resolves word → objects and object → words;
+no lookup scans or compares learned vectors. It rebuilds from the common
+store on load and after compaction. There is no fixed order per spelling
+and no permanent attended row identity.
 
 Order counts symbolizations: order 0 is an event in the attentive field;
 order 1 is a particular, named (*Felix*) or unnamed (*the cat*), whose
@@ -84,23 +44,25 @@ these concepts; lexical resolution never invents a missing one.
 
 Item 9b names the operator that performs this resolution: `interpret`
 ([Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25)),
-the default per-word step of serial mode, from the word-concept PartSpace
-looked up to its associated object-concept. An existing association wins at
+the mandatory per-word step under every binding, from the word-concept
+PartSpace looked up to its associated object-concept. An existing association wins at
 its existing order, including a kind. If several objects are associated with
 the word, grammar can resolve the ambiguity. If none exists, interpretation
-mints a provisional object whose only literal is the naming occurrence;
-the new object's default order is 1, unless grammar requests another order.
-A missing particular is not a reason to add one beside a known kind.
+replaces the word by its object in that same inventory row, without raising
+its order. A new word costs two identities, one inventory row and one DEF
+row. The word retains its parts and wholes; the object's row carries the
+learned content. Neither is a part of the other merely because they are
+linked. A missing particular is not a reason to add one beside a known kind.
 
-`InterpretLayer` consults both witnessed associations and earlier testimony
-before minting. Its `(word identity, object order)` index records an association;
-it is not a request to allocate every missing word/order combination.
-Repeated reads of the same observation count
-once. A recurring provisional object is admitted at the existing participation
-threshold; an unused one-off below the recycle threshold is retired at a later
-boundary. Retirement removes it from future knowing while preserving its
-identity-to-word inverse for programs already captured. No spelling heuristic
-or surface-to-operator anchor decides the reference order.
+`InterpretLayer` reserves capacity before the transaction and is the only
+writer of definitions. Reading identical canonical parts is a lookup,
+even when their property evidence has changed. Where the field discovers
+objects by recurrence, interpretation uses the case the field admits.
+The definition's `.when` stays fixed and its recency timestamp refreshes.
+If forgetting deletes the DEF row, both lookup directions lose that pair;
+reading the word again interprets it afresh. No spelling heuristic or
+surface-to-operator anchor decides reference order. See
+[item 7 §17](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
 
 A selected compose rule can declare `reference="I2:particular"` (the
 shipped determiner `lower`) or `reference="I2:pronoun"` (the shipped
@@ -110,14 +72,20 @@ not a token spelling. Proper-name and generic contexts therefore resolve
 through their selected grammar, without capitalization rules or word lists.
 Inner reference phrases retain their choice when an outer rule requests an
 order. A unique association at that order is selected; a carried referent
-can disambiguate it. A new order-1/2 referent is minted through `interpret` only when the word
-has no existing object; unresolved competing particulars remain unknown. Other unsupported orders remain unknown.
+can disambiguate it. A missing particular never causes a downcast from a known
+kind. Raising a source to a higher order uses its existing sigma chain or
+admits a singleton through the concept index.
 
-At program capture the selected identity and order are owned beside the
-original word references. Meaning recovery consumes the resolved identity
-and its conceptual payload. The captured leaves and input concept ids remain
-the tied reconstruction's provenance. Pronouns select particulars, never
-kinds. Symbolizing a particular does not also symbolize its kind.
+A candidate's declared noun references are resolved before its numerical
+operation runs. Particular and pronoun choices are limited to earlier live
+constituents and the predictor's bounded situation; pronouns never select
+kinds. The hard choice retains the softmax gradient. A completed row stores
+its end-state values and references, not the operations or lexical leaves.
+The temporary reading record keeps the original reconstruction provenance
+and the selected operand values until the sentence ends, then is discarded.
+Reading a row into words uses the shared generation policy. Retrieval terms
+come from unfolding the row, limited by the symbolic activation already used
+for semantic priming; no sentence word list or activation snapshot is stored.
 
 ## Quick reference
 
@@ -165,8 +133,8 @@ backward compatibility, see
   `topk_rp_chunked` helpers.
 - [`bin/embed.py`](../bin/embed.py) --- SBOW training loop.
 - [Spaces.md](Spaces.md) --- full per-space geometry discussion, including
-  the contrast between the projective Lexicon (PartSpace,
-  WholeSpace) and ConceptualSpace's unit-direction codebook.
+  the contrast between PartSpace's projective Lexicon and
+  ConceptualSpace's unit-direction codebook.
 - [test/tools/bench_codebook_lookup.py](../test/tools/bench_codebook_lookup.py) ---
   performance comparison of the broadcast, matmul, pole-aligned, and
   chunked-wrap forms.

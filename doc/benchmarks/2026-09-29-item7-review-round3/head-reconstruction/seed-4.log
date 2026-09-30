@@ -1,0 +1,28 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 25.00%)
+batch = 2 (Δ=30.676s, 50.00%)
+batch = 4 (Δ=0.441s, 75.00%)
+batch = 6 (Δ=0.359s, 100.00%)
+runEpoch(validation): hit max_batches=4 cap; cursor exiting early (4 batches processed, ds.all_done=False).
+Training throughput: 4 batches in 186.282s; word units 91.7% of 24 words (letters-only 100.0% of 8).
+batch = 0 (Δ=650.331s, 14.29%)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  return func(*args, **kwargs)
+batch = 2 (Δ=1.780s, 28.57%)
+batch = 4 (Δ=1.493s, 42.86%)
+batch = 6 (Δ=1.664s, 57.14%)
+batch = 8 (Δ=1.387s, 71.43%)
+batch = 10 (Δ=1.374s, 85.71%)
+batch = 12 (Δ=1.599s, 100.00%)
+runEpoch(train): hit max_batches=7 cap; cursor exiting early (7 batches processed, ds.all_done=False).
+Training throughput: 7 batches in 659.631s; word units 88.1% of 42 words (letters-only 100.0% of 14).
+batch = 0 (Δ=0.371s, 25.00%)
+batch = 2 (Δ=0.400s, 50.00%)
+batch = 4 (Δ=0.409s, 75.00%)
+batch = 6 (Δ=0.358s, 100.00%)
+runEpoch(validation): hit max_batches=4 cap; cursor exiting early (4 batches processed, ds.all_done=False).
+Training throughput: 4 batches in 1.533s; word units 91.7% of 24 words (letters-only 100.0% of 8).
+{"phases": [{"name": "before_training", "steps": [{"reconstruction": 0.09262026101350784, "answer": 0.04600714519619942, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 154.80785091698635}, {"reconstruction": 0.09695214778184891, "answer": 0.04704642668366432, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 30.675668083014898}, {"reconstruction": 0.09984360635280609, "answer": 0.05012758448719978, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.4411844579735771}, {"reconstruction": 0.09084475040435791, "answer": 0.06802064925432205, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.35858604207169265}], "reconstruction_mean": 0.09506519138813019, "sentences_per_second": 0.042945344273609694, "thought_calls": 0}, {"name": "training", "steps": [{"reconstruction": 0.11217016726732254, "answer": 0.047615647315979004, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 650.3362472089939}, {"reconstruction": 0.11038180440664291, "answer": 0.04325692355632782, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 1.777182124904357}, {"reconstruction": 0.09380403161048889, "answer": 0.05295094475150108, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 1.4928817501058802}, {"reconstruction": 0.09438492357730865, "answer": 0.04351946711540222, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 1.6648652909789234}, {"reconstruction": 0.10024149715900421, "answer": 0.05000416934490204, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 1.3860769999446347}, {"reconstruction": 0.10607776045799255, "answer": 0.05851592496037483, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 1.3748075000476092}, {"reconstruction": 0.11663034558296204, "answer": 0.04624322056770325, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 1.5995197090087458}], "reconstruction_mean": 0.10222771167755126, "sentences_per_second": 1.3301142351832687, "thought_calls": 0}, {"name": "after_training", "steps": [{"reconstruction": 0.10116640478372574, "answer": 0.0505475252866745, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.3667643750086427}, {"reconstruction": 0.10580582171678543, "answer": 0.050320547074079514, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.4006322920322418}, {"reconstruction": 0.10928472131490707, "answer": 0.04613230377435684, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.40985162497963756}, {"reconstruction": 0.09170565754175186, "answer": 0.053809184581041336, "thought_calls": 0, "thought_work": 0, "execute_records": 0, "seconds": 0.3565704169450328}], "reconstruction_mean": 0.10199065133929253, "sentences_per_second": 5.2157402652855875, "thought_calls": 0}], "dictionary_parameter": false}

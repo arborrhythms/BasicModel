@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_area_in_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_higher_for_closer_points",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_in_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_consistent_field_near_area",
+    "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_in_signed_unit_interval",
+    "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_isa_part_gradient",
+    "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_luminosity_gradient",
+    "test/test_conceptual_introspection.py::TestSTEWrapper::test_backward_routes_to_query",
+    "test/test_conceptual_introspection.py::TestSTEWrapper::test_forward_returns_answer",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_arity_metadata",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_forward_shapes",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layer_classes_parked_in_legacy",
+    "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layers_lossy"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-272.recycle.json"
+}

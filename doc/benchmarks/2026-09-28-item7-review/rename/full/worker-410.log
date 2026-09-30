@@ -1,0 +1,10 @@
+.......F                                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_seventh_source_is_location_masked_and_unbind_ignores_ss _________
+test/test_prior_stm_symbol_peer.py:279: in test_seventh_source_is_location_masked_and_unbind_ignores_ss
+    assert WholeSpace._normalize_fold_support(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'WholeSpace' has no attribute '_normalize_fold_support'
+=========================== short test summary info ============================
+FAILED test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss
+1 failed, 7 passed in 2.30s

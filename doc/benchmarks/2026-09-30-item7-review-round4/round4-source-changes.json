@@ -1,0 +1,26 @@
+{
+  "changed_files": [
+    "bin/ConceptIndex.py",
+    "test/test_item7_nested_references.py",
+    "bin/Language.py",
+    "test/test_output_path_supervised.py",
+    "test/test_reduction_pressure.py",
+    "test/test_item7_property_cache_release.py",
+    "bin/PerceptProperties.py",
+    "bin/Models.py",
+    "bin/Spaces.py",
+    "test/test_item7_property_read_storage.py",
+    "test/test_item7_selected_property_rows.py",
+    "test/test_item7_closing_identities.py",
+    "test/test_order0_attended_field.py",
+    "test/test_item7_predicate_storage.py",
+    "bin/ClauseRow.py",
+    "test/test_sentence_expectation.py",
+    "bin/Interpret.py",
+    "test/test_item7_point_owners.py",
+    "bin/ClauseJournal.py",
+    "test/test_item7_taxonomy.py",
+    "test/test_word_store.py"
+  ],
+  "configuration_changes": []
+}

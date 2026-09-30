@@ -64,30 +64,6 @@ def test_symbolic_nwhat_equals_ndim():
     assert sym.nWhat == sym.nDim - sum(canonical_shape("WholeSpace"))
 
 
-def test_symbolic_references_parameter_attached_via_knowledge():
-    """The new scalar-only path lives on ``WholeSpace.references``,
-    created when ``attach_knowledge`` fires. The codebook stays the
-    legacy ``.what.W`` Parameter; consumer migration from ``.W`` to
-    ``references`` is the remaining narrow-bivector-retirement work."""
-    from Language import Grammar
-    from embed import build_knowledge_section, KnowledgeView
-    ss = _make_word_space(symbolDim=4)
-    sym = ss.wholeSpace
-
-    g = Grammar()
-    g.rules = [
-        g._parse_rule("NP", "conjunction(DET, N)", space_role='SS'),
-        g._parse_rule("S", "disjunction(NP, VP)", space_role='SS'),
-    ]
-    g._configured = True
-    view = KnowledgeView(build_knowledge_section(g))
-    sym.attach_knowledge(view)
-
-    # references is the scalar-only Parameter the plan envisions as the
-    # eventual replacement for .what.W
-    assert hasattr(sym, 'references')
-    assert isinstance(sym.references, nn.Parameter)
-    assert sym.references.ndim == 1
 
 
 def test_symbolic_activation_carries_bivector():

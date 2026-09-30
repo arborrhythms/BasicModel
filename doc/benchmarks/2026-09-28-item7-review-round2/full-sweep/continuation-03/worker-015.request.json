@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_stm_relative_sentence_end_state.py::test_relative_sentence_reduces_to_depth_three"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-015.recycle.json"
+}

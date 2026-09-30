@@ -24,7 +24,8 @@ def test_exist_executor_keeps_all_roles_and_conflicting_fact_sources():
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
     store = TernaryTruthStore(8)
-    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref))
+    from index_fixtures import one_hot_unfold
+    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), unfold=one_hot_unfold)
     idea = replace(_meaning(), role_refs=refs)
     first = store.append_meaning(idea, kind="fact", trust=0.6)
     second = store.append_meaning(idea, kind="fact", trust=-0.4)

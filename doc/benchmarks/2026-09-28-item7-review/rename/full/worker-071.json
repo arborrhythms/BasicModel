@@ -1,0 +1,173 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+    "test/test_item9b_followup.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_item9b_followup.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+    "test/test_item9b_followup.py::test_interleave_epoch_reads_a_short_final_group_once",
+    "test/test_item9b_followup.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+    "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+    "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher",
+    "test/test_item9b_followup.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+    "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+    "test/test_item9b_followup.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_item9b_followup.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+    "test/test_item9b_followup.py::test_interleave_epoch_reads_a_short_final_group_once",
+    "test/test_item9b_followup.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+    "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+    "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher",
+    "test/test_item9b_followup.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+    "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 66.26137545902748,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 116.57094704196788,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014941697008907795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001282125012949109,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_epoch_reads_a_short_final_group_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.768718375009485,
+      "message": "",
+      "stdout": "Training throughput: 3 batches in 9.482s; word units 100.0% of 18 words (letters-only 100.0% of 18).\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 37.42504408303648,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7840/test_interleave_checkpoint_res0/pending.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7840/test_interleave_checkpoint_res0/pending.ckpt\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002496249508112669,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017470796592533588,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001222500577569008,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.27560625004116446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6728980420157313,
+      "message": "",
+      "stdout": "Training throughput: 1 batches in 0.392s; word units 100.0% of 6 words (letters-only 100.0% of 6).\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028208293952047825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001604999415576458,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015379209071397781,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014729099348187447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.29017129202838987,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

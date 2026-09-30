@@ -1,0 +1,68 @@
+--- before/bin/PerceptProperties.py
++++ after/bin/PerceptProperties.py
+@@ -29,6 +29,42 @@
+     lo = spans[..., :1].expand(-1, -1, 256)
+     hi = spans[..., 1:].expand(-1, -1, 256)
+     return prefix.gather(1, hi) - prefix.gather(1, lo)
++
++
++class _PropertySupportRead(torch.autograd.Function):
++    """Min/max over observed bytes without retaining the broadcast product.
++
++    Autograd's reduction saves every event/property/byte value. Recompute
++    that bounded workspace in backward instead, including neutral-byte ties
++    so the gradient is exactly the dense amin/amax gradient.
++    """
++    @staticmethod
++    def forward(ctx, weights, present, conjunctive):
++        chunks = []
++        for start in range(0, weights.shape[0], 256):
++            values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
++                                 1. if conjunctive else 0.)
++            chunks.append(values.amin(-1) if conjunctive else values.amax(-1))
++        result = (torch.cat(chunks, -1) if chunks else
++                  weights.new_empty((*present.shape[:-1], 0)))
++        ctx.save_for_backward(weights, present, result)
++        ctx.conjunctive = conjunctive
++        return result
++
++    @staticmethod
++    def backward(ctx, gradient):
++        weights, present, result = ctx.saved_tensors
++        chunks = []
++        for start in range(0, weights.shape[0], 256):
++            values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
++                                 1. if ctx.conjunctive else 0.)
++            ties = values == result[..., start:start + 256, None]
++            share = gradient[..., start:start + 256, None] / ties.sum(-1, keepdim=True)
++            credited = torch.where(present.unsqueeze(-2), share * ties, 0.)
++            if present.ndim > 1:
++                credited = credited.sum(tuple(range(present.ndim - 1)))
++            chunks.append(credited)
++        return (torch.cat(chunks, 0) if chunks else torch.zeros_like(weights)), None, None
+ 
+ 
+ class PrimitiveProperties(nn.Module):
+@@ -97,9 +133,7 @@
+             weights = 1 - weights
+         # Counts identify the observed support. Repeating a primitive does
+         # not change its membership or make a long run less of a whole.
+-        values = torch.where(counts.to(weights).unsqueeze(-2) > 0, weights,
+-                             1. if conjunctive else 0.)
+-        result = values.amin(-1) if conjunctive else values.amax(-1)
++        result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+         return result * (counts.sum(-1, keepdim=True) > 0).to(result)
+ 
+     def reverse(self, evidence):
+--- before/bin/Models.py
++++ after/bin/Models.py
+@@ -15708,7 +15708,8 @@
+ 
+         for mod in self.modules():
+             for tn in ("_live_buffer", "_last_output", "_last_root_state",
+-                       "_intent_boosts", "_stage0_recon_loss"):
++                       "_intent_boosts", "_stage0_recon_loss",
++                       "_stage0_property_membership"):
+                 _sever(mod, tn)
+             rs = getattr(mod, "routing_state", None)
+             if rs is not None:

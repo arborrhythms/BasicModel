@@ -157,25 +157,20 @@ inspectable separation between:
   `LanguageLayer`), and
 - **pipeline timing** (`LanguageSpace`).
 
-`SymbolSubSpace.reconstruction_stack` is the sole owner of the detached
-sentence-construction teacher. It retains the exact radix spelling of every
-word (`[B,W,P]` IDs plus mask), optional durable concept IDs, the exact percept
-leaves, and the committed grammar rule IDs/arities. The complete compiled
-sentence loop carries fixed tensor slots (two binary opportunities and one
-unary opportunity per capacity position, followed by the bounded drain), but
-its `torch.while_loop` writes only live word positions. Dense surface targets
-are copied at the eager lexical boundary, outside capture. The compatibility
-K=1/K=2 word cell writes the same fixed local layout; its eager adapter remaps
-that slab into sentence-global slots without putting a changing chunk offset
-in the compiled graph.
-The old `BasicModel._stm_pre_reduce_slab`, `_stm_reduce_op_trace`, and
-`_stm_trace_sentence_scope` caches no longer exist. These records are detached
-targets for the statically registered `ReverseConstructionChooser`; the
-chooser's only semantic input is `stopgrad(S)`. It predicts active
-unary/binary slots, global rule IDs, and exact percept leaves. Compatibility
-evaluation may still replay the trace, but canonical training does not: no
-reverse loss derivative crosses back into the completed idea or its recurrent
-construction.
+`SymbolSubSpace.reconstruction_stack` holds the temporary reading record:
+selected operations, actual operands, native references and the owned spelling
+targets. Each word has three fixed operation-round slots, followed by a bounded
+closing budget. Every round chooses from both arities through the same softmax;
+there is no separate unary pass. The compiled loop masks inactive words and
+publishes the actual end state explicitly.
+
+The sentence driver uses this record for tied reconstruction and the explore
+path's forced deviation. Reconstruction keeps the chosen-path gradient live;
+targets and durable memory are detached. After both trials train, only the
+chosen end state is committed and the operation record is cleared. The LTM row
+and completed `Understanding` contain no reading program, leaves or spelling
+snapshot. Output and retrieval-index unfolding generate from the occupied
+state and the model's current grammar.
 
 When `forwardGrammarWeight` is nonzero, the same fixed trace layout also
 carries a bounded local loss for each committed fold. Unary and binary layers
@@ -496,7 +491,7 @@ complement but no additive inverse: `x + (1 - e)` leaves `[0,1]`, and nothing
 added to a presence cancels it. Expectation enters the mind as a
 *negative image*, the sign-reversed predicted idea added to what was composed,
 so it cannot be formed over percepts or over the order-0 presence field; it
-is formed over the sealed idea, at order 1 and above, where the signed carrier
+is formed over the ended idea, at order 1 and above, where the signed carrier
 exists. Sensation is therefore never subtracted from. What the unsigned
 carrier does support is withdrawal, the non-affirming `non`, and that is how
 attention works here: the reading scope and the priority surface exclude
@@ -1176,7 +1171,7 @@ optimizer identities, not a second checkpoint copy.
 
 The concept allocator also owns ordered constituent records. Existing word,
 object and chain writers remain until item 7 replaces the sequence and
-object-testimony path with the two-truths seal. There is one concept row
+object-testimony path with the two-truths closing. There is one concept row
 inventory, with conjunctive or disjunctive parts, not different row kinds.
 `symbolicOrder=0` disables this parallel cutover; aligned serial grammar
 continues to use its own event/STM path.
@@ -1185,7 +1180,7 @@ continues to use its own event/STM path.
 presence gate. The conceptual knowing field is the separate paired
 `_concept_activations` tensor, whose occurrence axis is retained in the
 checkpoint and whose two poles travel through thought effects and the SS
-leg. Serial idea vectors and the pending item-7 LTM seal have their own
+leg. Serial idea vectors and the pending item-7 LTM closing have their own
 contracts; neither is a substitute for this paired field.
 
 **MASK on `SubSpace._active`.** Two orthogonal per-position tensors:
@@ -1197,38 +1192,32 @@ contracts; neither is a substitute for this paired field.
 | Aligns with `out.shape[-1]` (feature axis) | Element-wise multiply on output |
 | Aligns with `out.shape[-2]` (position axis) | Zero masked rows of `_active`; `materialize()` gates downstream |
 
-### Word auto-bind deferred to `Reset` (fullgraph forward)
+### Eager word interpretation (fullgraph forward)
 
 The compiled per-batch forward (`BaseModel.enable_compiled_step`,
-`torch.compile(fullgraph=True)`) must carry **zero graph breaks**. Concept/META
-allocation and ConceptualSpace taxonomy updates are irreducibly host-side:
+`torch.compile(fullgraph=True)`) must carry **zero graph breaks**. Concept
+admission, DEF writes and ConceptualSpace taxonomy updates are host-side:
 `.item()` loops, Python dict/set mutation, and reserve activation cannot be
 traced safely. They therefore do not run inside the compiled forward. This
 allocation is entirely separate from any dynamic WholeSpace property growth.
 
-Instead (2026-06-03 refactor) it is **deferred to the sentence/document
-boundary**. `PartSpace._embed_radix` stashes the encountered percept
-ids (`_forward_input['indices']`) and the pre-pi seed (`_embedded_input`)
-during the forward --- a side-effect dynamo simply replays. On the next
-hard `ConceptualSpace.Reset` (fired on `hard_eos`, between sentences),
-`_commit_autobind_from_stash` reads that stash and performs the *same*
-allocation in eager Python. Same words, same SS rows --- only moved from
-mid-stage to the between-sentence reset, so a downstream tensor op in the
-same forward no longer sees a mid-forward codebook growth (verified
-behaviour-preserving across the radix / meta-taxonomy / `mm_xor`
-convergence suites). Whole-slab configs run one forward per sentence, so
-the stash is the whole sentence; a per-word/serial config commits the last
-forward's stash per reset.
+The June boundary refactor moved allocation out of the graph. The current
+item 7 reading calls the full `interpret` unary at its eager word boundary,
+under either binding. The canonical aligned serial path already has that
+boundary; the other readings use `_stage_reading_word_concepts` before
+entering their graph. Parts fuse first, and the object's row replaces the
+word's row. A new word reserves that inventory row and one common-store
+DEF row together. Repeated canonical parts are a lookup, even after learned
+property memberships move.
 
-Two smaller forward-purity fixes accompany it: `SymbolSubSpace._synthesize_
-rule_probs` normalizes branchlessly (`probs / row_sums.clamp_min(tiny)`
-instead of `if nz.any()`), and the fail-loud `isfinite` guards (here and in
-`insert_meta` / `record_lbg_pull`) are gated behind `util.MODEL_DEBUG` --- a
-constant the tracer folds away when off, so the data-dependent `.all()`
-host sync leaves the compiled graph while divergence still raises under
-`MODEL_DEBUG` runs and the eager finite-loss guard. (`BASIC_FULLGRAPH=0`
-relaxes the strict gate to enumerate any remaining breaks;
-`MODEL_COMPILE=eager` traces without the Inductor C++ backend.)
+`_commit_autobind_from_stash` still runs at the sentence boundary for its
+remaining work, including category-codebook updates and recognised words.
+Forcing interpretation does not disable those duties. The word-to-object
+link is an identity-based DEF row; the META fold and its APIs are retired.
+See [the definition contract](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
+
+`BASIC_FULLGRAPH=0` relaxes the strict gate to enumerate graph breaks;
+`MODEL_COMPILE=eager` traces without the Inductor C++ backend.
 
 ### ShortTermMemory
 
@@ -1331,10 +1320,10 @@ It is perceptual and therefore strictly upstream of concepts and symbols.
 - Dynamic property learning may add rows to this inventory. Its allocator and
   checkpoint policy are independent of ConceptualSpace capacity.
 
-WholeSpace does **not** own word meanings, concepts, META relations, taxonomy,
-grammar symbols, or symbol prototypes. Those old responsibilities migrated to
-ConceptualSpace (concepts/META/taxonomy) and SymbolSpace (downstream references
-and grammar dispatch). Consequently a WholeSpace state dict must not contain a
+WholeSpace does **not** own word meanings, concepts, definitions, taxonomy,
+grammar symbols, or symbol prototypes. ConceptualSpace owns the concept
+inventory and taxonomy; the common LTM store owns DEF rows; SymbolSpace owns
+downstream references and grammar dispatch. Consequently a WholeSpace state dict must not contain a
 tensor sized like the conceptual inventory merely because aligned binding is
 enabled.
 
@@ -1354,9 +1343,9 @@ rows mean.
 
 **Checkpoint boundary.** Schema-1 checkpoints used the same WS paths for
 concept/symbol prototypes and carried a second `analysis_store`. Schema 2 drops
-those semantically incompatible tensors instead of treating their leading rows
-as properties, and quarantines their host-side WS taxonomy state for explicit
-ConceptualSpace import. This migration never rewrites the source artifact.
+those semantically incompatible tensors and the retired WS taxonomy with a
+warning. Primitive properties start from their a-priori examples. This
+migration never rewrites the source artifact.
 
 See [Philosophy.md](Philosophy.md), [Logic.md](Logic.md),
 [Mereology.md](Mereology.md), and [Language.md](Language.md).
@@ -1398,19 +1387,15 @@ prototypes when its XML weights are enabled. See
 
 ## SyntacticSpace --- retired
 
-The standalone `SyntacticSpace` class has been retired. `WholeSpace`
-itself has no `compose` method — dispatch instead runs through two
-cooperating layers: `build_space_syntactic_layer`
-([`bin/Language.py`](../bin/Language.py)) constructs a per-space
-`SyntacticLayer` and stores it as `space.syntacticLayer` (one instance
-per PartSpace / ConceptualSpace / WholeSpace, registered with the
-`SymbolSpace` coordinator's host-layer registry), and the signal router
-`SymbolSubSpace.languageLayer` (a `LanguageLayer`) is the canonical
-parser — its `compose` / `generate` do the binary-derivation work the
-retired `SyntacticSpace` used to do. Words are still concepts encoding
-grammatical rules, and the derivation is still stored as word tuples ---
-just dispatched through `WholeSpace.syntacticLayer` /
-`symbolSpace.languageLayer` rather than living on a separate Space.
+The standalone `SyntacticSpace` class has been retired. LanguageSpace owns
+one operation-selection layer for compose, the serial STM reducer and the
+shared numerical grammar catalog. It chooses one binary or unary operation
+per round, with STOP eligible only when the sentence fits its row.
+
+WholeSpace supplies property memberships and has no word dictionary or
+symbolic compose path. The temporary reading record supports reconstruction
+and the forced explore deviation while a sentence is open. A completed row
+stores its one-slot or three-slot end state; readback generates from that state.
 
 See [Language.md](Language.md) for grammar and parser dispatch.
 

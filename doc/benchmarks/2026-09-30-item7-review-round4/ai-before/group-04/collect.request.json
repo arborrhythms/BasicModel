@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

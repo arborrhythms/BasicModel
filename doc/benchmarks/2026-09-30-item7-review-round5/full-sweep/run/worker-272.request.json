@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_corrections.py::test_large_registry_addresses_roundtrip_through_both_phases"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-272.recycle.json"
+}

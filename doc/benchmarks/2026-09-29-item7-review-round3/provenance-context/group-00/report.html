@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 7/7 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>2.1005261668469757</pre></td><td><pre>test/test_ltm_consolidation.py:693: in test_resubmit_replaces_user_rows_only
+    self.assertEqual(len(user_rows), 1, &quot;resubmit replaces, not appends&quot;)
+E   AssertionError: 3 != 1 : resubmit replaces, not appends</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.20805816701613367</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.22673870786093175</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.36137079098261893</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up, 50.00%)
+batch = 1 (Δ=0.072s, 100.00%)
+runEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=False).
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.24037204100750387</pre></td><td><pre>test/test_ltm_consolidation.py:643: in test_user_rows_land_alongside_provisioned
+    self.assertEqual(
+E   AssertionError: Lists differ: [1, 5, 8] != [0, 1, 2]
+E   
+E   First differing element 0:
+E   1
+E   0
+E   
+E   - [1, 5, 8]
+E   + [0, 1, 2]</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.23742312495596707</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.27901437506079674</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr></table></body></html>

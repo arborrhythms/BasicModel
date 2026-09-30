@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_item7_byte_columns.py",
+    "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

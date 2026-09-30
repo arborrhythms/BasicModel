@@ -1,0 +1,150 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_conceptual_recurrence.py::test_reconstruct_enum_retired",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_butterfly",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_dense_large_leading",
+    "test/test_conceptual_recurrence.py::test_mm5m_forward_finite_after_combine",
+    "test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip",
+    "test/test_conceptual_recurrence.py::test_no_recompile_fullgraph",
+    "test/test_conceptual_recurrence.py::test_combine_no_dropped_reverse",
+    "test/test_conceptual_recurrence.py::test_callosum_glue_init_average",
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "test/test_conceptual_recurrence.py::test_no_comprehension_seed_interface",
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+    "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards"
+  ],
+  "completed": [
+    "test/test_conceptual_recurrence.py::test_reconstruct_enum_retired",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_butterfly",
+    "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_dense_large_leading",
+    "test/test_conceptual_recurrence.py::test_mm5m_forward_finite_after_combine",
+    "test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip",
+    "test/test_conceptual_recurrence.py::test_no_recompile_fullgraph",
+    "test/test_conceptual_recurrence.py::test_combine_no_dropped_reverse",
+    "test/test_conceptual_recurrence.py::test_callosum_glue_init_average",
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "test/test_conceptual_recurrence.py::test_no_comprehension_seed_interface",
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+    "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards"
+  ],
+  "slow_selected": [
+    "test/test_conceptual_recurrence.py::test_reconstruct_enum_retired",
+    "test/test_conceptual_recurrence.py::test_mm5m_forward_finite_after_combine",
+    "test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip",
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+    "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_reconstruct_enum_retired",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 6.454100366681814e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptual_recurrence.py', 22, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009914999827742577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_butterfly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00691266602370888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_dense_large_leading",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0052067500073462725,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_mm5m_forward_finite_after_combine",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010583398398011923,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptual_recurrence.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.487503509968519e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptual_recurrence.py', 192, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_no_recompile_fullgraph",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.829194121062756e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptual_recurrence.py', 297, 'Skipped: slow (~33s no-recompile fullgraph gate) -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_combine_no_dropped_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001952920574694872,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_callosum_glue_init_average",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006133330753073096,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011133390944451094,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptual_recurrence.py', 377, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_no_comprehension_seed_interface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01312116696499288,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010300008580088615,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptual_recurrence.py', 442, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.516607340425253e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_conceptual_recurrence.py', 495, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

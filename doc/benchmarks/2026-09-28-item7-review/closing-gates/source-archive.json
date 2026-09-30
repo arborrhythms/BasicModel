@@ -1,0 +1,11 @@
+{
+  "archive": "../closing-measurements/source.tar.gz",
+  "manifest_matches_measurements": true,
+  "sha256": "4b234c9c794cf89d4fb908da189566c82c5da9263543ec7ee8ef407d8a23da78",
+  "validated_source_digest": "64a48544242ffcf014f819e6ddcc5927f11c5f6edc9d8f3422c29a7659c73bc3",
+  "validated_files": 694,
+  "supplemental_inputs": {
+    "test/fixtures/transitional_pos.grammar": "43bf934bf153a293851c96e851e26f8b302d70f2fa8bef48843c117795a7cfa9",
+    "test/fixtures/where_tiling_corpus.jsonl": "f5c959f65ee59a7b0a62c9cb273551025a25d90ee554f52649003049c09f61d0"
+  }
+}

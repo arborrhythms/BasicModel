@@ -87,7 +87,8 @@ def test_symbolicspace_owns_its_starts():
     # part / whole / equal are compositional relation forms heading the
     # relative-truth start; exist_O1 remains the absolute-truth start.
     assert "exist_O1" in ws_syms, ws_syms
-    assert g.ws_relative_starts == frozenset({"part_O1", "whole_O1", "equal_O1"})
+    assert g.ws_relative_starts == frozenset({
+        'part_O1', 'whole_O1', 'equal_O1', 'implies_O1', 'operator_O1'})
     assert "exist_O1" in g.ws_absolute_starts
 
 

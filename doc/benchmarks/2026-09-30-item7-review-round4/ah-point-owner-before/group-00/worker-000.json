@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py::test_program_meaning_reads_ended_points_from_their_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01149087492376566,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ah_point_owner.py:16: in test_program_meaning_reads_ended_points_from_their_rows\n    meaning = LanguageSpace.program_meaning(f.language, entry, f.registry)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:13627: in program_meaning\n    values[i] = registry._payload(('sym', int(native_ids[i]))).to(leaves)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:1992: in _payload\n    row = _existing_row(self.space, reference)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:477: in _existing_row\n    raise ValueError('query concept reference is unavailable')\nE   ValueError: query concept reference is unavailable",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

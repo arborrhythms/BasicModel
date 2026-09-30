@@ -1,0 +1,798 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+    "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write",
+    "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]"
+  ],
+  "completed": [
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+    "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write",
+    "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+    "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+    "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-000.json"
+      ],
+      "pid": 58779,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 504235376,
+      "elapsed_seconds": 3.8128582920180634,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+      ],
+      "completed": [
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010297583998180926,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005270708003081381,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006060915999114513,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006182249984703958,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0062104579992592335,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007316791918128729,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005728916963562369,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.15226770797744393,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-001.json"
+      ],
+      "pid": 58788,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430966056,
+      "elapsed_seconds": 3.610947750043124,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+        "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+        "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+        "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+        "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+      ],
+      "completed": [
+        "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+        "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+        "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+        "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+        "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0065695419907569885,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00411279103718698,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0034974580630660057,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004108791006729007,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004331083036959171,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-002.json"
+      ],
+      "pid": 58812,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 432620888,
+      "elapsed_seconds": 3.679488042020239,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+        "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+        "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+        "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write"
+      ],
+      "completed": [
+        "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+        "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+        "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+        "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.015357166063040495,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007583540980704129,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007103084004484117,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0064193750731647015,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01342066703364253,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.016631709062494338,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003330291947349906,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-003.json"
+      ],
+      "pid": 58820,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431867200,
+      "elapsed_seconds": 3.67193466599565,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+        "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+        "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+        "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+        "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+        "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+        "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+        "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+        "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+        "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+        "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+        "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+        "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection"
+      ],
+      "completed": [
+        "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+        "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+        "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+        "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+        "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+        "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+        "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+        "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+        "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+        "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+        "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+        "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+        "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010859083035029471,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0097353330347687,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007868416956625879,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009974166983738542,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005068250000476837,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006086791981942952,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006831625010818243,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006962125073187053,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005856291973032057,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005564457969740033,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004371999995782971,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01136041700374335,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006768999970518053,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-004.json"
+      ],
+      "pid": 58828,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 963561176,
+      "elapsed_seconds": 4.614473041030578,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+      ],
+      "completed": [
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0016979160718619823,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009532080730423331,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0018453330267220736,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0022896669106557965,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.21154108294285834,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005840000230818987,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008704999927431345,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0011723750503733754,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00032887491397559643,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002434458932839334,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.689587208093144,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-005.json"
+      ],
+      "pid": 58840,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2721860440,
+      "elapsed_seconds": 5.866552916006185,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]"
+      ],
+      "completed": [
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6063879170687869,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6053682090714574,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.9391754169482738,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after",
+  "elapsed_seconds": 29.379868125077337,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 2721860440,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/collect.json"
+    ],
+    "pid": 58770,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 429933768,
+    "elapsed_seconds": 3.6240064579760656,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/unindexed-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+        "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+        "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+        "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+        "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand",
+        "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+        "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+        "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+        "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write",
+        "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+        "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+        "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+        "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+        "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+        "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+        "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+        "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+        "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+        "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+        "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+        "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+        "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection",
+        "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+        "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+        "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+        "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+        "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+        "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+        "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+        "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

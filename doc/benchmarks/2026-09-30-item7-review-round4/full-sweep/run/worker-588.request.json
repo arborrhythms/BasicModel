@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_erosion.py::test_categorical_discrimination_counts_each_pair_once"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-588.recycle.json"
+}

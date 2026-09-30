@@ -1,0 +1,64 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ TestXorGrammarReconstruction.test_piecewise_overall_at_least_50_pct ______
+test/test_explicit_dimensions.py:277: in test_piecewise_overall_at_least_50_pct
+    model = _run_xor_grammar_in_process()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/xor_observer_round4.py:41: in observed_grammar
+    model = grammar(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_explicit_dimensions.py:238: in _run_xor_grammar_in_process
+    results = ModelFactory.run("data/XOR_grammar.xml")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:25513: in run
+    return ModelFactory._run_hydrated(config_path, arch, dat, trn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:25620: in _run_hydrated
+    m.run(_t("numTrials", 1),
+bin/Models.py:3933: in run
+    acc[trial, :] = self.runTrial(
+bin/Models.py:11395: in runTrial
+    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split="train")
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16785: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:16050: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:16437: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:16556: in _commit_autobind_from_stash
+    self._maybe_autobind_meta(
+bin/Spaces.py:16920: in _maybe_autobind_meta
+    ws.insert_meta(ps_pos, sym_pos, fused_vec=seed)
+bin/Spaces.py:25767: in insert_meta
+    meta_pos = self.insert_whole(init_vec=seed)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:24890: in insert_whole
+    raise RuntimeError(
+E   RuntimeError: WholeSpace symbol codebook capacity exhausted: next row 6, fixed capacity 6. No allocation was performed. Runtime growth is not performed inside the word/compiled loop because aligned CS/WS rows and the ConceptAllocator square/bias coordinates must migrate atomically at a reset boundary. Increase both ConceptualSpace.nVectors and WholeSpace.nVectors before constructing the model (smaller checkpoints prefix-load safely), or place growing mereological/META structure in a separate store.
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+=============================== warnings summary ===============================
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Models.py:7946: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+1 failed, 1 warning in 6.29s

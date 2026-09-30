@@ -1,0 +1,220 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-before/group-00/worker-000.json"
+      ],
+      "pid": 6918,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 573900120,
+      "elapsed_seconds": 4.510119625017978,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.533211583038792,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:23: in test_22_new_word_replaces_one_inventory_row_and_writes_one_definition\n    alloc = cs._concept_allocator\n            ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02434295800048858,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:45: in test_24_index_is_bidirectional_and_rebuilds_from_saved_rows\n    index = cs.definitions\n            ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02397279196884483,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:67: in test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index\n    cs.interpret.define(word, second)\n    ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'InterpretLayer' object has no attribute 'define'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.17411183298099786,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:81: in test_26_full_store_refuses_the_whole_word_transaction\n    alloc = cs._concept_allocator\n            ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.023661875049583614,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:96: in test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append\n    r0 = cs.definitions.row(*first)\n         ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.023865666007623076,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:113: in test_28_forgotten_definition_does_not_survive_in_any_lookup\n    row = cs.definitions.row(word, obj)\n          ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.10531775001436472,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:133: in test_31_read_words_have_definition_rows_without_changing_the_configuration\n    word = cs.definitions.word(form=form)\n           ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.153527875081636,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:133: in test_31_read_words_have_definition_rows_without_changing_the_configuration\n    word = cs.definitions.word(form=form)\n           ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.16317487508058548,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:133: in test_31_read_words_have_definition_rows_without_changing_the_configuration\n    word = cs.definitions.word(form=form)\n           ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.024758332991041243,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:145: in test_34_learning_codes_cannot_change_definition_identity\n    row = cs.definitions.row(word, obj)\n          ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.007282832986675203,
+          "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py:167: in test_32_head_meta_checkpoint_migrates_to_definitions\n    assert cs.definitions.objects(word) == (obj,)\n           ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'definitions'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-before/group-00",
+  "elapsed_seconds": 6.446660041925497,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 573900120,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-before/group-00/collect.json"
+    ],
+    "pid": 6905,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179635016,
+    "elapsed_seconds": 1.715806124964729,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_26_full_store_refuses_the_whole_word_transaction",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_34_learning_codes_cannot_change_definition_identity",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_b.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

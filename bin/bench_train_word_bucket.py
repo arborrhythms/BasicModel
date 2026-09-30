@@ -450,7 +450,7 @@ def main(argv=None):
             batchSize=args.batch, optimizer=optimizer,
             batch_override=(x, target))
         # Mirror runEpoch's complete boundary. Packed intermediate sentences
-        # were sealed/reset inside CSLang; the last one is reset here only
+        # were ended/reset inside CSLang; the last one is reset here only
         # after its loss/backward finished. Hard EOS remains a row-stream
         # boundary rather than a sentence boundary.
         model.flush_word_buffers()

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+    "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+    "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-item7-all/group-12/worker-000.recycle.json"
+}

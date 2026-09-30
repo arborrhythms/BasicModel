@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011395919136703014,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

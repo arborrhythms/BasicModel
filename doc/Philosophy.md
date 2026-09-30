@@ -136,22 +136,43 @@ The architecture realizes this distinction structurally:
   observation; the commits write (workspace, bindings, codebook EMA),
   so the act of meaning-making back-acts on the state that produced
   the appearance.
-- **The two truths (satya-dvaya).** A completed sentence's meaning is
-  either an **absolute truth** — an *idea*: a region-shaped extent,
-  evaluable by the luminosity/coverage criterion, rooted at the
-  grammar's absolute-truth start state (`exist_O1`, the EXISTS
-  operator's output: `<start name="absolute_truth">exist_O1</start>`
-  in `data/complete.grammar`; the legacy `ABS_T` token is retired) —
-  or a **relative truth** — a *relation between ideas* (causal
-  implication, $NP_1$ at $t_1 \to VP \to NP_2$ at $t_2$, is the worked
-  example), verified relationally or by simulation through the serial
-  reasoning loop, never by coverage. Only absolute truths feed the preattentive
-  filter; relative truths are the conceptual overlay's own products
-  and are evaluated within it.
+- **The two truths (satya-dvaya).** One grammatical S names one spacetime
+  event and writes one row. An absolute S is an **idea**: NP and VP fuse to
+  one point. The row stores that end state; reading it back is generation
+  under the grammar, not replay of a derivation. Fusion is fair exactly
+  when every operand has a point. An embedded absolute S therefore
+  collapses into its enclosing idea; its own end-state row remains recorded.
+
+  A relative S is a **relation**: three slots over row references, of kind
+  part, implies or operator. A relation has no fused point. Referencing it
+  forces the enclosing clause to stay relative: “he said cats are animals”
+  retains the part row separately from the attribution. A generic subject
+  makes a relation even without a copula; a particular subject may fuse.
+  Grammar closes these alternatives as `NP → S` and `NP → REF(S)`.
+
+  Reference carries content, not credibility. Embedded rows register at
+  zero trust; external provenance asserts the outer observation. Negation
+  swaps the independent positive and negative evidence poles. Neither
+  certainty language nor a decaying attribution can assert its content.
+  Only idea rows enter luminosity. Parthood is the primitive (Simons,
+  *Parts*, 1987): whole reverses the operands and equality is two directed
+  part rows with independent evidence. The distinction between fused scenes
+  and separate content/source traces is grounded in
+  [the psychological discussion](#psychological-grounding-2026-09-16) and
+  [the two-truths decisions record](specs/2026-09-16-two-truths-ideas-and-relations.md#9-decisions-record-2026-09-16).
+
+  Trust and evidence are distinct (Alec, September 28). The evidence pair
+  says how well the input identified its concept. Scalar source trust says
+  whether the event it refers to is veridical, and applies to that event as
+  a whole. A well-identified report can be untrusted. Forgetting therefore
+  values the source's scalar `|trust|`, while luminosity's dissonance reads
+  `min(c⁺, c⁻)` from the separate evidence pair. Neither is derived from the
+  other. The row also carries its order: an abstract point must descend the
+  sigma ladder when decoded.
 
 **Expectation belongs to the overlay and cannot reach the first moment**
 (2026-09-20). The expected next idea is held as a sign-reversed *negative
-image* and added to the sealed idea, so what is conceived is what was not
+image* and added to the ended idea, so what is conceived is what was not
 predicted. Perceptual space carries no negation, so the first moment is met
 in full whatever is expected; attention, which excludes without predicting,
 is the faculty that can reach it. See
@@ -421,6 +442,14 @@ this section records what it means and what it answers to.
 > I'm not sure negation can be applied to zero-order concepts, which are just
 > perceptual assemblages, since perceptual space does not carry negation.
 
+*Superseded by Alec, 2026-09-28, after item 11 gave every concept two
+symbols:* "Both `not` and `non` can apply to any bivalent values; so concepts
+of any order can be negated. The reversal of a point is its negation wrt the
+origin, which is just another point, not a region." Perceptual space still
+carries no negation — a percept remains one-sided — but a zeroth-order
+*concept* is no longer one-sided: its bivalence is the pair `(c⁺, c⁻)`, not a
+sign, and negation is the swap of that pair.
+
 > Opposite of non-pot is a non-affirming negation. So I guess attention does
 > not need full prediction in order to focus (which makes sense).
 
@@ -458,10 +487,20 @@ presence in `[0, 1]`, "one-sided; its opposite is the complement `1-x`, not
 the signed negation `-x`". The cube has a complement but no additive inverse,
 and cancelling by addition needs one. Zeroth-order concepts are assemblages
 of percepts; sign enters conceptual activation only at the first rung above
-them. So the negative image cannot be formed at order 0 at all. It is an
-*idea* — and the negation of a zeroth-order point is not another such point
-but a region, everything the exclusion leaves, which makes it higher-order —
-and it is added where signed serial form exists: to the sealed idea.
+them.
+
+*Amended (Alec, 2026-09-28).* The paragraph above holds of **percepts** and
+no longer of **concepts**. Since item 11 every concept owns a negative
+symbol, so order 0 carries bivalence as the pair `(c⁺, c⁻)` rather than as a
+sign, and the two poles are antipodal in direction with independent
+magnitudes — one row holds the content, the two symbols differ only in sign.
+A concept's contribution `(c⁺ − c⁻)·v` lies in the signed span of the rows,
+which is closed under reflection through the origin at every order, so the
+negative image raises no order and needs no region: negation forms no
+complement. The withdrawn claim was that the negation of a zeroth-order point
+is "a region, everything the exclusion leaves"; it is not, it is the
+concept's own negative symbol. The image is still added to the ended idea,
+now at whatever order that idea has.
 
 Read against [the Gelug account above](#direct-perception-and-the-conceptual-overlay-gelug),
 this is exact. The **first moment** — the parallel prelude, percepts crossing
@@ -1024,7 +1063,7 @@ covers memory, the two truths, expectation, testimony and feeling.
 ### Support
 
 - **The two truths are two memory systems.** An *idea* (absolute truth, one
-  fused point with its derivation) is what text comprehension builds as the
+  fused point) is what text comprehension builds as the
   **situation model**, the integrated representation of one state of
   affairs that survives when the text's wording is gone (Zwaan & Radvansky
   1998); it is episodic in Tulving's sense, a particular. A *relation*
@@ -1040,9 +1079,10 @@ covers memory, the two truths, expectation, testimony and feeling.
   memory for a sentence's wording is lost within a few seconds of hearing
   it while memory for its meaning persists (Sachs 1967); fuzzy-trace theory
   separates a durable gist trace from a fragile verbatim trace (Reyna &
-  Brainerd 1995). Fusing an absolute sentence to one point and keeping its
-  factoring only as a replayable derivation is the same asymmetry:
-  understanding rests on the gist, the form is reconstructed.
+  Brainerd 1995). Fusing an absolute sentence to one point puts the gist in
+  memory; the grammar regenerates its wording. Under the September 28
+  decision no derivation persists beside that point. These findings motivate
+  the distinction; they do not establish the model's generation accuracy.
 
 - **Propositions embed by reference.** Text memory is a network of
   propositions in which an embedded proposition is an argument of the
@@ -1123,10 +1163,14 @@ covers memory, the two truths, expectation, testimony and feeling.
   (a quantised version of the referent) and *symbol* (an arbitrary stand-in
   related only through the binding table) are Peirce's icon and symbol.
   Symbolic reference proper is not the word-to-object link but a
-  **generalisation over many such links** (Deacon 1997), which is what the
-  META node as a generalisation over both the word-concept and the
-  object-concept encodes; grounding the symbol side in the perceptual
-  towers is the answer to the symbol grounding problem (Harnad 1990).
+  **generalisation over many such links** (Deacon 1997). The September 29
+  [definition amendment](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29)
+  retires the proposed META generalisation: each `word DEF object` row names
+  two concept identities and implies no order relation. Several rows express
+  polysemy and synonymy, with object selection at interpretation time.
+  Grounding the symbol side in the perceptual towers addresses the symbol
+  grounding problem (Harnad 1990); the DEF link itself is not a claim to
+  implement Deacon's generalisation.
 
 - **Mindfulness is metacognitive monitoring.** Pointing attention at one's
   own stores (STM, LTM trust sign, the symbol codebook) and reading them
@@ -1153,11 +1197,11 @@ are not discrepancies on inspection.
    at the source's provenance trust, and unbelieving is a later,
    effortful revision.
 
-2. **Verbatim retention (profile, future).** People lose wording within
-   seconds (Sachs 1967). Under `optimal` every idea's derivation is kept
-   losslessly for reconstruction. Under `human` derivations decay while
-   fused points persist, the gist/verbatim asymmetry made dynamic. This
-   is one face of the forgetting model in FutureWork.md.
+2. **Verbatim retention (revised September 28).** People lose wording
+   within seconds (Sachs 1967). The model keeps no derivation after reading,
+   under either profile. Reconstruction uses the operation record while a
+   sentence is open; later recall generates from its stored end state. The
+   earlier proposal to decay derivations before points is therefore vacuous.
 
 3. **Forgetting and consolidation (profile, future, urgent).** LTM is
    append-only to capacity, with recency as the only decay; people
@@ -1180,13 +1224,14 @@ are not discrepancies on inspection.
    than computed separately. Not a discrepancy; surprisal is a readout of
    the unfolding.
 
-6. **One word, one object (decided, future).** People have polysemy and
-   synonymy as the norm, resolved by context. Decision: META concepts
-   generalise over **more than two** concepts, several words and several
-   objects, and the discrimination among them happens at interpretation
-   time, from context, not at binding time. The two-truths spec §3.4 records
-   this; the binding table's one-row-per-word law is replaced by the
-   n-ary META, and the interpretation-time selection is in FutureWork.md.
+6. **One word, one object (amended September 29).** People have polysemy
+   and synonymy as the norm, resolved by context. The two-truths spec §17
+   replaces the earlier n-ary META proposal with definition rows. One word
+   can name several objects, and several words can name one object; one
+   derived table indexes both directions. The grammar selects an object
+   from context at interpretation time. `interpret` replaces the word by
+   its object in the existing inventory row, and the definition names both
+   by identity, so learning their codes cannot redirect it.
 
 7. **Strict inheritance (closed).** Hierarchical semantic memory predicts
    inheritance, but people show typicality effects and exceptions (Rips,
@@ -1362,6 +1407,73 @@ Psychol.* 56:142; Schooler & Engstler-Schooler 1990, *Cogn. Psychol.*
 22:36; Slagter et al. 2007, *PLoS Biol.* 5:e138; Wenk-Sormaz 2005,
 *Altern. Ther. Health Med.* 11:42; Winawer et al. 2007, *PNAS* 104:7780;
 Xu 2002, *Cognition* 85:223.
+
+## Words as a Formula for Narrowing Attention (2026-09-28)
+
+> Words are a formula for narrowing attention. (Alec, 2026-09-28)
+
+A sentence does not build a meaning up from nothing; it starts from
+everything that could be meant and takes away. What is narrowed is the
+**domain of discourse**. The term is Boole's — "whatever may be the extent
+of the field within which all the objects of our discourse are found, that
+field may properly be termed the universe of discourse" (Boole 1854) — and
+its limit is "assumed or expressed" by the discourse itself, so it is a
+fact about the conversation and not about the world. Each word is an act of
+election from it. In Boole's algebra "white sheep" is `xy`, the order of
+the two elections is indifferent, and electing twice changes nothing,
+`x² = x`. Alec's form of the same thought is that **words are projection
+operators onto lower-dimensional or smaller subspaces**.
+
+Three things follow that bear on the rest of this document.
+
+**Nouns are not things.** A noun and an adjective are the same kind of
+operator; the noun is only the one already applied. "Neither may be a
+region; they may both be operators, which can be treated as nouns when
+mapped to all of space, or which restrict the noun they are applied to."
+The category is never stored as an extent: it is the operator, and
+membership is the operator's leaving a thing unchanged. This is
+[apoha](#apoha-attention-excludes-and-needs-no-prediction) carried into
+grammar. "The exclusion is framed in apoha theory as the non-affirming
+negation of the complement of the object; that is the locus of perceptual
+attention (which treats everything not relevant to the definition of the cup
+as a zero value)" (Alec, 2026-09-28). Giving what is not relevant a zero
+value is a projection, and zero rather than a negative value is what makes
+the negation non-affirming: nothing is asserted of the non-cup, it is simply
+not taken up. So the word is the formula and attention is what it produces —
+the word specifies the projection, and perceptual attention carries out the
+exclusion. A word may also exclude nothing: a percept can direct attention
+to the symbol *everything*, "which has no narrowing effect". As elsewhere in
+this document, the classification is the project's working usage.
+
+The two attentions differ in one respect. Perceptual attention, whose
+objects include the symbols of thought "since we regard symbols as
+percepts", does not take up what it excludes. "The conceptual narrowing is
+different, and probably needs a Ground in order to make its Figure
+meaningful" (Alec, 2026-09-28): the domain a word elects from is kept,
+because the Figure means what it means only against it.
+
+**The noun is eternal until the verb.** "NPs are basically eternal and can
+do anything until the VP comes along and restricts their movement or
+freedom on the temporal dimension." A verb adds dimensions to the
+description and removes freedom from the thing described: the noun was
+silent on when, and on what the thing does. So the three "dimensions" that
+language seems to add — the thing, its time, its alternatives — are three
+indices along which a speaker individuates, by determiner, tense and modal.
+They belong to the symbolic projection and not to the concept, which stays
+one opaque code. The worry that prompted this was exactly that the other
+reading conflates "the conceptual space with its projection into a symbolic
+or rational encoding".
+
+**Where this leaves Boole.** His principle of contradiction,
+`x(1 − x) = 0`, says that the evidence against is the complement of the
+evidence for. The [catuṣkoṭi](#quaternary-truth-and-the-catuskoti) relaxes
+exactly that, so Boole's algebra is the slice of this system that has
+neither *both* nor *neither*. His complement `1 − x` is an affirming
+negation; the non-affirming one, `non`, withdraws a pole without asserting
+the other.
+
+The engineering statement, with the literature, is in
+[the accessible-mind specification §2.0.1](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention).
 
 ## Summary
 

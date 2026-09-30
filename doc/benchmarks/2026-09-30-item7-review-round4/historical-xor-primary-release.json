@@ -1,0 +1,18 @@
+{
+  "stopped_waiters": [
+    {
+      "pid": 87142,
+      "label": "ah-candidate",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python doc/benchmarks/2026-09-30-item7-review-round4/run_deferred_xor_matched.py ah-candidate /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l af-candidate ah-head"
+    },
+    {
+      "pid": 87158,
+      "label": "ai-candidate",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python doc/benchmarks/2026-09-30-item7-review-round4/run_deferred_xor_matched.py ai-candidate /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ai-693zswdi ah-candidate ai-head"
+    }
+  ],
+  "old_release": "all eight reconstruction completions",
+  "new_release": "primary reconstruction pool complete; at most one retry plus one historical table",
+  "reason": "Measured current reconstruction peaks below 6 GiB leave room for one historical diagnostic; full sweep remains serialized behind all measurements.",
+  "source_changes": false
+}

@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+    "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+    "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one"
+  ],
+  "completed": [
+    "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+    "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+    "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34/worker-000.json"
+      ],
+      "pid": 15318,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 448775464,
+      "elapsed_seconds": 3.763776000123471,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+        "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+        "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one"
+      ],
+      "completed": [
+        "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+        "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+        "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.07187975011765957,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013496584026142955,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.962497279047966e-05,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34",
+  "elapsed_seconds": 5.859106957912445,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 448775464,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34/collect.json"
+    ],
+    "pid": 15312,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180585288,
+    "elapsed_seconds": 1.7879250410478562,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-34/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+        "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+        "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

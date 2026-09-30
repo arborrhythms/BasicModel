@@ -1,0 +1,50 @@
+--- a/test/index_fixtures.py
++++ b/test/index_fixtures.py
+@@ -11,13 +11,15 @@
+     """
+     from MemoryIndex import configure_model_index
+     from Queries import _existing_row
++    from ClauseRow import predicate_relation
+     model.languageSpace = SimpleNamespace(
+         _generate_binary_ops=(), _generate_unary_ops=(),
+         reverse_inverses=lambda _ops: (),
+         generate_policy_logits=lambda values: values.new_zeros(len(values), 1))
+     space = model.conceptualSpace
+     rows = torch.tensor([_existing_row(space, reference) for reference in references
+-                         if reference is not None])
++                         if reference is not None
++                         and predicate_relation(reference[1]) == 'operator'])
+     space.prime_seen(rows)
+     configure_model_index(model, model.symbolSpace.ltm_store)
+     return max((space._row_order(int(row)) for row in rows), default=0)
+--- a/test/test_accessible_mind.py
++++ b/test/test_accessible_mind.py
+@@ -224,8 +224,11 @@
+     fact = registry.form('part', part, whole, mode='assertive')
+     from MemoryIndex import configure_model_index
+     from Queries import _existing_row
++    from ClauseRow import predicate_relation
+     configure_model_index(model, store)
+-    terms = tuple((_existing_row(registry.space, ref),) for ref in fact.role_refs)
++    terms = tuple((_existing_row(registry.space, ref),)
++                  if predicate_relation(ref[1]) == 'operator' else ()
++                  for ref in fact.role_refs)
+     # Force the terminal inverse for these three numerical atoms. The test
+     # concerns retrieval effects, not training a generate policy.
+     def unfold(value, limit, **kwargs):
+--- a/test/test_arithmetic_isolation.py
++++ b/test/test_arithmetic_isolation.py
+@@ -74,9 +74,11 @@
+     first, second = world(0, ('one', 'two')), world(11, ('cedar', 'birch'))
+     x = first[1].form('part', first[2], first[3])
+     y = second[1].form('part', second[2], second[3])
+-    assert all(a != b for a, b in zip(x.role_refs, y.role_refs))
++    assert all(x.role_refs[slot] != y.role_refs[slot] for slot in (0, 2))
++    assert x.role_refs[1] == y.role_refs[1]
+     with torch.no_grad():
+-        for value, ref in zip(x.roles, y.role_refs):
++        for slot in (0, 2):
++            value, ref = x.roles[slot], y.role_refs[slot]
+             row = second[0]._csw_concept_row(0, ref[1])
+             second[0].similarity_codebook.getW()[row].copy_(value)
+     y = second[1].form('part', second[2], second[3])

@@ -1,0 +1,186 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+    "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]",
+    "test/test_concept_readout_l1.py::test_missing_gradient_and_zero_grad_cannot_replay_stale_l1_policy",
+    "test/test_concept_readout_l1.py::test_l1_is_opt_in_and_unsupported_optimizer_fails_loudly",
+    "test/test_concept_readout_l1.py::test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1",
+    "test/test_concept_readout_l1.py::test_proximal_checkpoint_resume_keeps_moments_but_not_old_observation_policy",
+    "test/test_concept_readout_l1.py::test_row_local_prox_on_mps",
+    "test/test_concept_readout_l1.py::test_common_amp_scale_does_not_scale_proximal_threshold",
+    "test/test_concept_readout_l1.py::test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]"
+  ],
+  "completed": [
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+    "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]",
+    "test/test_concept_readout_l1.py::test_missing_gradient_and_zero_grad_cannot_replay_stale_l1_policy",
+    "test/test_concept_readout_l1.py::test_l1_is_opt_in_and_unsupported_optimizer_fails_loudly",
+    "test/test_concept_readout_l1.py::test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1",
+    "test/test_concept_readout_l1.py::test_proximal_checkpoint_resume_keeps_moments_but_not_old_observation_policy",
+    "test/test_concept_readout_l1.py::test_row_local_prox_on_mps",
+    "test/test_concept_readout_l1.py::test_common_amp_scale_does_not_scale_proximal_threshold",
+    "test/test_concept_readout_l1.py::test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]"
+  ],
+  "slow_selected": [
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016891700215637684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011320901103317738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010204093996435404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002300000051036477,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019850829849019647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011261659674346447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005758329061791301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005464170826599002,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_missing_gradient_and_zero_grad_cannot_replay_stale_l1_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031387503258883953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_l1_is_opt_in_and_unsupported_optimizer_fails_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002505839802324772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001193749951198697,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_proximal_checkpoint_resume_keeps_moments_but_not_old_observation_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00132845900952816,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_row_local_prox_on_mps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0790719169890508,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_common_amp_scale_does_not_scale_proximal_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001445000059902668,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17099333298392594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001152500044554472,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_concept_readout_l1.py', 243, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.283307008445263e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_concept_readout_l1.py', 243, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_byte_scoring_ignores_empty_candidate_columns _______________
+test/test_item7_byte_columns.py:25: in test_byte_scoring_ignores_empty_candidate_columns
+    torch.testing.assert_close(values[0], values[1], atol=0, rtol=0)
+E   AssertionError: Scalars are not equal!
+E   
+E   Expected 0.0007502115331590176 but got 0.000750092207454145.
+E   Absolute difference: 1.1932570487260818e-07
+E   Relative difference: 0.00015905607898367976
+=========================== short test summary info ============================
+FAILED test/test_item7_byte_columns.py::test_byte_scoring_ignores_empty_candidate_columns
+1 failed in 2.21s

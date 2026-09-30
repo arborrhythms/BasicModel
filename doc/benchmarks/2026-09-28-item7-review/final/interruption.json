@@ -1,0 +1,10 @@
+{
+  "reason": "Stopped to repair additional stale property/dictionary fixtures discovered by this attempt and a deleted-API caller audit. This is an incomplete attempt, not the final sweep.",
+  "exit_code": 130,
+  "elapsed_seconds": 2914.794840333052,
+  "selected": 5063,
+  "completed_accounted": 36,
+  "active_workers": [],
+  "source_manifest": "full/source-manifest.json",
+  "next_step": "Isolated fixture ports, affected files, then one complete source-matched final sweep."
+}

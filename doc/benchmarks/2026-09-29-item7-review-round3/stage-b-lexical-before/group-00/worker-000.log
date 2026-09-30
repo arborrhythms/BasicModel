@@ -1,0 +1,58 @@
+FFFFFF...                                                                [100%]
+=================================== FAILURES ===================================
+_____________ test_selected_grammar_context_selects_order[event-0] _____________
+test/test_lexical_reference_orders.py:42: in test_selected_grammar_context_selects_order
+    assert orders.tolist() == [-1, order]
+E   assert [-1, -1] == [-1, 0]
+E     
+E     At index 1 diff: -1 != 0
+E     Use -v to get more diff
+__________ test_selected_grammar_context_selects_order[particular-1] ___________
+test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, ids[order]]
+E   assert [-1, 1] == [-1, 2]
+E     
+E     At index 1 diff: 1 != 2
+E     Use -v to get more diff
+_____________ test_selected_grammar_context_selects_order[name-1] ______________
+test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, ids[order]]
+E   assert [-1, 1] == [-1, 2]
+E     
+E     At index 1 diff: 1 != 2
+E     Use -v to get more diff
+____________ test_selected_grammar_context_selects_order[pronoun-1] ____________
+test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, ids[order]]
+E   assert [-1, 1] == [-1, 2]
+E     
+E     At index 1 diff: 1 != 2
+E     Use -v to get more diff
+_____________ test_selected_grammar_context_selects_order[kind-2] ______________
+test/test_lexical_reference_orders.py:41: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, ids[order]]
+E   assert [-1, 1] == [-1, 3]
+E     
+E     At index 1 diff: 1 != 3
+E     Use -v to get more diff
+_____ test_capture_owns_grammar_resolution_without_changing_reconstruction _____
+test/test_lexical_reference_orders.py:55: in test_capture_owns_grammar_resolution_without_changing_reconstruction
+    entry, = BasicModel._program_entries(host,
+bin/Models.py:13244: in _program_entries
+    word_ids=(None if not torch.is_tensor(getattr(self.inputSpace, '_ar_word_concept_ids', None)) else
+                                                  ^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'inputSpace'
+=============================== warnings summary ===============================
+test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]
+FAILED test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction
+6 failed, 3 passed, 1 warning in 2.23s

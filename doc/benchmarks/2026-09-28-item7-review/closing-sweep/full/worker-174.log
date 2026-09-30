@@ -1,0 +1,17 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+________ TestBasicModelForwardReverse.test_grammar_has_syntactic_layers ________
+test/test_mental_model.py:57: in test_grammar_has_syntactic_layers
+    self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
+E   AssertionError: unexpectedly None : Whole percepts missing per-space SyntacticLayer
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 96-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers
+1 failed, 2 passed, 1 warning in 2.71s

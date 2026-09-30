@@ -107,7 +107,7 @@
            passes), symbolicOrder (relational loop budget), and serial
            (traversal mode). 0 (default) =
            UNBOUNDED: the reduction runs to its natural single-S fixpoint
-           (byte-identical). A positive value caps the NULL-seal reduce sweep to
+           (byte-identical). A positive value caps the NULL-closing reduce sweep to
            that many forced fold levels (statically clamped to the buffer
            capacity minus 1, so the CUDA-graph trip count stays static); the
            word-count upper bound holds STRUCTURALLY (a reduce micro-step is a
@@ -391,10 +391,10 @@
            trusted truths appended to the consolidated LTM at model load
            (provision_ltm), earliest timestamps. Each <truth> carries the text
            (the 'text' attribute or element content) and a 'trust' value in
-           [-1, 1]; optional 'kind' (partOf | implies | other) tags the relation
-           type. The row trust is multiplied by architecture.<trust>. Read only
+           [-1, 1]. Grammar determines the field's structure; provenance
+           supplies no declared kind. Trust is multiplied by architecture.<trust>. Read only
            when <ltmConsolidation> is on and an ltm_store exists; otherwise
-           ignored. See <trust>/<truthCriterion> for the runtime (JSON)
+           ignored. See <trust> for the runtime (JSON)
            truth-ingest path; this is the static, config-time provisioning path. -->
       <xs:element name="truthSet" minOccurs="0">
         <xs:complexType>
@@ -405,7 +405,6 @@
                   <xs:extension base="xs:string">
                     <xs:attribute name="text" type="xs:string"/>
                     <xs:attribute name="trust" type="xs:decimal"/>
-                    <xs:attribute name="kind" type="xs:string"/>
                   </xs:extension>
                 </xs:simpleContent>
               </xs:complexType>
@@ -548,7 +547,6 @@
            codebook insertion and WholeSpace truth recording (gold +
            training). Replaces the retired binary accumulateTruth /
            truthMinMagnitude switches. -->
-      <xs:element name="truthCriterion" type="unitInterval" minOccurs="0"/>
       <!-- Model-level trust in incoming assertions/testimony. Effective
            signed DoT = this multiplier * incoming trust. For persisted STM
            descriptions, absolute rows store this event trust and relative rows
@@ -943,6 +941,9 @@
       <!-- Number of deterministic detached negative prototype rows used by
            the contextual rotation reducer. Default 4 when omitted. -->
       <xs:element name="conceptualContextNegatives" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="conceptualContextSituationWeight" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptualContextSituationAnchors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="conceptualContextExpectationWeight" type="unitInterval" minOccurs="0"/>
       <!-- <definitionSparsityScale> (snap contract sec 5, 2026-07-06): lambda
            for the rank-ordered soft-L0 that keeps concept definitions compact
            (shrinks the surplus concept->symbol in-edges past definitionFreeSize).
@@ -1243,8 +1244,6 @@
            unrolls the loop when K is shape-bucketed (BPE power-of-
            two quantisation). -->
       <xs:element name="perWordStemSerial" type="xs:boolean" minOccurs="0"/>
-      <!-- Per-space override of architecture.truthCriterion. -->
-      <xs:element name="truthCriterion" type="unitInterval" minOccurs="0"/>
       <!-- Per-space override of architecture.attentionPromotion. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
@@ -1284,12 +1283,6 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- Canonical role switch. true means .what is solely the upstream
-           property basis: no analysis_store, concept/META rows, or symbol
-           prototypes. Omitted/false preserves legacy fixture/checkpoint
-           construction until it is explicitly migrated. -->
-      <xs:element name="propertyBasis" type="xs:boolean" minOccurs="0"
-                  default="false"/>
       <!-- <initScale> (2026-07-06 fidelity leg, doc/plans/2026-07-06-concepts-
            formalization-and-snap-contract-*.md): per-row seed magnitude for
            this space's property codebook and freshly discovered properties.
@@ -1400,10 +1393,6 @@
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- Gate WholeSpace's stack-rewrite LanguageLayer dispatch
-           (``self.use_stack_router``). Default false keeps the legacy
-           forward path. -->
-      <xs:element name="useStackRouter" type="xs:boolean" minOccurs="0"/>
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>

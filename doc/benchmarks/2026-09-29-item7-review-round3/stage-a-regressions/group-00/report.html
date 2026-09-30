@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: passed</h1><p>Exit 0; 5/5 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.93587591603864</pre></td><td><pre></pre></td><td><pre>[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 2 selectors; limit 60s, 0.5 GiB
+[worker-000] exit 1; 1.3s; peak 0.04 GiB
+[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)
+[worker-001] 1 selectors; limit 60s, 0.5 GiB
+[worker-001] exit 0; 1.3s; peak 0.04 GiB
+</pre></td></tr><tr><td><pre>test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.9795614579925314</pre></td><td><pre></pre></td><td><pre>[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 2 selectors; limit 60s, 0.5 GiB
+[worker-000] exit 1; 1.3s; peak 0.04 GiB
+[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)
+[worker-001] 1 selectors; limit 60s, 0.5 GiB
+[worker-001] exit 1; 1.3s; peak 0.04 GiB
+</pre></td></tr><tr><td><pre>test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.9801463339244947</pre></td><td><pre></pre></td><td><pre>[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 2 selectors; limit 60s, 0.5 GiB
+[worker-000] exit 1; 1.3s; peak 0.04 GiB
+[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)
+[worker-001] 1 selectors; limit 60s, 0.5 GiB
+[worker-001] exit 1; 1.3s; peak 0.04 GiB
+</pre></td></tr><tr><td><pre>test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>2.6596566250082105</pre></td><td><pre></pre></td><td><pre>[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 2 selectors; limit 60s, 0.5 GiB
+[worker-000] exit 1; 1.3s; peak 0.04 GiB
+</pre></td></tr><tr><td><pre>test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0016532919835299253</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

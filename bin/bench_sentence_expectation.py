@@ -136,7 +136,7 @@ def _score_head(head, values, masks, targets, root=False, target_masks=None):
             roles = prediction[:, None].expand(-1, 3, -1)
             presence = None
         else:
-            roles, presence = head(values, masks)
+            roles, presence, _sentence_kind = head(values, masks)
         squared = (roles - targets).square().mean(-1)
         per_role = squared.mean(0)
         return {

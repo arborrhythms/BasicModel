@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_ir_fullgraph_compile.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

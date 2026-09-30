@@ -1,0 +1,66 @@
+{
+  "stage": "ready_for_receipt_review",
+  "steps": [
+    {
+      "stage": "graph_release_final_source",
+      "exit_code": 1,
+      "seconds": 23.787716082995757
+    },
+    {
+      "stage": "candidate_reconstruction_final_source",
+      "exit_code": 0,
+      "seconds": 3915.0779619580135
+    },
+    {
+      "stage": "native_definition_context_final_source",
+      "exit_code": 1,
+      "seconds": 271.2058426660951
+    },
+    {
+      "stage": "final_source_xor",
+      "exit_code": 1,
+      "seconds": 309.0052550418768
+    },
+    {
+      "stage": "summarize_final_source_xor",
+      "exit_code": 0,
+      "seconds": 0.02292645792476833
+    },
+    {
+      "stage": "candidate_mm_grammar_final_source",
+      "exit_code": 0,
+      "seconds": 482.09591491590254
+    },
+    {
+      "stage": "summarize_final_source_measurements",
+      "exit_code": 0,
+      "seconds": 0.031026874901726842
+    },
+    {
+      "stage": "explicit_final_source",
+      "exit_code": 1,
+      "seconds": 1101.88864345802
+    },
+    {
+      "stage": "summarize_explicit_final_source",
+      "exit_code": 0,
+      "seconds": 0.059672625036910176
+    },
+    {
+      "stage": "one_full_sweep",
+      "exit_code": 1,
+      "seconds": 9386.305008250056
+    },
+    {
+      "stage": "summarize_sweep",
+      "exit_code": 0,
+      "seconds": 0.08491495810449123
+    }
+  ],
+  "finished": true,
+  "retained_controls": [
+    "head-reconstruction",
+    "head-mm-grammar"
+  ],
+  "prior_candidate_receipts_retained": true
+}

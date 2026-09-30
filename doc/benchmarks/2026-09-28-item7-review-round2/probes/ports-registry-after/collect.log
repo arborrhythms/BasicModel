@@ -1,0 +1,5 @@
+test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space
+test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction
+test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline
+
+3 tests collected in 2.18s

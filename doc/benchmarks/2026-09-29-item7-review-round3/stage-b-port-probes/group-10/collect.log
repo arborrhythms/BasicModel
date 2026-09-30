@@ -1,0 +1,16 @@
+
+==================================== ERRORS ====================================
+______________ ERROR collecting test/test_codebook_update_law.py _______________
+ImportError while importing test module '/Users/arogers/github/WikiOracle/basicmodel/test/test_codebook_update_law.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_codebook_update_law.py:32: in <module>
+    from References import ReferenceTable
+E   ImportError: cannot import name 'ReferenceTable' from 'References' (/Users/arogers/github/WikiOracle/basicmodel/test/../bin/References.py)
+=========================== short test summary info ============================
+ERROR test/test_codebook_update_law.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+no tests collected, 1 error in 0.84s

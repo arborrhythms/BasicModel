@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode_owner.py::test_idea_decode_without_a_completed_field_has_no_operand"
+  ],
+  "collect": false,
+  "recycle_file": "/private/tmp/item7-isolated-fixtures/worker-012.recycle.json"
+}

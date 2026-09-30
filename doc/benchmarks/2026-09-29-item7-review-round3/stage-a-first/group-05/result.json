@@ -1,0 +1,155 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]",
+    "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]",
+    "test/test_order0_percept_definitions.py::test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids",
+    "test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals",
+    "test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read",
+    "test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection"
+  ],
+  "completed": [
+    "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]",
+    "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]",
+    "test/test_order0_percept_definitions.py::test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids",
+    "test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals",
+    "test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read",
+    "test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-05/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-05/worker-000.json"
+      ],
+      "pid": 5342,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 546391360,
+      "elapsed_seconds": 3.941009500063956,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-05/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]",
+        "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]",
+        "test/test_order0_percept_definitions.py::test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids",
+        "test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals",
+        "test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read",
+        "test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection"
+      ],
+      "completed": [
+        "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]",
+        "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]",
+        "test/test_order0_percept_definitions.py::test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids",
+        "test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals",
+        "test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read",
+        "test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.012735125026665628,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010285041993483901,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_percept_definitions.py::test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008432499598711729,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00430833303835243,
+          "message": "test/test_order0_percept_definitions.py:78: in test_witnesses_write_alternatives_without_conjoining_their_literals\n    _model_with(restored, SimpleNamespace())._restore_structural_extras(saved)\nbin/Models.py:4887: in _restore_structural_extras\n    self._restore_allocator_extras(cs, alloc_blob)\nbin/Models.py:4859: in _restore_allocator_extras\n    restore_word_index(cs)\nbin/ConceptIndex.py:55: in restore_word_index\n    words, objects = meta_members(cs, meta)\n                     ^^^^^^^^^^^^^^^^^^^^^^\nbin/ConceptIndex.py:16: in meta_members\n    if int(cid) in alloc.retired:\n       ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.036730708088725805,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0026817909674718976,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-05",
+  "elapsed_seconds": 7.6716906250221655,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 546391360,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-05/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-05/collect.json"
+    ],
+    "pid": 5331,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 427967712,
+    "elapsed_seconds": 3.509880583966151,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-a-first/group-05/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]",
+        "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[True]",
+        "test/test_order0_percept_definitions.py::test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids",
+        "test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals",
+        "test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read",
+        "test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

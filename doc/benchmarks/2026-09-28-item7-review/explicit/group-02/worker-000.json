@@ -1,0 +1,14 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+  "device": "cpu"
+}

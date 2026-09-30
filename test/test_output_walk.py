@@ -212,11 +212,10 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
          "<packSentences>false</packSentences>\n      <outputInLoop>true</outputInLoop>")])
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    m.reconstruct_in_loop = False
+    m.loss.reconstruction_scale = 0.
     with torch.no_grad():
-        out = m._forward_with_compiled_sentence_state(None)
-        m._publish_compiled_sentence_state(out)
-        u = m._capture_understanding(out[:4] if isinstance(out, tuple) else out)
+        u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
         derivation = m._resolve_answer(u, What.supervised(0))
         idea, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
     D = int(m.conceptualSpace.stm.concept_dim)
@@ -225,13 +224,14 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     end = m._sentence_end_state(None)
     assert torch.allclose(idea, end)                        # zero-initialised conditioning
     T = m._walk_budget()
-    assert torch.is_tensor(targets) and tuple(targets.shape) == (2, T)
+    assert targets is None  # generation has no input-reading targets
     with torch.no_grad():
         words, n_emitted, truncated, cost = m._output_generate_walk(
             m._walk_operand(idea), T, False, targets)
     assert tuple(words.shape) == (2, T, D)
     assert bool((n_emitted >= 1).all())                     # each row emitted at least its root
     m.End(); m.symbolSpace.soft_reset()
+
 
 
 def test_output_ignores_input_derivation_on_conceptual_slots():
@@ -530,23 +530,21 @@ def test_question_conditioner_legacy_singular_checkpoint_reloads_strictly(tmp_pa
 
 
 def test_materialised_idea_follows_the_symbol_rows():
-    """The symbol table and the concept table share row indices, so the
-    answer is materialised from its symbols' rows and its derivation: the
-    concept dictionary rows at the rows, folded by the recorded derivation
-    through the grammar's forward ops.  With the rows the forward pushed,
-    the replay reproduces the forward's end state exactly; a different
-    symbol at a word (its row exchanged with its neighbour's) gives a
-    different idea, without any snap of a symbol vector."""
+    """A completed answer owns its field; a new reading uses its own words.
+
+    Exchanging the later input's row staging cannot alter the held answer.
+    Reading those exchanged words produces a distinct field through the same
+    sentence driver. Generation has no reading actions to replay.
+    """
     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     from What import What
     m = _model()
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    m.reconstruct_in_loop = False
+    m.loss.reconstruction_scale = 0.
     with torch.no_grad():
-        out = m._forward_with_compiled_sentence_state(None)
-        m._publish_compiled_sentence_state(out)
-        u = m._capture_understanding(out[:4] if isinstance(out, tuple) else out)
+        u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
         derivation = m._resolve_answer(u, What.supervised(0))
         idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
         end = m._sentence_end_state(None)
@@ -561,13 +559,14 @@ def test_materialised_idea_follows_the_symbol_rows():
         assert torch.equal(m._word_symbol_rows()[:, :2], rows[:, :2].flip(1))
         held, _r, _s, _t = m._materialize_answer_idea(u, derivation, What.supervised(0))
         torch.testing.assert_close(held, idea0, rtol=0, atol=0)
-        exchanged = m._capture_understanding(out[:4])
+        exchanged = _capture_program_probe(m, ["plus 12 1", "plus 3 4"])
         new_derivation = m._resolve_answer(exchanged, What.supervised(0))
         idea1, _r, _s, targets1 = m._materialize_answer_idea(
             exchanged, new_derivation, What.supervised(0))
     assert not torch.allclose(idea1, idea0, atol=1e-4)
-    assert torch.equal(targets1, targets)                       # the derivation is unchanged
+    assert targets1 is targets is None  # neither reading supplies generation actions
     m.End(); m.symbolSpace.soft_reset()
+
 
 
 def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present():
@@ -577,12 +576,17 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present():
     m.eval()
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
+    m.reconstruct_in_loop = False
+    m.loss.reconstruction_scale = 0.
     try:
+        with torch.no_grad():
+            u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+        # The standalone kernel leaves an unrelated open reading record.
+        # Output must ignore it and continue from the held completed field.
         _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
         with torch.no_grad():
             out = m._forward_with_compiled_sentence_state(None)
             m._publish_compiled_sentence_state(out)
-            u = m._capture_understanding(out[:4])
             targets = m._derivation_targets(None, m._walk_budget())
             assert bool((targets >= 0).any())
             choices = [t.clone() for t in m._reconstruction_stack().choices()]
@@ -600,6 +604,7 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present():
     finally:
         m.End()
         m.symbolSpace.soft_reset()
+
 
 
 def _generate_variant(tmp_path, names, remove_compose=()):
@@ -736,11 +741,9 @@ def test_generate_walk_with_no_declared_rules_only_emits(tmp_path):
 
 
 def _capture_program_probe(m, texts):
-    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
-    _stage_fullgraph_tensor_peer(m, texts)
-    out = m._forward_with_compiled_sentence_state(None)
-    m._publish_compiled_sentence_state(out)
-    u = m._capture_understanding(out[:4])
+    m._install_unit_span_fn()
+    out = m(m.inputSpace.prepInput(texts))
+    u = m._capture_understanding(out)
     m._last_understanding = u
     return u
 
@@ -825,7 +828,7 @@ def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path):
             after = m._materialize_answer_idea(current, d, questions)[0]
             # A pooled AR prediction is not a conceptual answer program.
             future = m._resolve_answer(current, (What.future(0), What.future(1)))
-            assert future.program == (None, None) and not future.resolved
+            assert future.sentence_states == (None, None) and not future.resolved
             idea, resolved, sources, _ = m._materialize_answer_idea(
                 current, future, (What.future(0), What.future(1)))
             assert not bool(resolved.any()) and not bool(idea.any())
@@ -850,24 +853,25 @@ def test_compiled_understanding_captures_explicit_sentence_products():
         with torch.no_grad():
             explicit = compiled(None)
             assert len(explicit) == 21
-            # No caller-side publication: what() captures before runBatch's
-            # compatibility publication, and must own the same products.
-            u = m._capture_understanding(explicit)
+            # The kernel ABI stays fixed. The common sentence driver then
+            # owns the completed fields and discards its operation journal.
+            m._tensor_peer_while_eager = True
+            u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
             d = m._resolve_answer(u, What.supervised(0))
             idea, resolved, _, _ = m._materialize_answer_idea(u, d, What.supervised(0))
             assert torch.is_tensor(idea) and bool(idea.abs().sum() > 0)
             assert bool(resolved.all())
-            assert u.execution is explicit
+            assert len(u.execution) == 4
             m._last_understanding = u
             _stop(m)
-            m.what(What.supervised(0), execution=explicit, record=False, iteration=1)
+            m.what(What.supervised(0), execution=u.execution, record=False, iteration=1)
             assert m._last_understanding is u
-            for b, record in enumerate(u.answer_program):
+            for b, record in enumerate(u.sentence_states):
                 assert record is not None
-                torch.testing.assert_close(record.end_state, explicit[19][b])
-                assert record.leaves.shape[0] == record.rows.numel()
-                assert record.activations.numel() == record.rows.numel()
-                assert record.actions.shape[-1] == 3
+                torch.testing.assert_close(record.end_state, m._sentence_fields[0][b].end_state)
+                assert int(record.meaning.role_mask.sum()) in (1, 3)
+                assert not hasattr(record, 'actions')
+                assert not hasattr(record, 'leaves')
     finally:
         torch._dynamo.reset()
         m.End()
@@ -888,17 +892,18 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path):
     m._install_unit_span_fn()
     try:
         with torch.no_grad():
-            _stage_packed(m, [["12 plus 1", "3 plus 4"], ["8 plus 2"]])
-            layout = m.inputSpace._packed_sentence_slot_mask.clone()
-            out = m._forward_with_compiled_sentence_state(None)
+            inputs = m.inputSpace.prepPackedInput([["12 plus 1", "3 plus 4"], ["8 plus 2"]])
+            out = m(inputs)
+            layout = torch.zeros_like(m.inputSpace._packed_sentence_slot_mask)
+            layout[:, :2] = torch.tensor([[True, True], [True, False]])
             assert torch.equal(m.inputSpace._packed_sentence_slot_mask, layout)
             u = m._capture_understanding(out)
-            assert u.sentence_programs[0][0] is not None
-            assert u.sentence_programs[1][0] is not None
-            assert u.sentence_programs[1][1] is None
-            assert u.answer_program[0] is u.sentence_programs[1][0]
-            assert u.answer_program[1] is u.sentence_programs[0][1]
-            roots = out[7].clone()
+            assert u.sentence_fields[0][0] is not None
+            assert u.sentence_fields[1][0] is not None
+            assert u.sentence_fields[1][1] is None
+            assert u.sentence_states[0] is u.sentence_fields[1][0]
+            assert u.sentence_states[1] is u.sentence_fields[0][1]
+            roots = m._packed_sentence_roots.clone()
             valid = m.inputSpace._packed_sentence_slot_mask.clone()
             # The observation consumes u even after a different brick owns
             # the live rows and ReconstructionStack.
@@ -907,13 +912,13 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path):
                 m._observe_discourse(m.symbolSpace.discourse, roots[:, t],
                                      mask=valid[:, t], slot=t, understanding=u)
             for b, slots in ((0, (0, 1)), (1, (0,))):
-                history = m._recall_program_history()[b]
+                history = m._recall_sentence_history()[b]
                 assert len(history) == len(slots)
                 for saved, t in zip(history, slots):
-                    owned = u.sentence_programs[t][b]
-                    for name in ("rows", "word_rows", "activations", "leaves", "actions", "targets", "end_state"):
-                        torch.testing.assert_close(getattr(saved, name), getattr(owned, name).cpu())
-                    assert not saved.leaves.requires_grad
+                    owned = u.sentence_fields[t][b]
+                    torch.testing.assert_close(saved.end_state, owned.end_state.cpu())
+                    assert saved.refs == owned.refs
+                    assert not saved.meaning.roles.requires_grad
     finally:
         m.End()
         m.symbolSpace.soft_reset()

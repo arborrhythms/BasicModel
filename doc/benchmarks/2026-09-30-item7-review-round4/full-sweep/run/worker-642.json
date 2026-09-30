@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "completed": [
+    "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012836625101044774,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s
+test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference
+test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows
+test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots
+
+4 tests collected in 1.91s

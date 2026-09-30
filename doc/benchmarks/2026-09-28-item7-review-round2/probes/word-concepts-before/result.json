@@ -1,0 +1,151 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/worker-000.json"
+      ],
+      "pid": 76480,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 533317096,
+      "elapsed_seconds": 4.444043666939251,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+      ],
+      "completed": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.055389916989952326,
+          "message": "test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol\n    assert all(owner.word_concepts(word) for word in words), {\nE   AssertionError: {'hello': (), 'loving': (), 'there': (), 'world': ()}\nE   assert False\nE    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x11f6bcf20>)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.1423460830701515,
+          "message": "test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol\n    assert all(owner.word_concepts(word) for word in words), {\nE   AssertionError: {'hello': (), 'loving': (), 'there': (), 'world': ()}\nE   assert False\nE    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x11f81d7e0>)",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.1461688750423491,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/worker-001.json"
+      ],
+      "pid": 76494,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 436356488,
+      "elapsed_seconds": 3.860603207955137,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.059265040908940136,
+          "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_output_synthesis.py:339: in test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only\n    assert not torch.allclose(first.actual, out_after)        # answer path moved\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: assert not True\nE    +  where True = <built-in method allclose of type object at 0x10d0f53a0>(tensor([[[0.]],\\n\\n        [[0.]]]), tensor([[[0.]],\\n\\n        [[0.]]]))\nE    +    where <built-in method allclose of type object at 0x10d0f53a0> = torch.allclose\nE    +    and   tensor([[[0.]],\\n\\n        [[0.]]]) = AnswerConstruction(actual=tensor([[[0.]],\\n\\n        [[0.]]]), derivation=AnswerDerivation(answer_symbol=tensor([[[0., 0...ceptual', 'shape': (2, 8, 14), 'selections': ()}, {'operation': 'output:from_percepts', 'shape': (2, 1, 1)}), texts=()).actual",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 5400,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before",
+  "elapsed_seconds": 10.38198166701477,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 533317096,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round2-unqmrds7/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/collect.json"
+    ],
+    "pid": 76456,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181519152,
+    "elapsed_seconds": 1.8512054590974003,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-concepts-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

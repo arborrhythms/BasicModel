@@ -20,6 +20,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 import torch
+from definition_fixtures import with_definitions
 from test_cs_sparse_weights import _evidence
 
 import Spaces
@@ -43,7 +44,7 @@ def _cs_active(nS=64, order=3):
     cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
-    return cs
+    return with_definitions(cs)
 
 
 def _build(name):
@@ -60,13 +61,13 @@ def _build(name):
 
 # -- population at mint, keyed by ramsified order -----------------------------
 
-def test_word_symbol_defines_order0_native_features_and_object_stays_unwritten():
+def test_interpreted_object_keeps_the_native_features_in_one_row():
     cs = _cs_active()
-    A, B, C = cs.interpret_word([1, 2], WORD, key="cat")
+    A, B = cs.interpret_word([1, 2], WORD, key="cat")
     # A reads native features. B's standing bounds are no perceptual
     # definition: only testimony can give the object its membership.
     assert cs._concept_source_order(A) == 0
-    a_row = cs._csw_concept_row(0, A)
+    a_row = cs._csw_row_of(B)
     assert a_row is not None
     assert cs.concept_weights(a_row) == []          # no edges at order 0
     assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
@@ -75,17 +76,9 @@ def test_word_symbol_defines_order0_native_features_and_object_stays_unwritten()
     assert {col for row, col in features._index if row == a_row} == {4, 4 * int(WORD) + 2}
     assert Spaces._concept_alloc_of(cs).layer().feature_groups[a_row, 4] == (1, 2)
     b_row = cs._csw_concept_row(0, B)
-    assert not any(row == b_row for row, _ in features._index)
+    assert b_row == a_row and cs._csw_row_of(A) is None
 
 
-def test_meta_is_structural_ordered_pair_over_word_and_object():
-    cs = _cs_active()
-    A, B, C = cs.interpret_word([1, 2], WORD, key="cat")
-    assert cs._concept_source_order(C) == 2
-    assert cs.concept_parts(C) == [('sym', B)]
-    assert cs.concept_wholes(C) == [('sym', A)]
-    # Naming relates different orders; this pair is not a field sigma fold.
-    assert cs._csw_row_of(C) is None
 
 
 def test_symbolic_order_does_not_admit_a_same_order_edge():
@@ -103,9 +96,9 @@ def test_population_inactive_is_noop():
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D, wordDim=_D,
         outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
-    cs = Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D])   # NOT active
+    cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
     cs.interpret_word([1, 2], WORD, key="cat")
-    assert getattr(cs, "_sparse_fam", None) is None    # nothing populated
+    assert Spaces._concept_alloc_of(cs).layer().features.nnz > 0
 
 
 def test_order_block_overflow_is_safe():
@@ -180,8 +173,8 @@ def test_getparameters_includes_csw_after_population():
     base = set(id(p) for p in cs.getParameters())
     cs.interpret_word([1, 2], WORD, key="cat")     # populates weights
     after = cs.getParameters()
-    csw = [ly.values for fam in cs._sparse_fam.values() for ly in fam
-           if ly is not None and ly.values is not None]
+    csw = [matrix.values for matrix in Spaces._concept_alloc_of(cs).layer().definition_matrices()
+           if matrix.values is not None]
     assert csw                                              # weights exist
     after_ids = set(id(p) for p in after)
     assert all(id(p) in after_ids for p in csw)             # all included
@@ -194,8 +187,8 @@ def test_getparameters_byte_identical_when_inactive():
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D, wordDim=_D,
         outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
-    cs = Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D])   # NOT active
-    cs.interpret_word([1, 2], WORD, key="cat")
+    cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
+    # No admitted word: forced interpret now activates feature parameters.
     assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]
 
 
@@ -232,15 +225,12 @@ def test_conceptual_sbow_situates_live_sparse_codes():
     # production's autobind populates -- _commit_autobind_from_stash is
     # stage-0 only).
     cs = [c for c in m.conceptualSpaces if c._sparse_active()][0]
-    # Mint a BIAS-BOUNDED joint alongside the meta: the snap's rectified
-    # readout can hard-zero a constituent row at a random init (a_0 = 0 ->
-    # d a_1 / d value = tanh' * a_0 = 0, a grad-dead draw -- the documented
-    # init-blindness), but the joint's EVERYTHING bias edge reads the
-    # CONSTANT 1, so its value's gradient is alive at ANY init: the
-    # mechanism check is deterministic.
-    A1, _B1, _C1 = cs.interpret_word([1], 2, key="w1")
-    A2, _B2, _C2 = cs.interpret_word([3], 4, key="w2")
-    cs.create_joint_concept([A1, A2], key=("w1", "w2"))
+    # An order-0 field definition may include the constant whole. Its
+    # nonzero bias witnesses a value gradient independently of random codes.
+    from Layers import EVERYTHING
+    cid = cs.relate(1, 2)
+    cs.add_whole(cid, EVERYTHING)
+    cs._populate_concept_weights(cid)
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))

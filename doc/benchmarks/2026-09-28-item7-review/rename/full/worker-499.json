@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_csbp.py::TestSVDOrthogonalInit::test_default_W_has_unit_singular_values",
+    "test/test_csbp.py::TestSVDOrthogonalInit::test_round_trip_mse_below_threshold_from_t0"
+  ],
+  "completed": [
+    "test/test_csbp.py::TestSVDOrthogonalInit::test_default_W_has_unit_singular_values",
+    "test/test_csbp.py::TestSVDOrthogonalInit::test_round_trip_mse_below_threshold_from_t0"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_csbp.py::TestSVDOrthogonalInit::test_default_W_has_unit_singular_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012818750692531466,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_csbp.py::TestSVDOrthogonalInit::test_round_trip_mse_below_threshold_from_t0",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000760749913752079,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

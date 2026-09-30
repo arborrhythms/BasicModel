@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/measure_identity.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/identity.json"
+  ],
+  "pid": 41840,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 403555600,
+  "elapsed_seconds": 4.12692837510258,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/identity.log"
+}

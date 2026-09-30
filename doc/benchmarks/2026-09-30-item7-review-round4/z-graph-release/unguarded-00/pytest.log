@@ -1,0 +1,30 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_two_epoch_training_severs_cross_batch_graph _______________
+test/test_word_store.py:905: in test_two_epoch_training_severs_cross_batch_graph
+    assert torch.is_tensor(actions) and bool((actions >= 0).any())
+E   assert (True and False)
+E    +  where True = <function is_tensor at 0x107f0fd80>(tensor([[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, ...     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1]]))
+E    +    where <function is_tensor at 0x107f0fd80> = torch.is_tensor
+E    +  and   False = bool(tensor(False))
+E    +    where tensor(False) = <built-in method any of Tensor object at 0x120a27bb0>()
+E    +      where <built-in method any of Tensor object at 0x120a27bb0> = tensor([[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, ...     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1]]) >= 0.any
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 4.671s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=4.293s, 100.00%)
+Training throughput: 1 batches in 4.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7637: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_grammar_wordstore.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+1 failed, 2 warnings in 16.23s

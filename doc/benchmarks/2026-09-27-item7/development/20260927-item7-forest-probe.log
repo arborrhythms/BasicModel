@@ -1,0 +1,37 @@
+....F                                                                    [100%]
+=================================== FAILURES ===================================
+_____________ test_three_slot_seal_registers_its_composite_operand _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f09e990>
+
+    def test_three_slot_seal_registers_its_composite_operand(monkeypatch):
+        from Meaning import ConceptualMeaning
+        from Layers import TernaryTruthStore
+        _, registry, language, entry, _ = _nested(monkeypatch)
+        # A relative S may finish as a three-slot forest. Its left operand is a
+        # completed inner relation and therefore has no fused-point reference.
+        operation, _ = registry.operation_form('part')
+        predicate = registry._reference((registry.descriptors['part'].domain, operation.semantic_id))
+        leaves = torch.cat((entry.leaves[:2], registry._payload(predicate)[None], entry.leaves[:1]))
+        actions = torch.cat((entry.actions[:3], torch.tensor([[0, -1, 2], [0, -1, 3]])))
+        meaning = ConceptualMeaning(torch.stack((torch.zeros_like(leaves[0]), leaves[2], leaves[3])),
+            torch.ones(3, dtype=torch.bool), role_refs=(('constituent', 8), predicate,
+                                                      ('sym', int(entry.concept_ids[0]))))
+        entry = replace(entry, rows=torch.arange(4), word_rows=torch.arange(4),
+            activations=torch.ones(4), leaves=leaves, actions=actions,
+            concept_ids=torch.tensor([*entry.concept_ids[:2].tolist(), predicate[1], int(entry.concept_ids[0])]),
+            lexical_forms=(None,) * 4, end_state=meaning.roles)
+        clause = clause_from_program(language, entry, meaning=meaning, depth=3, registry=registry)
+>       assert clause.refs[0] == ('clause', 0)
+E       AssertionError: assert -1 == ('clause', 0)
+
+test/test_item7_clause_program.py:90: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_clause_program.py::test_nested_clause_retains_its_own_program_and_reconstruction_targets
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_clause_program.py::test_three_slot_seal_registers_its_composite_operand
+1 failed, 4 passed, 1 warning in 2.05s

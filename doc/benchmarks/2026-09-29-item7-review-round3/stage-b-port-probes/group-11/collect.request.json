@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_dual_towers.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

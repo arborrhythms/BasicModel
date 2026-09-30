@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compact_concept_codebook_state.py::test_vector_quantize_legacy_default_keeps_full_ema_state",
+    "test/test_compact_concept_codebook_state.py::test_vector_quantize_compact_mode_omits_ema_and_rejects_ema_ops",
+    "test/test_compact_concept_codebook_state.py::test_codebook_compact_contract_preserves_w_active_mask_and_checkpoint",
+    "test/test_compact_concept_codebook_state.py::test_indexed_conceptual_stages_share_one_compact_dictionary",
+    "test/test_compact_concept_codebook_state.py::test_codebook_ema_policy_cannot_change_after_construction"
+  ],
+  "completed": [
+    "test/test_compact_concept_codebook_state.py::test_vector_quantize_legacy_default_keeps_full_ema_state",
+    "test/test_compact_concept_codebook_state.py::test_vector_quantize_compact_mode_omits_ema_and_rejects_ema_ops",
+    "test/test_compact_concept_codebook_state.py::test_codebook_compact_contract_preserves_w_active_mask_and_checkpoint",
+    "test/test_compact_concept_codebook_state.py::test_indexed_conceptual_stages_share_one_compact_dictionary",
+    "test/test_compact_concept_codebook_state.py::test_codebook_ema_policy_cannot_change_after_construction"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compact_concept_codebook_state.py::test_vector_quantize_legacy_default_keeps_full_ema_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048654095735400915,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compact_concept_codebook_state.py::test_vector_quantize_compact_mode_omits_ema_and_rejects_ema_ops",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002858330262824893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compact_concept_codebook_state.py::test_codebook_compact_contract_preserves_w_active_mask_and_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015277080237865448,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compact_concept_codebook_state.py::test_indexed_conceptual_stages_share_one_compact_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034702089615166187,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compact_concept_codebook_state.py::test_codebook_ema_policy_cannot_change_after_construction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000711292028427124,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

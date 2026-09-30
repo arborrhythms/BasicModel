@@ -1,0 +1,33 @@
+........................................................................ [ 77%]
+.....................                                                    [100%]
+=============================== warnings summary ===============================
+test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:5566: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 21 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13593: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9595/test_first_and_later_words_kee0/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9595/test_first_and_later_words_kee0/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+93 passed, 7 warnings in 9.64s

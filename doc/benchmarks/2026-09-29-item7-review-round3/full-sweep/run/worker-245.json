@@ -1,0 +1,63 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_connective_supervision.py::test_soft_compose_one_hot_matches_hard",
+    "test/test_connective_supervision.py::test_loss_is_differentiable",
+    "test/test_connective_supervision.py::test_and_corpus_recovers_conjunction",
+    "test/test_connective_supervision.py::test_or_corpus_recovers_disjunction",
+    "test/test_connective_supervision.py::test_identical_surface_different_consequence_discriminates"
+  ],
+  "completed": [
+    "test/test_connective_supervision.py::test_soft_compose_one_hot_matches_hard",
+    "test/test_connective_supervision.py::test_loss_is_differentiable",
+    "test/test_connective_supervision.py::test_and_corpus_recovers_conjunction",
+    "test/test_connective_supervision.py::test_or_corpus_recovers_disjunction",
+    "test/test_connective_supervision.py::test_identical_surface_different_consequence_discriminates"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_connective_supervision.py::test_soft_compose_one_hot_matches_hard",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00044599990360438824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_connective_supervision.py::test_loss_is_differentiable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011777167208492756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_connective_supervision.py::test_and_corpus_recovers_conjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06937641697004437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_connective_supervision.py::test_or_corpus_recovers_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06684612506069243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_connective_supervision.py::test_identical_surface_different_consequence_discriminates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13197295810095966,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

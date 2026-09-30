@@ -1,0 +1,155 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 36/36 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_cs_symbol_table.py::test_new_symbol_starts_empty</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0023281669709831476</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0016981670632958412</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0016064579831436276</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_reify_relation_between_symbols</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015488750068470836</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015511249657720327</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.001962333917617798</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_retire_transient_symbol</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015149590326473117</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015882080188021064</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.001499249949119985</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015458340058103204</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_interpret_word_structure</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0014092499623075128</pre></td><td><pre>test/test_cs_symbol_table.py:157: in test_interpret_word_structure
+    A, B, C = cs.interpret_word([65, 66, 67], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0017741660121828318</pre></td><td><pre>test/test_cs_symbol_table.py:171: in test_meta_membership_persists_identity_resolution
+    A, B, C = cs.interpret_word([65, 66], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.002013208926655352</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0015605839435011148</pre></td><td><pre>test/test_cs_symbol_table.py:198: in test_singleton_populates_one_untyped_edge
+    A, _B, _C = cs.interpret_word([1], 2, key=&quot;w&quot;)   # order-0 sym
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018030420178547502</pre></td><td><pre>test/test_cs_symbol_table.py:210: in test_meta_word_object_recovers_by_intersection
+    A, B, C = cs.interpret_word([65, 66], WORD, key=&quot;w&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.001912666019052267</pre></td><td><pre>test/test_cs_symbol_table.py:217: in test_interpret_word_idempotent_per_key
+    A1, B1, C1 = cs.interpret_word([65, 66], WORD, key=&quot;ab&quot;)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.001831499976105988</pre></td><td><pre>test/test_cs_symbol_table.py:230: in test_interpret_word_accumulates_word_parts
+    A, _, _ = cs.interpret_word([65], WORD, key=&quot;grows&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018371669575572014</pre></td><td><pre>test/test_cs_symbol_table.py:239: in test_object_symbol_is_refinable_not_yet_identity
+    _, B, _ = cs.interpret_word([65, 66, 67], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018678749911487103</pre></td><td><pre>test/test_cs_symbol_table.py:249: in test_resolve_identities_does_not_collapse_unspecified_object
+    A, B, C = cs.interpret_word([65, 66, 67], WORD)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0023862080415710807</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0016655829967930913</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015967910876497626</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015629999106749892</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0014997500693425536</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015560000902041793</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0019164170371368527</pre></td><td><pre>test/test_cs_symbol_table.py:350: in test_prune_removes_bias_edge_of_dropped_everything
+    A, _B, _C = cs.interpret_word([1], 2, key=&quot;w&quot;)   # A: order-0 sym
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0021754580084234476</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0016301249852403998</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.001456458936445415</pre></td><td><pre>test/test_cs_symbol_table.py:395: in test_assert_relation_replaces_poles_and_enters_embedding
+    A, B, C = cs.interpret_word([1], 2, key=&quot;cat&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0020025420235469937</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0015316249337047338</pre></td><td><pre>test/test_cs_symbol_table.py:426: in test_assert_relation_sym_weight_lands_on_edge
+    A, _B, _C = cs.interpret_word([1], 2, key=&quot;w&quot;)   # order-0 sym
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_pole_rename_aliases_hold</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>9.525008499622345e-05</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_fresh_object_concept_reads_its_naming_word_at_order1</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.002169333049096167</pre></td><td><pre>test/test_cs_symbol_table.py:450: in test_fresh_object_concept_reads_its_naming_word_at_order1
+    A, B, _ = cs.interpret_word([1, 2], 3, key=&quot;cat&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_assert_concrete_whole_retires_everything_bias_edge</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018956660060212016</pre></td><td><pre>test/test_cs_symbol_table.py:461: in test_assert_concrete_whole_retires_everything_bias_edge
+    A, _B, _C = cs.interpret_word([1, 2], 3, key=&quot;cat&quot;)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_prune_drops_everything_when_other_whole_linked</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0021289170254021883</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.001964417053386569</pre></td><td><pre>test/test_cs_symbol_table.py:491: in test_word_object_testimony_participation_strengthens_on_reoccurrence
+    A, B, C = cs.interpret_word([1, 2], 3, key=&quot;cat&quot;, occurrence=(0, 0))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr></table></body></html>

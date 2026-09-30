@@ -1,0 +1,53 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols"
+  ],
+  "completed": [
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.046073334058746696,
+      "message": "test/test_ss_codebook_operations.py:86: in test_operations_inserted_into_ws_codebook\n    pos_map = ws.insert_operations(g)\n              ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.023153375019319355,
+      "message": "test/test_ss_codebook_operations.py:117: in test_build_auto_inserts_operations\n    assert ws.operation_position(op) is not None, (\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'operation_position'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02285804192069918,
+      "message": "test/test_ss_codebook_operations.py:127: in test_insert_operations_is_idempotent\n    first = ws.insert_operations(g)\n            ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.023026666953228414,
+      "message": "test/test_ss_codebook_operations.py:140: in test_operations_are_distinct_from_meaning_symbols\n    pos_map = ws.insert_operations(g)\n              ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

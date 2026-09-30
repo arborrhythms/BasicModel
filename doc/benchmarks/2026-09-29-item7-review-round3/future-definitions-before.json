@@ -1,0 +1,9 @@
+{
+  "path": "doc/FutureWork.md",
+  "sha256": "2dd1caffddfde5e2b1cf0b0ec81e82edfcb8b35862cee1cfff3635c3346fcf88",
+  "before": "## 5. N-ary META and interpretation-time discrimination\n\n**Decision (Alec, 2026-09-16).** META concepts generalise over more than\ntwo concepts: several words and several objects (synonymy and polysemy),\nand the discrimination among them happens at interpretation time, from\ncontext, not at binding time. The two-truths spec \u00a73.4 records the\ndecision; the one-row-per-word law of the binding table is replaced by the\nn-ary META. To specify: the META row's member set and its allocation,\nwhat `deref(word)` returns when a word belongs to a META with several\nobjects (the member set, ranked by context), where in the closing the choice\nis made (the chooser that already selects readings), and how a wrong\nchoice is credited by expectation and reconstruction.\n",
+  "checks": {
+    "META_allocation_is_no_longer_future_work": false,
+    "DEF_amendment_recorded": false
+  }
+}

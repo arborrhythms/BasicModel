@@ -1,0 +1,21 @@
+{
+  "concept_capacity": 8,
+  "order_capacities": [
+    4,
+    2
+  ],
+  "unavailable": [
+    "part",
+    "equal",
+    "exist",
+    "true",
+    "lookup",
+    "quantize",
+    "arma",
+    "what"
+  ],
+  "reason": "ConceptualSpace concept inventory exhausted while allocating 8 id(s) for grammatical thought VPs: snap block has 0 occupied rows and capacity 4. No concept was minted.",
+  "physical_rows": {},
+  "next_identity": 1,
+  "store_rows": 0
+}

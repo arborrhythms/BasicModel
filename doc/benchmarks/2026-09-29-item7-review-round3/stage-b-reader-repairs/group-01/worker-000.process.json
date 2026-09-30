@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-01/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-01/worker-000.json"
+  ],
+  "pid": 10051,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 610764216,
+  "elapsed_seconds": 25.64431370899547,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-01/worker-000.log"
+}

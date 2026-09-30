@@ -1,0 +1,16 @@
+{
+  "previous_manifest": "final-harness-source.json",
+  "current_manifest": "scheduling-harness-source.json",
+  "changed_existing_helpers": [
+    "run_final_sweep.py",
+    "summarize_final_receipt.py"
+  ],
+  "new_helpers": [
+    "resource_schedule.py",
+    "resume_scheduled_validation.py",
+    "run_scheduled_checks.py",
+    "test_resource_schedule.py"
+  ],
+  "old_bodies_preserved": true,
+  "current_hashes_match": true
+}

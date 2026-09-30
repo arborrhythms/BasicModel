@@ -1,0 +1,83 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_subspace.py::test_push_keeps_parallel_buffers_in_sync",
+    "test/test_idea_subspace.py::test_marker_route_metadata_round_trips",
+    "test/test_idea_subspace.py::test_update_one_field_does_not_desync_others",
+    "test/test_idea_subspace.py::test_pop_clears_slot_and_decrements_depth",
+    "test/test_idea_subspace.py::test_overflow_raises",
+    "test/test_idea_subspace.py::test_live_mask_reflects_depth",
+    "test/test_idea_subspace.py::test_ensure_batch_preserves_state"
+  ],
+  "completed": [
+    "test/test_idea_subspace.py::test_push_keeps_parallel_buffers_in_sync",
+    "test/test_idea_subspace.py::test_marker_route_metadata_round_trips",
+    "test/test_idea_subspace.py::test_update_one_field_does_not_desync_others",
+    "test/test_idea_subspace.py::test_pop_clears_slot_and_decrements_depth",
+    "test/test_idea_subspace.py::test_overflow_raises",
+    "test/test_idea_subspace.py::test_live_mask_reflects_depth",
+    "test/test_idea_subspace.py::test_ensure_batch_preserves_state"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_subspace.py::test_push_keeps_parallel_buffers_in_sync",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000571875018067658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_subspace.py::test_marker_route_metadata_round_trips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029799994081258774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_subspace.py::test_update_one_field_does_not_desync_others",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035087508149445057,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_subspace.py::test_pop_clears_slot_and_decrements_depth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000320291961543262,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_subspace.py::test_overflow_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021683296654373407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_subspace.py::test_live_mask_reflects_depth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002483329735696316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idea_subspace.py::test_ensure_batch_preserves_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003429169300943613,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

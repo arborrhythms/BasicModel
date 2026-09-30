@@ -1,0 +1,32 @@
+{
+  "findings": [
+    {
+      "path": "doc/Architecture.md",
+      "sha256": "495a10d581d104a7a195812495630d30ac2e0a986112f9ac38cc62c634666370",
+      "stale_contracts": [
+        "META generalizes over sets",
+        "The order-1 default applies only when a word has no object yet."
+      ]
+    },
+    {
+      "path": "doc/Language.md",
+      "sha256": "ef50857cf7f0dd535d7d84df10e2575698f45280f8380afff8f93709ec42cd6a",
+      "stale_contracts": [
+        "Native parallel admission creates word predicates without",
+        "new object is an order-1 particular."
+      ]
+    },
+    {
+      "path": "doc/Lexicon.md",
+      "sha256": "91826594e11259c865082bc8e19af6fb24d5475ff57671860917f9c0531e777d",
+      "stale_contracts": [
+        "ConceptAllocator.word_forms",
+        "new object's default order is 1"
+      ]
+    }
+  ],
+  "protected_claude_sections": {
+    "doc/Architecture.md": "eb815d1b4b4879ed15ef8b0397bfea72251a094392996012268474039819a20d",
+    "doc/Language.md": "5bf35dc992320b2b8ea412872d77656519b6d0aa4cc3110e122acbe9a6d0d8c1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item11c_membership_folds.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

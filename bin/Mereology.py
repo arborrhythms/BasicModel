@@ -218,10 +218,7 @@ class HoCShape:
               paths; doubles for each binary op along the path.
     mask   -- ``[B, V]`` bool. True where the input symbolic vector
               had a nonzero per-position norm (Mereology applies no
-              magnitude threshold; truth recording/acceptance is
-              governed by the continuous ``truthCriterion`` bar
-              elsewhere, and the old ``truthMinMagnitude`` knob is
-              retired).
+              magnitude threshold; row trust comes from provenance).
     per_step -- list of StepInfo, DFS pre-order, one entry per
               layer-level reverse executed.
     """
@@ -442,9 +439,7 @@ class Mereology:
                 ``2^k_binary`` for k_binary binary ops along the path.
               * ``mask``: ``[B, V]`` bool -- True where the input
                 position had nonzero norm (Mereology applies no
-                magnitude threshold; the old ``truthMinMagnitude`` knob
-                is retired -- truth recording/acceptance is governed by
-                the continuous ``truthCriterion`` bar elsewhere). Leaves
+                magnitude threshold; row trust comes from provenance). Leaves
                 carry full ``[B, V, ...]`` shape
                 regardless; consumers AND-fold via the mask.
               * ``per_step``: list of ``StepInfo``, one per layer-
@@ -463,14 +458,8 @@ class Mereology:
                                      dtype=torch.bool, device=symbolic_vector.device)
             return HoCShape(leaves=[], mask=empty_mask, per_step=[])
 
-        # Step 1: per-position activity mask. Mereology applies no
-        # magnitude threshold (a magnitude threshold is not how truths are
-        # accepted -- see the content-aware ``truthCriterion`` path that
-        # governs both truth recording and learned-relation acceptance; the
-        # old ``truthMinMagnitude`` knob is retired). The threshold
-        # collapses to 0.0 here, so any position with nonzero norm counts
-        # as active and the all-zero / NULL-padded inputs still fold to an
-        # empty shape. ``threshold`` is
+        # Any nonzero norm is active; zero/NULL padding folds to an empty
+        # shape. This geometric mask does not set truth. The threshold is
         # threaded into ``_walk_reverse`` / ``_build_step`` (per-step
         # activity gate) so it stays a named local here.
         threshold = 0.0

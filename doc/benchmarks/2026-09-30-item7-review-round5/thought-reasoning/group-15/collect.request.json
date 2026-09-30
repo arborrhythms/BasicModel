@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_query_phase_permissions.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

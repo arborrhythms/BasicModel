@@ -1,0 +1,133 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step",
+    "test/test_item9b_corrections.py::test_model_owns_one_ladder_across_all_spaces",
+    "test/test_item9b_corrections.py::test_large_registry_addresses_roundtrip_through_both_phases",
+    "test/test_item9b_corrections.py::test_copy_preserves_the_single_registry_ladder",
+    "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates",
+    "test/test_item9b_corrections.py::test_reset_clears_only_the_selected_fields_time_band",
+    "test/test_item9b_corrections.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "test/test_item9b_corrections.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+    "test/test_item9b_corrections.py::test_native_percepts_encode_input_starts_and_share_time",
+    "test/test_item9b_corrections.py::test_percept_group_keeps_each_members_band_and_one_field_time"
+  ],
+  "completed": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step",
+    "test/test_item9b_corrections.py::test_model_owns_one_ladder_across_all_spaces",
+    "test/test_item9b_corrections.py::test_large_registry_addresses_roundtrip_through_both_phases",
+    "test/test_item9b_corrections.py::test_copy_preserves_the_single_registry_ladder",
+    "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates",
+    "test/test_item9b_corrections.py::test_reset_clears_only_the_selected_fields_time_band",
+    "test/test_item9b_corrections.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "test/test_item9b_corrections.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+    "test/test_item9b_corrections.py::test_native_percepts_encode_input_starts_and_share_time",
+    "test/test_item9b_corrections.py::test_percept_group_keeps_each_members_band_and_one_field_time"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02027174993418157,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002450666972436011,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.26541766605805606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_model_owns_one_ladder_across_all_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25376916606910527,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_large_registry_addresses_roundtrip_through_both_phases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010297090047970414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_copy_preserves_the_single_registry_ladder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021233398001641035,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25430591590702534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_reset_clears_only_the_selected_fields_time_band",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.040128667023964226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.568564750021324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 90.17712829192169,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_native_percepts_encode_input_starts_and_share_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2528543750522658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_corrections.py::test_percept_group_keeps_each_members_band_and_one_field_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.041615125024691224,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

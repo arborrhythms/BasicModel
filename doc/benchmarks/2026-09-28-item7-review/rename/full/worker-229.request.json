@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_monotonic",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_position_persists_via_vocab_extras",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_allocate_starts_at_one",
+    "test/test_where_encoding_recovery.py::TestSymbolSpaceAllocatePosition::test_load_vocab_extras_without_counter_defaults_to_one"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-229.recycle.json"
+}

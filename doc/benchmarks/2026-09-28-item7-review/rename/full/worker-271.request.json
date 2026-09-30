@@ -1,0 +1,24 @@
+{
+  "selectors": [
+    "test/test_cs_sparse_weights.py::test_order_slice_taper_contract",
+    "test/test_cs_sparse_weights.py::test_add_concept_edge_dedup_and_query",
+    "test/test_cs_sparse_weights.py::test_shared_untyped_square_store",
+    "test/test_cs_sparse_weights.py::test_any_edge_on_snap_row_fails_loud",
+    "test/test_cs_sparse_weights.py::test_family_values_grow_tail_preserving",
+    "test/test_cs_sparse_weights.py::test_source_code_activation_matches_dotproduct",
+    "test/test_cs_sparse_weights.py::test_source_code_activation_is_nonneg_presence_by_default",
+    "test/test_cs_sparse_weights.py::test_membership_read_is_input_dependent_and_differentiable",
+    "test/test_cs_sparse_weights.py::test_membership_read_never_updates_the_dictionary",
+    "test/test_cs_sparse_weights.py::test_cs_decode_scales_dictionary_atoms",
+    "test/test_cs_sparse_weights.py::test_forward_content_shape_and_stacking",
+    "test/test_cs_sparse_weights.py::test_forward_content_literal_poles_and_standing_bias",
+    "test/test_cs_sparse_weights.py::test_forward_content_activation_is_bounded",
+    "test/test_cs_sparse_weights.py::test_forward_content_empty_store_passes_a0",
+    "test/test_cs_sparse_weights.py::test_level_stats_are_report_only",
+    "test/test_cs_sparse_weights.py::test_forward_content_kernels_agree",
+    "test/test_cs_sparse_weights.py::test_forward_content_keeps_two_symbol_rows_per_code",
+    "test/test_cs_sparse_weights.py::test_forward_content_differentiable"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-271.recycle.json"
+}

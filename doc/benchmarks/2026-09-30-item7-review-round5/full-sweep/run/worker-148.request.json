@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-148.recycle.json"
+}

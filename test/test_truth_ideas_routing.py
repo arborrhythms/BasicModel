@@ -1,22 +1,4 @@
-"""Truth / Ideas processing -- store routing + trust (Workstreams F+G;
-doc/specs/mereological-order-raising.md "Truth / Ideas processing"; Alec
-2026-06-18).
-
-Stage 2: a learned relative relation is ROUTED by reducibility ("the
-intuitive and explicit knowings"):
-
-  * REDUCIBLE -- both ENTITY operands snap to existing WS codebook rows (no
-    mint) -> stays the WS-META "intuitive knowing" (the legacy reduce path),
-    carrying the full tetralemma trust;
-  * INEFFABLE -- a composed idea -> the uncollapsed (idea1, predicate, idea2)
-    triple lands in the sibling ``RelativeTruthStore`` ("explicit knowing")
-    with a SCALAR trust collapsed from the tetralemma (t - f; "inconsistency
-    is not a valid object of knowing").
-
-The routing is exercised directly on ``_maybe_learn_relation`` (the factor
-methods mocked so the gate is guaranteed to accept), mirroring
-``test_relative_sentence_codebook_insertion``.
-"""
+"""External provenance, independent evidence and relational readers (item 7)."""
 
 from __future__ import annotations
 
@@ -54,161 +36,6 @@ def _make_radix_model(config=_CONFIG):
     Models.TheData.load("xor")
     m.eval()
     return m
-
-
-def _accept_all(cs):
-    """Force the gate open by mocking the three factors to 1.0 each (so the
-    relation is also REDUCIBLE -- children factor 1.0)."""
-    cs._learn_score_children_in_codebook = lambda i1, i2: 1.0
-    cs._learn_score_is_truth_obvious = lambda rel: 1.0
-    cs._learn_score_resolves_contradiction = lambda rel: 1.0
-
-
-def _accept_but_ineffable(cs):
-    """Open the gate (tc=0) but make the relation IRREDUCIBLE: the children
-    factor is 0.0 so neither operand 'snaps' to a known code."""
-    cs._learn_score_children_in_codebook = lambda i1, i2: 0.0
-    cs._learn_score_is_truth_obvious = lambda rel: 1.0
-    cs._learn_score_resolves_contradiction = lambda rel: 1.0
-    cs.truth_criterion = 0.0
-
-
-def _three_ideas(D):
-    predicate = torch.zeros(D)
-    predicate[0] = 1.0
-    idea1 = torch.zeros(D)
-    idea1[1] = 1.0
-    idea2 = torch.zeros(D)
-    idea2[2] = 1.0
-    return predicate, idea1, idea2
-
-
-# -- pure helpers ----------------------------------------------------------
-
-class TestTrustCollapse(unittest.TestCase):
-    """``_collapse_trust`` = t - f, clamped to [-1, 1] (BOTH/NEITHER drop)."""
-
-    def test_collapse_is_t_minus_f(self):
-        from Spaces import ConceptualSpace
-        c = ConceptualSpace._collapse_trust
-        self.assertAlmostEqual(c((0.8, 0.1, 0.1, 0.0)), 0.7, places=6)
-        self.assertAlmostEqual(c((0.1, 0.6, 0.2, 0.1)), -0.5, places=6)
-        # BOTH / NEITHER never contribute.
-        self.assertAlmostEqual(c((0.0, 0.0, 1.0, 0.0)), 0.0, places=6)
-        self.assertAlmostEqual(c((0.0, 0.0, 0.0, 1.0)), 0.0, places=6)
-
-    def test_collapse_clamps(self):
-        from Spaces import ConceptualSpace
-        c = ConceptualSpace._collapse_trust
-        self.assertEqual(c((2.0, 0.0, 0.0, 0.0)), 1.0)
-        self.assertEqual(c((0.0, 2.0, 0.0, 0.0)), -1.0)
-
-
-class TestReducibility(unittest.TestCase):
-    """``_relation_is_reducible`` is True iff BOTH operands snap (children
-    factor == 1.0)."""
-
-    def test_reducible_only_when_both_snap(self):
-        m = _make_radix_model()
-        cs = m.conceptualSpace
-        D = int(cs.nDim)
-        _, idea1, idea2 = _three_ideas(D)
-        cs._learn_score_children_in_codebook = lambda i1, i2: 1.0
-        self.assertTrue(cs._relation_is_reducible(idea1, idea2))
-        cs._learn_score_children_in_codebook = lambda i1, i2: 0.5
-        self.assertFalse(cs._relation_is_reducible(idea1, idea2))
-        cs._learn_score_children_in_codebook = lambda i1, i2: 0.0
-        self.assertFalse(cs._relation_is_reducible(idea1, idea2))
-
-
-class TestRoutingReducible(unittest.TestCase):
-    """Reducible -> WS META ("intuitive knowing"); relative store untouched;
-    full tetralemma stored on the META node."""
-
-    def test_reducible_routes_to_ss_meta(self):
-        m = _make_radix_model()
-        cs = m.conceptualSpace
-        ws = cs.terminalSymbolSpace_ref
-        store = m.symbolSpace.relative_store
-        cs.truth_criterion = 0.3
-        _accept_all(cs)               # children == 1.0 -> reducible
-        D = int(cs.nDim)
-        predicate, idea1, idea2 = _three_ideas(D)
-        n_before = len(store)
-        pred_pos = cs._maybe_learn_relation(predicate, idea1, idea2)
-        self.assertIsInstance(pred_pos, int,
-                              "reducible relation returns the META position")
-        self.assertGreater(pred_pos, 0)
-        children = ws.taxonomy_children(pred_pos)
-        self.assertEqual(len(children), 2)
-        self.assertTrue(ws.is_meta(pred_pos))
-        trust = ws.meta_trust.get(pred_pos)
-        self.assertIsNotNone(trust, "WS META carries the FULL tetralemma")
-        self.assertEqual(len(trust), 4)
-        self.assertAlmostEqual(sum(trust), 1.0, places=5)
-        self.assertEqual(len(store), n_before,
-                         "reducible relation must NOT touch the relative store")
-
-
-class TestRoutingIneffable(unittest.TestCase):
-    """Ineffable -> RelativeTruthStore ("explicit knowing"); the uncollapsed
-    (idea1, predicate, idea2) triple stored with scalar trust; WS untouched."""
-
-    def test_ineffable_routes_to_relative_store(self):
-        m = _make_radix_model()
-        cs = m.conceptualSpace
-        ws = cs.terminalSymbolSpace_ref
-        store = m.symbolSpace.relative_store
-        _accept_but_ineffable(cs)
-        # Pin the tetralemma so the collapsed degree is a known non-zero.
-        cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
-        D = int(cs.nDim)
-        predicate, idea1, idea2 = _three_ideas(D)
-        n_before = len(store)
-        tax_before = dict(ws.taxonomy)
-        trust_before = dict(ws.meta_trust)
-
-        out = cs._maybe_learn_relation(predicate, idea1, idea2)
-
-        # Return shape distinguishes the explicit-knowing home.
-        self.assertIsInstance(out, tuple)
-        self.assertEqual(out[0], "idea")
-        row = out[1]
-        self.assertEqual(len(store), n_before + 1,
-                         "ineffable relation appends one triple")
-        # The uncollapsed triple is (idea1, predicate, idea2) * degree, with
-        # degree = t - f = 0.7. Operands are conformed to the store width
-        # (leading content slice; zero-padded when the store is wider).
-        sd = int(store.nDim)
-        k = idea1.numel()
-        np1, vp, np2 = store.triple(row)
-        self.assertEqual(np1.numel(), sd)
-        self.assertTrue(torch.allclose(np1[:k], idea1[:k] * 0.7, atol=1e-5))
-        self.assertTrue(torch.allclose(vp[:k], predicate[:k] * 0.7, atol=1e-5))
-        self.assertTrue(torch.allclose(np2[:k], idea2[:k] * 0.7, atol=1e-5))
-        if sd > k:
-            self.assertTrue(torch.allclose(
-                np1[k:], torch.zeros(sd - k), atol=1e-6),
-                "where/when tail is zero-padded")
-        # WS taxonomy is NOT mutated (testimony never grows the codebook).
-        self.assertEqual(ws.taxonomy, tax_before,
-                         "ineffable relation must not touch the WS taxonomy")
-        self.assertEqual(ws.meta_trust, trust_before)
-
-    def test_ineffable_degrades_to_reduce_without_relative_store(self):
-        """No relative store reachable -> graceful degrade to the reduce
-        path so the relation is never silently dropped."""
-        m = _make_radix_model()
-        cs = m.conceptualSpace
-        ws = cs.terminalSymbolSpace_ref
-        _accept_but_ineffable(cs)
-        cs._relative_store_for_learning = lambda: None
-        D = int(cs.nDim)
-        predicate, idea1, idea2 = _three_ideas(D)
-        out = cs._maybe_learn_relation(predicate, idea1, idea2)
-        self.assertIsInstance(out, int,
-                              "degrade path returns the reduced META position")
-        self.assertTrue(ws.is_meta(out))
 
 
 # -- config -> stamp wiring ------------------------------------------------
@@ -267,7 +94,7 @@ class TestStmLtmTrust(unittest.TestCase):
         cs.stm._depth = torch.tensor([3, 1], dtype=torch.long)
         out = cs.stm_end_state_trust(buf, torch.tensor([True, False]))
         self.assertIsNotNone(out)
-        self.assertAlmostEqual(out[0], 0.7, places=6)   # relative -> t - f
+        self.assertAlmostEqual(out[0], 1.0, places=6)   # provenance, not predicate
         self.assertAlmostEqual(
             out[1], 1.0, places=6,
             msg="absolute row carries trust that the event description refers")
@@ -285,7 +112,7 @@ class TestStmLtmTrust(unittest.TestCase):
         cs.stm._buffer = buf
         cs.stm._depth = torch.tensor([3, 1], dtype=torch.long)
         out = cs.stm_end_state_trust(buf, torch.tensor([True, False]))
-        self.assertAlmostEqual(out[0], 0.35, places=6)
+        self.assertAlmostEqual(out[0], 0.5, places=6)
         self.assertAlmostEqual(out[1], 0.5, places=6)
 
     def test_ltm_slot_persists_scalar_trust(self):
@@ -320,8 +147,8 @@ def _v(*vals):
 
 
 def _store():
-    from Layers import RelativeTruthStore
-    return RelativeTruthStore(_D2, max_triples=16)
+    from Layers import TernaryTruthStore
+    return TernaryTruthStore(_D2, capacity=16)
 
 
 _CACHED_CS = []
@@ -355,7 +182,7 @@ class TestReason(unittest.TestCase):
     def test_single_step_modus_ponens(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.8)  # A->B, t1
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.8)  # A->B, t1
         res = cs.reason(_v(1, 0), 0.5, parthood_threshold=0.7, store=st)
         self.assertEqual(len(res['derived']), 1)
         d = res['derived'][0]
@@ -370,7 +197,7 @@ class TestReason(unittest.TestCase):
     def test_no_fire_below_parthood_threshold(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.8)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.8)
         res = cs.reason(_v(0, 0, 1), 1.0, parthood_threshold=0.7, store=st)
         self.assertEqual(res['derived'], [])
         self.assertEqual(res['luminosity_gain'], 0.0)
@@ -378,7 +205,7 @@ class TestReason(unittest.TestCase):
     def test_zero_trust_relation_skipped(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.0)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.0)
         res = cs.reason(_v(1, 0), 1.0, parthood_threshold=0.7, store=st)
         self.assertEqual(res['derived'], [],
                          "a ~zero-trust relation carries no knowing to fire")
@@ -386,7 +213,7 @@ class TestReason(unittest.TestCase):
     def test_negative_trust_lie_not_illuminating(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=-0.6)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=-0.6)
         res = cs.reason(_v(1, 0), 0.5, parthood_threshold=0.7, store=st)
         self.assertEqual(len(res['derived']), 1)
         self.assertAlmostEqual(res['derived'][0]['trust'], -0.3, places=6)
@@ -396,8 +223,8 @@ class TestReason(unittest.TestCase):
     def test_forward_chaining(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 0, 0), _v(0, 1, 0), _v(0, 1, 0), degree=1.0)
-        st.record_triple(_v(0, 1, 0), _v(0, 0, 1), _v(0, 0, 1), degree=1.0)
+        st.append_relation(_v(1, 0, 0), _v(0, 1, 0), _v(0, 1, 0), trust=1.0)
+        st.append_relation(_v(0, 1, 0), _v(0, 0, 1), _v(0, 0, 1), trust=1.0)
         one = cs.reason(_v(1, 0, 0), 1.0, max_steps=1, store=st)
         self.assertEqual(len(one['derived']), 1, "one step -> one hop")
         two = cs.reason(_v(1, 0, 0), 1.0, max_steps=2, store=st)
@@ -414,45 +241,47 @@ class TestReason(unittest.TestCase):
 # -- stage 5: verification against order-0 episodes ------------------------
 
 class TestVerifyRelation(unittest.TestCase):
-    def test_support_raises_trust_and_rebakes(self):
+    def test_support_joins_evidence_without_rebaking(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.5)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5)
         # episodes whose antecedent is part of A=[1,1] and consequent part of
         # B=[0,0,1] -> full support.
         eps = [(_v(1, 0), _v(0, 0, 1)), (_v(0, 1), _v(0, 0, 1))]
         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
-        self.assertAlmostEqual(new, 0.75, places=6)   # 0.5*0.5 + 0.5*1
-        # magnitude re-baked: np1 == A * new = [1,1]*0.75.
-        np1, _vp, np2 = st.triple(0)
-        self.assertTrue(torch.allclose(np1, _v(1, 1) * 0.75, atol=1e-5))
-        self.assertTrue(torch.allclose(np2, _v(0, 0, 1) * 0.75, atol=1e-5))
+        self.assertAlmostEqual(new, 0.5, places=6)   # observed positive evidence
+        # Evidence updates leave the stored vectors unscaled.
+        np1, _vp, np2 = st.slots[0].unbind()
+        self.assertTrue(torch.allclose(np1, _v(1, 1), atol=1e-5))
+        self.assertTrue(torch.allclose(np2, _v(0, 0, 1), atol=1e-5))
 
-    def test_counterevidence_lowers_trust(self):
+    def test_counterevidence_joins_the_negative_pole(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.5)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5,
+                           evidence=(.5, 0.))
         # antecedent covered, consequent NOT (it's some other thing) -> all
         # relevant, none supporting.
         eps = [(_v(1, 0), _v(1, 0)), (_v(0, 1), _v(1, 0))]
         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
-        self.assertAlmostEqual(new, -0.25, places=6)  # 0.5*0.5 + 0.5*(-1)
+        self.assertAlmostEqual(new, 0., places=6)  # equal independent poles
+        self.assertAlmostEqual(float(st.trust[0]), .5, places=6)
 
     def test_no_relevant_episode_leaves_trust(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.5)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5)
         # antecedent not covered by A -> no relevant evidence.
         eps = [(_v(0, 0, 1), _v(0, 0, 1))]
         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
         self.assertAlmostEqual(new, 0.5, places=6)
 
-    def test_zero_trust_relation_unverifiable(self):
+    def test_zero_trust_relation_can_acquire_evidence(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.0)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.0)
         self.assertEqual(cs.verify_relation(0, [(_v(1, 0), _v(0, 0, 1))],
-                                            store=st), 0.0)
+                                            store=st), 0.5)
 
 
 # -- persistence: per-triple trust survives state_dict round-trip ----------
@@ -465,7 +294,7 @@ class TestRelativeTrustPersistence(unittest.TestCase):
 
     def test_trust_in_state_dict_roundtrip(self):
         st = _store()
-        idx = st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.7)
+        idx = st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
         self.assertEqual(idx, 0)
         sd = st.state_dict()
         self.assertIn('trust', sd, "trust must be a serialized buffer")
@@ -476,12 +305,12 @@ class TestRelativeTrustPersistence(unittest.TestCase):
         self.assertAlmostEqual(float(fresh.trust[0]), 0.7, places=6)
         # back-compat list view tracks the buffer over live rows.
         self.assertEqual(len(fresh), 1)
-        self.assertAlmostEqual(fresh._trusts[0], 0.7, places=6)
+        self.assertAlmostEqual(fresh.trust[0], 0.7, places=6)
 
     def test_reason_over_reloaded_store_recovers_t1(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.7)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
         sd = st.state_dict()
 
         reloaded = _store()
@@ -497,7 +326,7 @@ class TestRelativeTrustPersistence(unittest.TestCase):
 
     def test_old_checkpoint_without_trust_loads_nonstrict(self):
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.7)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
         sd = st.state_dict()
         del sd['trust']   # simulate a pre-fix checkpoint lacking the key
         fresh = _store()
@@ -508,12 +337,12 @@ class TestRelativeTrustPersistence(unittest.TestCase):
     def test_verify_relation_writes_back_to_buffer(self):
         cs = _cs()
         st = _store()
-        st.record_triple(_v(1, 1), _v(0, 1), _v(0, 0, 1), degree=0.5)
+        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5)
         eps = [(_v(1, 0), _v(0, 0, 1)), (_v(0, 1), _v(0, 0, 1))]
         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
-        self.assertAlmostEqual(new, 0.75, places=6)
+        self.assertAlmostEqual(new, 0.5, places=6)
         # the write landed in the buffer (not a discarded list snapshot).
-        self.assertAlmostEqual(float(st.trust[0]), 0.75, places=6)
+        self.assertAlmostEqual(float(st.c_plus[0]), 0.5, places=6)
 
 
 if __name__ == "__main__":

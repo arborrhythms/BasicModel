@@ -1,0 +1,5 @@
+test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence
+test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision
+test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties
+
+3 tests collected in 0.97s

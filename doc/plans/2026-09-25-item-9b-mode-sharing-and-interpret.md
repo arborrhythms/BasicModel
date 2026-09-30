@@ -285,7 +285,7 @@ event and a symbol occurrence keep their own. So the three things are:
 | Thing | `.where` | `.when` | `.what` |
 |---|---|---|---|
 | percept event, symbol occurrence | its own bracket | its own time | one code |
-| a **field** (a reading; an LTM row is a sealed field) | one convex bracket | one interval | many codes: the parts and wholes inside the bracket |
+| a **field** (a reading; an LTM row is a ended field) | one convex bracket | one interval | many codes: the parts and wholes inside the bracket |
 | a **concept row** in the store | none | none | its definition over percept poles |
 
 **What `.when` is for a field.** The field's time is its position in the
@@ -313,7 +313,7 @@ interval the field reads, not by stamping a time on the code.
 
 **Consequences for LTM and symbols (Alec, 2026-09-25).** (i) **Every LTM
 row picks up a `.where` and a `.when`**: the field's pair, written once by
-the seal (item 7's row schema gains the two columns beside `refs`,
+the closing (item 7's row schema gains the two columns beside `refs`,
 surprise and the `(c⁺, c⁻)` pair). (ii) **`.where` is one unique field
 over all percepts.** Input positions have unique `.where`s by
 construction; every **symbol occurrence** must also have a unique
@@ -342,7 +342,7 @@ already (`canonical_shape("ConceptualSpace") = (0, 0)`); the symbolic
 layer's mux/demux of `.where`/`.when` around `execute` stays, since symbol
 occurrences are percepts. What 4d adds to 4c is the rule that the field
 records **one** (where, when) beside its activation vector, and that an
-LTM row is a sealed field carrying that pair; the seal (item 7) writes it
+LTM row is a ended field carrying that pair; the closing (item 7) writes it
 once per row. No per-concept temporal coordinate is introduced anywhere.
 
 ## 4e. Fixed-capacity perceptual codebooks with where-space slices (proposed; question 7e)
@@ -544,6 +544,21 @@ accepted the correction on September 26, and Alec authorized publication.
 
 ## 5. The `interpret` operator (decided, Alec 2026-09-25)
 
+*Amended (Alec, 2026-09-29):* `interpret` is "a replacement for the
+previous two-step behavior: mint a word, and because we know the word is
+not the object, we link those two concepts", and the link is a
+definition row, `word DEF object`, with a lookup table in both
+directions, not a META fold. The object is no longer written as a sigma
+over its word. What this entry says of the operator's faces, of unknown
+words and of its tests stands; what it says of the META and of
+`create_word_object_meta`'s triple is superseded by
+[two truths §17](../specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
+It is also no longer an operator of serial mode alone: every read word
+is interpreted, under every binding. The word is a concept ("a word has
+to exist as a concept"), with its parts and its wholes, and `interpret`
+is "a unary that should do exactly that replacement", of the word by its
+object, so that no row is added for the object.
+
 **What it is.** A serial-mode `<compose>` operator that takes a
 **word-concept** and yields the **object-concept** it refers to:
 
@@ -583,7 +598,7 @@ says a kind over objects "cannot be witnessed until the mind has a video
 feed; its membership rests on testimony". The new row's order follows the
 same grammatical resolution as a known word's (a name yields an order-1
 individual, a count noun a kind); its later definition is written when
-percepts are witnessed with it, or asserted by the seal (*a wug is a
+percepts are witnessed with it, or asserted by the closing (*a wug is a
 bird*). Admission follows the ordinary provisional rule, recurrence at the
 boundary, so a one-off misspelling is forgotten and a recurring new word
 becomes an object. The second occurrence of a new word resolves to the
@@ -612,10 +627,10 @@ the throughput levers in [FutureWork](../FutureWork.md#throughput-levers-for-the
 the host side (`Language.py`, the order-1 branch of the symbol tower). Per
 the no-legacy rule, `interpret` **replaces** that host-side path with a
 declared grammar operator: the same shared inventory, invoked on every serial
-word before composition, with an owned lexical inverse. The two-truths seal
+word before composition, with an owned lexical inverse. The two-truths closing
 already writes asserted part rows *between the object concepts the words
 resolve to*; `interpret` is the operator that produces those object
-concepts, so the seal stops resolving them itself.
+concepts, so the closing stops resolving them itself.
 
 **Faces.** Compose: `interpret.forward(word) → object`. Generate:
 `interpret_I1 = interpret.reverse(interpret_O1)`, object → word, which is
@@ -627,7 +642,7 @@ the ordinary serial reading and adds no separate naming pass.
 **Tests.** (1) `interpret` returns a word's existing object at its stored
 order, for both operator-created and witnessed associations. A word without
 an object creates one at order 1 by default. (2) When several associations
-exist, grammar selects the requested kind or particular, and the seal
+exist, grammar selects the requested kind or particular, and the closing
 writes the part row between the two object rows, as the two-truths contract
 requires. (3) `interpret.reverse` on that object regenerates the word
 through the spelling inverse. (4) **Every word is interpreted**: in a
@@ -635,7 +650,7 @@ serial sentence, each composed operand is an object row, never a raw
 word-concept; no surface anchor exists for `interpret`. (5) **Unknown
 word**: *the wug sat* mints one provisional object row with the word as its
 only literal; *the wug flew* resolves to the same row; a later witnessed
-percept, or the seal on *a wug is a bird*, writes its definition; a word
+percept, or the closing on *a wug is a bird*, writes its definition; a word
 seen once is not admitted at the boundary. (6) **Parity across modes**: the
 object row `interpret` produces in serial mode is the row the parallel
 field binds for the same input (entry 1's test). (7)

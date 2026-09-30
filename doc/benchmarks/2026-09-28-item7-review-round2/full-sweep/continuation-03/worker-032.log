@@ -1,0 +1,60 @@
+.FF....                                                                  [100%]
+=================================== FAILURES ===================================
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer
+    probe = _run_forward_spying_fold(model)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:174: in _run_forward_spying_fold
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23814: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13583: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11502: in _stage_reading_word_concepts
+    owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:55: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=word_reading)
+bin/Spaces.py:18228: in _populate_concept_weights
+    self.add_concept_edge(c_row, target, 1.)
+bin/Spaces.py:17304: in add_concept_edge
+    source0 = self._order0_inventory_row(int(col))
+                                         ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer
+    probe = _run_forward_spying_fold(model)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:174: in _run_forward_spying_fold
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23814: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13583: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11502: in _stage_reading_word_concepts
+    owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:55: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=word_reading)
+bin/Spaces.py:18228: in _populate_concept_weights
+    self.add_concept_edge(c_row, target, 1.)
+bin/Spaces.py:17304: in add_concept_edge
+    source0 = self._order0_inventory_row(int(col))
+                                         ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+=========================== short test summary info ============================
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+2 failed, 5 passed in 4.85s

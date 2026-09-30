@@ -1,0 +1,220 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "completed": [
+    "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+    "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+    "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+    "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+    "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-27/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-27/worker-000.json"
+      ],
+      "pid": 35519,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 432080168,
+      "elapsed_seconds": 3.622912749880925,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-27/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+        "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+        "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+        "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+        "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+        "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+        "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+        "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+        "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+      ],
+      "completed": [
+        "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+        "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+        "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+        "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+        "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+        "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+        "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+        "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+        "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0040577908512204885,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0030134578701108694,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002284332877025008,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002004374982789159,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.358294144272804e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0039725829847157,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0029137919191271067,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007416541920974851,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005584208061918616,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005030833883211017,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007020666962489486,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-27",
+  "elapsed_seconds": 7.3926473329775035,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 432080168,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-27/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-27/collect.json"
+    ],
+    "pid": 35511,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432014560,
+    "elapsed_seconds": 3.527085250010714,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/explicit-after-owner/group-27/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+        "test/test_item7_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+        "test/test_item7_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+        "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+        "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+        "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+        "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+        "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+        "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+        "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

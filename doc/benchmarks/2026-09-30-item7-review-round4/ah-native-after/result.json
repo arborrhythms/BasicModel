@@ -1,0 +1,18 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_lexical_reference_orders.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ah-rfs4ed8l/doc/benchmarks/2026-09-30-item7-review-round4/probe_definition_context_native.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

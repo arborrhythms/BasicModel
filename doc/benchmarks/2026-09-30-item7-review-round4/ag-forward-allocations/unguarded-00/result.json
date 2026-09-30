@@ -1,0 +1,9 @@
+{
+  "selector": "doc/benchmarks/2026-09-30-item7-review-round4/probe_forward_allocations.py::test_native_forward_allocation_owners",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 29068008608,
+  "elapsed_seconds": 290.5606431250926
+}

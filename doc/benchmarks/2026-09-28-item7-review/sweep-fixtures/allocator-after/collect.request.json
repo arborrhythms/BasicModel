@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_where_encoding_recovery.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

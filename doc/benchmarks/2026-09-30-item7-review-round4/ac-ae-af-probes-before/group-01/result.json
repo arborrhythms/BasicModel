@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/worker-000.json"
+      ],
+      "pid": 65226,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 435143928,
+      "elapsed_seconds": 6.900563583010808,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 3.4564307909458876,
+          "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py:30: in test_more_than_eight_words_reuse_the_attended_field\n    assert len(slot) == 1, word\nE   AssertionError: lynx\nE   assert 0 == 1\nE    +  where 0 = len(tensor([], dtype=torch.int64))",
+          "stdout": "{\"form\": \"lynx\", \"lookup\": [12], \"word\": null, \"objects\": [], \"carrier_ids\": [-1, -1, -1, -1, -1, -1, -1, -1], \"source_is_terminal\": true}\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01",
+  "elapsed_seconds": 10.175241791876033,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435143928,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/collect.json"
+    ],
+    "pid": 65208,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180863816,
+    "elapsed_seconds": 2.9034466249868274,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ac-ae-af-probes-before/group-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

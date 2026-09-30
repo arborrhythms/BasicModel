@@ -1,0 +1,155 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+  ],
+  "completed": [
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-00/worker-000.json"
+      ],
+      "pid": 9548,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435471752,
+      "elapsed_seconds": 3.8176860420498997,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+        "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+        "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+      ],
+      "completed": [
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+        "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+        "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01041762507520616,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008091584080830216,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0050065419636666775,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007623958168551326,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003269040957093239,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003984249895438552,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-00",
+  "elapsed_seconds": 7.646366500062868,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435471752,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-00/collect.json"
+    ],
+    "pid": 9537,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433390840,
+    "elapsed_seconds": 3.513505417155102,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-after-before-ports/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+        "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+        "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

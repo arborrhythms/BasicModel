@@ -1,0 +1,6 @@
+{
+  "documents_checked": 117,
+  "todo_relative_links_checked": 76,
+  "all_targets_resolve": true,
+  "method": "Called the existing documentation-link assertion for all collected documents plus todo.md, without changing the source frozen for the running rename sweep."
+}

@@ -1,0 +1,12 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+  "device": "cpu"
+}

@@ -1,0 +1,18 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_definitions.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_item7_word_interpretation.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

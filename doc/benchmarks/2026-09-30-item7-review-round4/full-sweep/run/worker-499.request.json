@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_ps_reverse_e2e.py::test_meronymic_reverse_replays_surface",
+    "test/test_ps_reverse_e2e.py::test_meronymic_synthesis_can_emit_spaces",
+    "test/test_ps_reverse_e2e.py::test_grammar_has_no_and_token",
+    "test/test_ps_reverse_e2e.py::test_e2e_round_trip_with_learned_marker"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-499.recycle.json"
+}

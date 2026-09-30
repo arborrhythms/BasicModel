@@ -155,7 +155,7 @@ transitions.
 > STM capacity, proving that the next word begins below capacity. The retired
 > evaluation applied 0/728 times on the first FineWeb probe but consumed about
 > half of the isolated CSLang stage. Its reconstruction-trace position remains
-> an explicit inactive sentinel; demanded sentence-root sealing is unchanged.
+> an explicit inactive sentinel; demanded sentence-root ending is unchanged.
 
 The focused ownership and pipeline-parallel contract for sparse, per-execution
 `SubSpace` carriers and Space-owned codebooks is specified in

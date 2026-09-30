@@ -1,0 +1,63 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place"
+  ],
+  "completed": [
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_references_parameter",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0005379999056458473,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:131: in test_symbolic_space_attach_creates_references_parameter\n    assert hasattr(ws, 'references')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'references')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_attach_creates_order_buffer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00034166593104600906,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:151: in test_symbolic_space_attach_creates_order_buffer\n    assert hasattr(ws, 'order')\nE   AssertionError: assert False\nE    +  where False = hasattr(WholeSpace(), 'order')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_references_in_named_parameters",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00031933304853737354,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:165: in test_symbolic_space_references_in_named_parameters\n    assert 'references' in names\nE   AssertionError: assert 'references' in []",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_order_in_named_buffers",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00029929110314697027,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:175: in test_symbolic_space_order_in_named_buffers\n    assert 'order' in names\nE   AssertionError: assert 'order' in []",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_reattach_updates_in_place",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00028662499971687794,
+      "message": "/Users/arogers/github/WikiOracle/basicmodel/test/test_word_space_attach_knowledge.py:186: in test_symbolic_space_reattach_updates_in_place\n    refs_id_before = id(ws.references)\n                        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'references'. Did you mean: 'dereference'?",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities"
+  ],
+  "completed": [
+    "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06582874990999699,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20054366695694625,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7994855840224773,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007003124803304672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029629624914377928,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06553945783525705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0038594170473515987,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006297167157754302,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.028475374914705753,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029363415902480483,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11237833392806351,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5832784578669816,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20718779182061553,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

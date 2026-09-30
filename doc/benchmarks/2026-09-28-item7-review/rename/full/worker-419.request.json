@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_ps_byte_fallback_utf8.py::test_routed_byte_fallback_round_trips_non_ascii",
+    "test/test_ps_byte_fallback_utf8.py::test_routed_byte_terminals_preserve_offsets_and_dont_overlap",
+    "test/test_ps_byte_fallback_utf8.py::test_split_multibyte_glyph_has_no_replacement_char",
+    "test/test_ps_byte_fallback_utf8.py::test_known_word_with_byte_fallback_mix_round_trips"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-419.recycle.json"
+}

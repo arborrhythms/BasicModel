@@ -11,7 +11,9 @@ def test_real_sentence_capture_owns_native_object_ids_across_later_staging(tmp_p
     model = _native_answer_model(tmp_path, False)
     model.eval()
     try:
-        with torch.no_grad():
+        from reading_fixtures import capture_readings
+        model._concept_owner().new_concept()  # leave an allocator ID with no dictionary row
+        with capture_readings(model) as readings, torch.no_grad():
             held = _capture_program_probe(model, ['1 plus 2', '3 plus 4'])
             source = model.inputSpace
             expected = torch.where(source._ar_word_object_rows >= 0,
@@ -19,15 +21,16 @@ def test_real_sentence_capture_owns_native_object_ids_across_later_staging(tmp_p
                                    source._ar_word_concept_ids)
             active = source._word_active_mask
             assert bool((expected[active] > 0).any())
+            programs = readings[0]
             snapshots = []
-            for row, program in enumerate(held.answer_program):
+            for row, program in enumerate(programs):
                 torch.testing.assert_close(program.concept_ids, expected[row, active[row]])
                 # A concept ID is an allocator address, not its dictionary row.
                 known = program.concept_ids > 0
                 assert bool((program.concept_ids[known] != program.rows[known]).any())
                 snapshots.append(program.concept_ids.clone())
             _capture_program_probe(model, ['5 plus 6', '7 plus 8'])
-        for program, snapshot in zip(held.answer_program, snapshots):
+        for program, snapshot in zip(programs, snapshots):
             torch.testing.assert_close(program.concept_ids, snapshot)
             durable = program.detached()
             torch.testing.assert_close(durable.concept_ids, snapshot.cpu())

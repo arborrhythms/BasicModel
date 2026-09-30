@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: memory</h1><p>Exit 137; 8/16 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.002212833031080663</pre></td><td><pre>test/test_sparse_concept_e2e.py:65: in test_word_symbol_defines_order0_native_features_and_object_stays_unwritten
+    A, B, C = cs.interpret_word([1, 2], WORD, key=&quot;cat&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0018907079938799143</pre></td><td><pre>test/test_sparse_concept_e2e.py:83: in test_meta_is_a_sigma_generalization_over_named_word_and_object_members
+    A, B, C = cs.interpret_word([1, 2], WORD, key=&quot;cat&quot;)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0021170000545680523</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_population_inactive_is_noop</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0020010409643873572</pre></td><td><pre>test/test_sparse_concept_e2e.py:107: in test_population_inactive_is_noop
+    cs.interpret_word([1, 2], WORD, key=&quot;cat&quot;)
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0020045420387759805</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00945474999025464</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0016609999584034085</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>4.511044207960367</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

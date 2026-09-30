@@ -1,0 +1,22 @@
+[
+  "test/test_item7_acceptance.py",
+  "test/test_item7_clause_program.py",
+  "test/test_item7_clause_state.py",
+  "test/test_item7_context.py",
+  "test/test_item7_expectation.py",
+  "test/test_item7_grammar.py",
+  "test/test_item7_provenance.py",
+  "test/test_item7_references.py",
+  "test/test_item7_retention.py",
+  "test/test_item7_storage.py",
+  "test/test_item7_taxonomy.py",
+  "test/test_item9b_interpret.py",
+  "test/test_reference_table.py",
+  "test/test_cs_symbol_table.py",
+  "test/test_structural_checkpoint.py",
+  "test/test_selected_nested_meaning.py",
+  "test/test_sentence_expectation.py",
+  "test/test_existence_metadata.py",
+  "test/test_symbolize_layer.py",
+  "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance"
+]

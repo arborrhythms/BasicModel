@@ -1,0 +1,203 @@
+--- a/test/index_fixtures.py
++++ b/test/index_fixtures.py
+@@ -1,5 +1,26 @@
+ """Forced numerical unfolding for inverted-index mechanism tests."""
+ import torch
++from types import SimpleNamespace
++
++
++def terminal_model_index(model, references):
++    """Force terminal generation over primed native codes for reader mechanisms.
++
++    The production index still unfolds numeric values and descends sigma using
++    each row's stamp. This fixture asserts no learned parsing or word recovery.
++    """
++    from MemoryIndex import configure_model_index
++    from Queries import _existing_row
++    model.languageSpace = SimpleNamespace(
++        _generate_binary_ops=(), _generate_unary_ops=(),
++        reverse_inverses=lambda _ops: (),
++        generate_policy_logits=lambda values: values.new_zeros(len(values), 1))
++    space = model.conceptualSpace
++    rows = torch.tensor([_existing_row(space, reference) for reference in references
++                         if reference is not None])
++    space.prime_seen(rows)
++    configure_model_index(model, model.symbolSpace.ltm_store)
++    return max((space._row_order(int(row)) for row in rows), default=0)
+ 
+ 
+ def one_hot_unfold(value, limit, **kwargs):
+--- a/test/test_query_work_budget.py
++++ b/test/test_query_work_budget.py
+@@ -80,7 +80,9 @@
+ 
+ 
+ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypatch):
+-    from Queries import _existing_row
++    from Queries import _existing_row, ThoughtLTMCapability
++    from reasoning import TruthGroundedReasoner
++    from index_fixtures import append_indexed
+     cs = _cs()
+     ref = ('sym', cs.new_concept())
+     cs._csw_concept_row(0, ref[1])
+@@ -88,8 +90,12 @@
+                       role_refs=(ref, None, None))
+     store = TernaryTruthStore(8)
+     store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
+-    store.append_meaning(meaning, kind="fact", trust=.6)
+-    store.append_meaning(meaning, kind="fact", trust=-.4)
++    code = _existing_row(cs, ref)
++    append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=.6)
++    append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=-.4)
++    # This mechanism budgets primed candidate reads. Indexing precedes the
++    # query; its context supplies no generation work or renewal of the meter.
++    store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
+     read, original = [], store.row
+ 
+     def row(index):
+@@ -98,9 +104,13 @@
+ 
+     monkeypatch.setattr(store, "row", row)
+     meter = budget(2)
++    reader = TruthGroundedReasoner(store=store)
++    context = replace(_context(cs, store=store, work=meter),
++        ltm=ThoughtLTMCapability(store=reader.reasoning_store,
++            equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
+     from test_query_vp_boundaries import _signature
+     result = _signature('exist', 'I1').invoke(
+-        _context(cs, store=store, work=meter), meaning)
++        context, meaning)
+     assert read == [0] and result["records_scanned"] == 1
+     assert result["support_true"] == pytest.approx(.6)
+     assert result["support_false"] == 0 and "work_budget" in result["incomplete"]
+--- a/test/test_replacement_kernel_contracts.py
++++ b/test/test_replacement_kernel_contracts.py
+@@ -80,12 +80,14 @@
+ 
+ @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
+ def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
++    from index_fixtures import terminal_model_index
+     model, registry, store, (a, b, _c, _d) = _world()
+     meaning = registry.form('part', a, b, mode='assertive')
++    order = terminal_model_index(model, meaning.role_refs)
+     for trust in (positive, -negative):
+         if trust:
+-            store.append_meaning(meaning, kind='fact', trust=trust)
+-    occurrence = store.append_meaning(meaning, kind='unverified', trust=0)
++            store.append_meaning(meaning, kind='fact', trust=trust, order=order)
++    occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
+     with model._query_boundary_scope((0,)):
+         from QueryWork import QueryWorkBudget
+         query = registry.form('exist', store.row(occurrence)['occurrence'],
+--- a/test/test_taxonomy_policy.py
++++ b/test/test_taxonomy_policy.py
+@@ -27,9 +27,11 @@
+ 
+ 
+ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
++    from index_fixtures import terminal_model_index
+     cs, (a, b, _), store, model = _setup()
+     fact = model.grammatical_thoughts.form('part', a, b, mode='assertive')
+-    store.append_meaning(fact, trust=1)
++    order = terminal_model_index(model, fact.role_refs)
++    store.append_meaning(fact, trust=1, order=order)
+     assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1
+     result = model.reason_about(QuerySpec.from_surface('part', a, b))
+     assert result.support_true == 0
+--- a/test/test_truth_ideas_routing.py
++++ b/test/test_truth_ideas_routing.py
+@@ -36,43 +36,6 @@
+     Models.TheData.load("xor")
+     m.eval()
+     return m
+-
+-
+-def _accept_all(cs):
+-    """Force the gate open by mocking the three factors to 1.0 each (so the
+-    relation is also REDUCIBLE -- children factor 1.0)."""
+-    cs._learn_score_children_in_codebook = lambda i1, i2: 1.0
+-    cs._learn_score_is_truth_obvious = lambda rel: 1.0
+-    cs._learn_score_resolves_contradiction = lambda rel: 1.0
+-
+-
+-def _accept_but_ineffable(cs):
+-    """Open the gate (tc=0) but make the relation IRREDUCIBLE: the children
+-    factor is 0.0 so neither operand 'snaps' to a known code."""
+-    cs._learn_score_children_in_codebook = lambda i1, i2: 0.0
+-    cs._learn_score_is_truth_obvious = lambda rel: 1.0
+-    cs._learn_score_resolves_contradiction = lambda rel: 1.0
+-    cs.truth_criterion = 0.0
+-
+-
+-def _three_ideas(D):
+-    predicate = torch.zeros(D)
+-    predicate[0] = 1.0
+-    idea1 = torch.zeros(D)
+-    idea1[1] = 1.0
+-    idea2 = torch.zeros(D)
+-    idea2[2] = 1.0
+-    return predicate, idea1, idea2
+-
+-
+-# -- pure helpers ----------------------------------------------------------
+-
+-
+-
+-
+-
+-
+-
+ 
+ 
+ # -- config -> stamp wiring ------------------------------------------------
+@@ -286,21 +249,23 @@
+         # B=[0,0,1] -> full support.
+         eps = [(_v(1, 0), _v(0, 0, 1)), (_v(0, 1), _v(0, 0, 1))]
+         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
+-        self.assertAlmostEqual(new, 0.5, places=6)   # 0.5*0.5 + 0.5*1
+-        # magnitude re-baked: np1 == A * new = [1,1]*0.75.
++        self.assertAlmostEqual(new, 0.5, places=6)   # observed positive evidence
++        # Evidence updates leave the stored vectors unscaled.
+         np1, _vp, np2 = st.slots[0].unbind()
+         self.assertTrue(torch.allclose(np1, _v(1, 1), atol=1e-5))
+         self.assertTrue(torch.allclose(np2, _v(0, 0, 1), atol=1e-5))
+ 
+-    def test_counterevidence_lowers_trust(self):
+-        cs = _cs()
+-        st = _store()
+-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5)
++    def test_counterevidence_joins_the_negative_pole(self):
++        cs = _cs()
++        st = _store()
++        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5,
++                           evidence=(.5, 0.))
+         # antecedent covered, consequent NOT (it's some other thing) -> all
+         # relevant, none supporting.
+         eps = [(_v(1, 0), _v(1, 0)), (_v(0, 1), _v(1, 0))]
+         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
+-        self.assertAlmostEqual(new, 0., places=6)  # 0.5*0.5 + 0.5*(-1)
++        self.assertAlmostEqual(new, 0., places=6)  # equal independent poles
++        self.assertAlmostEqual(float(st.trust[0]), .5, places=6)
+ 
+     def test_no_relevant_episode_leaves_trust(self):
+         cs = _cs()
+--- a/test/test_two_truth_stores.py
++++ b/test/test_two_truth_stores.py
+@@ -148,7 +148,7 @@
+     triple, not a permuted one — and degrades gradedly."""
+     rs = _relative_store()
+     np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
+-    rs.append_relation(np1, vp, np2, trust=1.)
++    rs.append_relation(np1, vp, np2, trust=1., evidence=(1., 0.))
+     assert rs.evaluate(np1, vp, np2)[0] == pytest.approx(1.0, abs=1e-5)
+     # Swapped consequent: the relation never licensed it.
+     assert rs.evaluate(np1, vp, _vec(0.0, 0.0, -1.0))[0] == pytest.approx(
+@@ -164,7 +164,7 @@
+     yields that relation's consequent; below threshold, nothing."""
+     rs = _relative_store()
+     np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
+-    rs.append_relation(np1, vp, np2, trust=1.)
++    rs.append_relation(np1, vp, np2, trust=1., evidence=(1., 0.))
+     out = rs.consequents(_vec(0.95, 0.05))
+     assert len(out) == 1
+     idx, match, vp_row, np2_row = out[0]

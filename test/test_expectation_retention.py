@@ -7,7 +7,7 @@ import torch
 
 from Layers import InterSentenceLayer, TernaryTruthStore
 from Meaning import ConceptualMeaning
-from Models import _append_observed_meaning
+from meaning_fixtures import record_observation
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
 
 
@@ -50,7 +50,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
 
     source = _meaning(1.0, scope={"where": ("sym", 3)})
     _observe(discourse, source, document)
-    first = _append_observed_meaning(store, source.roles, 3, meaning=source)
+    first = record_observation(store, source.roles, 3, meaning=source)
     source_ref = store.row(first)["occurrence"]
     discourse.bind_observation_occurrence(0, source_ref)
 
@@ -58,7 +58,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
     _observe(discourse, observed, document)
     comparison = discourse.last_expectation_comparison(0)
     assert comparison is not None
-    second = _append_observed_meaning(
+    second = record_observation(
         store, observed.roles, 3, meaning=observed, expectation=comparison)
     discourse.bind_observation_occurrence(0, store.row(second)["occurrence"])
 

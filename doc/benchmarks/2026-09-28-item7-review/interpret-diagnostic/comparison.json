@@ -1,0 +1,68 @@
+{
+  "current_matches_native_all_values": true,
+  "head_matches_native_all_values": true,
+  "means": {
+    "current": {
+      "before_training": 0.12243161350488663,
+      "training": 0.11974661648273469,
+      "after_training": 0.12279699929058552
+    },
+    "head": {
+      "before_training": 0.11755186505615711,
+      "training": 0.11222685724496842,
+      "after_training": 0.10100938938558102
+    },
+    "association-head": {
+      "before_training": 0.11755186505615711,
+      "training": 0.11222685724496842,
+      "after_training": 0.10119657963514328
+    }
+  },
+  "first_object_admission": {
+    "current": {
+      "word": 4,
+      "requested_order": null,
+      "object": 5,
+      "object_order": 1,
+      "row": 5,
+      "next_id": 7,
+      "code_sha256": "4743e0b3b5c91ae9aed9cdc9e548620b50a37c5d8719b1aebbd673baf18f707a"
+    },
+    "head": {
+      "word": 4,
+      "requested_order": null,
+      "object": 5,
+      "object_order": 1,
+      "row": 4,
+      "next_id": 7,
+      "code_sha256": "411cb03dae5e9f974f987c3f319deb0953bec2489932135ad1ae3f4d7d6fc07b"
+    },
+    "association-head": {
+      "word": 4,
+      "requested_order": null,
+      "object": 5,
+      "object_order": 1,
+      "row": 4,
+      "next_id": 7,
+      "code_sha256": "411cb03dae5e9f974f987c3f319deb0953bec2489932135ad1ae3f4d7d6fc07b"
+    }
+  },
+  "requested_orders": {
+    "current": [
+      "None"
+    ],
+    "head": [
+      "None"
+    ],
+    "association-head": [
+      "None"
+    ]
+  },
+  "cause": "The new bind_meta sigma association admits a weighted META row before the object, changing object dictionary row allocation and therefore its initialized operand code. Restoring only association construction restores the old initial and training measurements and an improving after-training measurement. The smaller gap between the two counterfactuals belongs to the remaining interpret changes and is not separately attributed.",
+  "runtime_changed": false,
+  "drivers": {
+    "diagnose_interpret.py": "1e651db8d4a9b90b5457b8cc2f4330b9d5c81a39e122add4866de99150c55a0f",
+    "diagnose_byte_parity.py": "c72a9a5be0ac44a3f082fe90510ca14c5c1f03fc3075f7337db23e1e524b1034",
+    "analyze_byte_parity.py": "c4b3a79bd04510fe2f878742a27d17d4657b17d9bb0cd42d1725dc87e21a951a"
+  }
+}

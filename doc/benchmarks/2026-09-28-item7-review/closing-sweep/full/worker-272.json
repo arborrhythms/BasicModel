@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ps_single_arg_refactor.py::TestPSOwnsSingleLayers::test_ps_pi_attribute_retired",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_forward_signature_is_dual_towers",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_reverse_signature_is_single_arg",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardReturnsValidSubspace::test_forward_returns_valid_subspace",
+    "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_concept_module_list_gone",
+    "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_input_module_list_gone"
+  ],
+  "completed": [
+    "test/test_ps_single_arg_refactor.py::TestPSOwnsSingleLayers::test_ps_pi_attribute_retired",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_forward_signature_is_dual_towers",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_reverse_signature_is_single_arg",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardReturnsValidSubspace::test_forward_returns_valid_subspace",
+    "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_concept_module_list_gone",
+    "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_input_module_list_gone"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSOwnsSingleLayers::test_ps_pi_attribute_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.032718083006329834,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_forward_signature_is_dual_towers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014224997721612453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_reverse_signature_is_single_arg",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010924995876848698,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSForwardReturnsValidSubspace::test_forward_returns_valid_subspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016474250005558133,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_concept_module_list_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014866832992993295,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_input_module_list_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01470962492749095,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

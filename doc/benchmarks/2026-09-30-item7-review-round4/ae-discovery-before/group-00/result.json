@@ -1,0 +1,90 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py::test_attended_word_discovery_diagnostic"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py::test_attended_word_discovery_diagnostic"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-00/worker-000.json"
+      ],
+      "pid": 66720,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 430834936,
+      "elapsed_seconds": 4.468470667023212,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py::test_attended_word_discovery_diagnostic"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py::test_attended_word_discovery_diagnostic"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py::test_attended_word_discovery_diagnostic",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.012577584013343,
+          "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py:30: in test_attended_word_discovery_diagnostic\n    assert len(slot) == 1, word\nE   AssertionError: lynx\nE   assert 0 == 1\nE    +  where 0 = len(tensor([], dtype=torch.int64))",
+          "stdout": "{\"form\": \"lynx\", \"pending\": {\"1\": {\"forms\": [\"ant\"], \"parts\": [[1, 2, 3]], \"wholes\": [0]}, \"2\": {\"forms\": [\"bat\"], \"parts\": [[4, 1, 3]], \"wholes\": [0]}, \"3\": {\"forms\": [\"cat\"], \"parts\": [[5, 1, 3]], \"wholes\": [0]}, \"4\": {\"forms\": [\"dog\"], \"parts\": [[6, 7, 8]], \"wholes\": [0]}, \"5\": {\"forms\": [\"elk\"], \"parts\": [[9, 10, 11]], \"wholes\": [0]}, \"6\": {\"forms\": [\"fox\"], \"parts\": [[12, 7, 13]], \"wholes\": [0]}, \"7\": {\"forms\": [\"gnu\"], \"parts\": [[8, 2, 14]], \"wholes\": [0]}, \"8\": {\"forms\": [\"hare\"], \"parts\": [[15, 1, 16, 9]], \"wholes\": [0]}, \"9\": {\"forms\": [\"ibex\"], \"parts\": [[17, 4, 9, 13]], \"wholes\": [0]}, \"10\": {\"forms\": [\"jay\"], \"parts\": [[18, 1, 19]], \"wholes\": [0]}, \"11\": {\"forms\": [\"koala\"], \"parts\": [[11, 7, 1, 10, 1]], \"wholes\": [0]}, \"12\": {\"forms\": [\"lynx\"], \"parts\": [[10, 19, 2, 13]], \"wholes\": [0]}}, \"field_pending\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], \"definitions\": [], \"native\": [[20]], \"cases\": [], \"ids\": [-1, -1, -1, -1, -1, -1, -1, -1]}\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-00",
+  "elapsed_seconds": 6.742374665802345,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 430834936,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-00/collect.json"
+    ],
+    "pid": 66711,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181257008,
+    "elapsed_seconds": 2.017660708865151,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ae-discovery-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae_discovery.py::test_attended_word_discovery_diagnostic"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

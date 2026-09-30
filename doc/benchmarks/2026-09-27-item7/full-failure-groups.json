@@ -1,0 +1,234 @@
+{
+  "grouping": "First reported exception/assertion line; not a root-cause classification",
+  "cases": 84,
+  "groups": [
+    {
+      "error": "E   ValueError: an observation requires its selected clause and shared index",
+      "count": 37,
+      "nodes": [
+        "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+        "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+        "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+        "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+        "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+        "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+        "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+        "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+        "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_intra_routing_for_predict_returns_real_tensor",
+        "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_routing_state_built_with_rule_probs",
+        "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+        "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_full_forward_runs_recurrent_cell",
+        "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_terminal_conceptual_exposes_views",
+        "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+        "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+        "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+        "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+        "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+        "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+        "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+        "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+        "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+        "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+        "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition",
+        "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_cs_cache_not_present_after_forward",
+        "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_ws_cache_not_present_after_forward",
+        "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_runBatch_reverse_path_does_not_depend_on_cs_cache",
+        "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_terminal_stm_snapshot_available_after_forward",
+        "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm",
+        "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed"
+      ]
+    },
+    {
+      "error": "E   RuntimeError: property analysis requires learned primitive definitions",
+      "count": 13,
+      "nodes": [
+        "test/test_cursor_universal.py::test_xor_runs_through_trial_cursor",
+        "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+        "test/test_no_eos_sync.py::test_reset_fires_even_when_end_of_stream_is_all_false",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+        "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+        "test/test_recon_bench.py::test_run_record_schema_smoke",
+        "test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once",
+        "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
+        "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+        "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+        "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+        "test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds"
+      ]
+    },
+    {
+      "error": "E   AttributeError: 'WholeSpace' object has no attribute 'enable_category_codebook'",
+      "count": 10,
+      "nodes": [
+        "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+        "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys",
+        "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+        "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+        "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+        "test/test_category_codebook.py::test_enable_noop_without_roles",
+        "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+        "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+        "test/test_category_collapse.py::test_gated_off_by_default_stores_no_collapse",
+        "test/test_category_collapse.py::test_gated_on_runs_collapse_at_enable"
+      ]
+    },
+    {
+      "error": "E   ValueError: TruthSet kind disagrees with the selected grammatical clause",
+      "count": 3,
+      "nodes": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+        "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state"
+      ]
+    },
+    {
+      "error": "E   AttributeError: 'WholeSpace' object has no attribute 'taxonomy'",
+      "count": 2,
+      "nodes": [
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+        "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+      ]
+    },
+    {
+      "error": "E   AssertionError: absolute rows must collapse to depth 1, got [3, 3]",
+      "count": 1,
+      "nodes": [
+        "test/test_stm_relative_sentence_end_state.py::test_absolute_sentence_still_collapses_to_depth_one"
+      ]
+    },
+    {
+      "error": "E   AssertionError: assert 'true' not in ('part', 'equal', 'exist', 'true', 'lookup', 'quantize', ...)",
+      "count": 1,
+      "nodes": [
+        "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations"
+      ]
+    },
+    {
+      "error": "E   AssertionError: assert ['quantize'] == ['quantize', 'conclude']",
+      "count": 1,
+      "nodes": [
+        "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller"
+      ]
+    },
+    {
+      "error": "E   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []",
+      "count": 1,
+      "nodes": [
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+      ]
+    },
+    {
+      "error": "E   AssertionError: assert frozenset({'e..., 'whole_O1'}) == frozenset({'e..., 'whole_O1'})",
+      "count": 1,
+      "nodes": [
+        "test/test_role_collapsed_grammar.py::test_symbolicspace_owns_its_starts"
+      ]
+    },
+    {
+      "error": "E   AssertionError: assert frozenset({'e...rt', 'whole'}) == frozenset({'e...rt', 'whole'})",
+      "count": 1,
+      "nodes": [
+        "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms"
+      ]
+    },
+    {
+      "error": "E   AttributeError: 'WholeSpace' object has no attribute '_category_codebook_requested'",
+      "count": 1,
+      "nodes": [
+        "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook"
+      ]
+    },
+    {
+      "error": "E   AttributeError: 'WholeSpace' object has no attribute 'assign_category'",
+      "count": 1,
+      "nodes": [
+        "test/test_category_codebook.py::test_disabled_methods_are_safe_noops"
+      ]
+    },
+    {
+      "error": "E   AttributeError: 'WholeSpace' object has no attribute 'category_codebook_enabled'",
+      "count": 1,
+      "nodes": [
+        "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table"
+      ]
+    },
+    {
+      "error": "E   AttributeError: type object 'WholeSpace' has no attribute '_normalize_fold_support'",
+      "count": 1,
+      "nodes": [
+        "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss"
+      ]
+    },
+    {
+      "error": "E   ValueError: a sealed derivation must have one or three slots",
+      "count": 1,
+      "nodes": [
+        "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes"
+      ]
+    },
+    {
+      "error": "E   ValueError: ambiguous word association requires a resolving grammar order",
+      "count": 1,
+      "nodes": [
+        "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path"
+      ]
+    },
+    {
+      "error": "E   ValueError: requested grammar order has no unambiguous source",
+      "count": 1,
+      "nodes": [
+        "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting"
+      ]
+    },
+    {
+      "error": "E   assert 2 == 1",
+      "count": 1,
+      "nodes": [
+        "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths"
+      ]
+    },
+    {
+      "error": "E   assert 32 is None",
+      "count": 1,
+      "nodes": [
+        "test/test_relevance_bases.py::test_symbol_history_projection"
+      ]
+    },
+    {
+      "error": "E   assert False",
+      "count": 1,
+      "nodes": [
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging"
+      ]
+    },
+    {
+      "error": "E   assert [True, False, True] == [True, False, False]",
+      "count": 1,
+      "nodes": [
+        "test/test_stm_relative_sentence_end_state.py::test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates"
+      ]
+    },
+    {
+      "error": "E   assert [True] == [False]",
+      "count": 1,
+      "nodes": [
+        "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse"
+      ]
+    },
+    {
+      "error": "E   assert not True",
+      "count": 1,
+      "nodes": [
+        "test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules"
+      ]
+    }
+  ]
+}

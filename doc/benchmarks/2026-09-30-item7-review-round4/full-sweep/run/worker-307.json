@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[cpu]",
+    "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[mps]",
+    "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[cpu]",
+    "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[mps]",
+    "test/test_contextual_concept_codebook.py::test_context_owned_dictionary_is_excluded_from_optimizer_groups",
+    "test/test_contextual_concept_codebook.py::test_contextual_buffer_preserves_frozen_capacity_and_state_dict_storage"
+  ],
+  "completed": [
+    "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[cpu]",
+    "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[mps]",
+    "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[cpu]",
+    "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[mps]",
+    "test/test_contextual_concept_codebook.py::test_context_owned_dictionary_is_excluded_from_optimizer_groups",
+    "test/test_contextual_concept_codebook.py::test_contextual_buffer_preserves_frozen_capacity_and_state_dict_storage"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[cpu]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024375419598072767,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection[mps]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07080500014126301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[cpu]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001695042010396719,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer[mps]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013958832947537303,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_context_owned_dictionary_is_excluded_from_optimizer_groups",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003169998526573181,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_contextual_buffer_preserves_frozen_capacity_and_state_dict_storage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000480834161862731,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

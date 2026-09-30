@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_64_word_trace_reduces_online_in_stm8_without_part_truncation _______
+test/test_nanochat_grammar_eval.py:153: in test_64_word_trace_reduces_online_in_stm8_without_part_truncation
+    trace = gate.trace_serial_grammar(model, text)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_nanochat_grammar.py:578: in trace_serial_grammar
+    model.forward(model.inputSpace.prepInput([str(text)]))
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23815: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13584: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11502: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:83: in lookup_word
+    cs._preflight_concept_row(0)
+bin/Spaces.py:16910: in _preflight_concept_row
+    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E   RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+=============================== warnings summary ===============================
+test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation
+1 failed, 1 warning in 3.11s

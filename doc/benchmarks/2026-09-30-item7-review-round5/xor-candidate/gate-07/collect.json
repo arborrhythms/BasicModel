@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_basicmodel.py::TestSPNN::test_xor_training"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_basicmodel.py::TestSPNN::test_xor_training"
+  ],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

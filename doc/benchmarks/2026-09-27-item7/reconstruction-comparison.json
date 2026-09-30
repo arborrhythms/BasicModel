@@ -1,0 +1,64 @@
+{
+  "reviewed_baseline": {
+    "before_training": 0.10059066489338875,
+    "training": 0.09482414424419403,
+    "after_training": 0.09287650510668755
+  },
+  "preceding_7_5": {
+    "before_training": 0.11755186505615711,
+    "training": 0.10999541729688644,
+    "after_training": 0.09888161532580853
+  },
+  "current": {
+    "before_training": 0.12243161350488663,
+    "training": 0.1191720113158226,
+    "after_training": 0.12371796928346157
+  },
+  "rebaselined": false,
+  "training_sentences_per_second": 1.4530897228290676,
+  "parity": {
+    "initial_parameters_sha256": true,
+    "initial_dictionary_sha256": true,
+    "sentences": false,
+    "mean_sentence_byte_cost": false
+  },
+  "byte_cost": {
+    "reviewed": 0.6839025616645813,
+    "preceding_7_5": 0.18002260848879814,
+    "packed": 0.38411848741816357,
+    "single": 0.3841184933844488
+  },
+  "sentence_counts": {
+    "packed": 4,
+    "single": 4
+  },
+  "truncation": {
+    "packed": [
+      [
+        false,
+        false
+      ]
+    ],
+    "single": [
+      [
+        false,
+        false
+      ],
+      [
+        false,
+        false
+      ]
+    ]
+  },
+  "sentence_differences": [
+    {
+      "index": 3,
+      "differing_fields": [
+        "byte_cost"
+      ],
+      "packed_byte_cost": 0.0005294966977089643,
+      "single_byte_cost": 0.0005295205628499389,
+      "byte_cost_delta": 2.3865140974521637e-08
+    }
+  ]
+}

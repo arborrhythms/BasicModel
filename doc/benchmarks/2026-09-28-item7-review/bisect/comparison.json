@@ -1,0 +1,74 @@
+{
+  "interpret-head": {
+    "numeric_batch_values_identical_to_current": false,
+    "means": {
+      "before_training": 0.11755186505615711,
+      "training": 0.11222685724496842,
+      "after_training": 0.10100938938558102
+    },
+    "scope": "Use pre-item-7 interpret admission/order/association. The unused selected keyword is accepted for API shape.",
+    "configurations": [
+      {
+        "reference_rules": [],
+        "situation_weight": 0.0,
+        "expectation_weight": 0.0,
+        "expectation_loss": 0.0,
+        "sentence_expectation": false
+      }
+    ]
+  },
+  "context-head": {
+    "numeric_batch_values_identical_to_current": true,
+    "means": {
+      "before_training": 0.12243161350488663,
+      "training": 0.11974661648273469,
+      "after_training": 0.12279699929058552
+    },
+    "scope": "Use the pre-item-7 context update with no situation/expectation extension; configured weights stay zero.",
+    "configurations": [
+      {
+        "reference_rules": [],
+        "situation_weight": 0.0,
+        "expectation_weight": 0.0,
+        "expectation_loss": 0.0,
+        "sentence_expectation": false
+      }
+    ]
+  },
+  "identity-no-st": {
+    "numeric_batch_values_identical_to_current": true,
+    "means": {
+      "before_training": 0.12243161350488663,
+      "training": 0.11974661648273469,
+      "after_training": 0.12279699929058552
+    },
+    "scope": "Remove only the identity softmax straight-through derivative; hard point stays unchanged.",
+    "configurations": [
+      {
+        "reference_rules": [],
+        "situation_weight": 0.0,
+        "expectation_weight": 0.0,
+        "expectation_loss": 0.0,
+        "sentence_expectation": false
+      }
+    ]
+  },
+  "journal-detached": {
+    "numeric_batch_values_identical_to_current": true,
+    "means": {
+      "before_training": 0.12243161350488663,
+      "training": 0.11974661648273469,
+      "after_training": 0.12279699929058552
+    },
+    "scope": "Cut only the numerical clause-journal gradient branch; preserve every recorded value and end-state decision.",
+    "configurations": [
+      {
+        "reference_rules": [],
+        "situation_weight": 0.0,
+        "expectation_weight": 0.0,
+        "expectation_loss": 0.0,
+        "sentence_expectation": false
+      }
+    ]
+  }
+}

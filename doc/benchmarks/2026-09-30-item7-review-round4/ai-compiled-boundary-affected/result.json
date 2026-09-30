@@ -1,0 +1,24 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

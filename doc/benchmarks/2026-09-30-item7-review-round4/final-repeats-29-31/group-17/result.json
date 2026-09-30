@@ -1,0 +1,67 @@
+{
+  "exit_code": 125,
+  "reason": "running",
+  "selected": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]"
+  ],
+  "completed": [],
+  "workers": [],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-repeats-29-31/group-17",
+  "elapsed_seconds": 3.433113042032346,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 182059848,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-repeats-29-31/group-17/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-repeats-29-31/group-17/collect.json"
+    ],
+    "pid": 80175,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 182059848,
+    "elapsed_seconds": 3.0788516658358276,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-repeats-29-31/group-17/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "active_workers": [
+    {
+      "name": "worker-000",
+      "progress_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-repeats-29-31/group-17/worker-000.json",
+      "device": "cpu"
+    }
+  ],
+  "active_worker": {
+    "name": "worker-000",
+    "progress_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-repeats-29-31/group-17/worker-000.json",
+    "device": "cpu"
+  }
+}

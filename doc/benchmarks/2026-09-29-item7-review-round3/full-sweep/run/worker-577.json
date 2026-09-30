@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch"
+  ],
+  "completed": [
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014445839915424585,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020220899023115635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003559999167919159,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

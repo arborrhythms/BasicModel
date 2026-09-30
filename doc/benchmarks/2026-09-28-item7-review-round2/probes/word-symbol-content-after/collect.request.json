@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_item7_word_interpretation.py",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_output_synthesis.py",
+    "test/test_concept_evidence.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

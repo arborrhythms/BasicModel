@@ -23,7 +23,7 @@ review history is in
 * The forward is one `torch.while_loop` per word bucket
   (`TensorPeerWhilePipeline.run_cs_lanes_banked`, `Models.py`
   `_run_tensor_peer_word_pipeline`). Two reconstruction passes share its
-  word index (`_reconstruct_sentences`): pass A un-seals each sentence
+  word index (`_reconstruct_sentences`): pass A un-endings each sentence
   from its end state, pass B undoes each word's unary, post-binary and
   pre-binary folds with the tied inverses and scores the popped word
   (idea distance to its retained reference, byte cross-entropy through
@@ -83,12 +83,12 @@ code is re-read. Cite the line when you rely on one.
    (`ReconstructionStack`: `_choice_rule_ids`, `_choice_arities`,
    `_choice_mask`, `_choice_left_rows`, `_choice_right_rows`).
 6. **Trace layout.** Word `w` records pre-binary at slot `3w`, post-binary
-   at `3w+1`, unary at `3w+2`. The row's LAST sentence's seals are at
+   at `3w+1`, unary at `3w+2`. The row's LAST sentence's endings are at
    `3W + k`; an intermediate packed sentence ending at word `hi` records
-   its seals at `3W + hi·seal_width + k`, `seal_width = capacity − 1`
+   its endings at `3W + hi·closing_width + k`, `closing_width = capacity − 1`
    (pass A `body_a`, `_derivation_program`). Forward order per word:
-   pre, push, post, unary; seals after the sentence's last word, `k`
-   ascending. The reverse (the walk's teacher) is seals last-first, then
+   pre, push, post, unary; endings after the sentence's last word, `k`
+   ascending. The reverse (the walk's teacher) is endings last-first, then
    per word latest-first unary, post, pop, pre.
 7. **Operand orientation.** A binary fold's left operand is STM slot 1
    (older), its right operand slot 0 (newest); the reducer's window is
@@ -104,7 +104,7 @@ code is re-read. Cite the line when you rely on one.
    See [Models.py:20519](../../bin/Models.py#L20519) and
    [Layers.py:10037](../../bin/Layers.py#L10037).
    The September 16 local-role predictor reads the existing index-13/14
-   sealed slots/depths and the published final seal state, retaining each
+   ended slots/depths and the published final closing state, retaining each
    occupied NP1/VP/NP2 role rather than copying one root into every slot
    ([Models.py:12497](../../bin/Models.py#L12497),
    [Layers.py:9800](../../bin/Layers.py#L9800)). The tuple arity is unchanged.
@@ -155,7 +155,7 @@ code is re-read. Cite the line when you rely on one.
 | 1 | The generation chooser does not train through `runBatch` | code | the policy cost is recorded, never added to `totalLoss`; `generate_policy` is on no `params` list |
 | 2 | Materialisation reads the staged input, not answer-owned structure | code + one design decision | `_materialize_answer_idea` reads live model staging, not the derivation; two conditioners condition two different objects |
 | 3 | Output is teacher-forced even in evaluation | code | the walk follows `targets` whenever present |
-| 4 | Intermediate packed seals record the post-reduction operands | code | `_tensor_record_operands` is called after `apply_binary_language_choice` |
+| 4 | Intermediate packed endings record the post-reduction operands | code | `_tensor_record_operands` is called after `apply_binary_language_choice` |
 | 5 | The per-width conditioners do not reload from a checkpoint | code | the loader builds only the singular `question_conditioner` |
 | 6 | The byte snapshot copies the input's bytes | code (with a data gap) | candidates' bytes come from `_ar_word_part_ids`, the input; rows keep no surface |
 | 7 | (this session) the production answer symbol is degenerate | design | `conceptual_state` is None in production; `symbolic_state` is the SS activation view |
@@ -272,12 +272,12 @@ takes them regardless. Tests: in evaluation, opposing biases on
 present; in training with forcing they produce the same sequence and
 different credits.
 
-### 3.4 Item 4: intermediate seal operands
+### 3.4 Item 4: intermediate closing operands
 
-Evidence. In `stage_cs_lang` (`Models.py` ≈20100–20130) the seal loop
-reassigns `sealed_stm` with the result of
-`cs.apply_binary_language_choice(sealed_stm, seal_choice)` and only then
-calls `_tensor_record_operands(..., sealed_stm, seal_valid)`: the rows
+Evidence. In `stage_cs_lang` (`Models.py` ≈20100–20130) the closing loop
+reassigns `end_stm` with the result of
+`cs.apply_binary_language_choice(end_stm, closing_choice)` and only then
+calls `_tensor_record_operands(..., end_stm, closing_valid)`: the rows
 recorded are those AFTER the reduction (the composite's −1 and the slot
 below it). The per-word sites are right (they pass `pre_state` and
 `resolved`, the states before their folds, `Models.py` ≈20071–20074),
@@ -285,12 +285,12 @@ and the eager path is right (`_stm_bounded_reduce_step` reads
 `concept_rows` before reducing). Codex's `(a+b)+c` in an intermediate
 packed sentence reconstructs as `[a−b, b, b+c]` without truncation.
 
-Fix. Keep `pre_seal = sealed_stm` before `choose_sentence_seal_binary`
-and record from `pre_seal`. Test (real, not synthetic): a packed
+Fix. Keep `pre_closing = end_stm` before `choose_sentence_closing_binary`
+and record from `pre_closing`. Test (real, not synthetic): a packed
 two-sentence brick run with `_tensor_peer_while_eager`; extend
 `_replay_program` (or a small sibling) to track each slot's row while
 replaying (push → the word's row, fold → −1), and assert for every
-recorded binary slot (pre, post, seals of every sentence) that the
+recorded binary slot (pre, post, endings of every sentence) that the
 recorded left/right rows equal the tracked rows of the two tops before
 that fold. This checks all three record sites at once.
 
@@ -382,11 +382,11 @@ commit. Answer Codex with the test names.
 
 Execution evidence, item 4:
 `test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary`
-first failed at intermediate seal slot 159: recorded `(5, -1)` against
-the replayed pre-fold rows `(-1, -1)`. The fix retains `pre_seal` for
+first failed at intermediate closing slot 159: recorded `(5, -1)` against
+the replayed pre-fold rows `(-1, -1)`. The fix retains `pre_closing` for
 operand recording. The test replays all live binary and unary choices
 in two packed rows, checks every binary trace slot, and requires both
-per-word folds and final/intermediate seals, including a leaf beside a
+per-word folds and final/intermediate endings, including a leaf beside a
 composite. Verification: the file passed (15 tests); the eight affected
 files passed (112 passed, 6 skipped); the full suite passed (4047 passed,
 53 skipped, 7 xfailed, 4 subtests passed, 169 warnings) in 1705.26 seconds.
@@ -629,7 +629,7 @@ checks:
   `_capture_understanding` cannot clear a reconstruction cost: `runBatch`
   publishes again before the traversal reads `_recon_cost`.
 
-Per item: 4, the seal loop keeps `pre_seal` and the packed-brick test
+Per item: 4, the closing loop keeps `pre_closing` and the packed-brick test
 replays row identities at every binary slot. 5, the loader materialises
 every saved width and normalises the singular alias. 1, the policy is on
 SymbolSpace's explicit `params` and the credit is a score-function term

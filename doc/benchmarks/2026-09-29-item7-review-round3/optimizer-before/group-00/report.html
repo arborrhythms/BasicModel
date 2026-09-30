@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.47743108309805393</pre></td><td><pre>bin/Models.py:3113: in getOptimizer
+    remapped = remap_optimizer_state_by_name(
+bin/checkpoint_migrations.py:739: in remap_optimizer_state_by_name
+    raise ValueError(&quot;optimizer parameter-group layout differs&quot;)
+E   ValueError: optimizer parameter-group layout differs
+
+The above exception was the direct cause of the following exception:
+test/test_fineweb_preflight.py:146: in test_checkpoint_restores_optimizer_counters_and_rng
+    opt = restored.getOptimizer(lr=1e-4)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:3129: in getOptimizer
+    raise ValueError(message) from exc
+E   ValueError: [BasicModel] Optimizer checkpoint was not restored: optimizer parameter-group layout differs</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8485/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8485/test_checkpoint_restores_optim0/resume.ckpt
+</pre></td></tr></table></body></html>

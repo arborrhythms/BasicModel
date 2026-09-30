@@ -1,0 +1,61 @@
+...F...........                                                          [100%]
+=================================== FAILURES ===================================
+______________ test_bare_unlocated_np_reuses_its_concept_identity ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12a31cc80>
+
+    def test_bare_unlocated_np_reuses_its_concept_identity(monkeypatch):
+        from test_item7_storage import clause_store
+        _, registry, language, entry, _ = _nested(monkeypatch)
+        entry = replace(entry, rows=entry.rows[:1], word_rows=entry.word_rows[:1],
+                        activations=entry.activations[:1], leaves=entry.leaves[:1],
+                        concept_ids=torch.tensor([1]), lexical_forms=(None,),
+                        actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([-1]))
+        clause = clause_from_program(language, entry, registry=registry)
+        store, _ = clause_store()
+>       row = store.seal_clause(clause)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item7_clause_program.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:615: in seal_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:609: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseSeal.py:569: in append
+    row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore()
+meaning = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind=None)
+kind = 'observation', rel_type = 0, trust = 0.0, timestamp = None
+leaf_codes = ((3,), (), ()), stream = -1, surprise = -1.0
+
+    @torch.no_grad()
+    def append_meaning(self, meaning, *, kind="fact", rel_type=None,
+                       trust=0.0, timestamp=None, leaf_codes=None, stream=-1, surprise=-1.):
+        """Commit a complete description with explicit evidential provenance."""
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("append_meaning requires a ConceptualMeaning")
+        if meaning.roles.shape[-1] != self.nDim:
+>           raise ValueError("meaning width differs from the truth store")
+E           ValueError: meaning width differs from the truth store
+
+bin/Layers.py:9892: ValueError
+=============================== warnings summary ===============================
+test/test_item7_clause_program.py::test_nested_clause_retains_its_own_program_and_reconstruction_targets
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity
+1 failed, 14 passed, 1 warning in 2.54s

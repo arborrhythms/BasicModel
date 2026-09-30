@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ TestXorExactCliReconstruction.test_at_least_50_pct_inputs_reconstruct _____
+test/test_explicit_dimensions.py:203: in test_at_least_50_pct_inputs_reconstruct
+    self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
+E   AssertionError: 1 != 0 : CLI failed: stderr=g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py", line 16700, in _autobind_property_concepts
+E       formed = (self.interpret.lookup_word(parts, prop_rows, form=key), None, None)
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Interpret.py", line 53, in lookup_word
+E       cs._populate_concept_weights(word, witness=(parts, wholes))
+E     File "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py", line 18668, in _populate_concept_weights
+E       self.add_concept_edge(c_row, target, 1.)
+E     File "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/bin/Spaces.py", line 17748, in add_concept_edge
+E       source0 = self._order0_inventory_row(int(col))
+E                                            ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct
+1 failed in 152.45s (0:02:32)

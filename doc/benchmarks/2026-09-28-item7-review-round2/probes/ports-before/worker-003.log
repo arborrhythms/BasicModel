@@ -1,0 +1,37 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ TestLexiconOnSymbolSpace.test_symbolic_lexicon_methods_exist _________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:291: in test_symbolic_lexicon_methods_exist
+    self.assertTrue(hasattr(sym, name),
+E   AssertionError: False is not true : WholeSpace must expose 'train_embeddings' after the lexicon-API migration.
+---------------------------- Captured stdout setup -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+___________ TestSubsymbolicSymbolicSplit.test_s_has_syntactic_layer ____________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_perceptual_loopback.py:312: in test_s_has_syntactic_layer
+    self.assertIsNotNone(
+E   AssertionError: unexpectedly None : WholeSpace must retain its SyntacticLayer (the grammar's canonical dispatch host); missing on WholeSpace(
+E     (subspace): SubSpace()
+E     (_owned_bases): ModuleDict(
+E       (event): Tensor()
+E       (what): Codebook(
+E         (primitive_properties): PrimitiveProperties()
+E       )
+E       (where): Tensor()
+E       (when): Tensor()
+E       (activation): Tensor()
+E     )
+E     (_owned_encoders): ModuleDict(
+E       (activeEncoding): ActiveEncoding()
+E       (objectEncoding): EventEncoding()
+E       (whatEncoding): WhatEncoding()
+E       (wordEncoding): WordEncoding()
+E     )
+E     (layers): ModuleList()
+E   )
+---------------------------- Captured stdout setup -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=========================== short test summary info ============================
+FAILED test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_lexicon_methods_exist
+FAILED test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer
+2 failed in 2.30s

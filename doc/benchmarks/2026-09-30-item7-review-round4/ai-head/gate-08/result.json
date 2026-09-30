@@ -1,0 +1,92 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+  ],
+  "completed": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-08/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-08/worker-000.json"
+      ],
+      "pid": 83047,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4296822888,
+      "elapsed_seconds": 14.35504062497057,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-08/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+      ],
+      "completed": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.53164341696538,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.934s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.643s, 100.00%)\r\nrunEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.342s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-08",
+  "elapsed_seconds": 17.64444945892319,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 4296822888,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-head-6l65_rrd/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-08/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-08/collect.json"
+    ],
+    "pid": 83022,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 182649648,
+    "elapsed_seconds": 2.9700136249884963,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ai-head/gate-08/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-036.recycle.json"
+}

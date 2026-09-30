@@ -1,0 +1,33 @@
+--- before/bin/PerceptProperties.py
++++ after/bin/PerceptProperties.py
+@@ -90,9 +90,9 @@
+         members = self.members if rows is None else self.members.index_select(0, rows)
+         return members + (members.clamp(0, 1) - members).detach()
+ 
+-    def forward(self, byte_ids, observed=None):
++    def forward(self, byte_ids, observed=None, *, rows=None):
+         ids = byte_ids.to(device=self.members.device, dtype=torch.long).clamp(0, 255)
+-        result = self.coefficients().t()[ids]
++        result = self.coefficients(rows).t()[ids]
+         if observed is not None:
+             result = result * observed.to(result).unsqueeze(-1)
+         return result
+--- before/bin/Spaces.py
++++ after/bin/Spaces.py
+@@ -3306,9 +3306,13 @@
+         primitives = getattr(self, 'primitive_properties', None)
+         if input_bytes is not None and primitives is not None:
+             from ConceptEvidence import union
+-            membership = primitives(input_bytes)
+-            selected = torch.as_tensor(index, device=membership.device, dtype=torch.long).reshape(-1)
+-            return union(membership.index_select(-1, selected), dim=-1)
++            selected = torch.as_tensor(index, device=primitives.members.device,
++                                       dtype=torch.long).reshape(-1)
++            # Read only the selected definitions. Expanding every property
++            # over the padded input first creates a positions × inventory
++            # temporary even for a single requested property.
++            membership = primitives(input_bytes, rows=selected)
++            return union(membership, dim=-1)
+         if input_bytes is not None and self.property_kind:
+             classes = set()
+             for _r in torch.as_tensor(index).reshape(-1).tolist():

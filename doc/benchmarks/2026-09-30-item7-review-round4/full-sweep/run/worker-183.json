@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
+    "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
+    "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+    "test/test_compose_operations.py::test_hard_selected_candidate_keeps_probability_gradient",
+    "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+    "test/test_compose_operations.py::test_tiling_and_per_position_unary_implementations_are_deleted",
+    "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
+    "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
+    "test/test_compose_operations.py::test_budget_exhaustion_reports_overlarge_derivation",
+    "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop"
+  ],
+  "completed": [
+    "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
+    "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
+    "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+    "test/test_compose_operations.py::test_hard_selected_candidate_keeps_probability_gradient",
+    "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+    "test/test_compose_operations.py::test_tiling_and_per_position_unary_implementations_are_deleted",
+    "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
+    "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
+    "test/test_compose_operations.py::test_budget_exhaustion_reports_overlarge_derivation",
+    "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001528542023152113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007284590974450111,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006392498034983873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_hard_selected_candidate_keeps_probability_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012251375010237098,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005239957943558693,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_tiling_and_per_position_unary_implementations_are_deleted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.470898658037186e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.1410500828642398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010015408042818308,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_budget_exhaustion_reports_overlarge_derivation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006915000267326832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005207041976973414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010325419716536999,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

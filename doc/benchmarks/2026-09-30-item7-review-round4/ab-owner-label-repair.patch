@@ -1,0 +1,12 @@
+--- bin/Models.py (after AB first probe)
++++ bin/Models.py (after owner label repair)
+@@ -11552,7 +11552,8 @@
+                 ids=owner._cs_field_concept_ids, inventory_rows=owner._cs_field_rows,
+                 where=owner._cs_field_where, when=owner._cs_field_when).items():
+             object.__setattr__(concept_sub, '_concept_' + name, value)
+-        object.__setattr__(concept_sub, '_concept_code_owner', 0)
++        object.__setattr__(concept_sub, '_concept_code_owner',
++                           next(i for i, cs in enumerate(self.conceptualSpaces) if cs is owner))
+         object.__setattr__(concept_sub, '_thought_occurrence', None)
+         return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+ 

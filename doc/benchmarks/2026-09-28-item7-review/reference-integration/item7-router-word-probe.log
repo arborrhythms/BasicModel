@@ -1,0 +1,8 @@
+Starting with dynamic 4-dim embedding (words added at runtime)
+{'compose': 0, 'sweep': 1, 'reduce': 16, 'capacity': 8, 'post_depth_max': 1, 'post_sweep_depth_max': 1}
+flags True True 16 False
+_ar_word_part_ids None
+_ar_embedded_N torch.Size([1, 8, 12])
+_word_active_mask torch.Size([1, 8])
+_valid_len_host 8
+calls [([1], 'True', 3), ([2], 'True', 3), ([1], 'True', 2), ([2], 'True', 3), ([1], 'True', 2), ([2], 'True', 3), ([1], 'True', 2), ([2], 'True', 3), ([1], 'True', 2), ([2], 'True', 3), ([1], 'True', 2), ([2], 'True', 3), ([1], 'True', 2), ([2], 'True', 3), ([1], 'True', 2), ([1], 'True', 16)]

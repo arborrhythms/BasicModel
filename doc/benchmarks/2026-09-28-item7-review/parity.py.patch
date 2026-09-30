@@ -1,0 +1,28 @@
+--- doc/benchmarks/2026-09-21-item10/parity.py
++++ doc/benchmarks/2026-09-28-item7-review/parity.py
+@@ -7,6 +7,7 @@
+ import hashlib
+ import torch
+ from What import What
++from reading_fixtures import capture_readings
+ 
+ 
+ def _fingerprint(values):
+@@ -53,7 +54,7 @@
+         teacher = getattr(model, "teacher", None)
+         if teacher is not None:
+             teacher.stage_batch_sources("validation", source)
+-        with torch.no_grad():
++        with torch.no_grad(), capture_readings(model) as readings:
+             result, _ = model.runBatch(
+                 train=False, batchNum=index, batchSize=2, split="validation",
+                 batch_override=(raw, torch.empty(2, 0)), source_rows=source,
+@@ -76,7 +77,7 @@
+                     "source_row": address, "text": surfaces[address],
+                     "word_count": int(mask.sum()),
+                     "byte_cost": float(costs[row, sentence]),
+-                    "root": (model._last_understanding.answer_program[row].end_state.reshape(-1)
++                    "root": (readings[sentence][row].end_state.reshape(-1)
+                              if sentence == (1 if mode == "packed" else 0)
+                              else roots[row, sentence]).detach().tolist(),
+                     "reference": reference[row, mask].detach().tolist(),

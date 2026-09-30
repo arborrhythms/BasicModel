@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+  ],
+  "completed": [
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 266.0967555840034,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

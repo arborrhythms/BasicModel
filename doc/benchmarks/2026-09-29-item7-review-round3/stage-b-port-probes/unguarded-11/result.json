@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 17370526992,
+  "elapsed_seconds": 8.81252204196062
+}

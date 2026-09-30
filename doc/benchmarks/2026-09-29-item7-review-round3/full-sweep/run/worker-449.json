@@ -1,0 +1,73 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_noisy_input_converges_in_one_cycle",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_at_prototype_slab_is_fixed_point_cycle0",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_perslot_roundtrip_is_fixed_point"
+  ],
+  "completed": [
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_noisy_input_converges_in_one_cycle",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_at_prototype_slab_is_fixed_point_cycle0",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_perslot_roundtrip_is_fixed_point"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00178304105065763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013544580433517694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_noisy_input_converges_in_one_cycle",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009973340202122927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004486250691115856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_at_prototype_slab_is_fixed_point_cycle0",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008066671434789896,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_perslot_roundtrip_is_fixed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006529416888952255,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

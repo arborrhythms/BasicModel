@@ -1,0 +1,6 @@
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]
+test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+
+4 tests collected in 0.50s

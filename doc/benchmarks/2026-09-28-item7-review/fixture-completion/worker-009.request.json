@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/fixture-completion/worker-009.recycle.json"
+}

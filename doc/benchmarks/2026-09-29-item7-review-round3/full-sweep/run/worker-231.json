@@ -1,0 +1,333 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concepts_from_percepts.py::test_gated_formula_includes_signed_evidence_weights_and_bias",
+    "test/test_concepts_from_percepts.py::test_sigma_is_existing_linear_sigma_plus_affine_bias_and_output_tanh",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_local_context_changes_participation_but_is_not_an_output_shortcut",
+    "test/test_concepts_from_percepts.py::test_neutral_and_broadcast_context",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_proximal_step_zeros_edges_per_output_with_correct_lr_normalization",
+    "test/test_concepts_from_percepts.py::test_disabled_prox_and_zero_lr_preserve_parameters_exactly",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[-1.0]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[inf]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[nan]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_context_rejected_not_silently_broadcast_or_ignored",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[SigmaConceptsFromPercepts]"
+  ],
+  "completed": [
+    "test/test_concepts_from_percepts.py::test_gated_formula_includes_signed_evidence_weights_and_bias",
+    "test/test_concepts_from_percepts.py::test_sigma_is_existing_linear_sigma_plus_affine_bias_and_output_tanh",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_local_context_changes_participation_but_is_not_an_output_shortcut",
+    "test/test_concepts_from_percepts.py::test_neutral_and_broadcast_context",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_proximal_step_zeros_edges_per_output_with_correct_lr_normalization",
+    "test/test_concepts_from_percepts.py::test_disabled_prox_and_zero_lr_preserve_parameters_exactly",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[-1.0]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[inf]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[nan]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_context_rejected_not_silently_broadcast_or_ignored",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[SigmaConceptsFromPercepts]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_gated_formula_includes_signed_evidence_weights_and_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011098748072981834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_sigma_is_existing_linear_sigma_plus_affine_bias_and_output_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043062493205070496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004035830497741699,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036079203709959984,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036245910450816154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028324988670647144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032004108652472496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030649988912045956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003311659675091505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002794580068439245,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006865828763693571,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041833287104964256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040391692891716957,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034675002098083496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028258305974304676,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024212501011788845,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002758330665528774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022108410485088825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_local_context_changes_participation_but_is_not_an_output_shortcut",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004892500583082438,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_neutral_and_broadcast_context",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005217501893639565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030162488110363483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043329084292054176,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_proximal_step_zeros_edges_per_output_with_correct_lr_normalization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007858751341700554,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_disabled_prox_and_zero_lr_preserve_parameters_exactly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003934998530894518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024595879949629307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001827920787036419,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001691670622676611,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029362505301833153,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020508305169641972,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_context_rejected_not_silently_broadcast_or_ignored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001206583110615611,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23096579196862876,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04544850019738078,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

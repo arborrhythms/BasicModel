@@ -75,6 +75,12 @@ def _build(path):
     dat = TheXMLConfig.data.get("architecture", {}).get("data", {})
     Models.TheData.load("inline", dat=dat)
     model, _ = Models.BasicModel.from_config(path)
+    # This is a role-observation mechanism fixture with an explicitly
+    # supplied absolute reading. It does not measure learned English parsing
+    # or provision durable relation truths from an untrained reader.
+    model.conceptualSpace._ltm_consolidation = False
+    from reading_fixtures import force_absolute_reading
+    force_absolute_reading(model)
     return model
 
 
@@ -113,11 +119,8 @@ def _run_forwards(model, n=15):
 
 
 def _terminal_ss(model):
-    """The WholeSpace the autobind hook targets (terminalSymbolSpace_ref when
-    wired, else the model's wholeSpace)."""
-    cs = getattr(model, "conceptualSpace", None)
-    ws = getattr(cs, "terminalSymbolSpace_ref", None) if cs is not None else None
-    return ws if ws is not None else getattr(model, "wholeSpace", None)
+    """The ConceptualSpace that owns lexical category evidence."""
+    return model._concept_owner()
 
 
 def test_codebook_enables_and_em_populates_on_real_model():

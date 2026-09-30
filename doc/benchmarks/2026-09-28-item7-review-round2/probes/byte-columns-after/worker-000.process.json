@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/byte-columns-after/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/byte-columns-after/worker-000.json"
+  ],
+  "pid": 77802,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 501237104,
+  "elapsed_seconds": 3.658332832972519,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/byte-columns-after/worker-000.log"
+}

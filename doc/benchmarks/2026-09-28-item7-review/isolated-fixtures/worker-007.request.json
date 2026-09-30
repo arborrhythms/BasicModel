@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+  ],
+  "collect": false,
+  "recycle_file": "/private/tmp/item7-isolated-fixtures/worker-007.recycle.json"
+}

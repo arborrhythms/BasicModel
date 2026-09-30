@@ -1,0 +1,142 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+    "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row"
+  ],
+  "completed": [
+    "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+    "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-clause-reference-after/group-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-clause-reference-after/group-01/worker-000.json"
+      ],
+      "pid": 60472,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434980160,
+      "elapsed_seconds": 4.062271416187286,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-clause-reference-after/group-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+        "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+        "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+        "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+        "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row"
+      ],
+      "completed": [
+        "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+        "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+        "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+        "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+        "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009468207834288478,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00719929113984108,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008357124868780375,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04625899996608496,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005043999990448356,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-clause-reference-after/group-01",
+  "elapsed_seconds": 8.091508500045165,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 434980160,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-clause-reference-after/group-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-clause-reference-after/group-01/collect.json"
+    ],
+    "pid": 60440,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431998176,
+    "elapsed_seconds": 3.8217197919730097,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/z-clause-reference-after/group-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_closing_identities.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+        "test/test_item7_closing_identities.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+        "test/test_item7_closing_identities.py::test_closing_part_and_implies_never_ask_thought_authorization",
+        "test/test_item7_closing_identities.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+        "test/test_item7_closing_identities.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

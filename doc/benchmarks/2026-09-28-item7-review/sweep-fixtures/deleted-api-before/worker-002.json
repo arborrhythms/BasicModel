@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded"
+  ],
+  "completed": [
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.045838332967832685,
+      "message": "test/test_ps_ss_binding.py:67: in test_ps_to_ws_null_before_binding\n    vec, pos, grounded = ws.resolve_ps_terminal(4242, promote_threshold=2)\n                         ^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02254937496036291,
+      "message": "test/test_ps_ss_binding.py:77: in test_ps_to_ws_binding_after_repetition\n    _, _, g1 = ws.resolve_ps_terminal(pid, promote_threshold=2)\n               ^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.022389000048860908,
+      "message": "test/test_ps_ss_binding.py:94: in test_byte_fallback_terminal_is_never_grounded\n    vec, pos, grounded = ws.resolve_ps_terminal(-1, promote_threshold=2)\n                         ^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

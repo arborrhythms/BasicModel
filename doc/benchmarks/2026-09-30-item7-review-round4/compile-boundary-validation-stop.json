@@ -1,0 +1,33 @@
+{
+  "reason": "Final validation stopped after its saved complete-forward fullgraph failure. The boundary refresh must be repaired; completed and partial outcomes remain visible, and new final measurements will use the corrected source.",
+  "roots": [
+    79037,
+    79049,
+    79130,
+    79155,
+    79505,
+    79562
+  ],
+  "stopped_processes": [
+    79037,
+    79049,
+    79050,
+    79130,
+    79155,
+    79279,
+    79505,
+    79562,
+    79573,
+    80083,
+    80151,
+    80183
+  ],
+  "failure": "explicit-final/group-00/result.json",
+  "labels": [
+    "explicit-final",
+    "final-reconstruction-candidate",
+    "final-mm-grammar-candidate",
+    "final-repeats-29-31"
+  ],
+  "queued_cancelled": "final-xor-candidate"
+}

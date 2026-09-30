@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_conceptualSpaces_is_module_list_len_order",
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_active_residual_cache",
+    "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_sigma_layers"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-318.recycle.json"
+}

@@ -15,23 +15,32 @@ def test_unpacked_forward_observes_each_published_sentence_once(
     model = _tiny_canonical_model(tmp_path, monkeypatch)
     model.set_sentence_expectation(True)
     model._prewarm_checkpoint_shapes()
-    model._compiled_word_loop_fullgraph = compiled
+    import util
+    monkeypatch.setattr(util, "TheCompileBackend", "eager" if compiled else "none")
     model._tensor_peer_while_eager = not compiled
     model._chart_compose_per_word = lambda: None
-    source = lambda _unused: model._forward_with_compiled_sentence_state(None)
-    forward = torch.compile(source, backend="eager", fullgraph=True) if compiled else source
+    # The numerical word bricks compile; the common boundary stays eager.
+    observed, costs = [], []
+    original_score = model._sentence_path_cost
+    def score(*args):
+        result = original_score(*args)
+        observed.append(result[2])
+        costs.append(result[0])
+        return result
+    monkeypatch.setattr(model, '_sentence_path_cost', score)
     discourse = model.symbolSpace.discourse
     try:
         for index, samples in enumerate((["alpha beta", "gamma delta"],
                                          ["alpha gamma", "beta delta"])):
             raw = _stage_fullgraph_tensor_peer(model, samples)
-            model._active_compiled_step = forward if compiled else None
-            result = forward(raw)
+            with model._sentence_run():
+                result = model._forward_with_compiled_sentence_state(raw)
             assert len(result) == 21
             if compiled:
                 # A compiler may discard an attribute-only escape. The
                 # explicit outputs must be sufficient, on every invocation.
-                model._pending_stm_end_state = None
+                model._tensor_final_end_slots = None
+                model._tensor_final_end_depth = None
             model._publish_compiled_sentence_state(result)
             model._publish_compiled_sentence_state(result)
             model._end_step()
@@ -39,14 +48,13 @@ def test_unpacked_forward_observes_each_published_sentence_once(
             assert discourse.expectation_metrics()["observations"] == 2 * (index + 1)
             assert discourse.expectation_metrics()["predicted_targets"] == 2 * index
             for row in range(2):
-                expected, occupied = discourse._canonical_meaning(
-                    result[19][row], int(result[20][row]), "stm")
+                expected = observed[-1]['observed'][row]
                 if index:
                     comparison = discourse.last_expectation_comparison(row)
                     torch.testing.assert_close(comparison.observed, expected)
                     assert not comparison.observed.requires_grad
             if index:
-                loss = discourse.consume_inter_loss()
+                loss = costs[-1].mean()
                 assert loss is not None and loss.requires_grad
                 loss.backward()
                 assert any(p.grad is not None and p.grad.abs().sum() > 0
@@ -59,26 +67,21 @@ def test_unpacked_forward_observes_each_published_sentence_once(
         torch._dynamo.reset()
 
 
-def test_explicit_boundary_retains_depth_two_and_skips_masked_rows():
-    from types import SimpleNamespace
-    from Models import BasicModel
-    from test_sentence_expectation import layer
-
-    discourse = layer()
-    slots = torch.arange(24.).reshape(2, 3, 4).requires_grad_()
-    host = SimpleNamespace(
-        symbolSpace=SimpleNamespace(discourse=discourse, ltm_store=None),
-        conceptualSpace=SimpleNamespace(
-            _ltm_consolidation=False,
-            stm_end_state_trust=lambda *_: None),
-        _pending_stm_end_state=(slots, torch.tensor([2, 3]), torch.tensor([True, False])),
-        _expectation_documents_for_slot=lambda *_: ["doc", "padding"])
-    BasicModel._drain_pending_stm_end_state(host)
-    BasicModel._drain_pending_stm_end_state(host)
+def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypatch):
+    from Layers import InterSentenceLayer
+    from reading_fixtures import commit_reading, finish_reading
+    from test_item7_acceptance import SentenceFixture
+    fixture = SentenceFixture(monkeypatch)
+    discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='structured')
+    entry = fixture.program(('lift', 'cat', ('verb', 'chases', 'mouse')))
+    for active in (True, False):
+        commit_reading(fixture.language, fixture.registry, entry, None,
+                       discourse=discourse, active=active, document='doc')
     assert discourse.expectation_metrics()["observations"] == 1
     assert len(discourse._inter_context[0]) == 1
-    assert len(discourse._inter_context) == 1 or not discourse._inter_context[1]
-    depth, payload, _ = discourse._inter_context[0][0]
-    assert depth == 2
-    expected, _ = discourse._canonical_meaning(slots[0], 2, "stm")
-    torch.testing.assert_close(payload, expected)
+    depth, payload, mask = discourse._inter_context[0][0]
+    assert depth == 3
+    expected = finish_reading(fixture.language, entry, registry=fixture.registry).meaning
+    torch.testing.assert_close(payload, expected.roles)
+    torch.testing.assert_close(mask, expected.role_mask)

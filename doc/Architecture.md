@@ -77,6 +77,50 @@ update law (and the codebook/meronomy ownership model generally) instances: all
 computation is composed over typed, symbol-attached units — read/write masks,
 no anonymous global residual stream.
 
+## Words are a formula for narrowing attention (2026-09-28)
+
+The second and third pieces meet in language (Alec, 2026-09-28): **words
+are a formula for narrowing attention.** Attention selects what enters
+awareness; a sentence is a sequence of instructions for making that
+selection. What the words narrow is the **domain of discourse** — Boole's
+universe of discourse, a register that the situation seeds and that is all
+of conceptual space when there is no context — and each word is a
+**projection operator** onto a lower-dimensional or smaller subspace of it.
+
+- **One kind of operator.** Nouns, adjectives, verbs and adverbs all
+  restrict the domain; they differ in which dimensions they constrain, not
+  in kind. A noun is an operator read against the whole domain. Part of
+  speech is a role in a derivation, not a property of a codebook row.
+- **Three indices.** Language individuates along which thing (determiner),
+  which stretch of time (tense and aspect) and which alternative (modal).
+  These are indices of the symbolic projection and of the LTM row; a concept
+  stays one opaque code.
+- **Regions are derived, never stored.** Membership is invariance under the
+  operator and subsumption is absorption, so `part`, `whole` and `equal` are
+  tests on the same algebra.
+- **Two attentions, one chooser.** *Perceptual attention* is the bracket of
+  item 6.8. Its objects are the percepts of the input and, since symbols are
+  percepts, the symbols of thought; it excludes, and what it excludes is not
+  taken up. Perception and higher-order thought share its one budget
+  (`attentionBudget`), which is spent before grammatical analysis, so the
+  words do not draw on it. *Conceptual narrowing* is what the words do, and
+  it is different in kind: it keeps the domain it elects from as the Ground
+  against which its Figure has meaning. There is a budget for percepts and
+  none for conceptual space, though thoughts do shape it. Bracket candidates, restrictors and
+  the identity binding of item 6.5 are candidates in the one softmax of
+  item 7.5. Neither is obliged to narrow: the open read excludes nothing of
+  the input, and the symbol `everything` excludes nothing of the domain.
+
+The statement, its consequences, what the code does today and the
+literature are in
+[the accessible-mind specification §2.0.1](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention);
+the language mechanics are in
+[Language](Language.md#words-narrow-the-domain-of-discourse-2026-09-28), and
+the reading of it in
+[Philosophy](Philosophy.md#words-as-a-formula-for-narrowing-attention-2026-09-28).
+Decided in direction; nothing in this section is implemented as such or
+measured.
+
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
 > The sense in which compose, predict, invert, emit is *equivalent* to a
@@ -124,7 +168,7 @@ $\sum_k \alpha_k \cdot \mathrm{key}_k$. Six stores (the `SPACE_*` ids):
 |---|---|
 | `INPUT` | the staged input window (per-span percept content) |
 | `STM` | the live short-term-memory rows |
-| `LTM` | the consolidated truth store (rows + trust value) |
+| `LTM` | the shared clause store (rows, references and paired evidence) |
 | `PART` | the PartSpace codebook (part-percepts) |
 | `WHOLE` | the WholeSpace property codebook (whole-percepts only) |
 | `SYMBOL` | the downstream SymbolSpace reference namespace (1:1 with concepts) |
@@ -317,6 +361,48 @@ tied reconstruction; they do not determine conceptual presence.
 
 #### Relation-table entry contract
 
+The [two-truths clause closing](specs/2026-09-16-two-truths-ideas-and-relations.md)
+uses the native concept allocator for word and object addresses. An ended
+clause's identity is its occurrences in LTM, tied by the references in their
+slots; it takes no concept inventory row. Each LTM row has `row_ids`, three `refs`, an `order` stamp, independent
+`c_plus`/`c_minus` identification evidence, a separate scalar source `trust`,
+and the ended field's four-coordinate `.where` and `.when`. Trust concerns
+the event's veridicality; changing it never replaces the evidence pair.
+An abstract row is decoded through the sigma inverses down its stamped
+order. An idea occupies
+one point slot containing the actual end state. Its two pre-fusion operand
+references are a cache; no factored target or derivation persists. A
+relation occupies three slots and has kind `part`, `implies` or `operator`;
+there is no catch-all relation. Referenced relations have null point slots
+and are read by row identity, including implication over two relations.
+
+Item 7's September 29 amendment adds a fourth relation kind, `REL_DEF`:
+`word DEF object`. Its operands name native identities in `refs[0]` and
+`refs[2]`; their vector slots are null, and the middle slot has the fixed
+DEF atom. Learning either concept's code cannot redirect the definition.
+Word and object operands belong to the grammar registry's ConceptualSpace,
+including bodies with independent stage dictionaries; another stage's allocator
+cannot supply their identities. The DEF utterance and each ended clause have
+LTM occurrence identities. A grammar predicate has one identity per operation,
+tied by the relation slots in which it occurs, without an inventory row. A
+referenced phrase likewise keeps its point in its LTM row. An identity-to-row
+cache locates these occurrences. A full inventory refuses optional
+symbolization atomically and the reading continues.
+Only `interpret` writes definitions; only the closing writes what a sentence
+asserts. A definition has its own `.when`, remains in recency, and may be
+forgotten. Re-reading refreshes its timestamp without moving its `.when`.
+
+The taxonomy is the native concept hierarchy, read by sigma union. A part
+row between object concepts places the parent one order above its child;
+word identities are never taxonomic operands. One index derived from DEF
+rows supplies form/unit → word, word → objects, and object → words, without
+lookup scans. It rebuilds on load and store compaction. The word/object META,
+its fold and its part edge are retired in every reading; old checkpoint
+bindings migrate to DEF rows. WholeSpace owns only properties. Evidence and
+source trust stay on the LTM row. Clause admission and witnessed context
+discovery write the hierarchy; testimony does not pass the discovery gate.
+
+
 At the sparse-entry level, one entry binds one concept row index to one symbol
 column index, plus its signed membership weight. A concept definition is
 therefore not limited to one symbol: the same concept index may occur in
@@ -351,15 +437,10 @@ bias column). Order-0 concepts reserve their distributed row and read
 their signed feature definitions over native PS percepts and WS properties.
 A fresh object's standing bounds supply no perceptual membership; its
 definition awaits testimony. Feature addresses preserve the source rows
-by reference, without duplicating their codes. The word$\equiv$object META is the sec-4c ORDERED PAIR
-$[\text{whole}=\text{word-symbol}, \text{part}=\text{object-symbol}]$ --
-roles are positional slots of an ordered pair, not containment claims; the
-typed read-out (`meta_word_object`) recovers (word, object) by INTERSECTING
-the pair with the word-symbol class rather than trusting slot order. The
-JOINT/sentence concept (`create_joint_concept`) is the ordered Gallistel
-CHAIN over the row's word-symbols -- each link the pair
-$[\text{whole}=\text{current}, \text{part}=\text{rest}]$, bias-bounded --
-one head per sentence TYPE, so word order distinguishes sentence types. A
+by reference, without duplicating their codes. Word/object associations now
+use the DEF rows above. Completed sentences store their actual end state;
+they keep no word chain or derivation. The older word/object META ordered
+pair and sentence-type JOINT chain are retired by item 7. A
 1:1 tie between SYM refs is the SINGLETON principle (Alec 2026-07-02): the
 unit-set $\{x\}$ -- a whole containing exactly one symbolic part
 (`singleton_concept`, min-support exempt) -- is the constructive primitive
@@ -497,7 +578,7 @@ surface is unsigned (floor 0), so what it expresses is the non-affirming
 negation: the non-object is withdrawn and nothing is put in its place. That
 is why attention needs no prediction in order to focus — neither write
 channel reads the sentence predictor. Expectation is the other negation: the
-predicted idea, sign-reversed, is added to the *sealed idea* (order 1 and
+predicted idea, sign-reversed, is added to the *ended idea* (order 1 and
 above, where a signed carrier exists), never to activations and never to
 this surface, so what is conceived is what was not predicted and composition
 stays pure. The one interaction is that the image is applied to everything
@@ -541,7 +622,7 @@ that identity. An LTM row's address is its `.when`; its `.where` records what
 it was looking at. One shared temporal ladder covers the LTM allocation, and
 everything observed in an input receives the same advancing subjective
 `when_time` stamp. The exact long-integer clock remains alongside this band.
-Per-word reconstruction excludes this shared timestamp. Item 7's seal adds the field
+Per-word reconstruction excludes this shared timestamp. Item 7's closing adds the field
 coordinates to the LTM row schema. See [Spaces.md](Spaces.md) for the encodings.
 
 The spatial band records a start, not an extent. A part's byte length gives
@@ -943,7 +1024,7 @@ and `serial` selects the serial grammatical loop over words.
 >   serial or whole-slab parallel.
 > - **`syntacticOrder`** *(NEW — implemented 2026-06-19)* — the **parse-tree
 >   composition DEPTH** per sentence, bounded by the word count. `0` = unbounded
->   (byte-identical); a positive value caps the NULL-seal reduce sweep to that
+>   (byte-identical); a positive value caps the NULL-closing reduce sweep to that
 >   many fold levels (static `min(syntacticOrder, cap-1)`; $\le W$ structural).
 >   Inert in parallel mode.
 >
@@ -1230,14 +1311,14 @@ reading definitions and includes every supported identity, replacing the
 | Thing | `.where` | `.when` | `.what` |
 |---|---|---|---|
 | a percept event, a symbol occurrence | its own bracket | its own time | one code |
-| a **field** — a reading; an LTM row is a sealed field | **one** convex bracket | **one** interval | **many** codes: the parts and wholes inside the bracket |
+| a **field** — a reading; an LTM row is a ended field | **one** convex bracket | **one** interval | **many** codes: the parts and wholes inside the bracket |
 | a **concept row** in the store | none | none | its definition over percept poles |
 
 A concept *in a field* therefore has a where and a when — the field's —
 and a multiplicity of `.what` perceptual codes that are parts or wholes of
 that (where, when) location. A concept *row* has neither coordinate. The
 captured field and answer program retain that pair now. Item 7 owns its
-durable LTM row columns: the seal will write the pair once per row, never
+durable LTM row columns: the closing will write the pair once per row, never
 per concept.
 
 **The conceptual field is a percept activation vector.** For every
@@ -1297,7 +1378,7 @@ moves to perception's side.
 `when_time`, encoded with a sinusoidal ladder and retained as an exact integer
 alongside it. Every element of that input shares the stamp. It distinguishes
 successive observations; scoring it again for each word adds no per-word
-information. The item 7 seal will retain the field's coordinates in LTM, so a
+information. The item 7 closing will retain the field's coordinates in LTM, so a
 recalled row can enter thought with its own location and time. An interval
 wider than one row is an episode. Tense is the
 relation between the field's interval and the utterance's, a relation
@@ -1305,7 +1386,7 @@ between two brackets, never a property of a concept row; `lift` extends a
 thing into a process by widening the interval the field reads.
 
 **Consequently (Alec, 2026-09-25): every LTM row carries a `.where` and a
-`.when`**, the field's pair, written once by the seal (item 7). **`.where`
+`.when`**, the field's pair, written once by the closing (item 7). **`.where`
 uses one address space over input and stored percepts**: input positions
 come first, then PartSpace and WholeSpace rows, then one address per symbol
 pole. A word's percept and symbol occurrences carry its input byte start,
@@ -1353,27 +1434,29 @@ The original erosion experiment is archived in
 interleave results do not describe the parallel-first schedule. Categorical
 discrimination remains a descriptive metric for item 4's logger.
 
-**`interpret`: word-concept to object-concept.** In serial mode every
-arriving word is interpreted before it takes part in composition:
-PartSpace looks the word up as the recurring unit the fold ladder
-admitted, and `interpret` maps that word-concept to the object-concept it
-refers to. If that association already exists, interpretation returns that
-object at its existing order: a word associated with the cat kind returns
-that kind. The order-1 default applies only when a word has no object yet.
-A grammar request selects among multiple known associations or sets the order
-of a new object; it does not manufacture a second object merely because
-the existing one has a different order.
-Spelling does not choose the order. It is not a mode and not
-chooser-routed. An unknown word **mints** a provisional object row whose
-only literal is the word occurrence that named it: that is how
-object-concepts come to exist without direct experience, by testimony,
-and its second occurrence resolves to the same row. `interpret` replaces
-the host-side `create_word_object_meta` triple; its reverse is
-lexicalization. See [Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25).
+**`interpret`: word-concept to object-concept (item 7 amendment, September 29).**
+Every read word is interpreted under every binding. Its parts are fused
+first; the word keeps both its parts and its wholes, but its symbol is
+evidenced only where its part was read. A repeated canonical part sequence
+is a lookup even when the learned property reading has changed.
+
+The unary replaces a new word by its object in the same inventory row.
+It costs two native identities, one inventory row and one DEF row; it adds
+no META and no order-raising fold. An existing object keeps its order, and
+the grammar selects among ambiguous associations. Where the field discovers
+its own cases, interpretation reserves the word and its definition until
+the field admits the object's row. A word concept never blocks that discovery.
+Capacity is reserved before admission; refusal leaves nothing behind.
+
+The eager word boundary owns this transaction before graph execution. The
+sentence boundary retains category learning and recognized-word work.
+Generation uses the same DEF index in reverse. See
+[Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25)
+and [the definition contract](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
 
 ### Loop and parameter ownership (tied reconstruction, 2026-09-16)
 
-`forward()` composes and seals the input, publishing the existing 21-value
+`forward()` composes and endings the input, publishing the existing 21-value
 sentence state. BasicModel selects `reconstructionPlacement=compiled`, a
 separate fullgraph reconstruction call. With the MPS `eager` capture backend,
 that call uses `aot_eager` to capture backward as well. Its compiler retains
@@ -1387,7 +1470,7 @@ valid zero-valued results ([Models.py:7278](../bin/Models.py#L7278),
 [Models.py:11226](../bin/Models.py#L11226)).
 
 The reconstruction traversal has three bounded passes: an integer-only replay
-identifies operand occurrences; seal reversal recovers each completed sentence's
+identifies operand occurrences; closing reversal recovers each completed sentence's
 stack; then a reverse word walk undoes unary/post folds, pops and scores the
 word, and undoes its pre-fold. Repeated concept rows retain their own signed
 occurrence activations. Packed sentences have separate boundaries and costs.
@@ -1401,7 +1484,7 @@ admission cannot silently become a uniform-only byte loss. The boundary checks
 tensor metadata in Python and asserts ownership and sentence coverage on device,
 without reading tensor scalars back to the host; accelerator assertion failures
 are reported asynchronously.
-The live seal bank is completed with each row's final slots and depth before
+The live closing bank is completed with each row's final slots and depth before
 saved answer programs are captured; ragged rows can end at different slots.
 These changes preserve packed/single parity at equal frozen model state
 ([item 9 diagnosis](benchmarks/2026-09-25-item9-parity/README.md)).
@@ -1925,7 +2008,7 @@ order").
   order, as today. Taxonomic access keeps walking this structure
   ([taxonomic access](specs/2026-09-20-accessible-mind-subsystems.md)); the
   concept-level index of [two truths §3.4](specs/2026-09-16-two-truths-ideas-and-relations.md#34-meta-and-the-taxonomy-decided)
-  is this structure, and the seal is one of its writers. The pi stage is an
+  is this structure, and the closing is one of its writers. The pi stage is an
   optional discriminative extension in the order-0 field, `<conceptualPi>`,
   off by default: conjunctions with negation, for XOR-type concepts.
 - *Two ways in, and a maxim.* **What co-occurs is a necessary part of the
@@ -1940,7 +2023,7 @@ order").
   times, which is the evidence the promotion observer's context weights
   already collect. A kind over **objects** cannot be witnessed until the
   mind has a video feed; its membership rests on **testimony**: the
-  two-truths seal writes the asserted part row ("cats are animals") into
+  two-truths closing writes the asserted part row ("cats are animals") into
   this same structure, between the object concepts the words resolve to —
   the identity the expectation layer carries
   ([two truths §3.5](specs/2026-09-16-two-truths-ideas-and-relations.md#35-object-permanence-a-word-may-translate-to-an-earlier-occurrence-decided-2026-09-21))
@@ -2007,7 +2090,7 @@ remain in the [item 11](benchmarks/2026-09-23-item11/README.md) and
    JOINT / sentence concept is built on it. Now that LTM rows carry `refs`
    and leaf-code columns, **LTM references are the source of sequences**
    (Alec): a sequence is an episode, a conjunction of particular things in
-   order, and it is the chain of rows the two-truths seal writes
+   order, and it is the chain of rows the two-truths closing writes
    ([accessible mind §2.7.1](specs/2026-09-20-accessible-mind-subsystems.md));
    the predictor learns its regularities. `conceptualize_chain`, `chain_idx`
    and the JOINT concept are deleted when item 7 lands.
@@ -2032,7 +2115,7 @@ remain in the [item 11](benchmarks/2026-09-23-item11/README.md) and
    positive weight; co-active with its negative symbol it writes a negative
    weight. Nothing is written from absent percepts. Signed weights are
    stored as a nonnegative exponent and a source pole. Learning refines the
-   magnitude; the seal can assert either pole. Witnessing runs at the sentence
+   magnitude; the closing can assert either pole. Witnessing runs at the sentence
    boundary over retained position pairs, before the next field is bound.
 
 3. **Field conjunctions and symbolic unions.** Both matrices use sparse
@@ -2084,7 +2167,7 @@ remain in the [item 11](benchmarks/2026-09-23-item11/README.md) and
      context signature, the entry's context weights, is its where. This
      applies to what the mind witnesses: words and other percepts.
      Object-concepts are not witnessed, so their kinds are written by the
-     seal from testimony, not discovered by the pool. The gate is **use,
+     closing from testimony, not discovered by the pool. The gate is **use,
      not gradient**: an EWMA of the concept's own activation being above a
      floor on recent inputs — earned by recurring, never optimised, so a
      concept cannot learn to participate by making itself cheap. `g` rises
@@ -2334,7 +2417,7 @@ allowed; null results are reported as null.
 
 **Normalization lifetime, accepted.** Post-optimizer maximum normalization
 applies only to assigned provisional disjunctive rows. Discovered and
-seal-written definitions retain their learned exponent scale. This closes
+closing-written definitions retain their learned exponent scale. This closes
 the 11a normalization residue. The 11a prior memberships and segmentation
 remain unchanged. The [11c receipt](benchmarks/2026-09-24-item11c/README.md)
 records the current learned-row gate, controls, serial reconstruction against
@@ -2408,11 +2491,11 @@ job of `InterSentenceLayer` (alias `wordSpace.discourse`).
 
 ### Sentence representation
 
-The production inter objective uses each sealed sentence's occupied local
+The production inter objective uses each ended sentence's occupied local
 NP1/VP/NP2 roles, with an explicit mask. `SentenceExpectation` preserves
 role and chronological position and predicts independent role vectors plus
 occupancy logits. The packed observer reads the existing live end-slot/depth
-outputs, including the final seal, and adapts newest-first STM layout into
+outputs, including the final closing, and adapts newest-first STM layout into
 canonical infix order. The structured inter objective is distinct from the
 legacy ARMA objective described below. Compound-reference retention and
 prediction are tracked separately in the integrated spec's nesting migration.
@@ -2502,7 +2585,7 @@ continuity unless the caller explicitly calls `Reset`.
 
 ### Expectation at comprehension and generation boundaries
 
-Composition is pure. At the seal, the estimate is sign-reversed per role:
+Composition is pure. At the closing, the estimate is sign-reversed per role:
 `c = o - expectationGain * (1-object_mask) * presence * estimate`.
 The observation row keeps `o`, and the linked pair derives the conceived view.
 The chooser sees that detached view; prediction learns the all-role `o-estimate`

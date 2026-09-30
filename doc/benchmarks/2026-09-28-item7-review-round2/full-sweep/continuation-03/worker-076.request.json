@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_concepts_from_percepts.py::test_mps_forward_backward_and_prox[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_mps_forward_backward_and_prox[SigmaConceptsFromPercepts]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-076.recycle.json"
+}

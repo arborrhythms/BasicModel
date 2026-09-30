@@ -1,0 +1,113 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_meta]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[meta_trust]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_children]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_parent]",
+    "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_maybe_learn_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_route_learned_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_is_truth_obvious]"
+  ],
+  "completed": [
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_meta]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[meta_trust]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_children]",
+    "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_parent]",
+    "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_maybe_learn_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_route_learned_relation]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_children_in_codebook]",
+    "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_is_truth_obvious]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010687496978789568,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_meta]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.041593875735998e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[meta_trust]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.441705722361803e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_children]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.387502748519182e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_parent]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.508400060236454e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002135624992661178,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_maybe_learn_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.699996396899223e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_route_learned_relation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.533301297575235e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_children_in_codebook]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.570903446525335e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_is_truth_obvious]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.212507236748934e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,29 @@
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -238,6 +238,8 @@
+         return self._fit(point)
+ 
+     def _clause_reference(self, reference, children):
++        if isinstance(reference, ClausePredicate):
++            return reference.identity
+         return int(self.row_ids[children[reference[1]]]) if isinstance(reference, tuple) else reference
+ 
+     @torch.no_grad()
+@@ -295,11 +297,13 @@
+             self._validate_local_references(replace(value.meaning,
+                 role_refs=(None, None, None), constituents=()))
+             child_ids = tuple(preflight(child) for child in value.children)
+-            if any(isinstance(ref, ClausePredicate) for ref in value.refs):
+-                raise ValueError('predicate identity requires the clause index')
+-            refs = tuple(child_ids[r[1]] if isinstance(r, tuple) else r for r in value.refs)
++            refs = tuple(child_ids[r[1]] if isinstance(r, tuple) else
++                         r.identity if isinstance(r, ClausePredicate) else r for r in value.refs)
+             for slot, ref in enumerate(value.refs):
+-                if isinstance(ref, tuple):
++                if isinstance(ref, ClausePredicate):
++                    if ref.point.shape != (self.nDim,):
++                        raise ValueError('predicate point differs from its truth store width')
++                elif isinstance(ref, tuple):
+                     child = value.children[ref[1]]
+                     if relation is None and child.slots.shape[0] == 3:
+                         raise ValueError('a clause over a relation cannot fuse')

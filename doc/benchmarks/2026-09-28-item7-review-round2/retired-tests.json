@@ -1,0 +1,90 @@
+[
+  {
+    "file": "test/test_perceptual_loopback.py",
+    "test": "test_symbolic_lexicon_methods_exist",
+    "reason": "The retired WholeSpace lexicon API has no SymbolSpace counterpart.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "0c2ad3289295ee0b4d81267b73fdcfffc2b62e7316b0d9b6d170b254de6f99ab",
+    "preimage": "def test_symbolic_lexicon_methods_exist(self):\n        sym = self.model.wholeSpace\n        for name in (\n            'train_embeddings', 'sbow_loss', '_snapshot_embeddings',\n            'set_embedding_sigma', 'reconstruct_data',\n            'reconstruct_to_buffer', 'get_recovered_word',\n        ):\n            self.assertTrue(hasattr(sym, name),\n                            f\"WholeSpace must expose {name!r} after \"\n                            f\"the lexicon-API migration.\")"
+  },
+  {
+    "file": "test/test_init_scale.py",
+    "test": "test_whole_space_init_scale_wiring",
+    "reason": "WholeSpace analysis_store and learned word prototypes were deleted; the property basis is fixed.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "ef813a8ea70fdfa66a94962e9327ba346d17c73bd6d7ae7e0cb6a4cd3d2c2a2a",
+    "preimage": "def test_whole_space_init_scale_wiring():\n    # End-to-end: <WholeSpace><initScale> must reach BOTH WS codebooks so\n    # their prefill rows land at the small operating point.\n    import Models\n    import Language\n    from util import init_config\n\n    cfg = os.path.join(_DATA, \"MM_init_scale.xml\")\n    init_config(path=cfg, defaults_path=os.path.join(_DATA, \"model.xml\"))\n    Language.TheGrammar._configured = False\n    m, _ = Models.BasicModel.from_config(cfg)\n    ws = m.wholeSpace\n\n    what = ws.subspace.what\n    assert isinstance(what, Codebook), \"fixture must give WS a Codebook .what\"\n    assert what.init_scale == pytest.approx(0.02)\n    assert ws.analysis_store.init_scale == pytest.approx(0.02)\n    # The freshly-built .what prototypes sit at the small scale (mean row norm\n    # well under the unit / hypercube default).\n    mean_norm = float(_row_norms(what).mean())\n    assert mean_norm < 0.1, f\"WS .what rows not small-init: mean |row|={mean_norm}\""
+  },
+  {
+    "file": "test/test_bivector_retirement_state.py",
+    "test": "test_symbolic_references_parameter_attached_via_knowledge",
+    "reason": "Symbols reference concepts; no trainable scalar references parameter is allocated.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "aef8f5c4f98068f08544487339ce947eb3fc7d7cdfc1368d6c1d61066ab06bf5",
+    "preimage": "def test_symbolic_references_parameter_attached_via_knowledge():\n    \"\"\"The new scalar-only path lives on ``WholeSpace.references``,\n    created when ``attach_knowledge`` fires. The codebook stays the\n    legacy ``.what.W`` Parameter; consumer migration from ``.W`` to\n    ``references`` is the remaining narrow-bivector-retirement work.\"\"\"\n    from Language import Grammar\n    from embed import build_knowledge_section, KnowledgeView\n    ss = _make_word_space(symbolDim=4)\n    sym = ss.wholeSpace\n\n    g = Grammar()\n    g.rules = [\n        g._parse_rule(\"NP\", \"conjunction(DET, N)\", space_role='SS'),\n        g._parse_rule(\"S\", \"disjunction(NP, VP)\", space_role='SS'),\n    ]\n    g._configured = True\n    view = KnowledgeView(build_knowledge_section(g))\n    sym.attach_knowledge(view)\n\n    # references is the scalar-only Parameter the plan envisions as the\n    # eventual replacement for .what.W\n    assert hasattr(sym, 'references')\n    assert isinstance(sym.references, nn.Parameter)\n    assert sym.references.ndim == 1"
+  },
+  {
+    "file": "test/test_sparsity_regularizer.py",
+    "test": "test_symbolic_space_uses_sparsity_regularizer",
+    "reason": "The removed symbolic dictionary owns no regularizer factory.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "20597c575965bd8c795e2bac7ae3d61dee2f1d96c46910ce40fbe5ac038d9604",
+    "preimage": "def test_symbolic_space_uses_sparsity_regularizer():\n    \"\"\"WholeSpace.l1_proximal delegates to SparsityRegLayer.\"\"\"\n    from Spaces import WholeSpace\n    assert hasattr(WholeSpace, \"_build_sparsity_regularizer\"), \\\n        \"WholeSpace should expose a factory for its regularizer\""
+  },
+  {
+    "file": "test/test_phase2_end_to_end.py",
+    "test": "test_phase2_end_to_end_reattach_after_extend",
+    "reason": "The deleted references parameter and order buffer cannot be attached or extended; the other artifact loader tests remain.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "880dd686c0e300b83c3a596be514102aed66e4f4cda1c646ccaa7b4fb1e4767c",
+    "preimage": "def test_phase2_end_to_end_reattach_after_extend(tmp_path):\n    \"\"\"WholeSpace.attach_knowledge handles an extended artifact:\n    capacity-slack pattern preserves Parameter identity when capacity\n    didn't change.\"\"\"\n    from embed import (save_artifact, build_knowledge_section,\n                       extend_artifact, load_knowledge_view, NewRef)\n    from Spaces import WholeSpace\n    import torch.nn as nn\n    grammar = _grammar_with_lift_lower_and_ordinary()\n    path = str(tmp_path / \"growable.kv\")\n    save_artifact(path, knowledge=build_knowledge_section(grammar))\n\n    ws = _bare_space(WholeSpace)\n    view1 = load_knowledge_view(path)\n    ws.attach_knowledge(view1)\n    refs_param_id_1 = id(ws.references)\n\n    # Extend without exceeding capacity (256 slack absorbs +1).\n    s_rid = view1.ref_id_for('S')\n    extend_artifact(path, [\n        NewRef(scalar=0.99, order=4, parent_ref_id=s_rid, category='S'),\n    ])\n    view2 = load_knowledge_view(path)\n    ws.attach_knowledge(view2)\n    # Same Parameter object (no realloc needed since capacity unchanged)\n    assert id(ws.references) == refs_param_id_1\n    # The appended ref's scalar landed at the right slot (float32).\n    import pytest\n    n_before = view1.n_refs_live\n    assert float(ws.references[n_before].item()) == pytest.approx(0.99)"
+  },
+  {
+    "file": "test/test_phase2_end_to_end.py",
+    "test": "test_phase2_end_to_end_round_trip",
+    "reason": "The deleted references parameter and order buffer cannot be attached or extended; the other artifact loader tests remain.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "a9fcb3d956b92d9de4ac37cdcf5d48b9d5eef0974ca4d006dffe20098790570e",
+    "preimage": "def test_phase2_end_to_end_round_trip(tmp_path):\n    \"\"\"Full pipeline: write artifact, load, attach to 3 Spaces, verify\n    each Space sees the expected fields.\"\"\"\n    from embed import (save_artifact, build_knowledge_section,\n                       load_knowledge_view, KnowledgeView)\n    from Language import SymbolSubSpace\n    from Spaces import PartSpace, WholeSpace\n    import torch\n    import torch.nn as nn\n\n    # 1+2: Build + save\n    wv = _FakeWV([\"the\", \"cat\", \"ran\"])\n    grammar = _grammar_with_lift_lower_and_ordinary()\n    ks = build_knowledge_section(grammar, wv=wv)\n    path = str(tmp_path / \"e2e.kv\")\n    save_artifact(path, knowledge=ks)\n\n    # 3: Load\n    view = load_knowledge_view(path)\n    # root + base categories {S, NP, VP, DET} + explicit ordered refs\n    # {S4, NP3, VP1, NP4, S3}\n    assert view.n_refs_live == 10\n\n    # 4: Attach to three Spaces (all bare instances)\n    ss = object.__new__(SymbolSubSpace); nn.Module.__init__(ss)\n    ps = _bare_space(PartSpace)\n    ws = _bare_space(WholeSpace)\n    ps.wv = wv\n\n    ss.attach_knowledge(view)\n    ps.attach_knowledge(view)\n    ws.attach_knowledge(view)\n\n    # 5a: SymbolSubSpace exposes the view\n    assert ss.knowledge is view\n    assert ss.knowledge.ref_id_for('NP') is not None\n\n    # 5b: WholeSpace has trainable references Parameter + order buffer\n    assert isinstance(ws.references, nn.Parameter)\n    assert ws.references.dim() == 1\n    assert ws.references.shape[0] >= 256\n    assert 'references' in [n for n, _ in ws.named_parameters()]\n    assert ws.order.dtype == torch.long\n    assert 'order' in [n for n, _ in ws.named_buffers()]\n\n    # 5c: PartSpace.wv.ref_ids stamped (Phase-1 bootstrap \u2192 all -1)\n    assert hasattr(ps.wv, 'ref_ids')\n    assert ps.wv.ref_ids.shape[0] == 3\n    assert all(int(ps.wv.ref_ids[i].item()) == -1 for i in range(3))"
+  },
+  {
+    "file": "test/test_word_space_attach_knowledge.py",
+    "test": "test_symbolic_space_reattach_updates_in_place",
+    "reason": "The deleted scalar references parameter/order buffer has no SymbolSpace counterpart; symbols use concept identities.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "604ddabd8af0d44cd59dcff016bdf4a958d280cbb63a2eae8c852af43907ab55",
+    "preimage": "def test_symbolic_space_reattach_updates_in_place():\n    \"\"\"Re-attaching a view replaces the references / order data\n    without breaking Parameter / buffer registration.\"\"\"\n    from Spaces import WholeSpace\n    import torch\n    ws = _bare_space(WholeSpace)\n    view1 = _tiny_view()\n    ws.attach_knowledge(view1)\n    refs_id_before = id(ws.references)\n    # Modify the first ref's value via the underlying section, then\n    # build a fresh view to attach.\n    view2 = _tiny_view()\n    # The bootstrap builds with all zeros \u2014 to detect update, write\n    # something into view2's underlying section before attaching.\n    view2._ks['reference_codebook']['references'][0] = 0.75\n    ws.attach_knowledge(view2)\n    # New value visible\n    assert float(ws.references[0].item()) == 0.75\n    # Knowledge field updated too\n    assert ws.knowledge is view2"
+  },
+  {
+    "file": "test/test_word_space_attach_knowledge.py",
+    "test": "test_symbolic_space_order_in_named_buffers",
+    "reason": "The deleted scalar references parameter/order buffer has no SymbolSpace counterpart; symbols use concept identities.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "e290153fc3cb56651a628ac9e42652d8676d1e6b7f09835ba7f03d09f732e9b8",
+    "preimage": "def test_symbolic_space_order_in_named_buffers():\n    \"\"\"The order tensor shows up in ``named_buffers`` (not as a\n    Parameter \u2014 it's discrete metadata, not trainable).\"\"\"\n    from Spaces import WholeSpace\n    ws = _bare_space(WholeSpace)\n    ws.attach_knowledge(_tiny_view())\n    names = [n for n, _ in ws.named_buffers()]\n    assert 'order' in names"
+  },
+  {
+    "file": "test/test_word_space_attach_knowledge.py",
+    "test": "test_symbolic_space_references_in_named_parameters",
+    "reason": "The deleted scalar references parameter/order buffer has no SymbolSpace counterpart; symbols use concept identities.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "d710b097284304d0397c7868adfa821e322f2e589be61420fefc7ae643f987a1",
+    "preimage": "def test_symbolic_space_references_in_named_parameters():\n    \"\"\"The references Parameter shows up in ``named_parameters`` so the\n    optimizer picks it up for training.\"\"\"\n    from Spaces import WholeSpace\n    ws = _bare_space(WholeSpace)\n    ws.attach_knowledge(_tiny_view())\n    names = [n for n, _ in ws.named_parameters()]\n    assert 'references' in names"
+  },
+  {
+    "file": "test/test_word_space_attach_knowledge.py",
+    "test": "test_symbolic_space_attach_creates_order_buffer",
+    "reason": "The deleted scalar references parameter/order buffer has no SymbolSpace counterpart; symbols use concept identities.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "09f3fc064dc5e244d098299ac0646c7209d26ca6dcabd2eb0565a02cc63f9c07",
+    "preimage": "def test_symbolic_space_attach_creates_order_buffer():\n    \"\"\"After attach_knowledge, WholeSpace has an ``order`` long\n    buffer with the live rows from the artifact.\"\"\"\n    from Spaces import WholeSpace\n    import torch\n    ws = _bare_space(WholeSpace)\n    view = _tiny_view()\n    ws.attach_knowledge(view)\n    assert hasattr(ws, 'order')\n    assert ws.order.dtype == torch.long\n    n_live = view.n_refs_live\n    for i in range(n_live):\n        assert int(ws.order[i].item()) == int(view.orders[i].item())"
+  },
+  {
+    "file": "test/test_word_space_attach_knowledge.py",
+    "test": "test_symbolic_space_attach_creates_references_parameter",
+    "reason": "The deleted scalar references parameter/order buffer has no SymbolSpace counterpart; symbols use concept identities.",
+    "authorization": "item 7 \u00a713 I / \u00a714 step 4",
+    "preimage_sha256": "7afd357169e592ca6f8cbe37aa0be17b9537a5cfff6362b8b025cf5b0212867e",
+    "preimage": "def test_symbolic_space_attach_creates_references_parameter():\n    \"\"\"After attach_knowledge, WholeSpace has a 1-D references\n    Parameter at the artifact's capacity, initialized with the live\n    rows from the artifact.\"\"\"\n    from Spaces import WholeSpace\n    import torch.nn as nn\n    ws = _bare_space(WholeSpace)\n    view = _tiny_view()\n    ws.attach_knowledge(view)\n    assert hasattr(ws, 'references')\n    assert isinstance(ws.references, nn.Parameter)\n    # 1-D, sized to capacity (>= 256 per the bootstrap slack)\n    assert ws.references.dim() == 1\n    assert ws.references.shape[0] >= 256\n    # Live rows match the view's values\n    n_live = view.n_refs_live\n    for i in range(n_live):\n        assert float(ws.references[i].item()) == \\\n            float(view.references[i].item())"
+  }
+]

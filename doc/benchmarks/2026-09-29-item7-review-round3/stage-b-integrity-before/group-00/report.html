@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 3/3 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.5313503330107778</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:13: in test_copied_definition_index_is_owned_by_the_copied_store
+    assert restored.definitions.deref(word) is None
+E   assert 2 is None
+E    +  where 2 = deref(1)
+E    +    where deref = &lt;Definitions.DefinitionIndex object at 0x140c03d40&gt;.deref
+E    +      where &lt;Definitions.DefinitionIndex object at 0x140c03d40&gt; = TernaryTruthStore().definitions</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.17272945900913328</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:23: in test_two_pending_words_cannot_overbook_the_last_definition_row
+    with pytest.raises(RuntimeError,match=&#x27;capacity&#x27;):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.6752316249767318</pre></td><td><pre>doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:37: in test_word_concepts_exist_before_grounded_case_discovery
+    namespace[&#x27;learn_grounded_xor&#x27;](tmp_path,4)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_integrity.py:word-first:54: in learn_grounded_xor
+    ???
+E   AssertionError</pre></td><td><pre></pre></td></tr></table></body></html>

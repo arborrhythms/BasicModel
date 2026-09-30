@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_word_store.py::test_sixty_four_word_trace_is_bounded"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients",
+    "test/test_compiled_word_chunk.py::test_k2_adapter_maps_local_choice_trace_into_sentence_slots",
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-054.recycle.json"
+}

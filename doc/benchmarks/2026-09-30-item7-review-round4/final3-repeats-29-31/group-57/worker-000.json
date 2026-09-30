@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]"
+  ],
+  "completed": [
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07942316704429686,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

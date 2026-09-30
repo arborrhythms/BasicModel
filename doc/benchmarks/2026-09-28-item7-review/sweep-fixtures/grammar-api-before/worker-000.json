@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+  ],
+  "completed": [
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0011329170083627105,
+      "message": "test/test_merge_structural_not_operator.py:52: in test_merge_not_inserted_as_operator\n    pos = ws.insert_operations(g)\n          ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0014150839997455478,
+      "message": "test/test_merge_structural_not_operator.py:61: in test_semantic_operators_still_inserted\n    ws.insert_operations(g)\n    ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0009835410164669156,
+      "message": "test/test_merge_structural_not_operator.py:70: in test_only_semantic_operators_in_codebook\n    pos = ws.insert_operations(g)\n          ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

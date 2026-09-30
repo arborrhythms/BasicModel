@@ -1,0 +1,129 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+    "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+    "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+    "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one"
+  ],
+  "completed": [
+    "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+    "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+    "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+    "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/allocator-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/allocator-after/worker-000.json"
+      ],
+      "pid": 52410,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436340056,
+      "elapsed_seconds": 3.6900772500084713,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/allocator-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+        "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+        "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+        "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one"
+      ],
+      "completed": [
+        "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+        "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+        "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+        "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00030449999030679464,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00020820798818022013,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005724458023905754,
+          "message": "",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8055/test_allocate_position_persist0/concept-counter.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8055/test_allocate_position_persist0/concept-counter.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8055/test_allocate_position_persist0/concept-counter.ckpt\r\n"
+        },
+        {
+          "nodeid": "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00018987501971423626,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 2147483648,
+    "aggregate_memory_bytes": 2147483648,
+    "per_worker_memory_bytes": 2147483648,
+    "workers": 1,
+    "worker_seconds": 180,
+    "suite_seconds": 600,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/allocator-after",
+  "elapsed_seconds": 7.538268166943453,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 436340056,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/allocator-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/allocator-after/collect.json"
+    ],
+    "pid": 52354,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433390840,
+    "elapsed_seconds": 3.6707396249985322,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/allocator-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+        "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+        "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+        "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

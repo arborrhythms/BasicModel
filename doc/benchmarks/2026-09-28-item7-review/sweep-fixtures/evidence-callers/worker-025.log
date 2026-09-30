@@ -1,0 +1,10 @@
+..............F.......                                                   [100%]
+=================================== FAILURES ===================================
+_____________ TestVerifyRelation.test_counterevidence_lowers_trust _____________
+test/test_truth_ideas_routing.py:303: in test_counterevidence_lowers_trust
+    self.assertAlmostEqual(new, 0., places=6)  # 0.5*0.5 + 0.5*(-1)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: -0.5 != 0.0 within 6 places (0.5 difference)
+=========================== short test summary info ============================
+FAILED test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_lowers_trust
+1 failed, 21 passed in 2.16s

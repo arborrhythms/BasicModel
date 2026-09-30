@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 10707116840,
+  "elapsed_seconds": 8.391945749986917
+}

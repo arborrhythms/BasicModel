@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 169.1597107499838,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

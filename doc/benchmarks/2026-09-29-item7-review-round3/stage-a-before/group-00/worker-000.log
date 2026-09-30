@@ -1,0 +1,162 @@
+FFFFFFFFFFFFFF                                                           [100%]
+=================================== FAILURES ===================================
+___________________ test_23_fuse_parts_before_word_admission ___________________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:28: in test_23_fuse_parts_before_word_admission
+    assert cs.concept_parts(word) == [fused]
+E   assert [0, 1, 2, 3] == [4]
+E     
+E     At index 0 diff: 0 != 4
+E     Left contains 3 more items, first extra item: 1
+E     Use -v to get more diff
+____________ test_23_same_parts_after_property_change_write_nothing ____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:37: in test_23_same_parts_after_property_change_write_nothing
+    assert snapshot(cs) == before
+E   assert (3, {1: 0, 2:....0, 1.0), ...) == (2, {1: 0}, {....0, 1.0), ...)
+E     
+E     At index 0 diff: 3 != 2
+E     Use -v to get more diff
+______________ test_26_full_row_inventory_leaves_no_word_identity ______________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:52: in test_26_full_row_inventory_leaves_no_word_identity
+    assert snapshot(cs) == before
+E   assert (2, {1: 0}, {..., {}, (), ...) == (1, {}, {}, {}, {}, (), ...)
+E     
+E     At index 0 diff: 2 != 1
+E     Use -v to get more diff
+____________ test_29_shared_whole_does_not_evidence_an_absent_word _____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:70: in test_29_shared_whole_does_not_evidence_an_absent_word
+    assert field[slot, 0, 1].count_nonzero() == 0
+E   assert tensor(1) == 0
+E    +  where tensor(1) = <built-in method count_nonzero of Tensor object at 0x122f94140>()
+E    +    where <built-in method count_nonzero of Tensor object at 0x122f94140> = tensor([1., 0.], grad_fn=<SelectBackward0>).count_nonzero
+__________ test_29_each_reading_publishes_only_its_words[MM_xor.xml] ___________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:100: in test_29_each_reading_publishes_only_its_words
+    assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)
+E   AssertionError: ('MM_xor.xml', 'hello world', 'hello', 6, 8)
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x122fbb750>()
+E    +    where <built-in method any of Tensor object at 0x122fbb750> = tensor([[1., 0.]]).any
+________ test_29_each_reading_publishes_only_its_words[MM_grammar.xml] _________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:100: in test_29_each_reading_publishes_only_its_words
+    assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)
+E   AssertionError: ('MM_grammar.xml', 'hello world', 'hello', 6, 11)
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x1233b5b80>()
+E    +    where <built-in method any of Tensor object at 0x1233b5b80> = tensor([[1., 0.]]).any
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+________ test_29_each_reading_publishes_only_its_words[XOR_grammar.xml] ________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:100: in test_29_each_reading_publishes_only_its_words
+    assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)
+E   AssertionError: ('XOR_grammar.xml', 'hello world', 'hello', 6, 11)
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x1236faad0>()
+E    +    where <built-in method any of Tensor object at 0x1236faad0> = tensor([[1., 0.]]).any
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+____________ test_property_read_selects_rows_and_in_bracket_events _____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:125: in test_property_read_selects_rows_and_in_bracket_events
+    field = read_percepts((raw[:, :0], spans[:, :0], primitive, raw, spans),
+bin/PerceptField.py:77: in read_percepts
+    pair = primitive.evidence_on_counts(counts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:117: in observed
+    assert rows is not None and rows.tolist() == [17], 'unreferenced property rows evaluated'
+E   AssertionError: unreferenced property rows evaluated
+E   assert (None is not None)
+_________________ test_33_grounded_xor_with_word_boundary[4-0] _________________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary
+    namespace['learn_grounded_xor'](tmp_path, pool)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor
+    ???
+E   AssertionError
+_________________ test_33_grounded_xor_with_word_boundary[4-1] _________________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary
+    namespace['learn_grounded_xor'](tmp_path, pool)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor
+    ???
+E   AssertionError
+_________________ test_33_grounded_xor_with_word_boundary[4-2] _________________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary
+    namespace['learn_grounded_xor'](tmp_path, pool)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor
+    ???
+E   AssertionError
+_________________ test_33_grounded_xor_with_word_boundary[8-0] _________________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary
+    namespace['learn_grounded_xor'](tmp_path, pool)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor
+    ???
+E   AssertionError
+_________________ test_33_grounded_xor_with_word_boundary[8-1] _________________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary
+    namespace['learn_grounded_xor'](tmp_path, pool)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor
+    ???
+E   AssertionError
+_________________ test_33_grounded_xor_with_word_boundary[8-2] _________________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:144: in test_33_grounded_xor_with_word_boundary
+    namespace['learn_grounded_xor'](tmp_path, pool)
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py:test33:59: in learn_grounded_xor
+    ???
+E   AssertionError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_fuse_parts_before_word_admission
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_same_parts_after_property_change_write_nothing
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_same_parts_after_property_change_write_nothing
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 6 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_fuse_parts_before_word_admission
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_23_same_parts_after_property_change_write_nothing
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_26_full_row_inventory_leaves_no_word_identity
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_shared_whole_does_not_evidence_an_absent_word
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_property_read_selects_rows_and_in_bracket_events
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-0]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-1]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[4-2]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-0]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-1]
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py::test_33_grounded_xor_with_word_boundary[8-2]
+14 failed, 10 warnings in 8.44s

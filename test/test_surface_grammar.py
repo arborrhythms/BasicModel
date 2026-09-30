@@ -112,11 +112,19 @@ def run_wording_curriculum(tmp_path, monkeypatch):
         model._tensor_final_end_slots = None
         model._tensor_sentence_roots_live = None
         return _capture_program_probe(model, texts)
+    readings_for = {}
+    original_capture = capture
+    def capture(texts):
+        from reading_fixtures import capture_readings
+        with capture_readings(model) as readings:
+            result = original_capture(texts)
+        readings_for[id(result)] = readings[0]
+        return result
     programs = []
     with torch.no_grad():
         for lo in range(0, len(training), 64):
             u = capture([row["text"] for row in training[lo:lo+64]])
-            programs.extend(u.answer_program)
+            programs.extend(readings_for[id(u)])
     optimizer = model.getOptimizer(lr=.003)
     for step in range(1000):
         indices = torch.randperm(len(training))[:8].tolist()
@@ -156,7 +164,7 @@ def assert_selected_wording(model, curriculum):
     with torch.no_grad():
         observed = capture([row["text"] for row in evaluation])
     mistakes = []
-    for row, program in zip(evaluation, observed.answer_program):
+    for row, program in zip(evaluation, readings_for[id(observed)]):
         meaning = model.languageSpace.program_meaning(program, model.grammatical_thoughts)
         if row["form"] == "lift":
             if meaning is not None:
@@ -178,14 +186,14 @@ def assert_selected_wording(model, curriculum):
                     if "generation" in row and text != row["generation"]["text"]]
     print("GENERATED", construction.texts, "MISTAKES", wrong_output, flush=True)
     assert any(step["operation"] == "generate:lexical_inverse" for step in construction.trace)
-    assert len(model._concept_owner()._row_surfaces) >= 178
+    assert len(model._concept_owner().definitions.word_ids) >= 178
     assert not mistakes, mistakes
     assert not wrong_output, wrong_output
     generated_rows = [i for i, row in enumerate(evaluation) if "generation" in row]
     with torch.no_grad():
         reread = capture([construction.texts[i] for i in generated_rows])
-    for row_index, program in zip(generated_rows, reread.answer_program):
-        prior = model.languageSpace.program_meaning(observed.answer_program[row_index], model.grammatical_thoughts)
+    for row_index, program in zip(generated_rows, readings_for[id(reread)]):
+        prior = model.languageSpace.program_meaning(readings_for[id(observed)][row_index], model.grammatical_thoughts)
         meaning = model.languageSpace.program_meaning(program, model.grammatical_thoughts)
         assert meaning is not None
         assert meaning.metadata() == prior.metadata()
@@ -224,19 +232,22 @@ def test_normal_batch_trains_supplied_grammar_lessons(tmp_path, monkeypatch):
     optimizer = model.getOptimizer(lr=.003)
     try:
         inputs = model.inputSpace.prepInput(list(chosen))
-        result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
-            split="train", optimizer=optimizer, source_rows=[0, 1],
-            batch_override=(inputs, torch.empty(2, 0)))
+        from reading_fixtures import capture_readings
+        with capture_readings(model) as readings:
+            result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
+                split="train", optimizer=optimizer, source_rows=[0, 1],
+                batch_override=(inputs, torch.empty(2, 0)))
         assert result is not None
         for owner, original in zip(owners, before):
             assert any(not torch.equal(old, new) for old, new in zip(original, owner.parameters()))
         understanding = model._last_understanding
         assert understanding.input_reconstruction is not None
-        assert model._grammar_lesson_objectives(understanding, split="test", source_rows=[0, 1]) is None
+        programs = readings[0]
+        assert model._grammar_lesson_objectives(programs, split="test", source_rows=[0, 1]) is None
         with pytest.raises(ValueError, match="does not match"):
-            model._grammar_lesson_objectives(understanding, split="train", source_rows=[1, 0])
+            model._grammar_lesson_objectives(programs, split="train", source_rows=[1, 0])
         data.grammar_lessons = {}
-        assert model._grammar_lesson_objectives(understanding, split="train", source_rows=[0, 1]) is None
+        assert model._grammar_lesson_objectives(programs, split="train", source_rows=[0, 1]) is None
     finally:
         data.grammar_lessons = {}
         model.End()

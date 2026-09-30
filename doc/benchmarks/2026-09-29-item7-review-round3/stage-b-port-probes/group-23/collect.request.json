@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_aligned_capacity_checkpoint_growth.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

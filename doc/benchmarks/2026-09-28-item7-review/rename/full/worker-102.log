@@ -1,0 +1,17 @@
+...................                                                      [100%]
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary
+test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[WholeSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1740: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+19 passed, 4 warnings in 2.27s

@@ -17,9 +17,9 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current sequence (Alec, 2026-09-27):** 7 → the
-conference freeze (with item 4's pulled-forward word-level evaluator) →
-6.8 → 6.5 → 6 → 5 → 4 → 3 → 2 → 1 → 0. Items 9 and 8 are implemented and
+**Current sequence (reconciled at the September 30 item-7 landing):** 6.9 →
+the conference freeze (with item 4's pulled-forward word-level evaluator) →
+the grammatical operators update → 6.8 → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
 million-sentence checkpoint that item 0's run provides, so they are not
 in the implementation queue.
@@ -69,7 +69,7 @@ generation is expected at this stage and is recorded, not tuned away.
    causal result, and fused AMP conservatively undercounts exposure. Preserve the
    tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
    development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
-   old context-free and assertion-thought scores are invalid controls. Item 7 is
+   old context-free and assertion-thought scores are invalid controls. Item 6.9 is
    the next implementation task while this empirical gate waits for training.
 - **8. Evidence: learned utility and structural preference.** Prefer
    understandable structural operators when they carry the meaning; any opaque
@@ -113,59 +113,132 @@ generation is expected at this stage and is recorded, not tuned away.
 - **7.5. Deferred compose follow-ups (non-blocking).** Specify the nonzero
    training temperature and sentence parsimony/work term accepted for a later
    spec; evaluation remains deterministic. Restate the shared-operator report
-   assertion around seal contributions or forced parametric selection, and
+   assertion around closing contributions or forced parametric selection, and
    rename the native context-read `exploration_trial` flag in housekeeping.
+   **Found 2026-09-29 (6.9 plan §3.12):** the sentence pair costs its second
+   trial after stepping on the first, so the comparison favours the second
+   whatever its derivation; the correction is 6.9's step 5 (decided by
+   Alec, 2026-09-30: "equal comparison").
    The unchanged depth-three campaign remains red; retain its assertion and
    the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
-- **7. Two truths** ([spec](doc/specs/2026-09-16-two-truths-ideas-and-relations.md)),
-   new session. One S = one LTM row: an absolute S fuses to one point and
-   writes an idea row with derivation and `refs`; a relative S (generic
-   subject, or any S referencing a relation) stays three slots and writes a
-   relation row of kind part / implies / operator over row references.
-   Clause-level seal as grammar (`NP → S`, `NP → REF(S)`), one relation writer
-   at the seal, `REL_OTHER` and the reducible/ineffable routing deleted, the
-   WholeSpace META taxonomy retired for a concept-level index, luminosity
-   restricted to idea rows, the sentence never setting its own trust; do not
-   assume one word per META (§3.4). **Object permanence by reference** (§3.5):
-   translating a word to its object may tie it to an earlier noun or sentence
-   in the recency buffer; identity is imputed and carried by the predictor.
-   **The taxonomy grows by language over those identities** (Alec,
-   2026-09-22): "cats are animals" writes its part row between the *object*
-   concepts the words resolve to, type or token as §3.5 decides, never
-   between words — into the concept store's own hierarchy of higher-order
-   concepts, which is the taxonomy (§3.4 as amended; item 11), trust on the
-   LTM row.
-   The seal must store `(c⁺, c⁻)` and preserve both separately from neither
-   (§1.1); the current scalar `_collapse_trust` is replaced here, and §3.1's
-   "scalar trust" row schema is amended in the same landing, gaining the
-   sealed field's `.where` and `.when` (item 9b; the row's address is its
-   `.when`, its `.where` is what it was looking at). Item 11's
-   paired conceptual field and checkpoint do not implement this LTM seal.
-   *Compatibility with 11c (Claude, 2026-09-25):* (a) the taxonomy is the
-   concept store's sigma rows, and order is taxonomic depth: "cats are
-   animals" is a sigma edge from the *animal* row to the *cat* symbol one
-   order below, so the seal places a kind one order above what it
-   subsumes and symbolizes when no row exists there; it never writes a
-   conjunctive edge above order 0 or a same-order part row. (b) Testimony
-   writes directly; the refine-before-raise gate governs only discovery
-   from context. (c) 11c entry 11 lands here: a word form addresses a set
-   of concept ids across orders (event, particular, kind); the particular
-   is order-1 symbolization and *is* object permanence, and the seal binds
-   the form to it — today production binds only the order-0 word and its
-   object. (d) A pronoun ties to an order-1 particular, never a kind.
-   Then the distributional context widens from the sentence to the
-   **situation** the predictor anchors, under three `model.xml` variables
-   (plan §8.4 point 2: situation weight, anchor bound, expectation weight);
-   the frames that anticipatory `what`s already hand the predictor are its
-   start. With the seal chaining rows, `conceptualize_chain`, `chain_idx` and
-   the JOINT / sentence concept are deleted (item 11: sequences come from LTM
-   references, not the concept store). Exit: the twenty-one §7 tests, the §8
-   docs, the reconstruction baseline of `d4dc385`
-   unchanged, and the `true` operator over the sealed clause declared in
-   `<thought>` and executable.
+- **6.9. XOR_grammar: the baseline of grammatical learning**
+   ([plan](doc/plans/2026-09-29-item-6-9-xor-grammar.md); Alec, 2026-09-29:
+   "let's make item 6.9 an effort to fix xor-grammar ... so that we can
+   prevent any grammatical regression"). Item 7 is accepted; this is next, before
+   the operators update, which is then made under this baseline, and 6.8.
+   **Ready for a new Codex session** (plan §8). Found: a
+   sentence's two trials are compared across an optimizer step, so the
+   explore trial is kept in most rows whatever its derivation (a control
+   that repeats the greedy derivation "wins" 88–93%), and the answer is
+   trained mostly on understandings that evaluation never sees (plan
+   §3.12). Decided (Alec, 2026-09-30): "equal comparison", done efficiently,
+   with a snapshot where the two trials branch left to future work. Decided
+   (Alec, 2026-09-29): the class gate asks for all four answers right with
+   an error below .05, "but let's make sure it's theoretically possible"
+   (it is, when the grammar composes object concepts, and not for symbols
+   composed the same way for every sentence: plan §3.11); "Answers begin
+   with the understanding left in the 1 or 3 slot representation"; "The
+   grammar operations are conducted over the object concepts, not the word
+   concepts"; reconstruction is "a lower bar", its only admitted errors
+   transpositions, since "the grammar is symmetric"; the rules stay
+   `conjunction` and `disjunction`, "since meaning is not significant".
+   Measured (plan §3): the class
+   gate reads a placeholder zero for every `embedding` configuration and
+   cannot pass; read correctly, its bar is met by chance nine times in
+   sixteen; the answer reads one concept per word position, not the root
+   the grammar composed; the grammar is given each word as its own event,
+   with no object and two numbers that differ between words; the
+   reconstruction gate never calls the grammar's reverse. The operator set
+   is not the obstacle: `intersection` and `union` change nothing, and in
+   isolation any operator that is not a sum learns XOR from full codes.
+   With the answer reading the root and each word given as its object's
+   code (two probes), the four roots are exactly separable; the remaining
+   gap is the answer map's convergence (plan §3.7). Also here: the slow
+   MM_20M_xor exact round trip fails 1 of 15 unseeded runs at HEAD (3 of 15
+   on the item 7 candidate), decoding half the inputs; an XOR proof that is
+   not reliable, whose cause is to be found (two truths §19 AA). Exit: both gates pass
+   without a seed at the settled bar, a `sum`-only negative control fails,
+   and no other XOR proof, nor MM_grammar's ten-run table, is worse.
+- **The grammatical operators update** (not yet numbered. **Decided, Alec,
+   2026-09-29:** after item 7 is accepted, after the conference freeze and
+   before 6.8: "let's iron out the operators after getting 7 accepted";
+   later the same day, after item 6.9).
+   It carries into code what the
+   operator pass of 2026-09-27 to 09-29 decided in documents: `not` and `non`
+   over evidence poles, the conjunction's reading of poles, words as
+   restricting operators, and the determiners
+   ([accessible mind §2.0 to §2.6.2](doc/specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
+   Its specification is
+   [the operator catalogue](doc/specs/2026-09-29-operator-catalogue.md), in
+   progress: the pass goes noun, adjective, verb and adverb first, and
+   prepositions and tense, morphology, aspect and null last. Decided there
+   (Alec, 2026-09-29): `what` and `lookup` become one operator, which
+   returns conceptual content; `true` and `exist` are retired, since no
+   operator leaves a scalar; `sum`, as a mean, and `product` stay provided.
+   The renames (`synthesize` and `analyze`, `query`, `symbolize` and
+   `conceptualize`) are future work: "The operator rename can also be
+   future work"
+   ([FutureWork](doc/FutureWork.md#operator-names-future-work-alec-2026-09-29)).
+   Resolved there (Alec, 2026-09-29): the noun and the adjective combine
+   by an idempotent intersection, compounds are sub-typing, the verb is a
+   modifier, and the adverb is a multiplicative modifier of a modifier.
+   The candidate for what a verb phrase is to its noun phrase (Alec,
+   2026-09-29, "a good candidate"): projections onto learned, orthogonal
+   subspaces within a sentence, and a transformation found by ICA on the
+   differences between events (item 6.5); with the modal phrase a further
+   projection, "a 5D NP+VP+MP" (catalogue §4.4). Decided the same day:
+   whatever the code needs to know of an operator is a declared property
+   of its rule and the name is never consulted; the code tests operators
+   by name in about 140 places today. Proposed: operator names that are
+   not parts of speech, and alternatives for learning to choose among, "up
+   to a point" (catalogue §3.9). Answered later the same day (catalogue §4.4
+   to §9): modality is a dimension, not an order; the determiner drops the
+   order by the fold's inverse, "the" binding; `lift` and `lower` were to
+   raise and lower the order, "perhaps" better a dimension; the words "and
+   nowhere else" are withdrawn from "the order drops at the determiner";
+   a verb's object sub-types the verb; `implies` is "a relation candidate
+   for LTM" with no inverse of its own; `part`, `whole` and `equal` look
+   into the symbol codebook and `query` into LTM; a sentence that states a
+   definition needs only `equal`; `surface` is the operator of surface
+   form, with tense and aspect; tense, morphology and aspect "need more
+   work before they are included in any grammar"; the preposition is "a
+   clausal formula that creates an ADV or ADJ". "Lift/lower and
+   surface/tense can all move to future work, or at least after item 6"
+   ([FutureWork](doc/FutureWork.md#lift-and-lower-as-dimensions-surface-form-and-tense-future-work-alec-2026-09-29)).
+   Measured
+   against that: the coded `intersection` is softened and so not
+   idempotent, and loses what one word is silent on; the coded verb and
+   adverb cannot write on a dimension their operand is silent on. Open
+   there, for when the pass reaches them: `bind`, `expect` in place of
+   `arma`, and what says a sentence is absolute once `exist` is retired.
+   **Requirement gate (Alec, 2026-09-29):** XOR_grammar's two gates pass
+   without a seed; it is item 6.9, taken first. No configuration is given
+   more rows (decided, spec §17.7). A sentence that states a definition is
+   an `equal` (Alec, 2026-09-29: "I guess we only need equal?"; catalogue
+   §6.3).
+   **Item-7 review residue** (two truths §21 and §23): the predicate identity
+   becomes a declared rule property when names stop governing operators;
+   reconcile equality's separate question identity and retire the unused
+   `GrammaticalQueryRegistry` under the reviewed no-legacy rule. These are
+   outside the accepted item-7 repair.
+   Item 5 takes up the bias of forgetting by the kind of truth that Alec
+   proposed on 2026-09-29 (forgetting spec §4).
 - **6.8. One attention: brackets, narrowing, and expectation at every bracket**
    ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
    after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
+   **Item-7 reading residue:** every read word currently runs the complete
+   `interpret` unary under every binding. This forcing stays until reading
+   mode decides when an object is interpreted; its removal is not part of
+   item 7's accepted landing (two truths §15 and §18).
+   **Taken up with this item (Alec, 2026-09-29):** a predefined word
+   whole, "a cut of non-white space letters", so that a word has one whole
+   that learning does not move and WholeSpace's cut agrees with the
+   reader's ([plan §3a](doc/plans/2026-09-27-item-6-8-one-attention.md#3a-the-word-whole-alec-2026-09-29-taken-up-with-this-item)).
+   "Waiting for 6.8 is fine, as long as it's written down." Its extent is a
+   word by the common definition: "punctuation and digits also separate
+   words". To settle there: the reader's rule, which does not separate at
+   digits today, and what reads the runs of digits that the proofs of XOR
+   are made of.
    The simplification: attention is one mechanism, a bracket over the input.
    Open awareness is the bracket set to the whole input, read by the field,
    whose only operations are the order-independent ones — and, or, not —
@@ -196,7 +269,7 @@ generation is expected at this stage and is recorded, not tuned away.
    words, so the compiled per-word step keeps its shape; narrowing and
    glossing enter as candidates in the 7.5 softmax (the same chooser and
    straight-through learning, no separate policy), which is why this
-   follows 7.5; the seal's sentence-bracket row with its `.where`/`.when`
+   follows 7.5; the closing's sentence-bracket row with its `.where`/`.when`
    is the terminal encoding, which is why it follows 7; 6.5 then adds
    identity binding as further candidates in the same softmax, which is
    why it precedes 6.5. Deletions, per the no-legacy rule: `modeSchedule`,
@@ -218,9 +291,14 @@ generation is expected at this stage and is recorded, not tuned away.
    freeze the demo checkpoint; before the freeze pull forward only the
    word-level predictor as the NanoChat gate's evaluator (recorded under
    item 4); start 6.8 after the freeze.
+   *Architecture (Alec, 2026-09-28):* words are a formula for narrowing
+   attention — the bracket narrows the input and the symbols on one shared
+   budget, the words narrow the domain of discourse and keep it as Ground;
+   two attentions, one chooser
+   ([accessible mind §2.0.1](doc/specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
 - **6.5. Independent components: identity as columns, verbs as change**
    ([spec](doc/specs/2026-09-26-independent-components.md)), after item 7
-   (needs the seal writing every S as a row and §3.5's reference chain).
+   (needs the closing writing every S as a row and §3.5's reference chain).
    Today identity is bookkeeping and prediction trains only the predictor:
    `interpret` binds a word to its object by set logic outside autograd,
    `resolve_word_concept` carries a referent by rule, the inter-sentence loss
@@ -244,7 +322,7 @@ generation is expected at this stage and is recorded, not tuned away.
    surprise under the 9b recurrence gate, prune by item 5's value with an
    automatic-relevance scale. Identity binding becomes a candidate in the
    7.5 softmax (bind to a column in the recency buffer or cued frames, or
-   mint), credited by surprise through the seal; the inter-frame predictor's
+   mint), credited by surprise through the closing; the inter-frame predictor's
    source ideas go live, target detached. ICA binds across frames and within
    an object; it does **not** bind roles within a sentence — the three slots
    do, and a test asserts the superposition catastrophe rather than hiding
@@ -256,6 +334,15 @@ generation is expected at this stage and is recorded, not tuned away.
    *Compatibility:* 7.5's exploit/explore derivations and tie rule are
    unchanged in form; item 5 consumes the relevance scale; item 6's recovery
    measurements are unaffected.
+   *Architecture (Alec, 2026-09-28):* the determiner is the lexical cue for
+   the identity system's bind or mint — "a" mints an individual, "the"
+   binds to one, "every" does not lower and writes a relation; a learning
+   gate is added in direction
+   ([spec §2.7](doc/specs/2026-09-26-independent-components.md#27-tie-to-the-grammatical-derivation)).
+   *Amended (Alec, 2026-09-30):* "every lowers like all but has a different
+   plurality", and a bare plural lowers by an implicit "all" or "some"
+   ([5.5 spec §6](doc/specs/2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers));
+   "every" still mints and binds no column.
 - **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
    on it. Item 1c's probe reports zero compound recovery
    ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
@@ -280,6 +367,33 @@ generation is expected at this stage and is recorded, not tuned away.
    descent applies: reverse sigma is a choice of case, reverse pi is
    attribution against the field, so clean-up decoding through the forward
    kernel is the intended form of that choice.
+- **5.5. Where and when a sentence occurred; tense, aspect, the preposition
+   and surface form** ([spec](doc/specs/2026-09-30-occurrence-tense-aspect.md)),
+   after item 6 and needing item 6.5's verb columns; one check-in (Alec,
+   2026-09-30). **Measured:** the clock's `.when` stamp is muxed into every
+   idea, so the chooser reads it: the same sentences parse two ways
+   depending on the clock's phase, one fact is stored as two ideas, and a
+   trained MM_xor's answers drift with the clock (max error .061 at the
+   end of training, .240 a thousand batches later). **Decided (Alec,
+   2026-09-30):** a row's `.where` and `.when` are where and when the
+   utterance occurred, and the time a sentence conceives stays in the
+   concept, carried by the verb phrase; a memory row's `.where` is its
+   document and its `.when` the sentence's index in that document, from 1
+   (documents have no order relation); percepts and concepts drop `.when`;
+   a row keeps only its start, and a state holds until a row of the same
+   content with evidence against begins (no duration, no `eternal` flag,
+   no refresh rule, no `timestamp`); documents are codes in the codebook
+   and the situation is presented in WholeSpace as identities; every text
+   configuration interleaves; tense and aspect are prepositions of the
+   verb phrase with none written, the catalogue's compound selecting among
+   the verb phrase's phases; the preposition is one operation with two
+   attachments; markers are leaves, minted on recurrence, and `surface`
+   is one operator with four suboperations, trained by reconstruction
+   under parsimony. Removes the old tense, aspect and morphology code and
+   its table of English forms. Exit: the ten mechanism tests of spec §8;
+   learning measurements after 6.5, recorded and not tuned. Replace the
+   legacy `get_stm_chain` recency across batch rows and test lookup by the
+   row's occurrence address (two truths §21). Open for Alec: spec §10.
 - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
    (needs `refs` and every S writing a row). Document-boundary pass from the
    high-water to the low-water mark deleting the lowest-value unprotected
@@ -291,13 +405,21 @@ generation is expected at this stage and is recorded, not tuned away.
    §7 tests, the accessible-mind spec's test 31 (retention by surprise), the
    §6 elements in schema/`model.xml`/Params.md, the §8 docs, and the reviewed 9b
    reconstruction measurements unchanged unless explicitly re-baselined.
-   *Compatibility:* rows carry the pair `(c⁺, c⁻)` (§1.1); `|trust|` in
-   the value is `|c⁺ − c⁻|` (11c entry 2's collapse) and the *both* corner
-   `min(c⁺, c⁻)` counts as dissonance in the luminosity term, so a
-   heterogeneous row is protected, not discarded. Open for Alec: forgetting
+   *Compatibility (corrected, Alec, 2026-09-28):* rows carry the evidence
+   pair `(c⁺, c⁻)` (§1.1) **and, separately, a univalent trust scalar**.
+   `|trust|` in the value is that scalar; it is **not** the collapse
+   `|c⁺ − c⁻|`, which this line previously said and which was applying the
+   evidence algebra to trust. The collapse `c⁺ − c⁻` and the *both* mass
+   `min(c⁺, c⁻)` are the row's **evidence**, and the latter is the dissonance
+   in the luminosity term, so a heterogeneous row is protected, not
+   discarded. Open for Alec: forgetting
    of the concept inventory itself — order-0 definitions, alternatives and
    feature groups — is not in the spec; discovered rows are never recycled
    (item 11), so their retirement needs a rule here or in FutureWork.
+   *Age (Alec, 2026-09-30):* with no clock across documents (item 5.5), the
+   age term "can probably just be an increasing document index: more
+   important within a document will be its salience"
+   ([5.5 spec §9](doc/specs/2026-09-30-occurrence-tense-aspect.md#9-what-it-touches)).
 - **4. Run harness and resume test.** *Pulled forward for the conference
    (Alec, 2026-09-27):* the word-level predictor as the NanoChat gate's
    evaluator — the model's own expectation of the next word scored on the
@@ -393,7 +515,8 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence seal, reduction pressure/deadlines and seal-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
+- Item 7: two truths, indexed definitions, ended clause state and shared row-free predicates; accepted under review §25 after all three fixture ports and required checks ([landing receipt](doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md)).
+- `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence closing, reduction pressure/deadlines and closing-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
 - `8bc710a` Item 9b: shared fields, parallel-first context, association-first interpretation, fixed capacities and corrected occurrence/time objectives; Claude accepted the source-matched 4,948-case sweep ([receipt](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md)).
 - `8bc710a` Item 9 evaluation machinery: verified FineWeb exposure and maturity-gated wording/prediction/predictive-thought checks; empirical acceptance remains open above ([receipt](doc/benchmarks/2026-09-26-item9-followup/README.md)).
 

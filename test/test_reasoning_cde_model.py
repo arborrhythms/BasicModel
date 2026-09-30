@@ -9,6 +9,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import unittest
 import torch
+import pytest
+from fineweb_artifacts import fineweb_checkpoint, fineweb_trained_model
 
 import Models
 from Models import BaseModel
@@ -23,6 +25,15 @@ class TestReasoningCDEModel(unittest.TestCase):
     def setUpClass(cls):
         Models.TheData.load('queries')
         cls.m, _ = BaseModel.from_config(_CONFIG)
+        # Public-boundary and optimizer mechanisms use a supplied reading.
+        # The separate provisioning learning assertion requires its checkpoint.
+        from reading_fixtures import force_absolute_reading
+        force_absolute_reading(cls.m)
+
+    @pytest.fixture(autouse=True)
+    def trained_provisioning(self, request):
+        if request.node.name == 'test_truthset_provisions_source_rows':
+            self.m = request.getfixturevalue('fineweb_trained_model')
 
     def test_gates_on(self):
         self.assertEqual(self.m.reasoning_iterations, 10)
@@ -31,11 +42,16 @@ class TestReasoningCDEModel(unittest.TestCase):
         self.assertFalse(hasattr(self.m, "_intervening_generator"))
 
     def test_truthset_provisions_source_rows(self):
-        self.m.provision_ltm()
         store = self.m.symbolSpace.ltm_store
-        rows = [store.row(int(i)) for i in store.relations(rel_type=store.REL_PARTOF)]
+        # This is a learning assertion, with no supplied relation annotation.
+        written = self.m._ltm_ingest_truth_texts(store,
+            ['socrates is a human', 'humans are mortal'], trusts=[.9, .9],
+            origin=store.ORIGIN_PROVISIONED)
+        selected = {i for group in written for i in group}
+        rows = [store.row(int(i)) for i in store.relations(rel_type=store.REL_PARTOF)
+                if int(i) in selected]
         assert {row['text'] for row in rows} == {
-            'socrates partOf human', 'human partOf mortal'}
+            'socrates is a human', 'humans are mortal'}
         assert all(abs(row['trust'] - .9) < 1e-6 for row in rows)
 
 

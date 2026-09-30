@@ -1,0 +1,12 @@
+[collect] 3 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.8s; peak 0.46 GiB
+[worker-000] 21 selectors; limit 1796s, 8.0 GiB
+[worker-001] 32 selectors; limit 1796s, 8.0 GiB
+[worker-002] 14 selectors; limit 1796s, 8.0 GiB
+[worker-000] exit 0; 4.5s; peak 0.41 GiB
+[worker-003] 22 selectors; limit 1792s, 8.0 GiB
+[worker-001] exit 0; 6.0s; peak 0.48 GiB
+[worker-002] exit 0; 7.0s; peak 0.48 GiB
+[worker-003] exit 0; 4.2s; peak 0.41 GiB
+Result: passed, exit 0; 89/89 cases completed.
+output/tests/20260927-item7-paired-verification/result.json

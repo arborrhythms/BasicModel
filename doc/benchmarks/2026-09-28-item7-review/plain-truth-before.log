@@ -1,0 +1,43 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+__________________ test_truth_kind_is_rejected_by_the_schema ___________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7927/test_truth_kind_is_rejected_by0')
+
+    def test_truth_kind_is_rejected_by_the_schema(tmp_path):
+        from util import XMLConfig
+        source = Path('data/MM_query_reasoning.xml').read_text()
+        import re
+        source = re.sub(r' kind="[^"]*"', '', source)
+        source = source.replace('<truth text=', '<truth kind="partOf" text=', 1)
+        path = tmp_path / 'declared_kind.xml'
+        path.write_text(source)
+>       with pytest.raises(ValueError, match='kind'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_item7_truth_text.py:18: Failed
+___________________ test_given_truth_texts_are_plain_english ___________________
+
+    def test_given_truth_texts_are_plain_english():
+        import xml.etree.ElementTree as ET
+        query = ET.parse('data/MM_query_reasoning.xml')
+>       assert [row.attrib for row in query.findall('.//truth')] == [
+            {'text': 'socrates is a human', 'trust': '0.9'},
+            {'text': 'humans are mortal', 'trust': '0.9'}]
+E       AssertionError: assert [{'text': 'so...d': 'partOf'}] == [{'text': 'so...rust': '0.9'}]
+E         
+E         At index 0 diff: {'text': 'socrates partOf human', 'trust': '0.9', 'kind': 'partOf'} != {'text': 'socrates is a human', 'trust': '0.9'}
+E         Use -v to get more diff
+
+test/test_item7_truth_text.py:25: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema
+FAILED test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english
+2 failed, 1 passed, 1 warning in 2.00s

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_af.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_af.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_af.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.03480775002390146,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_af.py:14: in test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference\n    row = f.store.write_clause(clause, trust=.7)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:345: in write_clause\n    preflight(clause)\nbin/ClauseRow.py:316: in preflight\n    raise ValueError('a relation requires three resolved row references')\nE   ValueError: a relation requires three resolved row references",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

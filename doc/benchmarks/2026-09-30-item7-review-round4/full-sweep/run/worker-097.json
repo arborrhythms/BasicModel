@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients"
+  ],
+  "completed": [
+    "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 675.0344638749957,
+      "message": "",
+      "stdout": "MEASURED_OPERATOR_GRADIENTS {\"operator.CS.surface\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": 0.0, \"output_negative_streak\": 0, \"output_norm\": 3.016307052914218, \"output_reconstruction_norm_ratio\": 101051593345518.36, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 2.984917855377875e-14, \"reconstruction_output_cosine\": 0.10879822774582168}}\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -126,15 +126,15 @@ gives a null ratio; a zero other norm with nonzero reconstruction gives zero.
 [Diagnostic implementation](../bin/GradientDiagnostics.py),
 [run harness](../bin/Models.py).
 
-Sentence reconstruction and prediction now train at each sentence seal, before
+Sentence reconstruction and prediction now train at each sentence closing, before
 the batch-end output backward. On a diagnostic batch, the report captures the
-weighted gradients from both exploit and explore before each seal graph is
+weighted gradients from both exploit and explore before each closing graph is
 released, then sums those vectors with the batch-end objective gradients. The
 sum follows the actual optimizer updates across parameter versions; it is not
 a gradient evaluated at one common parameter state. Cached perception contributes
 through its exact pullback. Norms and cosines are calculated after vector
 aggregation, so cancellation and agreement remain visible. The diagnostic keeps
-no live seal graphs and does not add an optimizer step.
+no live closing graphs and does not add an optimizer step.
 
 Names come from the actual grammar registry and registered parameter owners.
 Aliases/tied parameters are counted once, and only optimizer-owned parameters
@@ -217,7 +217,7 @@ trains shared `lift` and `lower` maps from supplied answers. Both cut the live
 conclusion derivative. These are one-step mechanism checks, not an output
 learning gate. [Item 11 evidence and probe dispositions](benchmarks/2026-09-21-item11/README.md).
 
-## Expectation at the seal (September 21, item 2)
+## Expectation at the closing (September 21, item 2)
 
 Compose has no prediction input. The signed image and the observation produce
 `c = o - g*(1-m)*k*e` as detached chooser evidence. The predictor separately

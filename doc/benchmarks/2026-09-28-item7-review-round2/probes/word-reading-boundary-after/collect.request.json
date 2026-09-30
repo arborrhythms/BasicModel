@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_item7_word_interpretation.py",
+    "test/test_sparse_concept_e2e.py",
+    "test/test_output_synthesis.py",
+    "test/test_mm_xor.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

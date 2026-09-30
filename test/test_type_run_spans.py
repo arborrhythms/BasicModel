@@ -9,7 +9,6 @@ byte->type LUT, the vectorised ``_type_run_spans`` cutter, and the
 """
 import os
 import sys
-import types
 from pathlib import Path
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -22,6 +21,7 @@ import torch
 from Spaces import (WholeSpace, Codebook, _LUT_ANALYSIS_TYPE, _type_run_spans,
                     _derive_type_lut, _analysis_type_lut,
                     _TYPE_SPACE, _TYPE_LETTER, _TYPE_DIGIT, _TYPE_PUNCT)
+from property_fixtures import property_reader
 
 
 def _bytes(s, n=None):
@@ -135,11 +135,10 @@ def test_batch_mixed_lengths_and_padding():
 
 
 # -- WholeSpace.stage_analysis_spans (LUT + cutter, mode gate) ------------------
-# The method reads only ``self.analysis_mode``, so a SimpleNamespace stands in
-# for a full WholeSpace (mirrors the property_spans(None, ...) unbound pattern).
+# The small owner supplies real primitive coefficients for the unbound cut.
 
 def _stage(mode, s, n=None):
-    fake = types.SimpleNamespace(analysis_mode=mode)
+    fake = property_reader(analysis_mode=mode)
     u = _bytes(s, n)
     return WholeSpace.stage_analysis_spans(fake, u)
 
@@ -150,7 +149,7 @@ def test_stage_byte_mode_returns_none():
 
 
 def test_stage_none_input_returns_none():
-    fake = types.SimpleNamespace(analysis_mode="word")
+    fake = property_reader(analysis_mode="word")
     assert WholeSpace.stage_analysis_spans(fake, None) is None
 
 
@@ -161,21 +160,14 @@ def test_stage_word_mode_type_runs():
 
 def test_stage_accepts_three_dim_unity():
     # [B, 1, N] unity (the codebook-selection layout) -> row 0 is read.
-    fake = types.SimpleNamespace(analysis_mode="word")
+    fake = property_reader(analysis_mode="word")
     u = _bytes("a...b").unsqueeze(1)         # [1, 1, 5]
     out = WholeSpace.stage_analysis_spans(fake, u)
     assert out[0].tolist() == [[0, 1], [1, 4], [4, 5]]
 
 
-# == the four TYPE rows ARE a WS-owned subspace's .what (source of truth) ======
-# doc/plans/2026-07-10-wholes-are-types-segmentation.md, T2 (Alec 2026-07-10).
-# The analysis cut's byte->type LUT is DERIVED from the four tagged rows of the
-# frozen ``.what`` codebook of ``WholeSpace.type_subspace`` -- a dedicated
-# WS-owned SubSpace (calculations in Spaces, DATA in SubSpaces; "properties are
-# WholeSpace.what" made literal). The codebook is a Codebook -- a Tensor --
-# whose W is a plain, non-Parameter tensor; the module constant is only the
-# no-subspace fallback. These build a LIVE WholeSpace via the same test-config
-# harness as test_property_tiling.
+# The live analysis owner reads one learned property basis. Teaching tags name
+# its canonical rows; they do not form a second frozen dictionary.
 
 from Layers import LETTER, DIGIT, WHITESPACE, PUNCT
 from Spaces import Tensor, SubSpace
@@ -189,7 +181,7 @@ _NS = 64
 
 
 def _live_ws(analysis="word", nS=_NS):
-    """A LIVE WholeSpace owning a frozen ``type_subspace`` for the cut."""
+    """A live WholeSpace owning the learned primitive-property basis."""
     _populate_test_config(
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
         wordDim=_D, outputDim=_D,
@@ -209,68 +201,63 @@ def test_derive_type_lut_matches_frozen_module_lut():
     assert torch.equal(_derive_type_lut(pk), _LUT_ANALYSIS_TYPE)
 
 
-# -- (a) a built model's live WS has the type subspace, exactly four tags ------
+# -- the one learned property inventory ---------------------------------------
 
-def test_live_ws_has_type_subspace_with_four_tagged_rows():
+def test_live_ws_has_one_property_basis_with_canonical_teaching_rows():
+    from Spaces import _CANONICAL_PROPERTY_ROWS
     ws = _live_ws("word")
-    sub = ws.type_subspace
+    sub = ws.subspace
     assert isinstance(sub, SubSpace)
     tc = sub.what
     assert isinstance(tc, Codebook) and isinstance(tc, Tensor)
-    # The SubSpace adopted the codebook on its .what slot (unmuxed placement).
-    assert sub.codebook_slot == "what" and not sub.muxed
-    # Exactly four tagged rows, one class each.
-    assert tc.property_kind == {0: {WHITESPACE}, 1: {LETTER},
-                                2: {DIGIT}, 3: {PUNCT}}
-    assert ws.type_property_rows() == {WHITESPACE: 0, LETTER: 1,
-                                       DIGIT: 2, PUNCT: 3}
-    # Frozen by construction: W is a plain tensor, NOT an nn.Parameter, and the
-    # whole subspace exposes no Parameter (so an optimizer can never see it).
-    assert torch.is_tensor(tc.getW()) and not isinstance(tc.getW(), nn.Parameter)
-    assert list(sub.parameters()) == []
+    assert ws.type_subspace is None
+    assert tc.property_kind is None
+    assert ws.well_known_atoms == {name: row for row, (name, _kind)
+                                  in enumerate(_CANONICAL_PROPERTY_ROWS)}
+    expected = property_reader().subspace.what.primitive_properties.coefficients()
+    assert torch.equal(tc.primitive_properties.coefficients()[:len(expected)], expected)
+    assert torch.is_tensor(tc.getW()) and tc.getW().requires_grad
+    assert isinstance(tc.primitive_properties.members, nn.Parameter)
 
 
-def test_type_subspace_is_idempotent_on_rebuild():
+def test_property_teaching_rows_are_idempotent_on_rebuild():
     a = _live_ws("word")
     b = _live_ws("word")
-    assert (a.type_subspace.what.property_kind
-            == b.type_subspace.what.property_kind)
-    # Re-running the build on the SAME space lands the same tags.
-    pk_before = dict(a.type_subspace.what.property_kind)
+    assert a.well_known_atoms == b.well_known_atoms
+    names = dict(a.well_known_atoms)
+    a.subspace.what.primitive_properties.teach(names["digit"], [ord("2")], [.25])
+    coefficients = a.subspace.what.primitive_properties.coefficients().clone()
     a._build_type_subspace()
-    assert a.type_subspace.what.property_kind == pk_before
+    assert a.well_known_atoms == names
+    assert torch.equal(a.subspace.what.primitive_properties.coefficients(), coefficients)
+    assert a.type_subspace is None
 
 
-def test_byte_mode_builds_no_type_subspace():
-    # byte/raw/sentence stage no spans, so they build no type subspace and the
-    # cut falls back to the frozen module LUT (byte-identical).
+def test_byte_mode_owns_properties_without_a_type_dictionary():
     ws = _live_ws("byte")
     assert ws.type_subspace is None
-    assert _analysis_type_lut(ws) is _LUT_ANALYSIS_TYPE
-    # ... and no type-codebook key rides the checkpoint blob for byte configs.
-    assert "type_property_kinds" not in ws.vocab_extras()
+    assert torch.equal(_analysis_type_lut(ws), _LUT_ANALYSIS_TYPE)
+    assert not hasattr(ws, "vocab_extras")
+    assert any("primitive_properties.members" in key for key in ws.state_dict())
 
 
 def test_type_subspace_adds_no_state_dict_keys():
-    # The frozen type subspace holds a plain (non-Parameter) .what W and only
-    # persistent=False buffers, so owning it adds nothing to the WholeSpace
-    # state_dict -- checkpoint keys for a word-mode WS match a byte-mode WS
-    # exactly on the type-subspace front.
+    # There is no second type dictionary in a property-only WholeSpace.
     word = _live_ws("word")
     keys = [k for k in word.state_dict().keys() if "type_subspace" in k]
     assert keys == []
 
 
-# -- (b) the derived cut is byte-identical to the previous LUT cut -------------
+# -- native cuts equal the same a-priori primitive definitions ----------------
 
 def _cut_from_rows(ws, byte_rows):
     u = torch.tensor(byte_rows, dtype=torch.long)
     return WholeSpace.stage_analysis_spans(ws, u)
 
 
-def _cut_from_module(byte_rows):
+def _cut_from_apriori_properties(byte_rows):
     u = torch.tensor(byte_rows, dtype=torch.long)
-    fake = types.SimpleNamespace(analysis_mode="word")
+    fake = property_reader(analysis_mode="word")
     return WholeSpace.stage_analysis_spans(fake, u)
 
 
@@ -293,65 +280,52 @@ def test_derived_cut_byte_identical_across_a_spread_of_inputs():
         [255] * N,                                # all high bytes -> one run
     ]
     live = _cut_from_rows(ws, samples)
-    module = _cut_from_module(samples)
+    module = _cut_from_apriori_properties(samples)
     assert torch.equal(live, module), (live.tolist(), module.tolist())
-    # And explicitly: a high-byte run is ONE letter-run whole.
-    assert live[4].tolist()[0] == [0, 4]
+    # DEL is a control; the following three bytes share the high-byte property.
+    assert [span for span in live[4].tolist() if span[1] > span[0]] == [[0, 1], [1, 4]]
 
 
-# -- (c) checkpoint save/load preserves the rows, tags, and the cut ------------
+# -- checkpoint save/load preserves learned memberships and their cut --------
 
-def test_checkpoint_roundtrip_preserves_tags_and_cut():
+def test_checkpoint_roundtrip_preserves_property_definitions_and_cut():
     a = _live_ws("word")
-    extras = a.vocab_extras()
-    assert extras["type_property_kinds"] == {
-        0: [WHITESPACE], 1: [LETTER], 2: [DIGIT], 3: [PUNCT]}
+    definitions = a.subspace.what.primitive_properties
+    definitions.teach(a.well_known_atoms["digit"], [ord("2")], [.25])
+    state = a.state_dict()
     b = _live_ws("word")
-    # Wipe B's type subspace to prove the LOAD (not the build) restores it.
-    b.type_subspace = None
-    b._type_lut_cache = None
-    b.load_vocab_extras(extras)
-    assert b.type_subspace is not None
-    assert b.type_subspace.what.property_kind == {
-        0: {WHITESPACE}, 1: {LETTER}, 2: {DIGIT}, 3: {PUNCT}}
-    assert torch.equal(_analysis_type_lut(b), _LUT_ANALYSIS_TYPE)
-    # The cut is unchanged after the roundtrip.
+    with torch.no_grad():
+        b.subspace.what.primitive_properties.members.zero_()
+    b.load_state_dict(state, strict=True)
+    assert b.type_subspace is None
+    assert b.subspace.what.property_kind == a.subspace.what.property_kind
+    assert torch.equal(b.subspace.what.primitive_properties.coefficients(),
+                       definitions.coefficients())
     rows = [list(b"ab 12! xy") + [0]]
-    assert torch.equal(_cut_from_rows(b, rows), _cut_from_module(rows))
+    assert torch.equal(_cut_from_rows(b, rows), _cut_from_rows(a, rows))
 
 
-# -- (d) the type subspace is frozen: no Parameter, untouched by training ------
-
-def test_type_subspace_is_not_a_parameter_and_survives_a_backward():
+def test_property_memberships_are_owned_parameters_and_train():
     ws = _live_ws("word")
-    tc = ws.type_subspace.what
-    before = tc.getW().clone()
-    # It carries no trainable Parameter, so a WholeSpace-wide optimizer step
-    # cannot reach it. Simulate the harshest case: run SGD over EVERY Parameter
-    # the WholeSpace exposes (the type subspace IS a registered submodule, so
-    # ws.parameters() would surface any Parameter it carried) and confirm the
-    # type rows are untouched.
+    tc = ws.subspace.what
+    members = tc.primitive_properties.members
+    before = members.detach().clone()
+    names = dict(ws.well_known_atoms)
     params = list(ws.parameters())
-    assert all(p is not tc.getW() for p in params)   # W is not among them
-    opt = torch.optim.SGD(params, lr=0.1) if params else None
-    if opt is not None:
-        opt.zero_grad()
-        # A dummy loss over the trainable params; the type subspace is not in
-        # the graph, so it receives no gradient and no update.
-        loss = sum(p.pow(2).sum() for p in params)
-        loss.backward()
-        opt.step()
-    assert torch.equal(tc.getW(), before)
-    assert tc.property_kind == {0: {WHITESPACE}, 1: {LETTER},
-                                2: {DIGIT}, 3: {PUNCT}}
+    assert any(p is members for p in params)
+    opt = torch.optim.SGD(params, lr=0.1)
+    opt.zero_grad()
+    tc.primitive_properties.coefficients().square().sum().backward()
+    opt.step()
+    assert not torch.equal(members, before)
+    assert ws.well_known_atoms == names
 
 
 # == the digit whole (<digitWholes>, Alec 2026-09-10) ==========================
 
 def _digit_spans(s, n=None):
-    from Spaces import _analysis_digit_mask
     t = _types(s, n)
-    return _type_run_spans(t, singleton=_analysis_digit_mask(None, t, False))[0].tolist()
+    return _type_run_spans(t, singleton=(t == _TYPE_DIGIT))[0].tolist()
 
 
 def test_digit_wholes_cut_each_digit():
@@ -362,24 +336,24 @@ def test_digit_wholes_cut_each_digit():
 
 
 def test_stage_digit_wholes_knob():
-    fake = types.SimpleNamespace(analysis_mode="word", digit_wholes=True)
+    fake = property_reader(analysis_mode="word", digit_wholes=True)
     assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
         [[0, 1], [1, 2], [3, 7], [8, 9]]
-    fake = types.SimpleNamespace(analysis_mode="word", digit_wholes=False)
+    fake = property_reader(analysis_mode="word", digit_wholes=False)
     assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
         [[0, 2], [3, 7], [8, 9]]
     assert WholeSpace.stage_analysis_spans(
-        types.SimpleNamespace(analysis_mode="word"), _bytes("14 plus 1"))[0].tolist() == \
+        property_reader(analysis_mode="word"), _bytes("14 plus 1"))[0].tolist() == \
         [[0, 2], [3, 7], [8, 9]]                                  # default: unchanged
 
 
 def test_digit_wholes_property_basis_signature(tmp_path):
-    from Spaces import _analysis_digit_mask, _analysis_property_signature
+    from Spaces import _digit_signature_bits, _analysis_property_signature
     from test_wholespace_property_migration import _small_property_model
     ws = _small_property_model(tmp_path).wholeSpace
     lookup, discarded = _analysis_property_signature(ws)
     sig = lookup[_bytes("x12 9")]
-    single = _analysis_digit_mask(ws, sig, True)
+    single = (sig & _digit_signature_bits(ws)) != 0
     assert single[0].tolist() == [False, True, True, False, True]
     out = _type_run_spans(sig, discard_mask=discarded, singleton=single)
     assert out[0].tolist() == [[0, 1], [1, 2], [2, 3], [4, 5]]

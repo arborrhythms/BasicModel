@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_conceptual_stm_typed.py::test_typed_stm_buffers_allocated_on_wordsubspace",
+    "test/test_conceptual_stm_typed.py::test_push_pop_roundtrip",
+    "test/test_conceptual_stm_typed.py::test_top_peek_does_not_pop",
+    "test/test_conceptual_stm_typed.py::test_ensure_stm_batch_grows_rows"
+  ],
+  "completed": [
+    "test/test_conceptual_stm_typed.py::test_typed_stm_buffers_allocated_on_wordsubspace",
+    "test/test_conceptual_stm_typed.py::test_push_pop_roundtrip",
+    "test/test_conceptual_stm_typed.py::test_top_peek_does_not_pop",
+    "test/test_conceptual_stm_typed.py::test_ensure_stm_batch_grows_rows"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_conceptual_stm_typed.py::test_typed_stm_buffers_allocated_on_wordsubspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028187502175569534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm_typed.py::test_push_pop_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004040829371660948,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm_typed.py::test_top_peek_does_not_pop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018683401867747307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_stm_typed.py::test_ensure_stm_batch_grows_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027508405037224293,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

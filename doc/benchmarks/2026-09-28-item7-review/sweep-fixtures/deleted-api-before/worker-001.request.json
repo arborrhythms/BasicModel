@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-001.recycle.json"
+}

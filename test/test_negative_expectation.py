@@ -9,7 +9,7 @@ import torch
 
 from Layers import MeaningExpectation, ExpectationComparison, TernaryTruthStore
 from Meaning import ConceptualMeaning
-from Models import _append_observed_meaning
+from meaning_fixtures import record_observation
 from test_sentence_expectation import layer, observe
 
 
@@ -69,7 +69,7 @@ def test_retained_pair_keeps_full_estimate_and_normalized_surprise():
         prediction, actual.roles, mask, actual.roles - prediction.roles,
         mask.float() - prediction.presence_logits.sigmoid(), "doc",
         (store.occurrence_of(first),), ("external", "doc"))
-    row = _append_observed_meaning(store, actual.roles, 3,
+    row = record_observation(store, actual.roles, 3,
                                    meaning=actual, expectation=comparison)
     assert len(store) == 3
     pair = store.expectation_pair(row, gain=.5, object_mask=torch.tensor([0., 1., 0.]))
@@ -169,7 +169,7 @@ def _anticipating_model():
     model.expectation_policy_weight = .2
     model.expectation_query_budget = 64
     observe(discourse, meaning.roles)
-    index = _append_observed_meaning(store, meaning.roles, 3, meaning=meaning)
+    index = record_observation(store, meaning.roles, 3, meaning=meaning)
     discourse.bind_observation_occurrence(0, store.occurrence_of(index))
     return model, discourse, meaning
 
@@ -204,13 +204,13 @@ def test_metadata_comes_from_the_preceding_occurrence_not_the_target():
     store = discourse._ltm_store
     prior = replace(meaning, bindings={"variable": "prior"}, scope={"where": "before"})
     observe(discourse, prior.roles)
-    row = _append_observed_meaning(store, prior.roles, 3, meaning=prior)
+    row = record_observation(store, prior.roles, 3, meaning=prior)
     discourse.bind_observation_occurrence(0, store.occurrence_of(row))
     estimate = discourse.expect_next_meaning()
     target = replace(meaning, bindings={"variable": "target"}, scope={"where": "after"})
     observe(discourse, target.roles)
     comparison = discourse.last_expectation_comparison()
-    row = _append_observed_meaning(store, target.roles, 3, meaning=target, expectation=comparison)
+    row = record_observation(store, target.roles, 3, meaning=target, expectation=comparison)
     pair = store.expectation_pair(row)
     assert pair["estimate"].bindings == prior.bindings != target.bindings
     assert pair["estimate"].scope == prior.scope != target.scope
@@ -278,7 +278,7 @@ def test_idea_and_relation_rows_have_equal_surprise_per_role(capacity, sources):
         comparison = ExpectationComparison(prediction, actual.roles, mask,
             actual.roles - prediction.roles, mask.float() - prediction.presence_logits.sigmoid(),
             "doc", (store.occurrence_of(source),) if sources else (), ("external", "doc"))
-        row = _append_observed_meaning(store, actual.roles, depth,
+        row = record_observation(store, actual.roles, depth,
                                        meaning=actual, expectation=comparison)
         scores.append(store.row(row)["surprise"])
     assert scores == pytest.approx([.5, .5])
@@ -388,7 +388,7 @@ def test_anticipation_ignores_incoming_staging_and_other_streams():
     before = discourse._inter_last_meaning[0]
     # Content staged for an arriving or later packed sentence is unavailable
     # to prior-only thought, including the most recent mutable program slot.
-    perturbed._last_understanding = SimpleNamespace(answer_program=(SimpleNamespace(leaves=torch.full((9, meaning.roles.shape[-1]), 999.)),))
+    perturbed._last_understanding = SimpleNamespace(sentence_states=(SimpleNamespace(leaves=torch.full((9, meaning.roles.shape[-1]), 999.)),))
     perturbed.inputSpace = SimpleNamespace(_ar_embedded_N=torch.full((2, 8, 16), -999.))
     perturbed.symbolSpace.ltm_store.append_meaning(meaning, kind="observation", stream=1)
     perturbed._stage_expectation_queries()
@@ -496,17 +496,21 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
             before_scope = cs._passback_scope_where.clone()
             out = model._forward_with_compiled_sentence_state(None)
             model._publish_compiled_sentence_state(out)
-            result = model._capture_understanding(out[:4])
+            # Inspect the numerical kernel directly; no completed row stores
+            # the operation journal. This is a caller-owned comparison only.
+            trace = model._reconstruction_stack()
+            captured = (out[19].detach().clone(), trace._choice_rule_ids.detach().clone(),
+                        trace._choice_arities.detach().clone(), trace._choice_mask.detach().clone(),
+                        model._tensor_pushed_ideas.detach().clone())
             priority = model._assemble_relevance_priority(cs, 0, None, None)
             model._reading_attention_step(1, cs.stm.snapshot(detach=True), model._staged_in_sub, None)
             scope = cs._passback_scope_where
             assert priority.abs().sum() > 0 and priority.max() > priority.min()
             assert scope.numel() == 2 and scope[1] > scope[0]
-        program = result.answer_program[0]
-        snapshots.append(tuple(getattr(program, name).detach().clone() for name in program._tensor_fields) +
+        snapshots.append(captured +
             (model.conceptualSpace.similarity_codebook.W.clone(),
              model.inputSpace._ar_embedded_N.detach().clone(),
              before_priority, before_scope, priority.clone(), scope.clone()))
-        assert program.leaves.abs().sum() > 0
+        assert captured[-1].abs().sum() > 0
     for snapshot in snapshots[1:]:
         torch.testing.assert_close(snapshot, snapshots[0], rtol=0, atol=0)

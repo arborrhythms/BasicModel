@@ -1,0 +1,143 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+    "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+    "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+    "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+    "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+    "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "completed": [
+    "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+    "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+    "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+    "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+    "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+    "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_source_trust_does_not_supply_identification_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018411669880151749,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_changing_source_trust_preserves_both_and_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017962080892175436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_clause_order_and_evidence_are_stored_without_a_program",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001616207999177277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_row_compaction_preserves_each_order_and_pole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017905000131577253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_embedded_identification_does_not_grant_source_authority",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015927080530673265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_open_reading_keeps_both_poles_and_its_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026078457944095135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_index_unfolding_reads_the_stored_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008927088929340243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_abstract_unfold_descends_each_sigma_rung",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048450008034706116,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013695829547941685,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048570800572633743,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_withdrawing_authority_preserves_identification",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001099625020287931,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_luminosity_view_does_not_present_identification_as_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011462500551715493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_row_schema.py::test_native_sentence_carries_paired_identification_to_its_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8916736249811947,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

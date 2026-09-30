@@ -1,0 +1,17 @@
+{
+  "cause": "The unaligned embedding path holds numerical NP fields without native word IDs. A selected relative operation previously passed those unknown addresses to the strict writer.",
+  "diagnosis": "One unselected observational first forward selected only absolute operations and did not fail. A forced part reading through the real MM path then reproduced the exact writer failure, as did seven field-level cases.",
+  "fix": "Close each unindexed relative operand as an unasserted one-slot S using its existing numerical field. Write those idea rows before the referring relation; retain scalar provenance only on the outer asserted field. Already indexed operands are unchanged. No vector snapping, inferred native ID, new lexical concept, or relaxed writer validation.",
+  "before": "../sweep-fixtures/unindexed-before/result.json",
+  "after": "../sweep-fixtures/unindexed-after/result.json",
+  "before_cases": 8,
+  "before_failed": 8,
+  "after_cases": 47,
+  "after_passed": 47,
+  "source_hashes": {
+    "bin/ClauseJournal.py": "5fa4ac1b365334e3497700fa56f0575229b031da397919bf2eae25674c0b04a3",
+    "test/test_item7_unindexed_relations.py": "4251654584183d4a434c9fd2d51bf9d06d9ae8b7c90621567ab476ae74d43d5b"
+  },
+  "protected_gates_unchanged": true,
+  "unselected_MM_gate_to_be_reissued": true
+}

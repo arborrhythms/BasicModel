@@ -281,16 +281,6 @@ class TestLexiconOnSymbolSpace(unittest.TestCase):
                              "P (text mode) or fall back to S's own .what "
                              "(numeric / non-text mode).")
 
-    def test_symbolic_lexicon_methods_exist(self):
-        sym = self.model.wholeSpace
-        for name in (
-            'train_embeddings', 'sbow_loss', '_snapshot_embeddings',
-            'set_embedding_sigma', 'reconstruct_data',
-            'reconstruct_to_buffer', 'get_recovered_word',
-        ):
-            self.assertTrue(hasattr(sym, name),
-                            f"WholeSpace must expose {name!r} after "
-                            f"the lexicon-API migration.")
 
 
 class TestSubsymbolicSymbolicSplit(unittest.TestCase):
@@ -307,11 +297,11 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
             cls.model = _fresh_model()
 
     def test_s_has_syntactic_layer(self):
-        for s in self.model.wholeSpaces:
+        for s in (self.model.symbolSpace,):
             layer = getattr(s, 'syntacticLayer', None)
             self.assertIsNotNone(
                 layer,
-                f"WholeSpace must retain its SyntacticLayer "
+                f"SymbolSpace must retain its SyntacticLayer "
                 f"(the grammar's canonical dispatch host); missing on {s}")
 
     def test_no_p_space_role_rules_in_grammar(self):

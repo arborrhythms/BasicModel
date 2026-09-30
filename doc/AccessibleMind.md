@@ -4,7 +4,7 @@ The three grammars share numerical operators and a conceptual dictionary.
 `<thought>` effects use the existing controller, chronological thought history,
 conceptual activation carrier and ternary LTM store. There is no added language
 model, interpreter, policy or semantic store. This is item 1c's implementation;
-expectation's negative image is derived at the seal;
+expectation's negative image is derived at the closing;
 [ExpectationRetention](ExpectationRetention.md) gives its gradient and credit contracts.
 
 ## Permissions and effects
@@ -58,24 +58,21 @@ the existing bounded conclusion path at cutoff.
 
 ## The existing LTM writer owns the index
 
-LTM retains its `[capacity, 3, width]` idea slots. New registered tensor columns
-are `leaf_codes`, per-row/per-role `leaf_offsets`, `leaf_complete`, and
-`index_stream`. Posting lists from `(code, role)` to store rows are derived from
-these columns. They contain addresses, not another copy of semantic vectors.
-The leaf column doubles its allocated capacity when needed; appends write only
-new terms. Checkpoints serialize its used prefix, and reset/compaction rebuild
-its extent and postings. Row-to-concept identity is cached by the allocator's
-row owner at allocation and reconstructed on checkpoint load, so thought
-effects do not scan the dictionary to recreate a reverse map.
-[Writer and checkpoint](../bin/Layers.py), [index](../bin/MemoryIndex.py).
+LTM retains its `[capacity, 3, width]` slots. Retrieval terms are derived by
+unfolding each occupied numerical slot with the current generate MLP and tied
+operators, within a fixed bound. Candidates come from the symbolic activation
+that already drives semantic priming: values above its neutral value of one.
+No per-sentence word list, leaf list or activation snapshot accompanies a row.
+Only a terminal emission within numerical tolerance of a candidate counts as
+a recovered code; unsuccessful unfolding remains explicitly incomplete.
+Structural references follow the actual referenced field.
 
-A canonical meaning supplies native leaf references and nested constituents.
-An otherwise unprojected forward program supplies each sealed role's exact
-leaf sequence from its completed forest. Neither route guesses the nearest
-root code. When no derivation is available, the current generate MLP and tied
-operators unfold the detached idea within a bound. Only a terminal emission
-within numerical tolerance of a codebook row counts as a recovered code.
-Unsuccessful unfolding leaves the role explicitly incomplete.
+The durable index is inverted: `(code, role)` maps to store row addresses.
+Checkpoint columns `posting_codes`, `posting_roles` and `posting_rows` serialize
+those global postings; `leaf_complete` and `index_stream` retain completion and
+stream metadata. Appends extend posting lists without copying all prior rows.
+Row-to-concept identity remains the allocator's index, independent of semantic
+vectors. [Writer](../bin/Layers.py), [index](../bin/MemoryIndex.py).
 
 Cues include the bound roles' leaf codes, occurrence references, priming and
 neighbors of previously retrieved frames in the same stream. The reader
@@ -94,8 +91,8 @@ the same row permutation to the index and preserves occurrence IDs. A live
 codebook row-removal notification remaps its leaf addresses; removed codes mark
 roles incomplete. Rows written before the codebook owner is attached remain
 unindexed until binding fills the missing terms with actual codebook rows;
-allocator IDs are never treated as row addresses. Existing recorded leaves are
-preserved. Nested writes inherit their parent's stream. Reset clears the
+allocator IDs are never treated as row addresses. Old forward leaf lists are
+dropped with a warning and their rows require unfolding under the bound owner. Nested writes inherit their parent's stream. Reset clears the
 columns and their derived postings.
 
 ## Measured limits
@@ -115,8 +112,10 @@ codes and operations.
 | 5 | 4 | 0/1, 0/1, 0/1 |
 
 These null results establish no learned compound generativity or chained-episode
-recovery. The index can retrieve a row through its recorded leaf codes while
-its fused idea still fails to regenerate them. This is a design limitation to
-measure during further training, not a passing learning claim. The small probe
+recovery. Those historical measurements used the earlier recorded-leaf index.
+Under the September 28 decision the index itself depends on generation from
+the actual field, making weak generativity a retrieval limitation too. The
+historical values are retained; they are not a passing learning claim for the
+new index. The small probe
 is also not a corpus estimate, multi-seed study or causal-utility comparison.
 [Probe](../test/test_mind_generativity.py), [receipts](Testing.md).

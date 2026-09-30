@@ -1,0 +1,24 @@
+--- bin/Models.py (before AB)
++++ bin/Models.py (after AB)
+@@ -4868,15 +4868,20 @@
+ 
+         conceptual_spaces = list(
+             getattr(self, "conceptualSpaces", None) or ())
++        entries = []
+         for raw_i, entry in (extras.get("conceptual_spaces") or {}).items():
+             i = int(raw_i)
+             if not 0 <= i < len(conceptual_spaces):
+                 raise ValueError(
+                     f"checkpoint ConceptualSpace index {i} is not present")
+-            cs = conceptual_spaces[i]
++            entries.append((conceptual_spaces[i], entry))
++        # Knowing in one space can name the terminal space's inventory.
++        # Restore all identity and row owners before rebuilding any reader.
++        for cs, entry in entries:
+             alloc_blob = entry.get("allocator")
+             if isinstance(alloc_blob, dict):
+                 self._restore_allocator_extras(cs, alloc_blob)
++        for cs, entry in entries:
+             pending = entry.get('pending_definitions') or {}
+             if pending or hasattr(cs, 'interpret'):
+                 cs.interpret._pending = _checkpoint_host_copy(pending.get('words', {}))

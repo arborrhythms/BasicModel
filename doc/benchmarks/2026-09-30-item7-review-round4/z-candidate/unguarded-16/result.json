@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 15669063776,
+  "elapsed_seconds": 136.07129012490623
+}

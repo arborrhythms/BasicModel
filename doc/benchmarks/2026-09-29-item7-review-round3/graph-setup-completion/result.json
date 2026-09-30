@@ -1,0 +1,12 @@
+{
+  "groups": [
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "passed"
+}

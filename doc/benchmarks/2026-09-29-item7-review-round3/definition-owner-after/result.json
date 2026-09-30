@@ -1,0 +1,30 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_provenance.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_item7_unindexed_relations.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_ltm_consolidation.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_item7_definition_integrity.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

@@ -1,0 +1,32 @@
+{
+  "stage": "explicit_complete_fixture_port_required",
+  "steps": [
+    {
+      "stage": "native_definition_context",
+      "exit_code": 0,
+      "seconds": 260.4663857501
+    },
+    {
+      "stage": "final_xor",
+      "exit_code": 1,
+      "seconds": 423.8736050829757
+    },
+    {
+      "stage": "summarize_xor",
+      "exit_code": 0,
+      "seconds": 0.020897666923701763
+    },
+    {
+      "stage": "mm_grammar_twenty_runs",
+      "exit_code": 0,
+      "seconds": 1277.1271542080212
+    },
+    {
+      "stage": "summarize_measurements",
+      "exit_code": 0,
+      "seconds": 0.031661458080634475
+    }
+  ],
+  "finished": false,
+  "note": "Explicit gates completed. Driver stopped before the full sweep to port the provenance fixture exposed by its failing probe. Numerical/runtime measurements remain frozen."
+}

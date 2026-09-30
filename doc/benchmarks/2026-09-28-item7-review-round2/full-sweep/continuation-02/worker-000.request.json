@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu",
+    "test/test_training_device.py::test_parallel_pool_keeps_one_accelerator_training_lane"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-02/worker-000.recycle.json"
+}

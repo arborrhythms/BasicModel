@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_csbp.py::TestSVDOrthogonalInit::test_default_W_has_unit_singular_values",
+    "test/test_csbp.py::TestSVDOrthogonalInit::test_round_trip_mse_below_threshold_from_t0"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-399.recycle.json"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 200.6324398749275,
+      "message": "test/test_output_walk.py:893: in test_packed_recall_observes_captured_sentence_programs\n    assert torch.equal(m.inputSpace._packed_sentence_slot_mask, layout)\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10c26d3a0>(tensor([[ True,  True, False, False, False, False, False, False, False, False,\\n         False, False, False, False, Fa...ue, False, False, False, False, False, False, False, False, False,\\n         False, False, False, False, False, False]]), tensor([[ True,  True],\\n        [ True, False]]))\nE    +    where <built-in method equal of type object at 0x10c26d3a0> = torch.equal\nE    +    and   tensor([[ True,  True, False, False, False, False, False, False, False, False,\\n         False, False, False, False, Fa...ue, False, False, False, False, False, False, False, False, False,\\n         False, False, False, False, False, False]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._packed_sentence_slot_mask\nE    +      where InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-3): 4 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n).inputSpace",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

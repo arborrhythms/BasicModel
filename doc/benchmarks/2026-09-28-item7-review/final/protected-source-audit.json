@@ -1,0 +1,27 @@
+{
+  "head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+  "deferred_operator_classes_AST_identical_to_HEAD": {
+    "NonLayer": true,
+    "ConjunctionLayer": true
+  },
+  "protected_files": {
+    "data/XOR_grammar.xml": {
+      "sha256": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d",
+      "byte_identical_to_HEAD": true
+    },
+    "test/test_mm_xor.py": {
+      "sha256": "f31b7717533ebe163c0f1d6c9460fb8095415295b8ffc88737908d094fab382a",
+      "byte_identical_to_HEAD": true
+    },
+    "test/test_explicit_dimensions.py": {
+      "sha256": "7dc6fe7d1d5fa1a47f62cefdb09ec57d3ca71224a642bdc6f23bedfcdfdd4805",
+      "byte_identical_to_HEAD": true
+    },
+    "pytest.ini": {
+      "sha256": "fd2c736dc663af060e6a62112524794e709b01ca240da47480f1262344cf1dc1",
+      "byte_identical_to_HEAD": true
+    }
+  },
+  "depth3_and_other_protected_assertions": "../protected-contracts.json",
+  "final_manifest": "full/source-manifest.json"
+}

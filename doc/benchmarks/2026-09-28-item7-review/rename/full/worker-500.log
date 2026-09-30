@@ -1,0 +1,13 @@
+F....                                                                    [100%]
+=================================== FAILURES ===================================
+____________ test_relative_op_names_are_canonical_structural_forms _____________
+test/test_relative_rule_detection_collapsed.py:78: in test_relative_op_names_are_canonical_structural_forms
+    assert Grammar._RELATIVE_OP_NAMES == frozenset({"equal", "part", "whole"})
+E   AssertionError: assert frozenset({'e...rt', 'whole'}) == frozenset({'e...rt', 'whole'})
+E     
+E     Extra items in the left set:
+E     'implies'
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms
+1 failed, 4 passed in 2.34s

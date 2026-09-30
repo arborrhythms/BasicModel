@@ -1,0 +1,28 @@
+FFF.                                                                     [100%]
+=================================== FAILURES ===================================
+____ TestInsertPercept.test_insert_percept_returns_positive_idx_and_inserts ____
+test/test_two_codebook_meta_taxonomy.py:83: in test_insert_percept_returns_positive_idx_and_inserts
+    pos = ws.insert_percept(b"hello")
+          ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_percept'
+____________ TestInsertWhole.test_insert_whole_default_init_random _____________
+test/test_two_codebook_meta_taxonomy.py:142: in test_insert_whole_default_init_random
+    pos_a = ws.insert_whole()
+            ^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_whole'
+__ TestInsertWhole.test_insert_whole_returns_positive_position_and_writes_row __
+test/test_two_codebook_meta_taxonomy.py:113: in test_insert_whole_returns_positive_position_and_writes_row
+    pos = ws.insert_whole(init_vec=init_vec)
+          ^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_whole'
+=========================== short test summary info ============================
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row
+3 failed, 1 passed in 2.62s

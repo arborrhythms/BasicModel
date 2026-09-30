@@ -1,0 +1,14 @@
+{
+  "finding": "AK",
+  "prior_source": "../2026-09-30-item7-review-round4/ai-native-id-source.json",
+  "failures": {
+    "../2026-09-30-item7-review-round4/full-sweep/run/worker-110.json": [
+      "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+    ],
+    "../2026-09-30-item7-review-round4/full-sweep/run/worker-123.json": [
+      "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds"
+    ]
+  },
+  "before_source_matches": true
+}

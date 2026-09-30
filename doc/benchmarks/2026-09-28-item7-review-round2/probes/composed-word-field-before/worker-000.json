@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01042737509123981,
+      "message": "test/test_item7_word_interpretation.py:63: in test_word_publication_preserves_the_composed_concept_field\n    result = BasicModel._publish_reading_symbols(host, carrier)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:11521: in _publish_reading_symbols\n    field = owner.cs_read_memberships(percepts, self._reading_word_extents)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item7_word_interpretation.py:57: in read_again\n    pytest.fail('completed symbolic evidence was replaced by word admission')\nE   Failed: completed symbolic evidence was replaced by word admission",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

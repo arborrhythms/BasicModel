@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence"
+  ],
+  "completed": [
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.355119707994163,
+      "message": "test/test_reduction_pressure.py:161: in test_native_packed_unary_preference_still_records_every_sentence\n    assert len(store) - before == 2\nE   assert (8 - 0) == 2\nE    +  where 8 = len(TernaryTruthStore())",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

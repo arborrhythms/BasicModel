@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.009890625020489097,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_af_forest.py:13: in test_nested_relation_forest_keeps_its_unindexed_predicate\n    clause = finish_reading(f.language, entry, registry=f.registry, depth=3)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/reading_fixtures.py:97: in finish_reading\n    return finish_clause(language, entry, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:324: in finish_clause\n    operation = registry.signature_for(\nbin/Queries.py:2285: in signature_for\n    reference = concept_reference(meaning.role_refs[1])\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Taxonomy.py:15: in concept_reference\n    raise TypeError(\"taxonomy operands require a ('sym', positive concept id) reference\")\nE   TypeError: taxonomy operands require a ('sym', positive concept id) reference",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

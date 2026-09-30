@@ -1,0 +1,12 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+  "device": "cpu"
+}

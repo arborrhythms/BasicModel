@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+    "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+    "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
+    "test/test_surface_schema.py::test_copy_swap_use_elision_template",
+    "test/test_surface_schema.py::test_marker_binds_from_cooccurrence",
+    "test/test_surface_schema.py::test_emit_replays_marker",
+    "test/test_surface_schema.py::test_emit_uses_route_meta_not_lossy_generate"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-565.recycle.json"
+}

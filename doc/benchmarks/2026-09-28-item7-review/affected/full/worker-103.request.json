@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_arity_is_two",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_invertible",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_is_grammarlayer_subclass",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_rule_name",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_space_role_is_CS",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterRegistration::test_meta_registers_with_word_subspace_authority",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_builds_meta_layer_for_cs_space_role",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_registers_meta_when_grammar_uses_it",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_inf_right",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_nan_left",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_host_layer_registry_resolves_meta_after_attach",
+    "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward",
+    "test/test_symbolize_layer.py::TestPureSymbolize::test_composition_retains_both_operand_gradients_without_a_memory_write",
+    "test/test_symbolize_layer.py::TestPureSymbolize::test_reverse_is_pure_with_attached_stores"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/affected/full/worker-103.recycle.json"
+}

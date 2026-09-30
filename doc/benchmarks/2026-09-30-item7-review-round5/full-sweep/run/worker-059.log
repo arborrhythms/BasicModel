@@ -1,0 +1,26 @@
+.................s...........................sssssssss.................. [ 78%]
+....................                                                     [100%]
+=============================== warnings summary ===============================
+test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13593: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_sentence_protocol.py: 1 warning
+test/test_serial_mode_conceptual.py: 2 warnings
+test/test_serial_mode_integration.py: 3 warnings
+test/test_serial_mode_perceptual.py: 6 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space
+test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_shamatha.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+82 passed, 10 skipped, 17 warnings in 6.71s

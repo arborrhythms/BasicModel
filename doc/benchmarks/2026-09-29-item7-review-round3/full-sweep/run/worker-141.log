@@ -1,0 +1,12 @@
+ssssss.s..s..ssss.s.s                                                    [100%]
+=============================== warnings summary ===============================
+test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7637: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13589: UserWarning: PartSpace._embed: input produced 11 tokens but nOutput=10; truncating 1 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+7 passed, 14 skipped, 2 warnings in 3.45s

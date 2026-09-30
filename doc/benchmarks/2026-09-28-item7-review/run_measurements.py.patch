@@ -1,0 +1,22 @@
+--- doc/benchmarks/2026-09-27-item7/run_measurements.py
++++ doc/benchmarks/2026-09-28-item7-review/run_measurements.py
+@@ -21,14 +21,14 @@
+         OMP_NUM_THREADS='1', MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1',
+         VECLIB_MAXIMUM_THREADS='1', NUMEXPR_NUM_THREADS='1',
+         PYTHONPATH=os.pathsep.join(str(ROOT / p) for p in
+-            ('bin', 'test', 'doc/benchmarks/2026-09-21-item10')))
++            ('bin', 'test', 'doc/benchmarks/2026-09-28-item7-review')))
+     baseline = HERE / 'profile_baseline.py'
+-    legacy = ROOT / 'doc/benchmarks/2026-09-21-item10/probe.py'
+-    parity = ROOT / 'doc/benchmarks/2026-09-21-item10/parity.py'
+-    config = ROOT / 'doc/benchmarks/2026-09-26-item7-5/parity.xml'
++    legacy = HERE / 'probe.py'
++    parity = HERE / 'parity.py'
++    config = HERE / 'parity.xml'
+     drivers = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+         for p in (Path(__file__), baseline, legacy, parity, config,
+-                  ROOT / 'doc/benchmarks/2026-09-26-item8/measure.py')}
++                  HERE / 'measure.py')}
+     (output / 'drivers.json').write_text(json.dumps(drivers, indent=2) + '\n')
+     jobs = [('serial-baseline', [baseline])]
+     jobs += [(layout, [legacy, '--config', config, '--parity', layout])

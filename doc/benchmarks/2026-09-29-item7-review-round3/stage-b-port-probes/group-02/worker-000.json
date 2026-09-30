@@ -1,0 +1,123 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery",
+    "test/test_attention_promotion.py::test_use_discovers_identity_in_place_and_replenishes_pool",
+    "test/test_attention_promotion.py::test_matching_alternative_joins_existing_kind_without_context_as_part",
+    "test/test_attention_promotion.py::test_nonrecurring_row_decays_and_is_recycled",
+    "test/test_attention_promotion.py::test_objects_never_acquire_witnessed_kinds",
+    "test/test_attention_promotion.py::test_pool_parameter_controls_reservation_and_gate_off_is_inert",
+    "test/test_attention_promotion.py::test_nonfinite_acts_fail_loud",
+    "test/test_attention_promotion.py::test_provisional_parts_receive_gradient_through_use_gate",
+    "test/test_attention_promotion.py::test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment",
+    "test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore",
+    "test/test_attention_promotion.py::test_row_pool_prunes_weak_edges_when_use_discovers_it"
+  ],
+  "completed": [
+    "test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery",
+    "test/test_attention_promotion.py::test_use_discovers_identity_in_place_and_replenishes_pool",
+    "test/test_attention_promotion.py::test_matching_alternative_joins_existing_kind_without_context_as_part",
+    "test/test_attention_promotion.py::test_nonrecurring_row_decays_and_is_recycled",
+    "test/test_attention_promotion.py::test_objects_never_acquire_witnessed_kinds",
+    "test/test_attention_promotion.py::test_pool_parameter_controls_reservation_and_gate_off_is_inert",
+    "test/test_attention_promotion.py::test_nonfinite_acts_fail_loud",
+    "test/test_attention_promotion.py::test_provisional_parts_receive_gradient_through_use_gate",
+    "test/test_attention_promotion.py::test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment",
+    "test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore",
+    "test/test_attention_promotion.py::test_row_pool_prunes_weak_edges_when_use_discovers_it"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005732084042392671,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_use_discovers_identity_in_place_and_replenishes_pool",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027287582983262837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_matching_alternative_joins_existing_kind_without_context_as_part",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004925458924844861,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_nonrecurring_row_decays_and_is_recycled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009817250072956085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_objects_never_acquire_witnessed_kinds",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0016657919622957706,
+      "message": "test/test_attention_promotion.py:153: in test_objects_never_acquire_witnessed_kinds\n    word, obj, meta = cs.interpret_word([1], 2, key='cat')\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:19215: in interpret_word\n    word = self.interpret.lookup_word(word_parts, word_whole, form=key)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:36: in lookup_word\n    alloc, index = _concept_alloc_of(cs), cs.definitions\n                                          ^^^^^^^^^^^^^^\nbin/Spaces.py:19583: in definitions\n    raise RuntimeError('interpret requires the common truth store')\nE   RuntimeError: interpret requires the common truth store",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_pool_parameter_controls_reservation_and_gate_off_is_inert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002043499960564077,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_nonfinite_acts_fail_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001747500034980476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_provisional_parts_receive_gradient_through_use_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015553666977211833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0074399999575689435,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014305749908089638,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8453/test_registered_pool_checkpoin0/pool.pt\r\n[StructuralCheckpointTest] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8453/test_registered_pool_checkpoin0/pool.pt\n  Keys in model but missing from file: 102 (initialized fresh)\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8453/test_registered_pool_checkpoin0/pool.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_row_pool_prunes_weak_edges_when_use_discovers_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0054246250074356794,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

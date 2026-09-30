@@ -1,0 +1,286 @@
+...                                                                      [100%]
+=============================== warnings summary ===============================
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_mpzf8s9.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 13 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 14 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 16 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 17 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 20 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 23 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 25 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 26 gets records only, no weighted reading (overflow #15)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 28 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 29 gets records only, no weighted reading (overflow #17)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 31 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 32 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 34 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 35 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 37 gets records only, no weighted reading (overflow #25)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 38 gets records only, no weighted reading (overflow #26)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 40 gets records only, no weighted reading (overflow #27)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 41 gets records only, no weighted reading (overflow #28)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 43 gets records only, no weighted reading (overflow #32)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 44 gets records only, no weighted reading (overflow #33)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 46 gets records only, no weighted reading (overflow #34)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 47 gets records only, no weighted reading (overflow #35)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 49 gets records only, no weighted reading (overflow #41)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 50 gets records only, no weighted reading (overflow #42)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 52 gets records only, no weighted reading (overflow #48)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 53 gets records only, no weighted reading (overflow #49)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 55 gets records only, no weighted reading (overflow #54)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 56 gets records only, no weighted reading (overflow #55)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 58 gets records only, no weighted reading (overflow #61)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 59 gets records only, no weighted reading (overflow #62)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 61 gets records only, no weighted reading (overflow #66)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 62 gets records only, no weighted reading (overflow #67)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 64 gets records only, no weighted reading (overflow #69)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 65 gets records only, no weighted reading (overflow #70)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 67 gets records only, no weighted reading (overflow #74)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 68 gets records only, no weighted reading (overflow #75)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 70 gets records only, no weighted reading (overflow #82)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 71 gets records only, no weighted reading (overflow #83)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 73 gets records only, no weighted reading (overflow #88)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 74 gets records only, no weighted reading (overflow #89)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 76 gets records only, no weighted reading (overflow #93)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 77 gets records only, no weighted reading (overflow #94)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 79 gets records only, no weighted reading (overflow #95)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 80 gets records only, no weighted reading (overflow #96)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 82 gets records only, no weighted reading (overflow #97)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 83 gets records only, no weighted reading (overflow #98)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 85 gets records only, no weighted reading (overflow #102)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 86 gets records only, no weighted reading (overflow #103)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 88 gets records only, no weighted reading (overflow #105)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 89 gets records only, no weighted reading (overflow #106)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 91 gets records only, no weighted reading (overflow #110)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (4 rows): concept 92 gets records only, no weighted reading (overflow #111)
+    warnings.warn(
+
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+  /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-fixture-final-ttvgmccd/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpt523cm0v.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 111 warnings in 16.11s

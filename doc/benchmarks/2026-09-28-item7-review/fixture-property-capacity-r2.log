@@ -1,0 +1,55 @@
+................F....                                                    [100%]
+=================================== FAILURES ===================================
+________ test_symbolspace_and_grammar_use_conceptual_not_property_width ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7935/test_symbolspace_and_grammar_u0')
+
+    def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
+        """SS state is CS-width even when the upstream property basis is narrow."""
+        model = _small_property_model(
+            tmp_path, native_event=16, concept_event=24,
+            symbol_tower=True, symbolic_lift=True)
+        cs = model.conceptualSpace
+        ws = model.wholeSpace
+        ss = model.symbolSpace
+    
+        # Concepts are opaque codes: no conceptual band, the whole width is
+        # the code (2026-09-14).  Symbols are percepts and keep their band.
+        assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
+        assert ws.subspace.nWhat == 8
+        assert ws.subspace.muxedSize == 16
+    
+        assert ss.muxedSize == cs.subspace.muxedSize
+        assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
+        # Grammar consumes opaque concept codes, not the symbol's located-event
+        # content slice. No conceptual coordinate may be truncated here.
+        assert ss.languageLayer.feature_dim == cs.subspace.muxedSize
+        assert ss.truth_layer.nDim == cs.subspace.muxedSize      # ideas are concept codes
+        assert ss.ltm_store.nDim == cs.subspace.muxedSize
+        assert ss._stm_payload_dim == cs.subspace.muxedSize
+        assert ss.what.nDim == ss.nWhat
+    
+        lift = next(op for rule, op in zip(model.languageSpace._compose_binary_rules,
+                                          model.languageSpace._tree_layer(2).ops)
+                    if rule.method_name == 'lift').gl
+>       assert lift.nInput == cs.subspace.muxedSize          # opaque concept event (2026-09-13)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0 == 24
+E        +  where 0 = LiftLayer().nInput
+E        +  and   24 = SubSpace().muxedSize
+E        +    where SubSpace() = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...SigmaLayer(\n      (layer): LinearLayer()\n    )\n  )\n  (syntacticLayer): SyntacticLayer(\n    (layers): ModuleList()\n  )\n).subspace
+
+test/test_wholespace_property_migration.py:247: AssertionError
+=============================== warnings summary ===============================
+test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width
+1 failed, 20 passed, 2 warnings in 2.73s

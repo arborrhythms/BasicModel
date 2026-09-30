@@ -1,0 +1,35 @@
+--- bin/Models.py (before AC)
++++ bin/Models.py (after AC)
+@@ -9436,11 +9436,12 @@
+         order, so competing associations remain unresolved.
+         """
+         if understanding.sentence_states:
+-            from Spaces import _concept_alloc_of
+             owner = self._concept_owner()
+-            alloc = _concept_alloc_of(owner)
+-            candidates = tuple(cid for cid in owner.word_concepts(word)
+-                               if owner._concept_source_order(cid) > 0 and not alloc.refs(cid, 'ended'))
++            definitions = owner.definitions
++            word_id = definitions.word(form=word)
++            candidates = (() if word_id is None else tuple(
++                cid for cid in definitions.objects(word_id)
++                if cid not in definitions.word_ids))
+             cid = candidates[0] if len(candidates) == 1 else None
+             row = None if cid is None else owner._csw_row_of(cid)
+             rep = answer_row[0, 0] if row is None else owner.similarity_codebook.getW()[row]
+--- test/test_output_path_supervised.py (before AC)
++++ test/test_output_path_supervised.py (after AC)
+@@ -451,10 +451,11 @@
+             torch.testing.assert_close(d.conceptual_answer[:, 1:], base[:, 1:])
+             idea = m._materialize_answer_idea(u, d, questions)[0]
+             torch.testing.assert_close(idea, d.conceptual_answer)
+-            # A lexical referent resolves through the direct concept index;
++            # A lexical referent resolves through its definition row;
+             # the completed row has no remembered word list.
+             owner = m._concept_owner()
+-            concept_id = owner.resolve_word_concept('plus', order=1)
++            word_id = owner.definitions.word(form='plus')
++            concept_id, = owner.definitions.objects(word_id)
+             expected = owner.similarity_codebook.getW()[owner._csw_row_of(concept_id)]
+             query = m._referent_representation(
+                 u, 0, ('1', 'plus', '2'), 'plus', base[:1], detach=False)

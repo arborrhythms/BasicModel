@@ -1,0 +1,17 @@
+sssss...F                                                                [100%]
+=================================== FAILURES ===================================
+________________________ test_symbol_history_projection ________________________
+test/test_relevance_bases.py:215: in test_symbol_history_projection
+    assert cs._csw_row_of(C1) is None
+E   assert 32 is None
+E    +  where 32 = _csw_row_of(3)
+E    +    where _csw_row_of = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n)._csw_row_of
+=============================== warnings summary ===============================
+test/test_relevance_bases.py::test_priority_reranks_topk_selection
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relevance_bases.py::test_symbol_history_projection - assert ...
+1 failed, 3 passed, 5 skipped, 1 warning in 2.30s

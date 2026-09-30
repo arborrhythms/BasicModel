@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_relative_rule_detection_collapsed.py::test_relative_op_names_are_canonical_structural_forms",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+    "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+    "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name",
+    "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-561.recycle.json"
+}

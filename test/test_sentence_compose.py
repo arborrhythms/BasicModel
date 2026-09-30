@@ -1,4 +1,4 @@
-"""The seal is the transaction boundary, including ragged packed rows."""
+"""The closing is the transaction boundary, including ragged packed rows."""
 import torch
 import pytest
 
@@ -72,7 +72,7 @@ def test_evaluation_has_one_trial_and_no_step():
 
 
 @pytest.mark.parametrize('compiled', [False, True])
-def test_real_packed_seals_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
+def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
     from test_compiled_word_chunk import _tiny_canonical_model
     from test_reverse_traversal import _select_completed_binary_path
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
@@ -95,7 +95,7 @@ def test_real_packed_seals_train_before_the_next_sentence(tmp_path, monkeypatch,
         monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
             lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
     # Sentence ends land at different word columns in the two rows; the
-    # first row's one-word sentence also exercises its dedicated seal trace.
+    # first row's one-word sentence also exercises its dedicated closing trace.
     raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
     events = []
     candidates, prior_context = {}, []
@@ -120,8 +120,8 @@ def test_real_packed_seals_train_before_the_next_sentence(tmp_path, monkeypatch,
         # Input staging also builds a detached reporting slab. Count the
         # live word perception shared by the two compose/backward paths.
         if torch.is_grad_enabled() and not torch.compiler.is_compiling():
-            perceived.append(len(model._sentence_programs))
-            if len(model._sentence_programs) == 1:
+            perceived.append(len(model._sentence_fields))
+            if len(model._sentence_fields) == 1:
                 disc = model.symbolSpace.discourse
                 assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
         return perceive(*args, **kwargs)
@@ -159,14 +159,15 @@ def test_real_packed_seals_train_before_the_next_sentence(tmp_path, monkeypatch,
         assert [e[0] for e in events] == ['step', 'step', 'commit'] * 2
         assert len(model._sentence_winners) == 2
         assert all(cost.shape == (2, 2) for cost in model._sentence_trial_costs)
-        assert set(model._last_understanding.sentence_programs) == {0, 1}
+        assert set(model._last_understanding.sentence_fields) == {0, 1}
         assert model._training_step_count == 1
         for sid in range(2):
             assert model._sentence_winners[sid].tolist() == [True, False]
             for b, alternative in enumerate((True, False)):
-                expected = candidates[sid, alternative]['entries'][b]
-                actual = model._last_understanding.sentence_programs[sid][b]
-                torch.testing.assert_close(actual.actions, expected.actions)
+                expected = candidates[sid, alternative]['clauses'][b]
+                actual = model._last_understanding.sentence_fields[sid][b]
+                torch.testing.assert_close(actual.meaning.roles[actual.meaning.role_mask], expected.slots)
+                assert not hasattr(actual, 'actions')
         if not compiled:
             assert perceived == [0, 0, 1, 1]
     finally:
@@ -208,7 +209,7 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
     disc = SimpleNamespace(sentence_prediction_cost=lambda *a, **k:
         (predictor.square().reshape(1), predictor.square().reshape(1), None))
     observation = dict(observed_depths=[1], observed=[root],
-        mask=torch.tensor([True]), layout='stm', roles=None)
+        mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None])
     model = SimpleNamespace(reconstruct_in_loop=False, inter_loss_weight=0.,
         inter_contrastive_weight=0., symbolSpace=SimpleNamespace(discourse=disc),
         _publish_sentence_scratch=lambda state: None,

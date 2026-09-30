@@ -1,0 +1,9 @@
+{
+  "replaced_unstarted_queues": [
+    85453,
+    85543
+  ],
+  "failing_probe": "diagnostic-environment-before.json",
+  "runner": "run_xor_matched.py",
+  "scope": "Only future unguarded diagnostics now use the same environment as their guarded worker; all guarded limits, inputs and model configurations are unchanged."
+}

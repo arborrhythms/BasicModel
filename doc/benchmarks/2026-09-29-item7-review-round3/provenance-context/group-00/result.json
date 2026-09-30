@@ -1,0 +1,168 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/provenance-context/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/provenance-context/group-00/worker-000.json"
+      ],
+      "pid": 21737,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 534119840,
+      "elapsed_seconds": 5.824393541784957,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/provenance-context/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.1005261668469757,
+          "message": "test/test_ltm_consolidation.py:693: in test_resubmit_replaces_user_rows_only\n    self.assertEqual(len(user_rows), 1, \"resubmit replaces, not appends\")\nE   AssertionError: 3 != 1 : resubmit replaces, not appends",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.20805816701613367,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.22673870786093175,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.36137079098261893,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 1 (\u0394=0.072s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=False).\r\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.24037204100750387,
+          "message": "test/test_ltm_consolidation.py:643: in test_user_rows_land_alongside_provisioned\n    self.assertEqual(\nE   AssertionError: Lists differ: [1, 5, 8] != [0, 1, 2]\nE   \nE   First differing element 0:\nE   1\nE   0\nE   \nE   - [1, 5, 8]\nE   + [0, 1, 2]",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.23742312495596707,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.27901437506079674,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/provenance-context/group-00",
+  "elapsed_seconds": 7.837820375105366,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 534119840,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/provenance-context/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/provenance-context/group-00/collect.json"
+    ],
+    "pid": 21724,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180044616,
+    "elapsed_seconds": 1.7770064170472324,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/provenance-context/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+        "doc/benchmarks/2026-09-29-item7-review-round3/probe_provenance_context.py::test_observe_provisioning_and_resubmission"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

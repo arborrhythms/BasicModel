@@ -1,0 +1,141 @@
+{
+  "current": {
+    "initial_dictionary": "4f2ac749bdc41878d85580c921f047f33c2cc68bbf390f62485b60465ed0e894",
+    "words": [
+      {
+        "spelling": "nine",
+        "word": 1,
+        "object": 2,
+        "meta": 3,
+        "next_id": 4,
+        "object_row": 128,
+        "object_code": "a546d6f7e90871445fb87e181eeb532f418c20bf3d8d8cbe1d4ae0e6d5a78825",
+        "meta_row": 192,
+        "meta_order": 2,
+        "meta_parts": [
+          [
+            "sym",
+            2
+          ]
+        ],
+        "meta_wholes": [],
+        "rng_unchanged": true
+      },
+      {
+        "spelling": "plus",
+        "word": 4,
+        "object": 5,
+        "meta": 6,
+        "next_id": 7,
+        "object_row": 129,
+        "object_code": "2ccb4cb33b2378ccfec1e2ee7e119b6d835e6b5432584b364950aa7698f26ff3",
+        "meta_row": 193,
+        "meta_order": 2,
+        "meta_parts": [
+          [
+            "sym",
+            5
+          ]
+        ],
+        "meta_wholes": [],
+        "rng_unchanged": true
+      },
+      {
+        "spelling": "one",
+        "word": 7,
+        "object": 8,
+        "meta": 9,
+        "next_id": 10,
+        "object_row": 130,
+        "object_code": "86ec83ce8c7a0afa4b933698cd761eaef719911ec7b7cde1ea3c41c8612f21cc",
+        "meta_row": 194,
+        "meta_order": 2,
+        "meta_parts": [
+          [
+            "sym",
+            8
+          ]
+        ],
+        "meta_wholes": [],
+        "rng_unchanged": true
+      }
+    ]
+  },
+  "head": {
+    "initial_dictionary": "4f2ac749bdc41878d85580c921f047f33c2cc68bbf390f62485b60465ed0e894",
+    "words": [
+      {
+        "spelling": "nine",
+        "word": 1,
+        "object": 2,
+        "meta": 3,
+        "next_id": 4,
+        "object_row": 128,
+        "object_code": "a546d6f7e90871445fb87e181eeb532f418c20bf3d8d8cbe1d4ae0e6d5a78825",
+        "meta_row": null,
+        "meta_order": 2,
+        "meta_parts": [
+          [
+            "sym",
+            2
+          ]
+        ],
+        "meta_wholes": [
+          [
+            "sym",
+            1
+          ]
+        ],
+        "rng_unchanged": true
+      },
+      {
+        "spelling": "plus",
+        "word": 4,
+        "object": 5,
+        "meta": 6,
+        "next_id": 7,
+        "object_row": 129,
+        "object_code": "2ccb4cb33b2378ccfec1e2ee7e119b6d835e6b5432584b364950aa7698f26ff3",
+        "meta_row": null,
+        "meta_order": 2,
+        "meta_parts": [
+          [
+            "sym",
+            5
+          ]
+        ],
+        "meta_wholes": [
+          [
+            "sym",
+            4
+          ]
+        ],
+        "rng_unchanged": true
+      },
+      {
+        "spelling": "one",
+        "word": 7,
+        "object": 8,
+        "meta": 9,
+        "next_id": 10,
+        "object_row": 130,
+        "object_code": "86ec83ce8c7a0afa4b933698cd761eaef719911ec7b7cde1ea3c41c8612f21cc",
+        "meta_row": null,
+        "meta_order": 2,
+        "meta_parts": [
+          [
+            "sym",
+            8
+          ]
+        ],
+        "meta_wholes": [
+          [
+            "sym",
+            7
+          ]
+        ],
+        "rng_unchanged": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_semantic_categories_pipeline.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

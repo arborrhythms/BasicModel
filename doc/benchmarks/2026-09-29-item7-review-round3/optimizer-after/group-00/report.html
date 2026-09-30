@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 8/8 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003469999646767974</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00013749999925494194</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0009192499564960599</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0005682919872924685</pre></td><td><pre></pre></td><td><pre>
+=== Phase 1: Skipped (lexer=raw, no word embeddings) ===
+
+=== Phase 2: Training model ===
+</pre></td></tr><tr><td><pre>test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00033716706093400717</pre></td><td><pre></pre></td><td><pre>
+=== Syncing weights with trainer ===
+
+=== Syncing to trainer ===
+
+=== Running training on trainer ===
+
+=== Pulling generated weights from trainer ===
+</pre></td></tr><tr><td><pre>test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0014912920305505395</pre></td><td><pre></pre></td><td><pre>Loading text: 2 shard(s), max 20 docs from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8486/test_document_splits_do_not_le0
+Loaded 20 docs -&gt; 40 sentences (32 train, 4 val, 4 test)
+</pre></td></tr><tr><td><pre>test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.47839366691187024</pre></td><td><pre>bin/Models.py:3113: in getOptimizer
+    remapped = remap_optimizer_state_by_name(
+bin/checkpoint_migrations.py:739: in remap_optimizer_state_by_name
+    raise ValueError(&quot;optimizer parameter-group layout differs&quot;)
+E   ValueError: optimizer parameter-group layout differs
+
+The above exception was the direct cause of the following exception:
+test/test_fineweb_preflight.py:146: in test_checkpoint_restores_optimizer_counters_and_rng
+    opt = restored.getOptimizer(lr=1e-4)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:3129: in getOptimizer
+    raise ValueError(message) from exc
+E   ValueError: [BasicModel] Optimizer checkpoint was not restored: optimizer parameter-group layout differs</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8486/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8486/test_checkpoint_restores_optim0/resume.ckpt
+</pre></td></tr><tr><td><pre>test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step</pre></td><td><pre>setup</pre></td><td><pre>skipped</pre></td><td><pre>0.00013191706966608763</pre></td><td><pre>(&#x27;/Users/arogers/github/WikiOracle/basicmodel/test/test_fineweb_preflight.py&#x27;, 170, &#x27;Skipped: set RUN_FINEWEB_STEP=1 for the real N=64 optimizer-step gate&#x27;)</pre></td><td><pre></pre></td></tr></table></body></html>

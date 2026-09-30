@@ -1,0 +1,8 @@
+test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]
+test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]
+test/test_item7_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]
+test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]
+test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]
+test/test_item7_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]
+
+6 tests collected in 2.60s

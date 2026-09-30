@@ -1,0 +1,16 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_integrated_checkpoint_restores_allocator_and_identity_caches _______
+test/test_structural_checkpoint.py:52: in test_integrated_checkpoint_restores_allocator_and_identity_caches
+    alloc.word_obj_meta["cat"] = (word, obj, meta)
+    ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'
+=============================== warnings summary ===============================
+test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches
+1 failed, 2 passed, 1 warning in 2.02s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_ltm_program_reference.py::test_ltm_clause_reference_reaches_inventory_only_program_reader"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/ltm-program-reference-completion/group-00/worker-000.recycle.json"
+}

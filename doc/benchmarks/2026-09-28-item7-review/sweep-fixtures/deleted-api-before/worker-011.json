@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+  ],
+  "completed": [
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0024625000078231096,
+      "message": "test/test_basicmodel.py:3086: in test_symbol_objective_residual_primary_l1_secondary\n    terms = sym._compute_symbol_terms(predicted, target=target)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_compute_symbol_terms'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0018078749999403954,
+      "message": "test/test_basicmodel.py:3127: in test_symbol_objective_uses_nearest_codebook_target\n    terms = sym._compute_symbol_terms(predicted, use_codebook_target=True)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_compute_symbol_terms'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

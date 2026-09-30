@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_item9b_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots",
+    "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time",
+    "test/test_item9b_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+    "test/test_item9b_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock",
+    "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-072.recycle.json"
+}

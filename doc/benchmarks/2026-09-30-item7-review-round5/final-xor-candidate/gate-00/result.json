@@ -1,0 +1,155 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+  ],
+  "completed": [
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-00/worker-000.json"
+      ],
+      "pid": 15580,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 464684400,
+      "elapsed_seconds": 29.425803000107408,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "completed": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.113304416881874,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.22948733298108,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.2562592499889433,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.16425208398141,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.241921457927674,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.291039250092581,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-00",
+  "elapsed_seconds": 33.87192879198119,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 464684400,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-00/collect.json"
+    ],
+    "pid": 15562,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430638280,
+    "elapsed_seconds": 4.159552207915112,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/gate-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

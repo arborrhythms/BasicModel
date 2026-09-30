@@ -1,0 +1,72 @@
+{
+  "cause": "Numbered placeholder restoration matched a shorter numeric prefix inside longer placeholders. Restoration now matches each complete placeholder once.",
+  "todo_repairs": [
+    {
+      "position": 10,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md0",
+      "restored": "doc/benchmarks/2026-09-25-item9-parity/README.md#validation"
+    },
+    {
+      "position": 11,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md1",
+      "restored": "doc/benchmarks/2026-09-27-item7-5-landing/README.md"
+    },
+    {
+      "position": 12,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md2",
+      "restored": "doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md"
+    },
+    {
+      "position": 13,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md3",
+      "restored": "doc/benchmarks/2026-09-26-item9-followup/README.md"
+    },
+    {
+      "position": 14,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md4",
+      "restored": "doc/benchmarks/2026-09-25-item9-bank-sync/README.md"
+    },
+    {
+      "position": 15,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md5",
+      "restored": "doc/benchmarks/2026-09-25-item10-forward/README.md"
+    },
+    {
+      "position": 16,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md6",
+      "restored": "doc/benchmarks/2026-09-24-item10/README.md"
+    },
+    {
+      "position": 17,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md7",
+      "restored": "doc/benchmarks/2026-09-25-item10-forward/README.md"
+    },
+    {
+      "position": 18,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md8",
+      "restored": "doc/benchmarks/2026-09-24-item11c/README.md"
+    },
+    {
+      "position": 19,
+      "damaged": "doc/benchmarks/2026-09-26-item9/README.md9",
+      "restored": "doc/benchmarks/2026-09-24-item11b-extent/README.md"
+    },
+    {
+      "position": 20,
+      "damaged": "doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits0",
+      "restored": "doc/benchmarks/2026-09-24-item11b-corrections/README.md"
+    },
+    {
+      "position": 21,
+      "damaged": "doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits1",
+      "restored": "doc/benchmarks/2026-09-24-item11b-review/README.md"
+    }
+  ],
+  "files_audited": 94,
+  "preexisting_markdown_link_targets_audited": 1218,
+  "preexisting_link_targets_preserved": true,
+  "new_spec_link": "../benchmarks/2026-09-28-item7-review/rename/mapping.json",
+  "numbered_placeholder_regression_count": 24,
+  "numbered_placeholder_regression_passed": true,
+  "runtime_source_unchanged": true
+}

@@ -1,0 +1,11 @@
+{
+  "doc/Params.md": {
+    "sha256": "ce04a1059a3ed87dd21a61d830b2c9c4cf3661fc700ddb75e88e36ccfdf89639"
+  },
+  "doc/Training.md": {
+    "sha256": "1e328fd7a8dbd00fcd8521d1fba7c3f32374f8ebd3460a44e3976864f4f375c6"
+  },
+  "doc/Spaces.md": {
+    "sha256": "f644e3af2e2ea06faa3a7c98e33deb8ab26de4b7c4b3f424a065227b8489e7d2"
+  }
+}

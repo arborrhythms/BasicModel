@@ -1,0 +1,83 @@
+{
+  "entries": [
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "round3": "passed",
+      "round4": "failed",
+      "cluster": "closing and registry-based meaning predicate identities differ",
+      "stored_predicate_id": 4010033338316264258,
+      "expected_predicate_id": 1,
+      "operand_refs_agree": true,
+      "assertion_unchanged": true,
+      "subsequent_assertions_not_executed": true,
+      "worker_log": "full-sweep/run/worker-110.log",
+      "failure_report": {
+        "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 0.009044791804626584,
+        "message": "test/test_selected_relation_meaning.py:427: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert stored.role_refs == registry.form(\"part\", _a, _b).role_refs\nE   AssertionError: assert (('sym', 11),..., ('sym', 12)) == (('sym', 11),..., ('sym', 12))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+        "stdout": "",
+        "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-110.log"
+      }
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "round3": "passed",
+      "round4": "failed",
+      "cluster": "closing and registry-based meaning predicate identities differ",
+      "stored_predicate_id": 4010033338316264258,
+      "expected_predicate_id": 1,
+      "operand_refs_agree": true,
+      "assertion_unchanged": true,
+      "subsequent_assertions_not_executed": true,
+      "worker_log": "full-sweep/run/worker-110.log",
+      "failure_report": {
+        "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 0.007662583142518997,
+        "message": "test/test_selected_relation_meaning.py:427: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert stored.role_refs == registry.form(\"part\", _a, _b).role_refs\nE   AssertionError: assert (('sym', 11),..., ('sym', 12)) == (('sym', 11),..., ('sym', 12))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+        "stdout": "",
+        "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-110.log"
+      }
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "round3": "passed",
+      "round4": "failed",
+      "cluster": "closing and registry-based meaning predicate identities differ",
+      "stored_predicate_id": 4010033338316264258,
+      "expected_predicate_id": 1,
+      "operand_refs_agree": true,
+      "assertion_unchanged": true,
+      "subsequent_assertions_not_executed": true,
+      "worker_log": "full-sweep/run/worker-123.log",
+      "failure_report": {
+        "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "phase": "call",
+        "outcome": "failed",
+        "duration": 0.012832749867811799,
+        "message": "test/test_item9b_interpret.py:158: in test_selected_generic_grammar_ends_the_interpreted_kinds\n    assert store.row(row)['meaning'].role_refs == meaning.role_refs\nE   AssertionError: assert (('sym', 17),..., ('sym', 18)) == (('sym', 17),..., ('sym', 18))\nE     \nE     At index 1 diff: ('sym', 4010033338316264258) != ('sym', 1)\nE     Use -v to get more diff",
+        "stdout": "",
+        "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-123.log"
+      }
+    }
+  ],
+  "closed_round3_failures": {
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]": "passed",
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths": "passed",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root": "passed",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model": "passed",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration": "passed",
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence": "passed",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation": "passed",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream": "passed",
+    "test/test_space_equiv_selfcheck.py::test_identity_candidate_passes": "passed",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode": "passed",
+    "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero": "passed",
+    "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng": "passed",
+    "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field": "passed"
+  },
+  "accepted": false
+}

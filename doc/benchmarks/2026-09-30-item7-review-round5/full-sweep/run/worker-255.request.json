@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-255.recycle.json"
+}

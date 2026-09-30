@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_capacity_contract.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+    "test/test_item9b_capacity_contract.py::test_atomic_byte_admission_preflights_the_complete_batch",
+    "test/test_item9b_capacity_contract.py::test_admission_preserves_optimizer_parameter_and_moments",
+    "test/test_item9b_capacity_contract.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+    "test/test_item9b_capacity_contract.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+    "test/test_item9b_capacity_contract.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+    "test/test_item9b_capacity_contract.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+    "test/test_item9b_capacity_contract.py::test_large_where_ranges_keep_symbol_row_addresses_exact"
+  ],
+  "completed": [
+    "test/test_item9b_capacity_contract.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+    "test/test_item9b_capacity_contract.py::test_atomic_byte_admission_preflights_the_complete_batch",
+    "test/test_item9b_capacity_contract.py::test_admission_preserves_optimizer_parameter_and_moments",
+    "test/test_item9b_capacity_contract.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+    "test/test_item9b_capacity_contract.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+    "test/test_item9b_capacity_contract.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+    "test/test_item9b_capacity_contract.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+    "test/test_item9b_capacity_contract.py::test_large_where_ranges_keep_symbol_row_addresses_exact"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008899170206859708,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_atomic_byte_admission_preflights_the_complete_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030758301727473736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_admission_preserves_optimizer_parameter_and_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012198875076137483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005064579891040921,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026805419474840164,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07643816596828401,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005197500577196479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018145900685340166,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

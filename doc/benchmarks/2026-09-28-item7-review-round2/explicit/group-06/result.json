@@ -1,0 +1,157 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+    "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+  ],
+  "completed": [
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+    "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/worker-000.json"
+      ],
+      "pid": 79159,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 8568052912,
+      "elapsed_seconds": 471.255265166983,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+      ],
+      "completed": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 233.89733320800588,
+          "message": "test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program\n    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,\nE   AssertionError: (1, 0) root: Tensor-likes are not close!\nE   \nE   Mismatched elements: 136 / 408 (33.3%)\nE   Greatest absolute difference: 0.3198815882205963 at index (0, 75) (up to 1e-06 allowed)\nE   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=133.360s)\r\nbatch = 0 (\u0394=0.964s)\r\nbatch = 1 (\u0394=0.929s)\r\n"
+        },
+        {
+          "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 230.71461525000632,
+          "message": "test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program\n    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,\nE   AssertionError: (1, 0) root: Tensor-likes are not close!\nE   \nE   Mismatched elements: 136 / 408 (33.3%)\nE   Greatest absolute difference: 0.2525632381439209 at index (0, 113) (up to 1e-06 allowed)\nE   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=129.336s)\r\nbatch = 0 (\u0394=0.943s)\r\nbatch = 1 (\u0394=0.923s)\r\n"
+        }
+      ],
+      "recycled": true
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/worker-001.json"
+      ],
+      "pid": 79341,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 4738437704,
+      "elapsed_seconds": 238.9750350000104,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+      ],
+      "completed": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 231.88147862500045,
+          "message": "test/test_packed_reconstruction_parity.py:143: in test_native_packing_preserves_each_sentence_and_owned_program\n    torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,\nE   AssertionError: (1, 0) root: Tensor-likes are not close!\nE   \nE   Mismatched elements: 96 / 408 (23.5%)\nE   Greatest absolute difference: 1.0618056058883667 at index (0, 0) (up to 1e-06 allowed)\nE   Greatest relative difference: 1.0 at index (0, 0) (up to 1e-05 allowed)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=131.275s)\r\nbatch = 0 (\u0394=0.942s)\r\nbatch = 1 (\u0394=0.927s)\r\n"
+        },
+        {
+          "nodeid": "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0017312091076746583,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2000,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06",
+  "elapsed_seconds": 712.4348229169846,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 8568052912,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/collect.json"
+    ],
+    "pid": 79155,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180699976,
+    "elapsed_seconds": 1.9654809170169756,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/explicit/group-06/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

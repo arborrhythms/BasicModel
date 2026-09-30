@@ -663,7 +663,7 @@ GO_SUBSYSTEMS = [
     ("1", "Perceptual knowing",
      ["activation of the two meronymic", "towers (PartSpace, WholeSpace);", "the word stream, read by bracket"], False),
     ("2", "Conceptual · order 0",
-     ["FIELD: whole 0-order codebook at", "once; TWO symbols per concept,", "c⁺/c⁻; memberships over bytes"], False),
+     ["FIELD: whole 0-order codebook at", "once; TWO symbols per concept,", "c+/c−; memberships over bytes"], False),
     ("3", "Conceptual · higher",
      ["FIELD over higher-order symbols;", "one point = a REGION of order 0,", "possibly discontinuous (rows as in 2)"], False),
     ("4", "Serial thinking",
@@ -671,22 +671,22 @@ GO_SUBSYSTEMS = [
     ("5", "Priming",
      ["spreading activation over the", "concept store's edges; lives with", "the codebook; decays"], False),
     ("6", "Expectation",
-     ["NEGATIVE IMAGE: predicted idea,", "sign-reversed, added at the seal;", "learns o − ê. ▸ per bracket at 6.8"], True),
+     ["NEGATIVE IMAGE: predicted idea,", "sign-reversed, added at the closing;", "learns o − ê. > per bracket at 6.8"], True),
     ("7", "LTM",
-     ["serial form ONLY: ideas, any order;", "▸ one row per S with (c⁺, c⁻) at 7;", "reached by CUE only (no last-N)"], False),
+     ["serial form ONLY: ideas, any order;", "> one row per S with (c+, c−) at 7;", "reached by CUE only (no last-N)"], False),
     ("8", "Budget",
      ["remaining work + closure pressure;", "READ to know cutoff is near,", "CHARGED by every thought op"], False),
     ("9", "Meronymic access",
      ["residual of part(x,y)=x·(y/|y|),", "left as an idea VECTOR (serial, 4),", "not a 1/0); order 0; no store"], True),
     ("10", "Taxonomic access",
-     ["relations over higher-order symbols;", "emits a SYMBOLIC value (graded);", "▸ at 7 it is the store's sigma rows"], False),
+     ["relations over higher-order symbols;", "emits a SYMBOLIC value (graded);", "> at 7 it is the store's sigma rows"], False),
 ]
 
 GO_SUBSYSTEM_NOTE = (
     "field (parallel, graded) → CODE = nearest-row projection; words arrive as codes → "
     "operators compose an IDEA: one off-codebook vector that must regenerate its codes + "
     "operations (generativity)   ·   stores: perceptual, conceptual, priming, LTM   ·   "
-    "resource: budget   ·   relation: taxonomy   ·   ▸ = decided and specified, not yet landed")
+    "resource: budget   ·   relation: taxonomy   ·   > = decided and specified, not yet landed")
 
 GO_GRAMMARS = [
     ("<compose>  ·  understanding", [
@@ -707,7 +707,7 @@ GO_GRAMMARS = [
         "(operator, operands, open roles, level) | conclude",
         "gradient: none through effects; chooser on policy credit only",
         "cost: every choice / execute / descend / return charges 8",
-        "▸ 6.8 adds the bracket candidates and 6.5 identity binding to this same",
+        "> 6.8 adds the bracket candidates and 6.5 identity binding to this same",
         "softmax, credited the same way; neither is a separate policy"]),
     ("<generate>  ·  speech production", [
         "reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3,",
@@ -724,12 +724,14 @@ GO_GRAMMARS = [
 GO_GRAMMAR_NOTE = (
     "one vocabulary of operator identities; shared operators are the ONE gradient "
     "coupling between objectives (dissonance = per-operator gradient cosine); a compose face "
-    "alone grants no thought permission   ·   the SEAL (not an operator) adds the negative "
+    "alone grants no thought permission   ·   the ENDING (not an operator) adds the negative "
     "image and, per sentence, commits the better of the two derivations")
 
 # group -> rows of (operator, faces, operand kind, roles, {subsystem id: access}, note)
 # kind: F = a pooled reading over a bracket, S = one identified concept (6.8, 6a).
-# W* = FutureWork §7; ▸ = decided and specified, not yet landed.
+# W* = FutureWork §7; > = decided and specified, not yet landed.
+# Section D's inverses are read from Language.reverse_binary_step /
+# reverse_unary_step and Layers._binary_op_inverse_impl, not from the prose.
 GO_OPERATORS = [
     ("field operands — order-independent, over a whole bracket at once (compose + generate)", [
         ("not / non", "C G", "F", "I1→O1", {"2": "RW", "3": "RW", "4": "RW"},
@@ -742,12 +744,22 @@ GO_OPERATORS = [
          "subsymbolic tier"),
     ]),
     ("symbol operands — order-dependent, between brackets (compose + generate)", [
-        ("sum / product", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW"},
-         "additive / multiplicative concept ops"),
-        ("lift · verb · adverb · lower", "C G", "S", "I1,I2→O1",
-         {"2": "RW", "4": "RW", "5": "R"}, "VP application; lift = eig edit"),
-        ("preposition · bind · tense · morphology", "C G", "S", "I1(,I2)→O1",
-         {"1": "R", "2": "RW", "4": "RW"}, "bind: referents from the serial stream"),
+        ("surface", "C G", "S", "I1,I2→O1", {"1": "R", "2": "RW", "4": "RW"},
+         "the per-word marker fold: the word's own code carried into the concept"),
+        ("sum / chunk", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW"},
+         "additive concept ops"),
+        ("product", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW"},
+         "multiplicative concept op"),
+        ("lift / lower", "C G", "S", "I1,I2→O1", {"2": "RW", "3": "RW", "4": "RW"},
+         "the ladder: lift raises order (and makes a PP of a preposition), lower applies "
+         "a modifier to a head"),
+        ("verb / adverb", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW", "5": "R"},
+         "VP application: a sparse eigenvalue edit δ_v over the composed phrase"),
+        ("preposition · bind", "C G", "S", "I1,I2→O1", {"1": "R", "2": "RW", "4": "RW"},
+         "bind: referents from the serial stream"),
+        ("tense · morphology · aspect · null", "C G", "S", "I1→O1",
+         {"1": "R", "2": "R", "4": "RW"},
+         "surface-token analysis that leaves the concept value untouched"),
         ("interpret", "C G", "S", "I1→O1 (word → object)",
          {"1": "R", "2": "RW", "4": "W", "7": "R"},
          "the word→object operator: mints on a new word, returns the seen one, resolves "
@@ -764,10 +776,10 @@ GO_OPERATORS = [
         ("exist", "C T G", "S", "I1→O1", {"2": "R", "4": "RW", "7": "R", "8": "W"},
          "T reads facts among frames in STM"),
         ("quantize", "C T G", "S", "I1→O1", {"2": "R", "3": "W", "8": "W"},
-         "snap to the codebook; keeps ideas on-manifold; ▸ 6.8's gloss is this projection "
+         "snap to the codebook; keeps ideas on-manifold; > 6.8's gloss is this projection "
          "taken at a bracket"),
         ("arma", "C T G", "S", "I1→O1", {"4": "R", "6": "W", "8": "W"},
-         "reads the recency buffer; its estimate, sign-reversed, is the NEGATIVE IMAGE the seal "
+         "reads the recency buffer; its estimate, sign-reversed, is the NEGATIVE IMAGE the closing "
          "adds; positive as the <generate> seed; never a fact"),
         ("what (Q)", "C T G", "S", "I1→O1",
          {"2": "W*", "3": "W*", "4": "RW", "7": "R", "8": "W"},
@@ -777,13 +789,13 @@ GO_OPERATORS = [
     ("asymmetric / deferred / planned", [
         ("lookup", "C T –", "S", "I1,I2→O1", {"4": "W", "7": "R", "8": "W"},
          "same retrieval as what / parts / wholes — one mechanism; no generate face?"),
-        ("true", "– T –", "S", "I1→O1 (sealed clause NP→REF(S))", {"7": "R", "10": "R"},
-         "▸ item 7, next: declared in <thought> and executable over the clause the seal "
-         "stored as (c⁺, c⁻)"),
+        ("true", "– T –", "S", "I1→O1 (ended clause NP→REF(S))", {"7": "R", "10": "R"},
+         "> item 7, next: declared in <thought> and executable over the clause the closing "
+         "stored as (c+, c−)"),
         ("(subsymbolic LM operator)", "C   G", "S", "I1..In→O1",
          {"1": "R", "2": "RW", "4": "RW", "5": "R"}, "SAME row as structural faces; nothing more"),
     ]),
-    ("▸ further candidates in the SAME 7.5 softmax (specified, not yet landed)", [
+    ("> further candidates in the SAME 7.5 softmax (specified, not yet landed)", [
         ("divide · descend · gloss    (6.8)", "C – –", "F", "bracket → brackets / one symbol",
          {"1": "R", "2": "R", "3": "R", "8": "W"},
          "narrowing: both → divide, neither → descend and let interpret mint; gloss projects a "
@@ -793,7 +805,7 @@ GO_OPERATORS = [
         ("bind to a column · mint    (6.5)", "C T –", "S", "I1→O1 (identity)",
          {"2": "R", "4": "RW", "6": "R", "7": "R"},
          "frame = A·a: an individual is a column of A, identity is its fixedness over the "
-         "chain; credited by surprise through the seal"),
+         "chain; credited by surprise through the closing"),
     ]),
     ("not operators", [
         ("the selection layer  (7.5)", "C T G", "—",
@@ -801,12 +813,91 @@ GO_OPERATORS = [
          {"2": "R", "3": "R", "4": "R", "6": "R", "7": "R", "8": "R"},
          "ONE object for compose, the STM reducer, thought's chooser and generate's policy; "
          "context = recency buffer + cued LTM frames; policy credit only"),
-        ("the seal", "– – –", "—", "o → c = o − g·(1 − m)·κ·ê",
+        ("the closing", "– – –", "—", "o → c = o − g·(1 − m)·κ·ê",
          {"4": "R", "6": "RW", "7": "W"},
          "AFTER composition (purity); κ = predicted presence; m = open roles; and the "
          "transaction point: per sentence, the better derivation commits here"),
     ]),
     ("… (add)", [("", "", "", "", {}, "")] * 3),
+]
+
+# group -> rows of (operator, form, what the reverse program does, what it needs / loses)
+GO_INVERSES = [
+    ("exact — a closed form, given the witness the forward retained", [
+        ("not / non", "self",
+         "reverse() applies the same sign reversal or withdrawal again",
+         "nothing: the only unary that truly inverts (not = order 1+, non = any order)"),
+        ("surface", "affine",
+         "W^-1 · (parent − witness − marker bias) returns the other child",
+         "free generation has no witness and falls back to the operator's learned marker "
+         "prior — a guess about the word, not a recovery"),
+        ("sum / chunk", "residual",
+         "parent − witness is the other child, exactly",
+         "with no witness it splits the parent in half: a placeholder, not a recovery"),
+        ("product", "residual",
+         "elementwise parent / witness wherever |witness| > 1e-8",
+         "coordinates where the witness is zero are unrecoverable and fall to the search"),
+        ("part · preposition  (assertPart, isPart)", "discard",
+         "the marker IS the discarded left operand: left = witness, right = parent",
+         "needs the witness on the LEFT; a missing one falls through to the search"),
+        ("whole · bind", "discard",
+         "the fold passed its left operand through, so right = witness",
+         "needs the witness on the RIGHT; no binding context from a LATER sentence may "
+         "enter the inverse"),
+    ]),
+    ("tied — the compose weights' own inverse, so the operator is checked against itself", [
+        ("lift / lower", "W^-1 (LDU)",
+         "the layer's functional_Winverse, replayed as generate's balanced split",
+         "reference-free it returns children about 65% of the way from their codes at "
+         "depth 1, and they project to the wrong code — item 6's open measurement"),
+        ("verb", "spectral",
+         "unapply_verb undoes the eigenvalue edit against the verb",
+         "it NEEDS the verb as the right operand; a missing one is reported, never "
+         "substituted by the parent's inherited Sigma"),
+        ("adverb", "fixed point",
+         "eight bounded corrections in the adverb's own chart",
+         "an approximation, not a bijection — the only iterative inverse in the set"),
+    ]),
+    ("search — no closed form: the lossy folds", [
+        ("conjunction / disjunction", "candidates",
+         "≤16 prototypes a side, K² pairs recomposed through the FORWARD kernel and "
+         "scored by a residual softmax",
+         "a soft blend of candidates, not the original pair; with no active candidate it "
+         "reports UNAVAILABLE, never an identity pseudo-inverse"),
+        ("intersection / union / equal", "candidates",
+         "the same bounded reconstruction",
+         "approximate: recomposition and child fidelity must be measured separately"),
+    ]),
+    ("identity / none — nothing to invert", [
+        ("tense · morphology · aspect · exist · null", "identity",
+         "declared tensor identities on the CS value, so replay preserves it",
+         "morphology's surface analysis must not read a later token during replay"),
+        ("quantize", "none",
+         "the snap IS a projection; only the code survives it",
+         "the residual it discards is exactly what a reverse would need — > 6.8's gloss "
+         "inherits this"),
+        ("interpret", "index",
+         "inverts by the shared symbol / concept row index, not by a kernel",
+         "no learned inverse, so nothing to measure; > 6.5 gives the binding a gradient"),
+        ("arma · what · lookup", "none",
+         "an estimate or a retrieval, not a fold",
+         "they leave effects, not a program step; nothing is reconstructed from them"),
+        ("(subsymbolic LM operator)", "opaque",
+         "whatever the model learned",
+         "no structural inverse to check — the reason the structural face is preferred "
+         "at equal fit (item 8)"),
+    ]),
+    ("… (add)", [("", "", "", "")] * 3),
+]
+
+GO_INVERSE_NOTE = [
+    "every reverse step reports availability, and a missing inverse is explicit: the "
+    "traversal never substitutes an identity pseudo-inverse   ·   the reverse loop is a "
+    "bounded while_loop over the recorded derivation, so only recorded operators execute, "
+    "and the lossy folds share one candidate search",
+    "WITNESS = the retained constituent reference, the dictionary row the word was pushed "
+    "with. It belongs to its own occurrence, so it is present for reconstruction and absent "
+    "in free generation — which is why the same operator has two inverses here",
 ]
 
 GO_QUESTIONS = [
@@ -819,6 +910,15 @@ GO_QUESTIONS = [
     "(6) forgetting of the concept inventory itself — order-0 definitions, alternatives, "
     "feature groups — has no rule (item 5 or FutureWork?)   (7) item 8's propertyBasis: port "
     "it to XOR_grammar, or leave that gate as written?",
+    "On the inverses (D):  (8) the lossy folds are the only operators with no closed form — "
+    "should compose PREFER an invertible fold where both fit, the way item 8 prefers the "
+    "structural face at equal fit?   (9) lift / lower reference-free recovery is item 6's "
+    "blocker: is clean-up decoding through the forward kernel — the search the lossy folds "
+    "already use — the intended answer?",
+    "(10) adverb: keep the eight-step iterative inverse, or declare it non-invertible and "
+    "let it fall to the same candidate search?   (11) surface's free-generation prior is a "
+    "guess about the word rather than a recovery — is that the right division between "
+    "reconstruction and generation, or should generation also search?",
 ]
 
 
@@ -834,7 +934,7 @@ _HELV = dict(zip(
      556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556,
      333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584]))
 _HELV.update({"·": 278, "×": 584, "—": 1000, "–": 556, "→": 1000, "−": 584, "§": 556,
-              "ê": 556, "…": 1000, "’": 222})
+              "ê": 556, "…": 1000, "’": 222, "> ": 556, "²": 333, "≤": 584, "δ": 528, "κ": 500, "Σ": 667, "⁰": 333})
 
 
 def _helv_width(s, fs, bold=False):
@@ -844,7 +944,7 @@ def _helv_width(s, fs, bold=False):
 def make_grammar_operators():
     INK, SOFT, FAINT, MUTE = "#111", "#333", "#444", "#666"
     SANS = "Helvetica, Arial, sans-serif"
-    W, X0 = 1820, 40
+    W, X0 = 2100, 40
 
     def t(x, y, s, fs=13, fill=INK, bold=False, italic=False, right=None):
         # right = the x the text must not pass (default: the sheet's right margin)
@@ -854,9 +954,39 @@ def make_grammar_operators():
         return txt(x, y, escape(s, quote=False), anchor="start", fs=fs, fill=fill,
                    bold=bold, italic=italic, ff=SANS)
 
+    def table(y, cols, groups, cells_of):
+        """One bordered matrix: a header strip, italic group bands, and a
+        row per entry.  ``cells_of`` maps a row tuple to one value per column."""
+        total, top, rowh = sum(w for _, w in cols), y, 24
+        parts.append(rect(X0, y, total, 26, "#eee", stroke=SOFT, sw=1, rx=0))
+        cx = X0
+        for name, w in cols:
+            parts.append(t(cx + 6, y + 17, name, fs=11, bold=True, right=cx + w))
+            cx += w
+        y += 26
+        for group, rows in groups:
+            parts.append(rect(X0, y, total, rowh, "#f7f7f7", stroke=SOFT, sw=0.8, rx=0))
+            parts.append(t(X0 + 6, y + 16, group, fs=11.5, fill=SOFT, bold=True, italic=True))
+            y += rowh
+            for row in rows:
+                parts.append(rect(X0, y, total, rowh, "#fff", stroke="#999", sw=0.6, rx=0))
+                cx = X0
+                for (col, w), value in zip(cols, cells_of(row)):
+                    if value:
+                        narrow = w <= 48
+                        parts.append(t(cx + 6, y + 16, value, fs=11.5 if narrow else 10.8,
+                                       bold=narrow, right=cx + w))
+                    cx += w
+                y += rowh
+        cx = X0
+        for _, w in cols:
+            parts.append(line(cx, top, cx, y, stroke="#bbb", sw=0.6))
+            cx += w
+        return y
+
     parts = [None]                       # the white ground, sized once H is known
-    parts.append(t(X0, 44, "BasicModel — the three grammars, their operators, "
-                   "and what each face may touch", fs=22, bold=True))
+    parts.append(t(X0, 44, "BasicModel — the three grammars, their operators, their "
+                   "inverses, and what each face may touch", fs=22, bold=True))
     parts.append(t(X0, 68, f"Draft for annotation · {GO_REV} · operators have no return "
                    "values, only effects: a signature is roles × faces × read (R) / write (W) "
                    "over the accessible mind", fs=13, fill=FAINT, italic=True))
@@ -866,7 +996,7 @@ def make_grammar_operators():
     parts.append(t(X0, y, "A.  The accessible mind — ten subsystems (dashed = reducible or "
                    "derived; every access is bounded)", fs=16, bold=True))
     y += 14
-    bw, bh, gap = 166, 98, 8
+    bw, bh, gap = 194, 98, 8
     for i, (sid, title, body, dashed) in enumerate(GO_SUBSYSTEMS):
         x = X0 + i * (bw + gap)
         parts.append(rect(x, y, bw, bh, "#fff", stroke=SOFT, sw=1.2,
@@ -882,7 +1012,7 @@ def make_grammar_operators():
     y += 26
     parts.append(t(X0, y, "B.  The three grammars (faces) and their contexts", fs=16, bold=True))
     y += 14
-    gw, gh, ggap = 546, 150, 20
+    gw, gh, ggap = 660, 204, 20
     for i, (title, body) in enumerate(GO_GRAMMARS):
         x = X0 + i * (gw + ggap)
         parts.append(rect(x, y, gw, gh, "#fff", stroke=SOFT, sw=1.4))
@@ -903,34 +1033,24 @@ def make_grammar_operators():
                    fs=16, bold=True))
     y += 12
     ids = [s[0] for s in GO_SUBSYSTEMS]
-    cols = [("operator", 250), ("faces", 62), ("roles", 238)] + [(i, 44) for i in ids] \
-        + [("note", 690)]
-    total, top, rowh = sum(w for _, w in cols), y, 24
-    parts.append(rect(X0, y, total, 26, "#eee", stroke=SOFT, sw=1, rx=0))
-    cx = X0
-    for name, w in cols:
-        parts.append(t(cx + 6, y + 17, name, fs=11, bold=True, right=cx + w))
-        cx += w
+    cols = [("operator", 270), ("faces", 58), ("kind", 46), ("roles", 250)] \
+        + [(i, 42) for i in ids] + [("note", 970)]
+    y = table(y, cols,
+              GO_OPERATORS,
+              lambda r: [r[0], r[1], r[2], r[3]] + [r[4].get(i, "") for i in ids] + [r[5]])
+
+    # D. the inverses
     y += 26
-    for group, rows in GO_OPERATORS:
-        parts.append(rect(X0, y, total, rowh, "#f7f7f7", stroke=SOFT, sw=0.8, rx=0))
-        parts.append(t(X0 + 6, y + 16, group, fs=11.5, fill=SOFT, bold=True, italic=True))
-        y += rowh
-        for name, faces, roles, access, note in rows:
-            parts.append(rect(X0, y, total, rowh, "#fff", stroke="#999", sw=0.6, rx=0))
-            cells = [name, faces, roles] + [access.get(i, "") for i in ids] + [note]
-            cx = X0
-            for (col, w), value in zip(cols, cells):
-                if value:
-                    numeric = col in ids
-                    parts.append(t(cx + 6, y + 16, value, fs=11.5 if numeric else 10.8,
-                                   bold=numeric, right=cx + w))
-                cx += w
-            y += rowh
-    cx = X0
-    for _, w in cols:
-        parts.append(line(cx, top, cx, y, stroke="#bbb", sw=0.6))
-        cx += w
+    parts.append(t(X0, y, "D.  Operators and their inverses — the reverse program that "
+                   "replays a recorded derivation backward", fs=16, bold=True))
+    y += 12
+    y = table(y, [("operator", 300), ("form", 96), ("what the reverse step does", 820),
+                  ("what it needs · what is lost", 800)],
+              GO_INVERSES, lambda r: list(r))
+    y += 20
+    for row in GO_INVERSE_NOTE:
+        parts.append(t(X0, y, row, fs=11, fill=FAINT, italic=True))
+        y += 16
 
     y += 20
     for q in GO_QUESTIONS:

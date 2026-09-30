@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-326.recycle.json"
+}

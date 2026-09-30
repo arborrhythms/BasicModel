@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ps_where.py::test_endpoint_sum_where_decodes_span",
+    "test/test_ps_where.py::test_endpoint_sum_where_rebase_preserves_length",
+    "test/test_ps_where.py::test_endpoint_sum_where_rejects_ambiguous_period",
+    "test/test_ps_where.py::test_endpoint_sum_where_batched"
+  ],
+  "completed": [
+    "test/test_ps_where.py::test_endpoint_sum_where_decodes_span",
+    "test/test_ps_where.py::test_endpoint_sum_where_rebase_preserves_length",
+    "test/test_ps_where.py::test_endpoint_sum_where_rejects_ambiguous_period",
+    "test/test_ps_where.py::test_endpoint_sum_where_batched"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ps_where.py::test_endpoint_sum_where_decodes_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008068331517279148,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_where.py::test_endpoint_sum_where_rebase_preserves_length",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022245780564844608,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_where.py::test_endpoint_sum_where_rejects_ambiguous_period",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020399992354214191,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_where.py::test_endpoint_sum_where_batched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020599993877112865,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

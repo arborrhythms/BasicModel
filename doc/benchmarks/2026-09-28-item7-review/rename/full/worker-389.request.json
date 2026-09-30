@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_d1_pos_recovery_gate.py::test_clean_fixture_recovers_declared_pos_perfectly",
+    "test/test_d1_pos_recovery_gate.py::test_real_grammar_role_collapsed_op_roles_recover",
+    "test/test_d1_pos_recovery_gate.py::test_participation_drives_recovering_collapse"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-389.recycle.json"
+}

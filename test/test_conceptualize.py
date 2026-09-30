@@ -53,24 +53,3 @@ def test_conceptualize_dispatch():
     assert ss.conceptualize(0) is None
     assert ss.conceptualize(1) is None
     assert ss.conceptualize(2) is None
-
-
-@pytest.mark.slow
-def test_conceptualize_chain():
-    """order-3 = Gallistel sequence chain: a tail-recursive [whole, part] list
-    over concept pairs (head whole = first concept, part = the rest-chain)."""
-    m = _build("MM_symbol_tower.xml")
-    ss = m.symbolSpace.subspace
-    cs = ss.conceptualSpace
-    a = ss.conceptualize(0, part=1, whole=2)
-    b = ss.conceptualize(0, part=3, whole=4)
-    c = ss.conceptualize(0, part=5, whole=6)
-
-    head = ss.conceptualize(3, concept_ids=[a, b, c])
-    assert isinstance(head, int)
-    assert ss.conceptualize(3, concept_ids=[a, b, c]) == head     # idempotent
-    assert ss.conceptualize(3, concept_ids=[c, b, a]) != head     # ORDERED
-    assert ss.conceptualize(3, concept_ids=[a]) == a              # singleton
-    assert ss.conceptualize(3, concept_ids=[]) is None            # empty
-    # head's whole is the first concept (the part carries the rest-chain).
-    assert ("sym", a) in cs._concept_wholes.get(head, set())

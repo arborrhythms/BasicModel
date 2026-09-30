@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-09-30T20:24:36.264480+00:00",
+  "phase": "full-sweep",
+  "coordinator_pid": 17664,
+  "sweep_pid": 19539,
+  "wall_seconds_since_launch": 1996.561047,
+  "selected": 5122,
+  "completed": 12,
+  "outcomes": {
+    "passed": 7,
+    "skipped": 5
+  },
+  "active_workers": 4,
+  "resource_stops": [],
+  "peak_worker_gib": 5.262853175401688,
+  "peak_aggregate_gib": 17.397311754524708,
+  "runtime_matches_final_manifest": true,
+  "final_receipt_ready": false
+}

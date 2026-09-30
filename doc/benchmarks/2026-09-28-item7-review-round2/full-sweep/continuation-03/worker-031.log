@@ -1,0 +1,34 @@
+.....Fs                                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_provisioning_keeps_its_existing_hard_reset_of_what_episode ________
+test/test_expectation_review.py:86: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+    assert memory.get_what_slots(b=0) == []
+E   AssertionError: assert [LTMSlot(inpu... 0.0, 0.0)}))] == []
+E     
+E     Left contains 3 more items, first extra item: LTMSlot(input=tensor([[[0.0917, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2129, 1.9925,\n          0.4234, 1.9584, 0.04... 'iteration': 0, 'closure_pressure': 0.0, 'forced': False, 'temporal': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)}))
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/256 docs
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_expectation_review.py::test_one_interaction_owner_even_when_expectation_is_enabled
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13590: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 7 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18131: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 8 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+1 failed, 5 passed, 1 skipped, 4 warnings in 3.50s

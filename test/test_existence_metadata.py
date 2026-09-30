@@ -19,38 +19,22 @@ def _evaluate(store, description):
         QuerySpec.from_surface("exist", description))
 
 
-@pytest.mark.parametrize("depth", [1, 2, 3])
+@pytest.mark.parametrize("tree,depth", [('cat', 1), (('part', 'cats', 'animals'), 3)])
 @pytest.mark.parametrize("path", ["pending", "packed"])
-def test_actual_observation_writers_keep_roles_without_asserting_world_facts(depth, path):
+def test_actual_observation_writers_keep_roles_without_asserting_world_facts(monkeypatch, tree, depth, path):
     from Models import BasicModel
-    slots = torch.eye(6)[:3][None]
-    store = TernaryTruthStore(6, capacity=8)
-    model = SimpleNamespace(
-        symbolSpace=SimpleNamespace(ltm_store=store, discourse=None),
-        conceptualSpace=SimpleNamespace(
-            _ltm_consolidation=True,
-            stm_end_state_trust=lambda *_args: torch.tensor([.95])),
-    )
-    if path == "pending":
-        model._pending_stm_end_state = (slots, torch.tensor([depth]), torch.tensor([True]))
-        BasicModel._drain_pending_stm_end_state(model)
-    else:
-        model._packed_sentence_roots = slots[:, :1]
-        model._tensor_sentence_roots_live = slots.reshape(1, 1, -1)
-        model._tensor_sentence_roots_depth = torch.tensor([[depth]])
-        model._tensor_final_end_slots = slots
-        model._tensor_final_end_depth = torch.tensor([depth])
-        model.inputSpace = SimpleNamespace(
-            _packed_sentence_slot_end_positions=torch.tensor([[0]]),
-            _packed_sentence_slot_mask=torch.tensor([[True]]),
-            _packed_sentence_counts_host=(1,),
-        )
-        BasicModel._drain_packed_stm_end_states(model)
-    expected = slots[0, :depth]
-    expected = expected[[1, 2, 0]] if depth == 3 else expected.flip(0)
-    torch.testing.assert_close(store.slots[0, :depth], expected)
+    from reading_fixtures import finish_reading
+    from test_item7_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    entry = f.program(tree)
+    clause = finish_reading(f.language, entry, registry=f.registry)
+    from reading_fixtures import commit_reading
+    model, store = f.model, f.store
+    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
+    assert int(store.rel_type[0]) == (store.REL_NONE if depth == 1 else store.REL_PARTOF)
+    torch.testing.assert_close(store.meaning_of(0).roles[store.role_mask[0]], clause.slots)
     assert store.row(0).get("kind") == "observation"
-    result = _evaluate(store, expected)
+    result = _evaluate(store, store.meaning_of(0))
     assert result["posture"] == UNKNOWN
     assert result["support_true"] == result["support_false"] == 0
 
@@ -64,11 +48,14 @@ def test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows():
     old_keys = {"slots", "rel_type", "timestamp", "trust", "count", "origin", "_next_ts"}
     old_state = {k: v.clone() for k, v in source.state_dict().items() if k in old_keys}
     restored = TernaryTruthStore(6, capacity=8)
-    restored.load_state_dict(old_state, strict=True)
+    with pytest.warns(UserWarning, match='re-provisioned'):
+        restored.load_state_dict(old_state, strict=True)
+    assert len(restored) == 1
+    assert restored.row(0)['origin'] == source.ORIGIN_CONVERSATION
     result = _evaluate(restored, idea)
-    assert result["support_true"] == pytest.approx(.6)
-    assert len(result["candidates"]) == 1
-    assert result["candidates"][0]["origin"] == source.ORIGIN_PROVISIONED
+    assert result["posture"] == UNKNOWN
+    assert result["support_true"] == result["support_false"] == 0
+    assert result["candidates"] == []
 
 
 @pytest.mark.parametrize("field", ["bindings", "scope", "role_refs"])

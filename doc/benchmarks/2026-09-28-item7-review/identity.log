@@ -1,0 +1,155 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+{
+  "seed": 42,
+  "updates_per_condition": 240,
+  "driver_sha256": "f06660878042c2a436269e7dff2a3e6f6b9f386806654cf3e2c2e79dbc85a288",
+  "references_off": {
+    "before": {
+      "mean_role_mse": 0.13560978882014751,
+      "records": [
+        {
+          "label": "lion 1: runs \u2192 tired",
+          "role_mse": 0.12241240590810776,
+          "content_mse": 0.11365172266960144,
+          "relation_probability": 0.5
+        },
+        {
+          "label": "lion 1: rests \u2192 rested",
+          "role_mse": 0.1492205560207367,
+          "content_mse": 0.16458472609519958,
+          "relation_probability": 0.5
+        },
+        {
+          "label": "lion 2: runs \u2192 tired",
+          "role_mse": 0.12389764189720154,
+          "content_mse": 0.11002635210752487,
+          "relation_probability": 0.5
+        },
+        {
+          "label": "lion 2: rests \u2192 rested",
+          "role_mse": 0.14690855145454407,
+          "content_mse": 0.15244832634925842,
+          "relation_probability": 0.5
+        }
+      ],
+      "predicted_verb_effect_distance": 0.07831984013319016,
+      "wrong_identity_content_mse": 0.1213330402970314,
+      "correct_identity_content_mse": 0.11365172266960144,
+      "wrong_identity_content_rise": 0.007681317627429962
+    },
+    "after": {
+      "mean_role_mse": 0.00021547510914388113,
+      "records": [
+        {
+          "label": "lion 1: runs \u2192 tired",
+          "role_mse": 0.0003158569452352822,
+          "content_mse": 0.0005302206263877451,
+          "relation_probability": 0.00018414415535517037
+        },
+        {
+          "label": "lion 1: rests \u2192 rested",
+          "role_mse": 0.00035827301326207817,
+          "content_mse": 0.000628985115326941,
+          "relation_probability": 0.00018460018327459693
+        },
+        {
+          "label": "lion 2: runs \u2192 tired",
+          "role_mse": 0.00010044935334008187,
+          "content_mse": 0.0001039949493133463,
+          "relation_probability": 0.0001737212878651917
+        },
+        {
+          "label": "lion 2: rests \u2192 rested",
+          "role_mse": 8.732112473808229e-05,
+          "content_mse": 8.467510633636266e-05,
+          "relation_probability": 0.00017158086120616645
+        }
+      ],
+      "predicted_verb_effect_distance": 1.4085450172424316,
+      "wrong_identity_content_mse": 0.25077563524246216,
+      "correct_identity_content_mse": 0.0005302206263877451,
+      "wrong_identity_content_rise": 0.2502454146160744
+    }
+  },
+  "references_on": {
+    "before": {
+      "mean_role_mse": 0.1829218827188015,
+      "records": [
+        {
+          "label": "lion 1: runs \u2192 tired",
+          "role_mse": 0.17024070024490356,
+          "content_mse": 0.11365172266960144,
+          "relation_probability": 0.5
+        },
+        {
+          "label": "lion 1: rests \u2192 rested",
+          "role_mse": 0.19737672805786133,
+          "content_mse": 0.16458472609519958,
+          "relation_probability": 0.5
+        },
+        {
+          "label": "lion 2: runs \u2192 tired",
+          "role_mse": 0.16952495276927948,
+          "content_mse": 0.11002635210752487,
+          "relation_probability": 0.5
+        },
+        {
+          "label": "lion 2: rests \u2192 rested",
+          "role_mse": 0.19454514980316162,
+          "content_mse": 0.15244832634925842,
+          "relation_probability": 0.5
+        }
+      ],
+      "predicted_verb_effect_distance": 0.07831984013319016,
+      "wrong_identity_content_mse": 0.1213330402970314,
+      "correct_identity_content_mse": 0.11365172266960144,
+      "wrong_identity_content_rise": 0.007681317627429962
+    },
+    "after": {
+      "mean_role_mse": 9.32359034777619e-05,
+      "records": [
+        {
+          "label": "lion 1: runs \u2192 tired",
+          "role_mse": 0.00013263593427836895,
+          "content_mse": 6.299950473476201e-05,
+          "relation_probability": 0.0001636555971344933
+        },
+        {
+          "label": "lion 1: rests \u2192 rested",
+          "role_mse": 0.00011155853280797601,
+          "content_mse": 5.327365215634927e-05,
+          "relation_probability": 0.00016167755529750139
+        },
+        {
+          "label": "lion 2: runs \u2192 tired",
+          "role_mse": 5.8595156588125974e-05,
+          "content_mse": 1.8247503248858266e-05,
+          "relation_probability": 0.00019760963914450258
+        },
+        {
+          "label": "lion 2: rests \u2192 rested",
+          "role_mse": 7.015399023657665e-05,
+          "content_mse": 2.280224725836888e-05,
+          "relation_probability": 0.00019560269720386714
+        }
+      ],
+      "predicted_verb_effect_distance": 1.4092786312103271,
+      "wrong_identity_content_mse": 0.2507680356502533,
+      "correct_identity_content_mse": 6.299950473476201e-05,
+      "wrong_identity_content_rise": 0.25070503614551853
+    }
+  },
+  "mixed_kind": {
+    "before": {
+      "mean_bce": 0.6931471824645996,
+      "accuracy": 0.6666666666666666
+    },
+    "after": {
+      "mean_bce": 0.002267699766283234,
+      "accuracy": 1.0
+    },
+    "ideas": 4,
+    "relations": 2
+  }
+}

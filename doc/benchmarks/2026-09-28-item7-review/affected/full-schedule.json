@@ -1,0 +1,2116 @@
+{
+  "rationale": "The mechanical rename sweep, using the preceding sweep's file costs.\n\nKeep the reviewed resource caps and isolate the same expensive native output\nand relative-STM cases. Ordering changes dispatch only, never case selection,\nassertions, skips or seeds.\n",
+  "historical_inputs": {
+    "doc/benchmarks/2026-09-27-item7-5-pressure/full/result.json.gz": "a7246ad25be04dabac0ef96ffc5c0af74e30950a261ffec005f42314a76fa4f6",
+    "doc/benchmarks/2026-09-27-item7-5-landing/fixtures/result.json.gz": "5926eebba289ae59050a98a3fdd09c44fd02bc188c2f1c65d9d0145912f5ac3e"
+  },
+  "expected_cases": 1300,
+  "files": [
+    {
+      "path": "test/test_output_walk.py",
+      "prior_seconds": 3519.5497192119947
+    },
+    {
+      "path": "test/test_negative_expectation.py",
+      "prior_seconds": 952.71552408149
+    },
+    {
+      "path": "test/test_expectation_defaults.py",
+      "prior_seconds": 852.1218653313117
+    },
+    {
+      "path": "test/test_output_path_supervised.py",
+      "prior_seconds": 710.8702933753375
+    },
+    {
+      "path": "test/test_arithmetic_isolation.py",
+      "prior_seconds": 689.8605833331821
+    },
+    {
+      "path": "test/test_unified_thought_controller.py",
+      "prior_seconds": 663.7757774549536
+    },
+    {
+      "path": "test/test_surface_grammar.py",
+      "prior_seconds": 639.1475644599413
+    },
+    {
+      "path": "test/test_grammar_word_learning.py",
+      "prior_seconds": 637.5487115407595
+    },
+    {
+      "path": "test/test_generation_catalog.py",
+      "prior_seconds": 512.6748307490489
+    },
+    {
+      "path": "test/test_sentence_compose.py",
+      "prior_seconds": 431.3557530848775
+    },
+    {
+      "path": "test/test_item9b_occurrence_coordinates.py",
+      "prior_seconds": 131.727618874982
+    },
+    {
+      "path": "test/test_prepared_answer_boundary.py",
+      "prior_seconds": 77.77301991602872
+    },
+    {
+      "path": "test/test_item9b_corrections.py",
+      "prior_seconds": 64.99186291825026
+    },
+    {
+      "path": "test/test_grounded_xor.py",
+      "prior_seconds": 23.286677542026155
+    },
+    {
+      "path": "test/test_joint_objectives.py",
+      "prior_seconds": 17.072985000908375
+    },
+    {
+      "path": "test/test_query_native_ids.py",
+      "prior_seconds": 10.10452225105837
+    },
+    {
+      "path": "test/test_selected_relation_meaning.py",
+      "prior_seconds": 9.0085438801907
+    },
+    {
+      "path": "test/test_aligned_fold_binding.py",
+      "prior_seconds": 8.921709793037735
+    },
+    {
+      "path": "test/test_reasoning_cde_model.py",
+      "prior_seconds": 5.410380164976232
+    },
+    {
+      "path": "test/test_ltm_consolidation.py",
+      "prior_seconds": 5.021517078974284
+    },
+    {
+      "path": "test/test_thinking_kernel.py",
+      "prior_seconds": 4.817338083055802
+    },
+    {
+      "path": "test/test_category_em_smoke.py",
+      "prior_seconds": 2.553292541881092
+    },
+    {
+      "path": "test/test_reduction_pressure.py",
+      "prior_seconds": 1.669462624937296
+    },
+    {
+      "path": "test/test_stm_relative_sentence_end_state.py",
+      "prior_seconds": 1.3274184179026634
+    },
+    {
+      "path": "test/test_learning_readiness.py",
+      "prior_seconds": 1.0416256670141593
+    },
+    {
+      "path": "test/test_runtime_split_ingestion.py",
+      "prior_seconds": 0.701797500019893
+    },
+    {
+      "path": "test/test_nanochat_grammar_eval.py",
+      "prior_seconds": 0.6930289580486715
+    },
+    {
+      "path": "test/test_input_word_cursor.py",
+      "prior_seconds": 0.6399191209347919
+    },
+    {
+      "path": "test/test_router_fires_per_word.py",
+      "prior_seconds": 0.6091103331418708
+    },
+    {
+      "path": "test/test_fineweb_preflight.py",
+      "prior_seconds": 0.5897205418441445
+    },
+    {
+      "path": "test/test_item9b_interpret.py",
+      "prior_seconds": 0.529715541168116
+    },
+    {
+      "path": "test/test_reverse_traversal.py",
+      "prior_seconds": 0.5248347909655422
+    },
+    {
+      "path": "test/test_bounded_stm_fold.py",
+      "prior_seconds": 0.4439894160022959
+    },
+    {
+      "path": "test/test_two_codebook_meta_taxonomy.py",
+      "prior_seconds": 0.42938845907337964
+    },
+    {
+      "path": "test/test_relative_sentence_codebook_insertion.py",
+      "prior_seconds": 0.4013315411284566
+    },
+    {
+      "path": "test/test_sentence_expectation.py",
+      "prior_seconds": 0.3933504991000518
+    },
+    {
+      "path": "test/test_symbolize_layer.py",
+      "prior_seconds": 0.37945420981850475
+    },
+    {
+      "path": "test/test_concept_evidence.py",
+      "prior_seconds": 0.28627553570549935
+    },
+    {
+      "path": "test/test_mind_generativity.py",
+      "prior_seconds": 0.27026750007644296
+    },
+    {
+      "path": "test/test_nested_retention_owners.py",
+      "prior_seconds": 0.24408970784861594
+    },
+    {
+      "path": "test/test_query_phase_permissions.py",
+      "prior_seconds": 0.24331099807750434
+    },
+    {
+      "path": "test/test_truth_ideas_routing.py",
+      "prior_seconds": 0.22160741896368563
+    },
+    {
+      "path": "test/test_wholespace_property_migration.py",
+      "prior_seconds": 0.21171429415699095
+    },
+    {
+      "path": "test/test_row_local_concept_optimizer.py",
+      "prior_seconds": 0.20556845888495445
+    },
+    {
+      "path": "test/test_compose_records.py",
+      "prior_seconds": 0.2051631681388244
+    },
+    {
+      "path": "test/test_positive_int_taxonomy.py",
+      "prior_seconds": 0.18235633289441466
+    },
+    {
+      "path": "test/test_normal_thought_controller.py",
+      "prior_seconds": 0.16438033222220838
+    },
+    {
+      "path": "test/test_learn_score_components.py",
+      "prior_seconds": 0.160166289890185
+    },
+    {
+      "path": "test/test_accessible_mind.py",
+      "prior_seconds": 0.15066904097329825
+    },
+    {
+      "path": "test/test_truth_criterion_gates_learning.py",
+      "prior_seconds": 0.1460543341236189
+    },
+    {
+      "path": "test/test_lbg_positive_int.py",
+      "prior_seconds": 0.14431779203005135
+    },
+    {
+      "path": "test/test_existence_metadata.py",
+      "prior_seconds": 0.13553987490013242
+    },
+    {
+      "path": "test/test_category_collapse.py",
+      "prior_seconds": 0.13286600005812943
+    },
+    {
+      "path": "test/test_syntactic_order.py",
+      "prior_seconds": 0.12345262500457466
+    },
+    {
+      "path": "test/test_autobind_from_cs.py",
+      "prior_seconds": 0.11131941806524992
+    },
+    {
+      "path": "test/test_doc_links.py",
+      "prior_seconds": 0.09767524956259876
+    },
+    {
+      "path": "test/test_wholespace_fixed_capacity.py",
+      "prior_seconds": 0.09090378996916115
+    },
+    {
+      "path": "test/test_lies_can_be_learned.py",
+      "prior_seconds": 0.0872702089836821
+    },
+    {
+      "path": "test/test_cs_symbol_table.py",
+      "prior_seconds": 0.07635050115641207
+    },
+    {
+      "path": "test/test_category_codebook.py",
+      "prior_seconds": 0.0724751657107845
+    },
+    {
+      "path": "test/test_unified_lexicon_codebook.py",
+      "prior_seconds": 0.07175612484570593
+    },
+    {
+      "path": "test/test_thought_answer_adapters.py",
+      "prior_seconds": 0.07133799826260656
+    },
+    {
+      "path": "test/test_compose_review.py",
+      "prior_seconds": 0.07117912417743355
+    },
+    {
+      "path": "test/test_abstraction_order_canonical.py",
+      "prior_seconds": 0.064903334248811
+    },
+    {
+      "path": "test/test_gather_first_percept_reads.py",
+      "prior_seconds": 0.06223987496923655
+    },
+    {
+      "path": "test/test_thought_operation_catalog.py",
+      "prior_seconds": 0.06191633373964578
+    },
+    {
+      "path": "test/test_word_loop_buckets_and_orders.py",
+      "prior_seconds": 0.06113762687891722
+    },
+    {
+      "path": "test/test_subspace_what_stm_contract.py",
+      "prior_seconds": 0.05746908439323306
+    },
+    {
+      "path": "test/test_radix_layer_reverse.py",
+      "prior_seconds": 0.055382875027135015
+    },
+    {
+      "path": "test/test_selected_nested_meaning.py",
+      "prior_seconds": 0.04550408315844834
+    },
+    {
+      "path": "test/test_sparse_concept_e2e.py",
+      "prior_seconds": 0.045137708890251815
+    },
+    {
+      "path": "test/test_aligned_capacity_checkpoint_growth.py",
+      "prior_seconds": 0.04210924997460097
+    },
+    {
+      "path": "test/test_mereology_word_binding.py",
+      "prior_seconds": 0.03735500399488956
+    },
+    {
+      "path": "test/test_whole_property_codebook.py",
+      "prior_seconds": 0.03021887573413551
+    },
+    {
+      "path": "test/test_priming_energy.py",
+      "prior_seconds": 0.027032793150283396
+    },
+    {
+      "path": "test/test_property_tiling.py",
+      "prior_seconds": 0.02609907987061888
+    },
+    {
+      "path": "test/test_packed_reconstruction_parity.py",
+      "prior_seconds": 0.02569833304733038
+    },
+    {
+      "path": "test/test_mereology_raise.py",
+      "prior_seconds": 0.020839542848989367
+    },
+    {
+      "path": "test/test_detached_reverse_objective.py",
+      "prior_seconds": 0.018181457999162376
+    },
+    {
+      "path": "test/test_ternary_truth_store.py",
+      "prior_seconds": 0.01763987389858812
+    },
+    {
+      "path": "test/test_concept_capacity_policy.py",
+      "prior_seconds": 0.01634533505421132
+    },
+    {
+      "path": "test/test_compiled_expectation_boundary.py",
+      "prior_seconds": 0.014784249942749739
+    },
+    {
+      "path": "test/test_role_collapsed_grammar.py",
+      "prior_seconds": 0.013692873530089855
+    },
+    {
+      "path": "test/test_expectation_retention.py",
+      "prior_seconds": 0.009122959105297923
+    },
+    {
+      "path": "test/test_prior_stm_symbol_peer.py",
+      "prior_seconds": 0.007490039803087711
+    },
+    {
+      "path": "test/test_structural_checkpoint.py",
+      "prior_seconds": 0.005087499972432852
+    },
+    {
+      "path": "test/test_reference_table.py",
+      "prior_seconds": 0.00472162791993469
+    },
+    {
+      "path": "test/test_two_truth_stores.py",
+      "prior_seconds": 0.00451795884873718
+    },
+    {
+      "path": "test/test_tied_reconstruction_migration.py",
+      "prior_seconds": 0.0028779550921171904
+    },
+    {
+      "path": "test/test_active_decode_candidates.py",
+      "prior_seconds": 0.002239499823190272
+    },
+    {
+      "path": "test/test_config_matrix.py",
+      "prior_seconds": 0.00047395878937095404
+    },
+    {
+      "path": "test/test_idea_decode_d3.py",
+      "prior_seconds": 0.0004272499354556203
+    },
+    {
+      "path": "test/test_conceptualize.py",
+      "prior_seconds": 0.000110417022369802
+    },
+    {
+      "path": "test/test_closing_gradient_diagnostics.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_acceptance.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_clause_program.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_clause_state.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_context.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_end_state_storage.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_expectation.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_grammar.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_property_only.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_provenance.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_references.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_retention.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_sentence_boundary.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_storage.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_taxonomy.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_truth_text.py",
+      "prior_seconds": 0.0
+    },
+    {
+      "path": "test/test_item7_unfold_index.py",
+      "prior_seconds": 0.0
+    }
+  ],
+  "batches": [
+    [
+      "test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents"
+    ],
+    [
+      "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation"
+    ],
+    [
+      "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending"
+    ],
+    [
+      "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager"
+    ],
+    [
+      "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row"
+    ],
+    [
+      "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state"
+    ],
+    [
+      "test/test_output_walk.py::test_generate_policy_returns_sampled_action_credit_without_imitation"
+    ],
+    [
+      "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top"
+    ],
+    [
+      "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk"
+    ],
+    [
+      "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots"
+    ],
+    [
+      "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]"
+    ],
+    [
+      "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]"
+    ],
+    [
+      "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+    ],
+    [
+      "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+    ],
+    [
+      "test/test_output_walk.py::test_question_conditioners_persist_per_answer_width"
+    ],
+    [
+      "test/test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly"
+    ],
+    [
+      "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths"
+    ],
+    [
+      "test/test_output_walk.py::test_question_conditioner_legacy_singular_checkpoint_reloads_strictly"
+    ],
+    [
+      "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows"
+    ],
+    [
+      "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present"
+    ],
+    [
+      "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule"
+    ],
+    [
+      "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-False]"
+    ],
+    [
+      "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[False-False]"
+    ],
+    [
+      "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-True]"
+    ],
+    [
+      "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits"
+    ],
+    [
+      "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context"
+    ],
+    [
+      "test/test_output_walk.py::test_materialised_answer_uses_one_conditioning_application"
+    ],
+    [
+      "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances"
+    ],
+    [
+      "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products"
+    ],
+    [
+      "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs"
+    ],
+    [
+      "test/test_negative_expectation.py::test_empty_role_has_residual_and_trains_the_predictor",
+      "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.0]",
+      "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.5]",
+      "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[1.0]",
+      "test/test_negative_expectation.py::test_conceived_absence_and_no_credit_to_gain_mask_or_reading",
+      "test/test_negative_expectation.py::test_retained_pair_keeps_full_estimate_and_normalized_surprise",
+      "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+      "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+      "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+      "test/test_negative_expectation.py::test_residual_credit_replays_current_chooser_and_has_its_own_baseline",
+      "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+      "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+      "test/test_negative_expectation.py::test_surprise_normalizes_observed_or_expected_roles_without_stance",
+      "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-True]",
+      "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[2-True]",
+      "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-False]",
+      "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+      "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+      "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+      "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+      "test/test_negative_expectation.py::test_delayed_contrastive_credit_replays_the_current_predictor",
+      "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+      "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+      "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+      "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+      "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+      "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+      "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+      "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance"
+    ],
+    [
+      "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+      "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+      "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+      "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+      "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+      "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+      "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+      "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+      "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+      "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+      "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+      "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+      "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+      "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_parallel_topology"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-production]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-production]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-development]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-production]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-development]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]"
+    ],
+    [
+      "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]"
+    ],
+    [
+      "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+      "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+      "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+      "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+      "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+    ],
+    [
+      "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+      "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+      "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+      "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+      "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+      "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+      "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+      "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+      "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+      "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs"
+    ],
+    [
+      "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+      "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+      "test/test_surface_grammar.py::test_surface_inverse_uses_only_supplied_occurrence_witness",
+      "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+      "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+      "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+      "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+    ],
+    [
+      "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+      "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+      "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+      "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[concepts]",
+      "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[roles]",
+      "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+      "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+      "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+      "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+    ],
+    [
+      "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]"
+    ],
+    [
+      "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]"
+    ],
+    [
+      "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[False]"
+    ],
+    [
+      "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]"
+    ],
+    [
+      "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state"
+    ],
+    [
+      "test/test_generation_catalog.py::test_default_catalog_does_not_borrow_a_natural_fold_from_another_space"
+    ],
+    [
+      "test/test_generation_catalog.py::test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error"
+    ],
+    [
+      "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]"
+    ],
+    [
+      "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+    ],
+    [
+      "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+      "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+      "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+      "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+      "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+      "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+      "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+      "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+      "test/test_sentence_compose.py::test_already_trained_observation_keeps_policy_and_skips_duplicate_loss"
+    ],
+    [
+      "test/test_item9b_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots",
+      "test/test_item9b_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time",
+      "test/test_item9b_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+      "test/test_item9b_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock",
+      "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+      "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+      "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+      "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+    ],
+    [
+      "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+      "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+      "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+      "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+      "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False]",
+      "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True]",
+      "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit",
+      "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes"
+    ],
+    [
+      "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association",
+      "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step",
+      "test/test_item9b_corrections.py::test_model_owns_one_ladder_across_all_spaces",
+      "test/test_item9b_corrections.py::test_large_registry_addresses_roundtrip_through_both_phases",
+      "test/test_item9b_corrections.py::test_copy_preserves_the_single_registry_ladder",
+      "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates",
+      "test/test_item9b_corrections.py::test_reset_clears_only_the_selected_fields_time_band",
+      "test/test_item9b_corrections.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+      "test/test_item9b_corrections.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+      "test/test_item9b_corrections.py::test_native_percepts_encode_input_starts_and_share_time",
+      "test/test_item9b_corrections.py::test_percept_group_keeps_each_members_band_and_one_field_time"
+    ],
+    [
+      "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+      "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+    ],
+    [
+      "test/test_joint_objectives.py::test_joint_learning_selects_a_predictive_encoding_with_exact_reconstruction",
+      "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+      "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+      "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher[False]",
+      "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher[True]",
+      "test/test_joint_objectives.py::test_summed_objectives_on_mps",
+      "test/test_joint_objectives.py::test_backward_sums_shared_heads_auxiliaries_and_ties",
+      "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]",
+      "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
+      "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
+      "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
+      "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+      "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
+      "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]",
+      "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+      "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+      "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles"
+    ],
+    [
+      "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+      "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+      "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+      "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+    ],
+    [
+      "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-part-order0]",
+      "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-whole-order1]",
+      "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-equal-order2]",
+      "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-part-order0]",
+      "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-whole-order1]",
+      "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-equal-order2]",
+      "test/test_selected_relation_meaning.py::test_changed_part_operand_remains_distinguishable_when_folded_root_is_identical",
+      "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[part]",
+      "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[equal]",
+      "test/test_selected_relation_meaning.py::test_unreduced_lexical_converse_uses_its_anchored_grammar_form",
+      "test/test_selected_relation_meaning.py::test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode",
+      "test/test_selected_relation_meaning.py::test_selected_unary_description_operation_does_not_invent_an_occurrence",
+      "test/test_selected_relation_meaning.py::test_capture_reads_anchored_form_from_retained_word_rows",
+      "test/test_selected_relation_meaning.py::test_capture_does_not_invent_anchoring_for_an_unresolved_word",
+      "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]",
+      "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[True]",
+      "test/test_selected_relation_meaning.py::test_native_addresses_do_not_become_semantic_operand_values",
+      "test/test_selected_relation_meaning.py::test_owned_local_rule_meaning_survives_global_grammar_reconfiguration",
+      "test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[not-False]",
+      "test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[non-False]",
+      "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]"
+    ],
+    [
+      "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+      "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
+      "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+      "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+      "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing",
+      "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+      "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+      "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+      "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent"
+    ],
+    [
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows"
+    ],
+    [
+      "test/test_ltm_consolidation.py::TestConstruction::test_ltm_store_registers_as_submodule_not_in_layers",
+      "test/test_ltm_consolidation.py::TestConstruction::test_ltm_store_widths",
+      "test/test_ltm_consolidation.py::TestConstruction::test_shared_store_is_unconditional",
+      "test/test_ltm_consolidation.py::TestProvisioning::test_provision_idempotent_count_via_runepoch_trigger",
+      "test/test_ltm_consolidation.py::TestProvisioning::test_provision_noop_when_gate_off",
+      "test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings",
+      "test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps",
+      "test/test_ltm_consolidation.py::TestProvisioning::test_provisioning_is_lazy_not_at_construction",
+      "test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward",
+      "test/test_ltm_consolidation.py::TestObserveWrites::test_absolute_depth1_appends_idea",
+      "test/test_ltm_consolidation.py::TestObserveWrites::test_none_tet_defaults_zero_trust",
+      "test/test_ltm_consolidation.py::TestObserveWrites::test_relative_depth3_slot_mapping",
+      "test/test_ltm_consolidation.py::TestReasonOverLtm::test_reason_selects_ltm_store_when_consolidated",
+      "test/test_ltm_consolidation.py::TestReasonOverLtm::test_reason_skips_absolute_idea_rows",
+      "test/test_ltm_consolidation.py::TestReasonOverLtm::test_verify_absolute_row_is_noop",
+      "test/test_ltm_consolidation.py::TestReasonOverLtm::test_verify_relation_joins_evidence_without_changing_provenance_or_vectors",
+      "test/test_ltm_consolidation.py::TestSurviveResetAndPersistence::test_save_load_roundtrip",
+      "test/test_ltm_consolidation.py::TestSurviveResetAndPersistence::test_state_dict_keys_present",
+      "test/test_ltm_consolidation.py::TestSurviveResetAndPersistence::test_survives_every_reset",
+      "test/test_ltm_consolidation.py::TestDiscourseConsolidationWiring::test_discourse_is_built",
+      "test/test_ltm_consolidation.py::TestDiscourseConsolidationWiring::test_discourse_wired_to_store_when_consolidated",
+      "test/test_ltm_consolidation.py::TestDiscourseConsolidationWiring::test_off_path_discourse_uses_deque",
+      "test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_reads_recent_oldest_first",
+      "test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_relation_slot_reconstruction",
+      "test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_respects_n_window",
+      "test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle",
+      "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_attach_does_not_duplicate_store_in_state_dict",
+      "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_empty_selection_empties_view",
+      "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_excludes_relation_rows",
+      "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_materializes_user_and_provisioned_rows_only",
+      "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_without_attachment_is_noop",
+      "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_truth_layer_attached_when_consolidated"
+    ],
+    [
+      "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_truth_layer_uses_the_shared_store_with_old_gate_off",
+      "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+      "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+      "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+      "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+      "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+      "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+      "test/test_ltm_consolidation.py::TestStatelessRevive::test_default_flag_is_stateless_true",
+      "test/test_ltm_consolidation.py::TestStatelessRevive::test_load_syncs_view_even_with_no_user_rows",
+      "test/test_ltm_consolidation.py::TestStatelessRevive::test_stateful_fixture_reads_false",
+      "test/test_ltm_consolidation.py::TestStatelessRevive::test_stateful_load_keeps_user_rows",
+      "test/test_ltm_consolidation.py::TestStatelessRevive::test_stateless_load_prunes_only_after_structural_owners_are_restored",
+      "test/test_ltm_consolidation.py::TestSerialForwardAppendsStore::test_forward_grows_store_not_deque"
+    ],
+    [
+      "test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state"
+    ],
+    [
+      "test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source",
+      "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+      "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built"
+    ],
+    [
+      "test/test_reduction_pressure.py::test_online_deadline_uses_full_depth_behind_the_two_slot_window",
+      "test/test_reduction_pressure.py::test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word",
+      "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[0.0]",
+      "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[1.0]",
+      "test/test_reduction_pressure.py::test_row_allowance_is_one_or_three_never_two",
+      "test/test_reduction_pressure.py::test_pressure_is_zero_when_empty_and_increases_with_load_and_urgency",
+      "test/test_reduction_pressure.py::test_pressure_enters_credit_but_temperature_does_not",
+      "test/test_reduction_pressure.py::test_deadline_masks_unary_and_stop_in_the_credit_distribution",
+      "test/test_reduction_pressure.py::test_early_stop_cannot_leave_a_small_relative_stack_full",
+      "test/test_reduction_pressure.py::test_pressure_and_deadlines_keep_fullgraph_forward_and_backward",
+      "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence",
+      "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[-1.0]",
+      "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[inf]",
+      "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[nan]",
+      "test/test_reduction_pressure.py::test_pressure_default_and_xml_override_share_the_compose_layer"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_grammar_marks_relative_rules"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_relative_mask_per_row_and_shared_shapes"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_category_prior_scores_anchored_operator_slot"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_relative_sentence_reduces_to_depth_three"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_absolute_sentence_still_collapses_to_depth_one"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_protect_depth_floor_one_is_byte_identical_to_no_arg"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse"
+    ],
+    [
+      "test/test_stm_relative_sentence_end_state.py::test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates"
+    ],
+    [
+      "test/test_learning_readiness.py::test_progress_counts_completed_ragged_sentences_without_reading_device_values",
+      "test/test_learning_readiness.py::test_unaddressed_or_unfinished_presentations_do_not_claim_fineweb_training",
+      "test/test_learning_readiness.py::test_learning_gate_uses_recorded_sentences_not_epochs_or_batch_estimates",
+      "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[-1]",
+      "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[True]",
+      "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1.5]",
+      "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1000000]",
+      "test/test_learning_readiness.py::test_integrated_checkpoint_preserves_fineweb_progress",
+      "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-False-True]",
+      "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[True-False-False]",
+      "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-True-False]",
+      "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path"
+    ],
+    [
+      "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_data_loader_runtime_maps_to_train_input",
+      "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_runepoch_runtime_split_no_raise",
+      "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+      "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths"
+    ],
+    [
+      "test/test_nanochat_grammar_eval.py::test_manifest_is_deterministic_document_heldout_and_frozen",
+      "test/test_nanochat_grammar_eval.py::test_manifest_round_trip_and_digest_guard",
+      "test/test_nanochat_grammar_eval.py::test_last_gated_intra_score_uses_final_active_word_per_row",
+      "test/test_nanochat_grammar_eval.py::test_capture_hook_runs_under_no_grad_without_loss_accumulation",
+      "test/test_nanochat_grammar_eval.py::test_new_model_configs_enable_word_grain_boundary",
+      "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "test/test_nanochat_grammar_eval.py::test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory"
+    ],
+    [
+      "test/test_input_word_cursor.py::test_disabled_by_default_returns_none_and_no_advance",
+      "test/test_input_word_cursor.py::test_none_buffer_returns_none_even_when_enabled",
+      "test/test_input_word_cursor.py::test_yields_words_one_per_call_in_T_order_then_null_ends",
+      "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends",
+      "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately",
+      "test/test_input_word_cursor.py::test_bpe_word_mask_is_the_validity_signal_when_present",
+      "test/test_input_word_cursor.py::test_live_forward_whole_slab_byte_identical_and_cursor_wired",
+      "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none",
+      "test/test_input_word_cursor.py::test_per_word_enabled_predicate_tracks_use_grammar"
+    ],
+    [
+      "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+      "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+      "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+      "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+      "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud"
+    ],
+    [
+      "test/test_fineweb_preflight.py::test_production_config_is_fineweb_and_recoverable",
+      "test/test_fineweb_preflight.py::test_make_train_defaults_to_production_config",
+      "test/test_fineweb_preflight.py::test_train_cli_defaults_to_production_config",
+      "test/test_fineweb_preflight.py::test_local_cli_forwards_every_phase_two_bound",
+      "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+      "test/test_fineweb_preflight.py::test_document_splits_do_not_leak_and_controls_reach_shards",
+      "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "test/test_fineweb_preflight.py::test_real_fineweb_config_runs_one_self_supervised_step"
+    ],
+    [
+      "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+      "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+      "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+      "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+      "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+      "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+    ],
+    [
+      "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+      "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+      "test/test_reverse_traversal.py::test_chunk_reverse_is_the_exact_residual_against_the_reference",
+      "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+      "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+      "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+      "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+      "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+      "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+      "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+      "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+      "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+      "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+      "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+      "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick"
+    ],
+    [
+      "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+      "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+      "test/test_bounded_stm_fold.py::test_binary_reducer_is_space_role_free",
+      "test/test_bounded_stm_fold.py::test_compose_single_reduction_space_role",
+      "test/test_bounded_stm_fold.py::test_lift_lower_stay_invertible_cs_ops",
+      "test/test_bounded_stm_fold.py::test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink"
+    ],
+    [
+      "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_insert_percept_returns_positive_idx_and_inserts",
+      "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_default_init_random",
+      "test/test_two_codebook_meta_taxonomy.py::TestInsertWhole::test_insert_whole_returns_positive_position_and_writes_row",
+      "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy"
+    ],
+    [
+      "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_relation]",
+      "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[insert_meta]",
+      "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[meta_trust]",
+      "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_children]",
+      "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted[taxonomy_parent]",
+      "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+      "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_maybe_learn_relation]",
+      "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_route_learned_relation]",
+      "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_children_in_codebook]",
+      "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted[_learn_score_is_truth_obvious]"
+    ],
+    [
+      "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+      "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+      "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+      "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+      "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+      "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+      "test/test_sentence_expectation.py::test_full_role_loss_trains_source_and_predictor_but_never_target",
+      "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+      "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+      "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+      "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+      "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+      "test/test_sentence_expectation.py::test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration",
+      "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+      "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+      "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+      "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+      "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+      "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses"
+    ],
+    [
+      "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_arity_is_two",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_invertible",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_is_grammarlayer_subclass",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_rule_name",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerClassAttributes::test_meta_space_role_is_CS",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterRegistration::test_meta_registers_with_word_subspace_authority",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_builds_meta_layer_for_cs_space_role",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerWiredIntoAttachPerSpace::test_attach_per_space_registers_meta_when_grammar_uses_it",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_inf_right",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerNumericalGuard::test_forward_raises_on_nan_left",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerComposeGenerate::test_compose_dispatches_to_forward",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_binary_op_adapter_routes_through_registered_meta_forward",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_host_layer_registry_resolves_meta_after_attach",
+      "test/test_symbolize_layer.py::TestSymbolizeLayerSignalRouterDispatch::test_registered_meta_layer_compose_dispatches_to_forward",
+      "test/test_symbolize_layer.py::TestPureSymbolize::test_composition_retains_both_operand_gradients_without_a_memory_write",
+      "test/test_symbolize_layer.py::TestPureSymbolize::test_reverse_is_pure_with_attached_stores"
+    ],
+    [
+      "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+      "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+      "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+      "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+      "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+      "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+      "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+      "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+      "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+      "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+      "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+      "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+      "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+      "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+      "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+      "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+      "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+      "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+      "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+      "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+      "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+      "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+      "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+      "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+    ],
+    [
+      "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length"
+    ],
+    [
+      "test/test_nested_retention_owners.py::test_normal_truthset_replacement_keeps_live_thought_constituents_and_credit",
+      "test/test_nested_retention_owners.py::test_full_checkpoint_restores_occurrence_owners_before_stateless_withdrawal",
+      "test/test_nested_retention_owners.py::test_full_checkpoint_removes_unreferenced_request_scoped_content",
+      "test/test_nested_retention_owners.py::test_tensor_only_restore_defers_pruning_but_withdraws_authority"
+    ],
+    [
+      "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[compose]",
+      "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[reconstruct]",
+      "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[generate]",
+      "test/test_query_phase_permissions.py::test_checked_execution_requires_a_completed_answer_boundary",
+      "test/test_query_phase_permissions.py::test_resolution_opens_only_completed_rows_and_closes_after_return",
+      "test/test_query_phase_permissions.py::test_resolution_exception_cannot_leave_permission_open",
+      "test/test_query_phase_permissions.py::test_nested_resolution_cannot_override_an_active_sentence_phase",
+      "test/test_query_phase_permissions.py::test_tied_input_reconstruction_must_finish_before_opening_query_boundary",
+      "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[answer_query]",
+      "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[reason_about]",
+      "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[think_about]",
+      "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[explicit_state]",
+      "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[understand_executor]",
+      "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[what_executor]",
+      "test/test_query_phase_permissions.py::test_operand_occurrence_reads_require_permission_before_preparation",
+      "test/test_query_phase_permissions.py::test_reconstruction_completion_keeps_query_executors_masked",
+      "test/test_query_phase_permissions.py::test_nested_boundary_can_narrow_but_not_widen_completed_rows",
+      "test/test_query_phase_permissions.py::test_nested_sentence_restores_the_outer_completed_boundary",
+      "test/test_query_phase_permissions.py::test_held_completed_understanding_owns_its_readiness_after_later_staging",
+      "test/test_query_phase_permissions.py::test_uncommitted_or_empty_program_rows_do_not_open_queries",
+      "test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[False]",
+      "test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[True]"
+    ],
+    [
+      "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+      "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+      "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+      "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+      "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+      "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+      "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+      "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+      "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+      "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+      "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+      "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+      "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+      "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+      "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_lowers_trust",
+      "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+      "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+      "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+      "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+      "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+      "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+      "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer"
+    ],
+    [
+      "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+      "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+      "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+      "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+      "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+      "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+      "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+      "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+      "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+      "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+    ],
+    [
+      "test/test_row_local_concept_optimizer.py::test_sparse_cs_lookup_and_row_local_step_stay_compact[cpu]",
+      "test/test_row_local_concept_optimizer.py::test_sparse_cs_lookup_and_row_local_step_stay_compact[mps]",
+      "test/test_row_local_concept_optimizer.py::test_row_local_adam_matches_sparse_adam_on_touched_rows",
+      "test/test_row_local_concept_optimizer.py::test_compact_moments_roundtrip_and_normalizer_preserves_prefix",
+      "test/test_row_local_concept_optimizer.py::test_pre_moment_dtype_checkpoint_adopts_configured_bfloat16_storage",
+      "test/test_row_local_concept_optimizer.py::test_bfloat16_moment_storage_uses_fp32_math_close_to_sparse_adam[cpu]",
+      "test/test_row_local_concept_optimizer.py::test_bfloat16_moment_storage_uses_fp32_math_close_to_sparse_adam[mps]",
+      "test/test_row_local_concept_optimizer.py::test_get_optimizer_routes_only_sparse_shared_cs_parameter_row_locally",
+      "test/test_row_local_concept_optimizer.py::test_sparse_decoder_leaves_shared_codebook_gradient_sparse",
+      "test/test_row_local_concept_optimizer.py::test_post_step_concept_projection_is_row_local_and_signed_bounded",
+      "test/test_row_local_concept_optimizer.py::test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode",
+      "test/test_row_local_concept_optimizer.py::test_concept_index_read_coexists_without_densifying_shared_gradient",
+      "test/test_row_local_concept_optimizer.py::test_model_debug_finite_check_accepts_sparse_codebook_gradient",
+      "test/test_row_local_concept_optimizer.py::test_zero_valued_sparse_placeholder_does_not_decay_row_zero[cpu]",
+      "test/test_row_local_concept_optimizer.py::test_zero_valued_sparse_placeholder_does_not_decay_row_zero[mps]"
+    ],
+    [
+      "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program",
+      "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+      "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+      "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+      "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+      "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+      "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+      "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+      "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]"
+    ],
+    [
+      "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_percept_returns_positive_position",
+      "test/test_positive_int_taxonomy.py::TestInsertReturnsPositiveInt::test_insert_whole_returns_positive_position",
+      "test/test_positive_int_taxonomy.py::test_meta_members_are_positive_native_concept_ids"
+    ],
+    [
+      "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+      "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+      "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+      "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+      "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+      "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+      "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+      "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+      "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+      "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+      "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+      "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+      "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+      "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+      "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+      "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+      "test/test_normal_thought_controller.py::test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner",
+      "test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot",
+      "test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row"
+    ],
+    [
+      "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_children_in_codebook]",
+      "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_is_truth_obvious]",
+      "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_learn_score_resolves_contradiction]",
+      "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_maybe_learn_relation]",
+      "test/test_learn_score_components.py::test_learn_score_components_are_deleted[_route_learned_relation]"
+    ],
+    [
+      "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+      "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+      "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
+      "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
+      "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
+      "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
+      "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches",
+      "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+      "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
+      "test/test_accessible_mind.py::test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm",
+      "test/test_accessible_mind.py::test_higher_order_missing_edge_is_symbolic_zero_not_a_residual",
+      "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+      "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+      "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
+      "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
+      "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+      "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+      "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+      "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+      "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams",
+      "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+      "test/test_accessible_mind.py::test_nested_writes_inherit_stream_isolation",
+      "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+      "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates"
+    ],
+    [
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_compute_learn_score]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_children_in_codebook]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_is_truth_obvious]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_learn_score_resolves_contradiction]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_route_learned_relation]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_maybe_learn_relation]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[learn_relations_from_stm]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_relation_is_reducible]",
+      "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted[_collapse_trust]",
+      "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+      "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+      "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+      "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]"
+    ],
+    [
+      "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_record_lbg_pull]",
+      "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[_maybe_split_lbg]",
+      "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted[insert_meta]"
+    ],
+    [
+      "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+      "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+      "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+      "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]",
+      "test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows",
+      "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[bindings]",
+      "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[scope]",
+      "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[role_refs]",
+      "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[question-interrogative]",
+      "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[estimate-assertive]",
+      "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[observation-unspecified]",
+      "test/test_existence_metadata.py::test_question_cannot_be_written_as_accepted_fact",
+      "test/test_existence_metadata.py::test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset",
+      "test/test_existence_metadata.py::test_repeated_evidence_does_not_inflate_partial_support",
+      "test/test_existence_metadata.py::test_live_description_owns_values_but_fact_storage_detaches",
+      "test/test_existence_metadata.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[1]",
+      "test/test_existence_metadata.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[2]",
+      "test/test_existence_metadata.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[3]",
+      "test/test_existence_metadata.py::test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar",
+      "test/test_existence_metadata.py::test_actual_model_checkpoint_preserves_scoped_fact_identity",
+      "test/test_existence_metadata.py::test_checked_reader_keeps_both_sides_of_exist_evidence"
+    ],
+    [
+      "test/test_category_collapse.py::test_category_collapse_runs_at_runtime_conflict_free",
+      "test/test_category_collapse.py::test_category_collapse_is_cached_per_direction",
+      "test/test_category_collapse.py::test_live_grammar_already_collapsed_is_a_noop",
+      "test/test_category_collapse.py::test_gated_off_by_default_stores_no_collapse",
+      "test/test_category_collapse.py::test_gated_on_runs_collapse_at_enable",
+      "test/test_category_collapse.py::test_pooling_matrix_sums_merged_role_columns",
+      "test/test_category_collapse.py::test_pooling_matrix_is_none_for_identity_collapse",
+      "test/test_category_collapse.py::test_collapsed_cat_ctx_passthrough_when_flag_off",
+      "test/test_category_collapse.py::test_consumption_is_clean_noop_in_serial_mode_on_live_grammar"
+    ],
+    [
+      "test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config",
+      "test/test_syntactic_order.py::test_syntactic_order_zero_collapses_to_single_s",
+      "test/test_syntactic_order.py::test_syntactic_order_caps_parse_tree_depth",
+      "test/test_syntactic_order.py::test_syntactic_order_negative_rejected"
+    ],
+    [
+      "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
+      "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+      "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+      "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+      "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
+      "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids"
+    ],
+    [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/AccessibleMind.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Architecture.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModel.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModelStabilityPlan.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Componentization.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Ergodic.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/ExistenceEvidence.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/ExpectationRetention.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/FutureWork.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/GradientFlow.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Installation.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/KernelRetirement.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/LLMEquivalence.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Language.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Lexicon.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Logic.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/MachineMinds.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Mereology.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/NanoChatGrammarPilot.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/NestedRetention.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Params.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Philosophy.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/QueryContracts.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/QueryPhases.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/QueryWork.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Reasoning.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/STM.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/SelectedMeaning.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Spaces.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/SymbolFirewall.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/TaxonomyQueries.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Testing.md]"
+    ],
+    [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/ThoughtHistory.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/Training.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/WhatSpacetimeDesign.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-pre-teacher-baseline.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-teacher-reconstruction-b24.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-09-math-thinking-pilot.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-11-fold-ladder-throughput.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-sentence-expectation.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-tied-input-reconstruction.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item10/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item11/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item12/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item2/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-22-item11/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/spec.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/spec.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item10/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-corrections/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-extent/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-review/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11c/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-forward/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-resolution/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank-sync/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-parity/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/erosion-table.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/README.md]"
+    ],
+    [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/review.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item7-5/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/PROTOCOL.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8-review/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/PROTOCOL.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/PROTOCOL.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-corrections/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/PROTOCOL.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-landing/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/reviewed-spec.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/reviewed-spec.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/reviewed-spec.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-12-compiled-reverse-loops.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-14-answer-path-ownership-and-training.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-15-next-sentence-as-the-production-objective.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-17-bounded-fixture-reuse.md]"
+    ],
+    [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-18-thought-operator-unification.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-20-selected-thought-completion.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-24-item-11c.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-25-item-9b-mode-sharing-and-interpret.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-27-item-6-8-one-attention.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/research/2017-jang-gumbel-softmax.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/research/2019-kim-compound-pcfg.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/research/2022-yang-rank-space-pcfg.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/research/attention.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/research/forest-regularization.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/research/three-surfaces.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-07-27-teaching-modes-and-next-iteration.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-09-mathematical-thinking.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-11-sentence-boundary-thinking.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-16-forgetting.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-16-two-truths-ideas-and-relations.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-18-thought-operations-in-compose.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-20-accessible-mind-subsystems.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-26-independent-components.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-26-one-operation-per-round.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[README.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[todo.md]"
+    ],
+    [
+      "test/test_wholespace_fixed_capacity.py::test_wholespace_W_identity_is_frozen_and_optimizer_visible",
+      "test/test_wholespace_fixed_capacity.py::test_wholespace_capacity_exhaustion_is_atomic_and_actionable",
+      "test/test_wholespace_fixed_capacity.py::test_property_reads_are_rng_neutral_and_admit_no_rows",
+      "test/test_wholespace_fixed_capacity.py::test_property_split_uses_an_unused_row_without_replacing_parameters",
+      "test/test_wholespace_fixed_capacity.py::test_empty_wholespace_inventory_has_no_parameter_identity_to_freeze"
+    ],
+    [
+      "test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence",
+      "test/test_lies_can_be_learned.py::test_zero_provenance_registers_without_asserting"
+    ],
+    [
+      "test/test_cs_symbol_table.py::test_new_symbol_starts_empty",
+      "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+      "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
+      "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+      "test/test_cs_symbol_table.py::test_identity_at_one_part_one_whole",
+      "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
+      "test/test_cs_symbol_table.py::test_retire_transient_symbol",
+      "test/test_cs_symbol_table.py::test_populate_cs_symbols_location_knitting",
+      "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+      "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+      "test/test_cs_symbol_table.py::test_interpret_word_structure",
+      "test/test_cs_symbol_table.py::test_meta_membership_persists_identity_resolution",
+      "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+      "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+      "test/test_cs_symbol_table.py::test_meta_word_object_recovers_by_intersection",
+      "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+      "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+      "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+      "test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object",
+      "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+      "test/test_cs_symbol_table.py::test_synthesize_higher_order_idempotent_per_part_set",
+      "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+      "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_uniform_ok",
+      "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
+      "test/test_cs_symbol_table.py::test_prune_drops_constituents_of_linked_raised_symbol",
+      "test/test_cs_symbol_table.py::test_prune_removes_bias_edge_of_dropped_everything",
+      "test/test_cs_symbol_table.py::test_prune_drops_raw_links_records_only",
+      "test/test_cs_symbol_table.py::test_refine_over_collected_runs_pruning_round",
+      "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+      "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
+      "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+      "test/test_cs_symbol_table.py::test_pole_rename_aliases_hold"
+    ],
+    [
+      "test/test_cs_symbol_table.py::test_fresh_object_concept_reads_its_naming_word_at_order1",
+      "test/test_cs_symbol_table.py::test_assert_concrete_whole_retires_everything_bias_edge",
+      "test/test_cs_symbol_table.py::test_prune_drops_everything_when_other_whole_linked",
+      "test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence"
+    ],
+    [
+      "test/test_category_codebook.py::test_enable_allocates_codebook_and_role_table",
+      "test/test_category_codebook.py::test_enable_noop_without_roles",
+      "test/test_category_codebook.py::test_assign_returns_valid_centroid_indices",
+      "test/test_category_codebook.py::test_role_vector_ema_moves_toward_target",
+      "test/test_category_codebook.py::test_category_role_of_zeroes_negative_index",
+      "test/test_category_codebook.py::test_disabled_methods_are_safe_noops",
+      "test/test_category_codebook.py::test_pending_meta_symbol_commits_to_single_category",
+      "test/test_category_codebook.py::test_category_vq_assign_is_pure_lookup",
+      "test/test_category_codebook.py::test_checkpoint_prewarm_materializes_requested_category_codebook",
+      "test/test_category_codebook.py::test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe",
+      "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys"
+    ],
+    [
+      "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_lexicon_insert_leaves_ws_codebook_untouched",
+      "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_paired_insert_api_is_gone",
+      "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_parallel_does_not_receive_sparse_boundary_relaxation",
+      "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_serial_allows_compact_ps_into_high_dim_cs",
+      "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_serial_requires_predecoded_cs_input_boundary",
+      "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_passes_when_flat_slab_matches",
+      "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_cs_mismatch",
+      "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_is_ps_mismatch",
+      "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_5m_satisfies_flat_slab",
+      "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_grammar_satisfies_flat_slab",
+      "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_loopback_satisfies_flat_slab",
+      "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_satisfies_flat_slab",
+      "test/test_unified_lexicon_codebook.py::test_retired_wholespace_taxonomy_writer_is_absent"
+    ],
+    [
+      "test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference",
+      "test/test_thought_answer_adapters.py::test_open_relation_answer_preserves_every_member_without_another_reader",
+      "test/test_thought_answer_adapters.py::test_subgoal_carries_the_typed_child_result_into_the_answer",
+      "test/test_thought_answer_adapters.py::test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer",
+      "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]",
+      "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]",
+      "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]"
+    ],
+    [
+      "test/test_compose_review.py::test_zero_temperature_is_valid_and_keeps_the_chooser_gradient",
+      "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+      "test/test_compose_review.py::test_zero_temperature_explore_is_identical_until_the_forced_round",
+      "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+      "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+      "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+      "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+      "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+      "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+      "test/test_compose_review.py::test_zero_temperature_prefix_uses_execution_order_for_packed_ends",
+      "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+      "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+      "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]"
+    ],
+    [
+      "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+      "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+      "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+      "test/test_abstraction_order_canonical.py::test_forward_stamps_stage0_analysis_pi",
+      "test/test_abstraction_order_canonical.py::test_forward_stamps_symbolic_emission_winner_at_pass_slot",
+      "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+      "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+      "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+      "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+      "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+      "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+      "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+      "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent"
+    ],
+    [
+      "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
+      "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+      "test/test_gather_first_percept_reads.py::test_radix_active_searches_do_not_read_physical_reserve",
+      "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only"
+    ],
+    [
+      "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+      "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+      "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+      "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+      "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+      "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+      "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+      "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+      "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
+      "test/test_thought_operation_catalog.py::test_thought_selection_requires_a_checked_executor_at_registry_install",
+      "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config0]",
+      "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+      "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+      "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
+      "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
+      "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
+      "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+      "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+      "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+      "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+      "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+      "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+      "test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops",
+      "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+      "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+      "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+      "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+      "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+      "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+      "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+      "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+      "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views"
+    ],
+    [
+      "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
+      "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
+      "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+      "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+      "test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context",
+      "test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request"
+    ],
+    [
+      "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+      "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+      "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
+      "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
+      "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities"
+    ],
+    [
+      "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+      "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+      "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+      "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+      "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+      "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+      "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+      "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what",
+      "test/test_subspace_what_stm_contract.py::test_grammar_registry_surface_exists",
+      "test/test_subspace_what_stm_contract.py::test_grammar_registry_where_id_namespaces_do_not_collide",
+      "test/test_subspace_what_stm_contract.py::test_grammar_registry_accessors_on_configured_grammar",
+      "test/test_subspace_what_stm_contract.py::test_execute_arity1_dispatches_to_layer_forward",
+      "test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right",
+      "test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum",
+      "test/test_subspace_what_stm_contract.py::test_rule_codebook_class_basics",
+      "test/test_subspace_what_stm_contract.py::test_rule_codebook_attached_grammar_routes_through_namespace",
+      "test/test_subspace_what_stm_contract.py::test_rule_codebook_with_embedding_initializes_xavier",
+      "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_codebook",
+      "test/test_subspace_what_stm_contract.py::test_v_sym_wired_into_grammar_from_symbolic_space",
+      "test/test_subspace_what_stm_contract.py::test_rule_codebook_does_not_determine_parent_vectors",
+      "test/test_subspace_what_stm_contract.py::test_shift_writes_into_first_empty_slot",
+      "test/test_subspace_what_stm_contract.py::test_shift_appends_after_existing_live_slots",
+      "test/test_subspace_what_stm_contract.py::test_shift_raises_on_full_stack",
+      "test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right",
+      "test/test_subspace_what_stm_contract.py::test_reduce_raises_on_stack_underflow",
+      "test/test_subspace_what_stm_contract.py::test_reduce_gradient_flows_to_child_payloads_and_op_params",
+      "test/test_subspace_what_stm_contract.py::test_symbolic_space_owns_signal_router",
+      "test/test_subspace_what_stm_contract.py::test_use_stack_router_flag_default_false",
+      "test/test_subspace_what_stm_contract.py::test_stack_route_forward_runs_and_writes_subspace_what",
+      "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_word_space_current_rules",
+      "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm",
+      "test/test_subspace_what_stm_contract.py::test_stack_router_dispatches_via_syntactic_layer_execute"
+    ],
+    [
+      "test/test_subspace_what_stm_contract.py::test_flag_off_does_not_call_stack_route_forward",
+      "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_roundtrips_through_namespace",
+      "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+      "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+      "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+      "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+      "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+      "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+      "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+      "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass",
+      "test/test_subspace_what_stm_contract.py::test_signal_router_init_sets_layer_attributes",
+      "test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions",
+      "test/test_subspace_what_stm_contract.py::test_forward_without_actions_raises_with_pointer",
+      "test/test_subspace_what_stm_contract.py::test_reverse_dispatches_to_reverse_stack",
+      "test/test_subspace_what_stm_contract.py::test_symbolic_space_stack_route_uses_canonical_forward",
+      "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_language_layer_reverse",
+      "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_off_does_not_call_language_layer",
+      "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules",
+      "test/test_subspace_what_stm_contract.py::test_forward_stack_orchestrates_shift_then_reduce"
+    ],
+    [
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_handles_perturbed_input",
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_returns_nearest_percept_bytes",
+      "test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk",
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_inf_input_raises",
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_nan_input_raises",
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseNullSlotGuard::test_near_zero_input_returns_empty_bytes",
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseEmptyCodebook::test_empty_codebook_returns_empty_bytes",
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_2d_input_returns_list_of_bytes",
+      "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_3d_input_returns_nested_list"
+    ],
+    [
+      "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+      "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+      "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+      "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+      "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+      "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+      "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write"
+    ],
+    [
+      "test/test_sparse_concept_e2e.py::test_word_symbol_defines_order0_native_features_and_object_stays_unwritten",
+      "test/test_sparse_concept_e2e.py::test_meta_is_a_sigma_generalization_over_named_word_and_object_members",
+      "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+      "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+      "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+      "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+      "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+      "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+      "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+      "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+      "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+      "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+      "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+      "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+      "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+      "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+    ],
+    [
+      "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_drops_fully_retired_optimizer_leaf",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+      "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows"
+    ],
+    [
+      "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
+      "test/test_mereology_word_binding.py::test_one_word_object_meta_has_typed_native_members",
+      "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
+      "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders"
+    ],
+    [
+      "test/test_whole_property_codebook.py::test_materialize_property_shape_and_range",
+      "test/test_whole_property_codebook.py::test_property_segments_into_have_and_havenot",
+      "test/test_whole_property_codebook.py::test_property_region_is_low_frequency",
+      "test/test_whole_property_codebook.py::test_materialize_property_is_differentiable",
+      "test/test_whole_property_codebook.py::test_subspace_routes_property_mode_to_codebook",
+      "test/test_whole_property_codebook.py::test_subspace_property_mode_routes_any_codebook",
+      "test/test_whole_property_codebook.py::test_subspace_property_mode_none_without_index",
+      "test/test_whole_property_codebook.py::test_property_codebook_public_reads_share_membership_view",
+      "test/test_whole_property_codebook.py::test_canonical_ws_stage_composes_transformed_property_rows"
+    ],
+    [
+      "test/test_priming_energy.py::test_edges_exposed_undirected",
+      "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+      "test/test_priming_energy.py::test_successive_primes_propagate_further",
+      "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+      "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+      "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order"
+    ],
+    [
+      "test/test_property_tiling.py::test_char_class_letter",
+      "test/test_property_tiling.py::test_char_class_digit",
+      "test/test_property_tiling.py::test_char_class_whitespace",
+      "test/test_property_tiling.py::test_char_class_punct",
+      "test/test_property_tiling.py::test_char_class_or_union",
+      "test/test_property_tiling.py::test_complement_is_the_other_whole",
+      "test/test_property_tiling.py::test_layer_matches_function",
+      "test/test_property_tiling.py::test_batched",
+      "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+      "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+      "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+      "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+      "test/test_property_tiling.py::test_property_spans_letter_runs",
+      "test/test_property_tiling.py::test_property_spans_digit_runs",
+      "test/test_property_tiling.py::test_property_spans_or_union_runs",
+      "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+      "test/test_property_tiling.py::test_property_spans_none_passthrough",
+      "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent"
+    ],
+    [
+      "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+      "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+      "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+      "test/test_packed_reconstruction_parity.py::test_excluded_byte_candidate_preserves_value_and_gradient"
+    ],
+    [
+      "test/test_mereology_raise.py::test_synthesize_over_set_shape_and_binary_equivalence",
+      "test/test_mereology_raise.py::test_conceptualspace_owns_run_structure_layer",
+      "test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words",
+      "test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton",
+      "test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only",
+      "test/test_mereology_raise.py::test_retired_wholespace_taxonomy_writer_is_absent"
+    ],
+    [
+      "test/test_detached_reverse_objective.py::test_reverse_construction_loss_stops_at_sentence_idea",
+      "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout",
+      "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+      "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective"
+    ],
+    [
+      "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
+      "test/test_ternary_truth_store.py::TestSchema::test_np_vp_null_unary",
+      "test/test_ternary_truth_store.py::TestSchema::test_relation_is_np_vp_np",
+      "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_trust_is_separate",
+      "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_explicit_timestamp_advances_clock",
+      "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_set_trust_overwrites",
+      "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_timestamp_monotonic",
+      "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
+      "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+      "test/test_ternary_truth_store.py::TestQueries::test_recent_by_timestamp_desc",
+      "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+      "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_returns_minus_one",
+      "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+      "test/test_ternary_truth_store.py::TestPersistence::test_reset_clears",
+      "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
+      "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+      "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+      "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
+      "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts",
+      "test/test_ternary_truth_store.py::TestOriginProvenance::test_rows_of_origin_filters_in_row_order",
+      "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_out_of_range_raises",
+      "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_tags_row_and_text"
+    ],
+    [
+      "test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic",
+      "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+      "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+      "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+      "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+      "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+    ],
+    [
+      "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+      "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+      "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+    ],
+    [
+      "test/test_role_collapsed_grammar.py::test_grammar_loads",
+      "test/test_role_collapsed_grammar.py::test_perceptualspace_has_everything_start",
+      "test/test_role_collapsed_grammar.py::test_symbolicspace_owns_its_starts",
+      "test/test_role_collapsed_grammar.py::test_no_top_level_start",
+      "test/test_role_collapsed_grammar.py::test_no_retired_relation_or_query_aliases",
+      "test/test_role_collapsed_grammar.py::test_no_pos_or_category_state_names",
+      "test/test_role_collapsed_grammar.py::test_no_category_rename_projection_rules",
+      "test/test_role_collapsed_grammar.py::test_canonical_relation_forms_use_role_names",
+      "test/test_role_collapsed_grammar.py::test_every_relation_rule_has_no_query_attribute",
+      "test/test_role_collapsed_grammar.py::test_operator_coverage",
+      "test/test_role_collapsed_grammar.py::test_forward_reverse_pairing",
+      "test/test_role_collapsed_grammar.py::test_transitional_baseline_uses_the_same_structural_relation_contract",
+      "test/test_role_collapsed_grammar.py::test_sweep_covers_data_grammars",
+      "test/test_role_collapsed_grammar.py::test_grammar_file_conforms_to_role_collapsed_format[complete.grammar]",
+      "test/test_role_collapsed_grammar.py::test_grammar_file_conforms_to_role_collapsed_format[default.grammar]",
+      "test/test_role_collapsed_grammar.py::test_grammar_file_conforms_to_role_collapsed_format[ladder.grammar]",
+      "test/test_role_collapsed_grammar.py::test_grammar_file_conforms_to_role_collapsed_format[shamatha.grammar]",
+      "test/test_role_collapsed_grammar.py::test_grammar_file_conforms_to_role_collapsed_format[tied_reconstruction_output_benchmark.grammar]",
+      "test/test_role_collapsed_grammar.py::test_grammar_file_conforms_to_role_collapsed_format[xor.grammar]"
+    ],
+    [
+      "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+      "test/test_expectation_retention.py::test_estimate_never_displaces_the_last_available_external_observation",
+      "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
+    ],
+    [
+      "test/test_prior_stm_symbol_peer.py::test_full_eight_slot_prior_slab_is_one_indexed_ss_source",
+      "test/test_prior_stm_symbol_peer.py::test_staged_sentence_bank_matches_prior_peer_without_an_inner_lookup",
+      "test/test_prior_stm_symbol_peer.py::test_ss_is_prior_tick_and_never_sees_a_later_push",
+      "test/test_prior_stm_symbol_peer.py::test_unknown_or_inactive_slots_zero_both_what_and_band",
+      "test/test_prior_stm_symbol_peer.py::test_prior_peer_requires_canonical_stm_location_geometry",
+      "test/test_prior_stm_symbol_peer.py::test_fixed_symbolic_loop_preserves_reference_and_raises_order_each_pass",
+      "test/test_prior_stm_symbol_peer.py::test_word_push_then_object_reference_replacement_is_cs_owned_and_masked",
+      "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss"
+    ],
+    [
+      "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+      "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+      "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail"
+    ],
+    [
+      "test/test_reference_table.py::test_nary_bindings_keep_each_selected_extent",
+      "test/test_reference_table.py::test_full_rows_only",
+      "test/test_reference_table.py::test_append_only",
+      "test/test_reference_table.py::test_gate_license_required",
+      "test/test_reference_table.py::test_unknown_word_is_a_query_outcome",
+      "test/test_reference_table.py::test_no_reverse_index_anywhere",
+      "test/test_reference_table.py::test_search_is_object_side_scan_by_dominance",
+      "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+      "test/test_reference_table.py::test_symbol_code_deterministic_identity",
+      "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert",
+      "test/test_reference_table.py::test_minted_whole_is_searchable_by_its_parts",
+      "test/test_reference_table.py::test_bind_gauge_orients_object_row",
+      "test/test_reference_table.py::test_bottom_extent_cached_definable_but_empty",
+      "test/test_reference_table.py::test_top_saturation_detected"
+    ],
+    [
+      "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+      "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+      "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+      "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+      "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+      "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+      "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+      "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+      "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+      "test/test_two_truth_stores.py::test_retired_relative_store_is_absent"
+    ],
+    [
+      "test/test_tied_reconstruction_migration.py::test_empty_rows_and_padding_carry_no_reconstruction_cost[False]",
+      "test/test_tied_reconstruction_migration.py::test_empty_rows_and_padding_carry_no_reconstruction_cost[True]",
+      "test/test_tied_reconstruction_migration.py::test_reverse_replays_pre_fold_after_popping_the_new_word",
+      "test/test_tied_reconstruction_migration.py::test_traced_verb_reverse_uses_the_actual_verb_operand",
+      "test/test_tied_reconstruction_migration.py::test_eager_reverse_evaluates_only_selected_recorded_operators",
+      "test/test_tied_reconstruction_migration.py::test_repeated_row_references_keep_their_occurrence_activations",
+      "test/test_tied_reconstruction_migration.py::test_functional_sigma_inverse_uses_its_learned_affine_bias",
+      "test/test_tied_reconstruction_migration.py::test_owned_input_reconstruction_survives_later_staging",
+      "test/test_tied_reconstruction_migration.py::test_input_reconstruction_does_not_enter_free_generate",
+      "test/test_tied_reconstruction_migration.py::test_zero_recovered_values_are_still_one_completed_traversal",
+      "test/test_tied_reconstruction_migration.py::test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse",
+      "test/test_tied_reconstruction_migration.py::test_enabling_tied_reconstruction_retains_the_owned_ideas",
+      "test/test_tied_reconstruction_migration.py::test_explicit_target_changes_the_score_but_not_the_owned_reconstruction",
+      "test/test_tied_reconstruction_migration.py::test_completed_state_damage_reaches_the_actual_input_surface"
+    ],
+    [
+      "test/test_active_decode_candidates.py::test_radix_ws_decode_searches_bound_active_intersection_with_remap",
+      "test/test_active_decode_candidates.py::test_chunk_reverse_and_peel_preserve_active_prefix_row_ids",
+      "test/test_active_decode_candidates.py::test_impenetrable_trust_slices_physical_ema_to_active_prefix"
+    ],
+    [
+      "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+      "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+      "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[legacy]",
+      "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+      "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+      "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]"
+    ],
+    [
+      "test/test_idea_decode_d3.py::test_idea_decode_defaults_off",
+      "test/test_idea_decode_d3.py::test_grammar_decode_runs_on_syntactic_ws",
+      "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+      "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+      "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+    ],
+    [
+      "test/test_conceptualize.py::test_conceptualize_dispatch"
+    ],
+    [
+      "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+      "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+      "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates"
+    ],
+    [
+      "test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+      "test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+      "test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+      "test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+      "test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+      "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+      "test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+      "test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+      "test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+      "test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+      "test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+      "test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+      "test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection"
+    ],
+    [
+      "test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+      "test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+      "test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references",
+      "test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity",
+      "test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand"
+    ],
+    [
+      "test/test_item7_clause_state.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+      "test/test_item7_clause_state.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+      "test/test_item7_clause_state.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+      "test/test_item7_clause_state.py::test_committed_stm_uses_one_idea_slot_or_three_relative_slots"
+    ],
+    [
+      "test/test_item7_context.py::test_situation_weight_adds_only_bounded_prior_anchors",
+      "test/test_item7_context.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+      "test/test_item7_context.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+    ],
+    [
+      "test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot",
+      "test/test_item7_end_state_storage.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+      "test/test_item7_end_state_storage.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+      "test/test_item7_end_state_storage.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+      "test/test_item7_end_state_storage.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+      "test/test_item7_end_state_storage.py::test_answer_and_recall_own_completed_fields_without_programs",
+      "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+      "test/test_item7_end_state_storage.py::test_writer_takes_relation_kind_from_the_rel_identity",
+      "test/test_item7_end_state_storage.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+      "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+      "test/test_item7_end_state_storage.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+    ],
+    [
+      "test/test_item7_expectation.py::test_kind_is_supervised_independently_of_role_vectors",
+      "test/test_item7_expectation.py::test_kind_preview_and_committed_comparison_agree",
+      "test/test_item7_expectation.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind"
+    ],
+    [
+      "test/test_item7_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
+      "test/test_item7_grammar.py::test_clause_facets_preserve_operator_input_roles"
+    ],
+    [
+      "test/test_item7_property_only.py::test_configuration_without_property_element_binds_at_first_sentence",
+      "test/test_item7_property_only.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+      "test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties"
+    ],
+    [
+      "test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+      "test/test_item7_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+      "test/test_item7_provenance.py::test_external_assertion_context_cannot_declare_a_kind"
+    ],
+    [
+      "test/test_item7_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+      "test/test_item7_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+      "test/test_item7_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+      "test/test_item7_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+      "test/test_item7_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+      "test/test_item7_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+      "test/test_item7_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+      "test/test_item7_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+    ],
+    [
+      "test/test_item7_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+      "test/test_item7_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+      "test/test_item7_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+      "test/test_item7_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+      "test/test_item7_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+    ],
+    [
+      "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+      "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+      "test/test_item7_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]"
+    ],
+    [
+      "test/test_item7_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+      "test/test_item7_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+      "test/test_item7_storage.py::test_relation_kinds_have_no_catch_all",
+      "test/test_item7_storage.py::test_relation_rows_never_enter_luminosity",
+      "test/test_item7_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+      "test/test_item7_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+      "test/test_item7_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+      "test/test_item7_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+      "test/test_item7_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+      "test/test_item7_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+      "test/test_item7_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+      "test/test_item7_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+      "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+      "test/test_item7_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+      "test/test_item7_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+      "test/test_item7_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+      "test/test_item7_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+      "test/test_item7_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+      "test/test_item7_storage.py::test_invalid_parent_never_partially_writes_its_child",
+      "test/test_item7_storage.py::test_migration_discards_dependents_of_retired_rows",
+      "test/test_item7_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+      "test/test_item7_storage.py::test_full_store_can_update_an_existing_relation",
+      "test/test_item7_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles"
+    ],
+    [
+      "test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+      "test/test_item7_taxonomy.py::test_one_meta_generalizes_over_several_words_and_objects",
+      "test/test_item7_taxonomy.py::test_meta_binding_does_not_discriminate_at_binding_time",
+      "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+      "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+      "test/test_item7_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+      "test/test_item7_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+      "test/test_item7_taxonomy.py::test_retiring_one_testimony_object_preserves_its_shared_meta",
+      "test/test_item7_taxonomy.py::test_restore_rebuilds_native_meta_membership_and_invalidates_direct_index",
+      "test/test_item7_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+      "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[width]",
+      "test/test_item7_taxonomy.py::test_native_phrase_admission_is_atomic[capacity]",
+      "test/test_item7_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular"
+    ],
+    [
+      "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+      "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+      "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+    ],
+    [
+      "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+      "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+      "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+    ]
+  ]
+}

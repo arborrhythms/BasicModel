@@ -1,0 +1,18 @@
+F...........                                                             [100%]
+=================================== FAILURES ===================================
+_________ test_default_interpret_reuses_existing_kind_without_minting __________
+test/test_item9b_corrections.py:16: in test_default_interpret_reuses_existing_kind_without_minting
+    assert interpret.forward(word, order=1) == kind
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:104: in forward
+    raise ValueError('requested grammar order has no unambiguous source')
+E   ValueError: requested grammar order has no unambiguous source
+=============================== warnings summary ===============================
+test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting
+1 failed, 11 passed, 1 warning in 77.31s (0:01:17)

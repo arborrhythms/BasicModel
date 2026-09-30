@@ -1,0 +1,113 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "completed": [
+    "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+    "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+    "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_reuses_provisional_testimony_and_reverses_by_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004638292011804879,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002762999967671931,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020936670480296016,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.087496437132359e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020915840286761522,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_unused_one_off_testimony_is_forgotten_at_the_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022284999722614884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 276.2769502910087,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_native_parallel_pass_and_boundary_do_not_interpret_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07717629196122289,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01044770807493478,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013415624969638884,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

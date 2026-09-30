@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/run/worker-159.recycle.json"
+}

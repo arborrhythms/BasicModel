@@ -1,0 +1,50 @@
+FsF.                                                                     [100%]
+=================================== FAILURES ===================================
+________ test_aligned_provenance_preserves_prior_bearing_forward_event _________
+test/test_aligned_fold_binding.py:161: in test_aligned_provenance_preserves_prior_bearing_forward_event
+    model, _ = _serial_model_and_batch()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_serial_object_meta.py:41: in _serial_model_and_batch
+    m, _ = Models.BasicModel.from_config(cfg_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17300: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)
+_________ test_concept_fold_support_roundtrips_with_conceptual_extras __________
+test/test_aligned_fold_binding.py:327: in test_concept_fold_support_roundtrips_with_conceptual_extras
+    model, _ = _serial_model_and_batch()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_serial_object_meta.py:41: in _serial_model_and_batch
+    m, _ = Models.BasicModel.from_config(cfg_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7100: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1908: in create_from_config
+    self.create(
+bin/Models.py:7120: in create
+    return self._create_per_stage(
+bin/Models.py:17300: in _create_per_stage
+    TheXMLConfig.validate()
+bin/util.py:1601: in validate
+    raise ValueError(
+E   ValueError: Config requirement failed: WholeSpace: non-codebook space requires nVectors (65536) == nActive (1024)
+=========================== short test summary info ============================
+FAILED test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event
+FAILED test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras
+2 failed, 1 passed, 1 skipped in 14.32s

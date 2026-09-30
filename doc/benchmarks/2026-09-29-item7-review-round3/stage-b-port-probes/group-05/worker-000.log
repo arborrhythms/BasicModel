@@ -1,0 +1,73 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_____________ test_explicit_word_triple_capacity_failure_is_atomic _____________
+test/test_concept_capacity_policy.py:75: in test_explicit_word_triple_capacity_failure_is_atomic
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    "word_obj_meta": dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'
+_____ test_automatic_capacity_mode_reuses_known_identity_without_recycling _____
+test/test_concept_capacity_policy.py:88: in test_automatic_capacity_mode_reuses_known_identity_without_recycling
+    known = cs.interpret_word([10], (0,), key="known")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19215: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+________ test_serial_property_autobind_does_not_persist_sentence_chain _________
+test/test_concept_capacity_policy.py:116: in test_serial_property_autobind_does_not_persist_sentence_chain
+    cs._autobind_property_concepts(
+bin/Spaces.py:16665: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError('interpret requires the common truth store')
+E   RuntimeError: interpret requires the common truth store
+________ test_rejected_word_does_not_consume_location_fallback_rows[1] _________
+test/test_concept_capacity_policy.py:137: in test_rejected_word_does_not_consume_location_fallback_rows
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    "word_obj_meta": dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'
+________ test_rejected_word_does_not_consume_location_fallback_rows[2] _________
+test/test_concept_capacity_policy.py:137: in test_rejected_word_does_not_consume_location_fallback_rows
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    "word_obj_meta": dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'
+______ test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span ______
+test/test_concept_capacity_policy.py:160: in test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span
+    before = _allocator_snapshot(cs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_concept_capacity_policy.py:57: in _allocator_snapshot
+    "word_obj_meta": dict(alloc.word_obj_meta),
+                          ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptAllocator' object has no attribute 'word_obj_meta'
+=============================== warnings summary ===============================
+test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_capacity_policy.py::test_explicit_word_triple_capacity_failure_is_atomic
+FAILED test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling
+FAILED test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain
+FAILED test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]
+FAILED test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]
+FAILED test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span
+6 failed, 1 warning in 2.44s

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 3.4564307909458876,
+      "message": "doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py:30: in test_more_than_eight_words_reuse_the_attended_field\n    assert len(slot) == 1, word\nE   AssertionError: lynx\nE   assert 0 == 1\nE    +  where 0 = len(tensor([], dtype=torch.int64))",
+      "stdout": "{\"form\": \"lynx\", \"lookup\": [12], \"word\": null, \"objects\": [], \"carrier_ids\": [-1, -1, -1, -1, -1, -1, -1, -1], \"source_is_terminal\": true}\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

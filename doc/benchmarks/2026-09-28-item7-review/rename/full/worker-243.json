@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols"
+  ],
+  "completed": [
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05149258393794298,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018901499919593334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018562500015832484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019365417072549462,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

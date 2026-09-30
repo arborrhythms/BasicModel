@@ -276,10 +276,9 @@ def test_seventh_source_is_location_masked_and_unbind_ignores_ss():
     }]
     assert torch.equal(
         out._aligned_source_validity[:, -1], valid)
-    assert WholeSpace._normalize_fold_support(
-        out._fold_support)["source_count"] == 7
-    assert WholeSpace._normalize_fold_support(
-        out._fold_support)["symbol_sources"][0]["prior_tick"] is True
+    support = cs.record_concept_fold_support(1, out._fold_support, actual_order=1)['support']
+    assert support["source_count"] == 7
+    assert support["symbol_sources"][0]["prior_tick"] is True
 
     recovered_part, recovered_whole = cs.unbind(out)
     assert torch.equal(recovered_part, part[-1])

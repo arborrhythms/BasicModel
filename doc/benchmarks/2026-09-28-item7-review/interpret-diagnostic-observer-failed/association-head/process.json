@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/diagnose_interpret.py",
+    "--mode",
+    "association-head",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/interpret-diagnostic/association-head/baseline.json"
+  ],
+  "pid": 44036,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 752862648,
+  "elapsed_seconds": 4.3775261249393225,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/interpret-diagnostic/association-head/run.log"
+}

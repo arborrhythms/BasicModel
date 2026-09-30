@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 15559356392,
+  "elapsed_seconds": 10.20438079093583
+}

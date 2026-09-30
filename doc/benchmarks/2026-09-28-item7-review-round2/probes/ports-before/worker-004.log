@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________________ test_whole_space_init_scale_wiring ______________________
+/Users/arogers/github/WikiOracle/basicmodel/test/test_init_scale.py:131: in test_whole_space_init_scale_wiring
+    assert ws.analysis_store.init_scale == pytest.approx(0.02)
+           ^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?
+=========================== short test summary info ============================
+FAILED test/test_init_scale.py::test_whole_space_init_scale_wiring - Attribut...
+1 failed in 2.27s

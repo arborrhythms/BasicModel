@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_corrections.py::test_percept_group_keeps_each_members_band_and_one_field_time"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-181.recycle.json"
+}

@@ -1,0 +1,168 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+    "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+    "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+    "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+    "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+    "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+    "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures"
+  ],
+  "completed": [
+    "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+    "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+    "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+    "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+    "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+    "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+    "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18/worker-000.json"
+      ],
+      "pid": 12901,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435717536,
+      "elapsed_seconds": 4.813909916207194,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+        "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+        "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+        "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+        "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+        "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+        "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures"
+      ],
+      "completed": [
+        "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+        "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+        "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+        "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+        "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+        "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+        "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00682787480764091,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005635667126625776,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0053385000210255384,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0031996669713407755,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003248792141675949,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0038382080383598804,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0034468751400709152,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18",
+  "elapsed_seconds": 9.742163582937792,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 435717536,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18/collect.json"
+    ],
+    "pid": 12892,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430621896,
+    "elapsed_seconds": 4.621684125158936,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/thought-reasoning/group-18/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+        "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
+        "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+        "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+        "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+        "test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget",
+        "test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

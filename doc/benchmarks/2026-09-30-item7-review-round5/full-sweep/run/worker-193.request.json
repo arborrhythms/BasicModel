@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/worker-193.recycle.json"
+}

@@ -1,0 +1,3 @@
+test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+
+1 test collected in 0.45s

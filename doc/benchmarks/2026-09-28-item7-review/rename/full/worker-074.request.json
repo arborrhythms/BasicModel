@@ -1,0 +1,18 @@
+{
+  "selectors": [
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_item9b_corrections.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_item9b_corrections.py::test_context_pass_cannot_backpropagate_or_step",
+    "test/test_item9b_corrections.py::test_model_owns_one_ladder_across_all_spaces",
+    "test/test_item9b_corrections.py::test_large_registry_addresses_roundtrip_through_both_phases",
+    "test/test_item9b_corrections.py::test_copy_preserves_the_single_registry_ladder",
+    "test/test_item9b_corrections.py::test_content_only_encode_decode_preserves_all_coordinates",
+    "test/test_item9b_corrections.py::test_reset_clears_only_the_selected_fields_time_band",
+    "test/test_item9b_corrections.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "test/test_item9b_corrections.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+    "test/test_item9b_corrections.py::test_native_percepts_encode_input_starts_and_share_time",
+    "test/test_item9b_corrections.py::test_percept_group_keeps_each_members_band_and_one_field_time"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-074.recycle.json"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "completed": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 182.64121758309193,
+      "message": "test/test_output_path_supervised.py:458: in test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer\n    expected = owner.similarity_codebook.getW()[owner._csw_row_of(concept_id)]\n                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:18583: in _csw_row_of\n    rows = self._csw_rows_of(concept_id)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:18571: in _csw_rows_of\n    r = ly.row_of((ns, int(concept_id)))\n                       ^^^^^^^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

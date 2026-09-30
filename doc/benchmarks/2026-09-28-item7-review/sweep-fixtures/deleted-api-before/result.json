@@ -1,0 +1,1034 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops",
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded",
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+    "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+    "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail",
+    "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+    "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+    "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+    "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop",
+    "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+    "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+    "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+    "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook",
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols",
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+    "test/test_search_then_mint.py::test_gate_requires_the_knob",
+    "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+    "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+    "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+    "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+    "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+    "test/test_search_then_mint.py::test_folds_never_create_rows",
+    "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+    "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+    "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+    "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+    "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+    "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+    "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+    "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+    "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+    "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+    "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+  ],
+  "completed": [
+    "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes",
+    "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops",
+    "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+    "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+    "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+    "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded",
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+    "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+    "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail",
+    "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+    "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+    "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+    "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop",
+    "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+    "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+    "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+    "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook",
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols",
+    "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+    "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+    "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+    "test/test_search_then_mint.py::test_gate_requires_the_knob",
+    "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+    "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+    "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+    "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+    "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+    "test/test_search_then_mint.py::test_folds_never_create_rows",
+    "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+    "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+    "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+    "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+    "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+    "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+    "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+    "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+    "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+    "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+    "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+    "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-000.json"
+      ],
+      "pid": 51697,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 431949168,
+      "elapsed_seconds": 3.6275225409772247,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops"
+      ],
+      "completed": [
+        "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0001550830202177167,
+          "message": "test/test_operator_codebook_shaping.py:50: in test_shape_operators_selects_correct_op_per_context\n    ws = _ws_with_ops(\"conjunction\", \"disjunction\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_operator_codebook_shaping.py:36: in _ws_with_ops\n    ws._operation_vectors[name] = ws._seed_operator_vector(name)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00010283291339874268,
+          "message": "test/test_operator_codebook_shaping.py:65: in test_shape_operators_writes_back_to_codebook\n    ws = _ws_with_ops(\"conjunction\", \"disjunction\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_operator_codebook_shaping.py:36: in _ws_with_ops\n    ws._operation_vectors[name] = ws._seed_operator_vector(name)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 9.212503209710121e-05,
+          "message": "test/test_operator_codebook_shaping.py:77: in test_shape_operators_weak_signal_still_shapes\n    ws = _ws_with_ops(\"conjunction\", \"disjunction\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_operator_codebook_shaping.py:36: in _ws_with_ops\n    ws._operation_vectors[name] = ws._seed_operator_vector(name)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.737493772059679e-05,
+          "message": "test/test_operator_codebook_shaping.py:89: in test_shape_operators_handles_unary_and_binary_ops\n    ws = _ws_with_ops(\"exist\", \"conjunction\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_operator_codebook_shaping.py:36: in _ws_with_ops\n    ws._operation_vectors[name] = ws._seed_operator_vector(name)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-001.json"
+      ],
+      "pid": 51706,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 442467624,
+      "elapsed_seconds": 3.8131259579677135,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+        "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+        "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+        "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+        "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none"
+      ],
+      "completed": [
+        "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+        "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+        "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+        "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+        "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.04824475001078099,
+          "message": "test/test_topk_priming_codebook_growth.py:67: in test_stale_short_boosts_after_codebook_growth_no_crash\n    mask = ss._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02299358299933374,
+          "message": "test/test_topk_priming_codebook_growth.py:81: in test_stale_long_boosts_truncated_no_crash\n    mask = ss._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02285845798905939,
+          "message": "test/test_topk_priming_codebook_growth.py:90: in test_no_intent_is_byte_identical_noop\n    assert ss._topk_priming_mask(act) is None\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.022848083055578172,
+          "message": "test/test_topk_priming_codebook_growth.py:98: in test_exact_length_boosts_unchanged\n    mask = ss._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.022903540986590087,
+          "message": "test/test_topk_priming_codebook_growth.py:109: in test_n_equals_one_returns_none\n    assert ss._topk_priming_mask(act) is None\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-002.json"
+      ],
+      "pid": 51715,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 438207808,
+      "elapsed_seconds": 3.747761333012022,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+        "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+        "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded"
+      ],
+      "completed": [
+        "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+        "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+        "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.045838332967832685,
+          "message": "test/test_ps_ss_binding.py:67: in test_ps_to_ws_null_before_binding\n    vec, pos, grounded = ws.resolve_ps_terminal(4242, promote_threshold=2)\n                         ^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02254937496036291,
+          "message": "test/test_ps_ss_binding.py:77: in test_ps_to_ws_binding_after_repetition\n    _, _, g1 = ws.resolve_ps_terminal(pid, promote_threshold=2)\n               ^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.022389000048860908,
+          "message": "test/test_ps_ss_binding.py:94: in test_byte_fallback_terminal_is_never_grounded\n    vec, pos, grounded = ws.resolve_ps_terminal(-1, promote_threshold=2)\n                         ^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-003.json"
+      ],
+      "pid": 51725,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 436372824,
+      "elapsed_seconds": 3.6799053329741582,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+        "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+        "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+        "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+        "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+        "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+        "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail"
+      ],
+      "completed": [
+        "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+        "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+        "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+        "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+        "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+        "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+        "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009042910533025861,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00043699995148926973,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00030633294954895973,
+          "message": "test/test_active_codebook_reads.py:85: in test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match\n    row, _distance = ws.nearest_ws_row(query)\n                     ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'nearest_ws_row'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00033416692167520523,
+          "message": "test/test_active_codebook_reads.py:106: in test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation\n    ws.ensure_ws_position(3)\n    ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'ensure_ws_position'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04147375002503395,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00030083395540714264,
+          "message": "test/test_active_codebook_reads.py:136: in test_topk_priming_scores_only_active_rows\n    mask = ws._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00028799998108297586,
+          "message": "test/test_active_codebook_reads.py:149: in test_semantic_arrangement_is_invariant_to_inactive_tail\n    first = ws.semantic_arrangement_loss(torch.tensor([0]))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'semantic_arrangement_loss'. Did you mean: 'semantic_arrangement_weight'?",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-004.json"
+      ],
+      "pid": 51758,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 425968960,
+      "elapsed_seconds": 3.6410352090606466,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+        "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+        "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+        "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop"
+      ],
+      "completed": [
+        "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+        "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+        "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+        "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00022495898883789778,
+          "message": "test/test_analysis_attention_gate.py:41: in test_no_intent_is_a_noop\n    s = _stub(boosts=None)\n        ^^^^^^^^^^^^^^^^^^\ntest/test_analysis_attention_gate.py:36: in _stub\n    WholeSpace._topk_priming_mask, s)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0027373749762773514,
+          "message": "test/test_analysis_attention_gate.py:49: in test_mask_keeps_top_half_and_is_shape_safe\n    s = _stub(boosts=boosts)\n        ^^^^^^^^^^^^^^^^^^^^\ntest/test_analysis_attention_gate.py:36: in _stub\n    WholeSpace._topk_priming_mask, s)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0003892079694196582,
+          "message": "test/test_analysis_attention_gate.py:70: in test_priming_selects_the_aligned_positions\n    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.758297190070152e-05,
+          "message": "test/test_analysis_attention_gate.py:87: in test_no_codebook_is_a_noop\n    s._topk_priming_mask = types.MethodType(WholeSpace._topk_priming_mask, s)\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'WholeSpace' has no attribute '_topk_priming_mask'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-005.json"
+      ],
+      "pid": 51766,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 474563856,
+      "elapsed_seconds": 3.713438375038095,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "completed": [
+        "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0007738749263808131,
+          "message": "test/test_semantic_categories_pipeline.py:42: in test_shape_then_recover_categorizes_by_operator_effect\n    ws = _ws_with_ops(\"conjunction\", \"disjunction\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_semantic_categories_pipeline.py:33: in _ws_with_ops\n    ws._operation_vectors[name] = ws._seed_operator_vector(name)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_seed_operator_vector'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0010789170628413558,
+          "message": "test/test_semantic_categories_pipeline.py:75: in test_recovers_on_transitional_grammar_participation\n    g.load_from_grammar_file(os.path.join(\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-006.json"
+      ],
+      "pid": 51797,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 435176744,
+      "elapsed_seconds": 3.6734588750405237,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+        "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+        "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook"
+      ],
+      "completed": [
+        "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+        "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+        "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002487374935299158,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003382499562576413,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.045770375058054924,
+          "message": "test/test_operator_superposition.py:106: in test_operator_superposition_resolves_against_codebook\n    qv = ws.operation_vector(target)\n         ^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'operation_vector'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-007.json"
+      ],
+      "pid": 51806,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 441206128,
+      "elapsed_seconds": 3.8130557499825954,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+        "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+        "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+        "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols"
+      ],
+      "completed": [
+        "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+        "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+        "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+        "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.046073334058746696,
+          "message": "test/test_ss_codebook_operations.py:86: in test_operations_inserted_into_ws_codebook\n    pos_map = ws.insert_operations(g)\n              ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.023153375019319355,
+          "message": "test/test_ss_codebook_operations.py:117: in test_build_auto_inserts_operations\n    assert ws.operation_position(op) is not None, (\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'operation_position'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02285804192069918,
+          "message": "test/test_ss_codebook_operations.py:127: in test_insert_operations_is_idempotent\n    first = ws.insert_operations(g)\n            ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.023026666953228414,
+          "message": "test/test_ss_codebook_operations.py:140: in test_operations_are_distinct_from_meaning_symbols\n    pos_map = ws.insert_operations(g)\n              ^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-008.json"
+      ],
+      "pid": 51815,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 473793760,
+      "elapsed_seconds": 3.8706377079943195,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+        "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+        "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+      ],
+      "completed": [
+        "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+        "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+        "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0001787920482456684,
+          "message": "test/test_merge_structural_not_operator.py:48: in test_merge_not_inserted_as_operator\n    ws, g = _ws_and_grammar()\n            ^^^^^^^^^^^^^^^^^\ntest/test_merge_structural_not_operator.py:40: in _ws_and_grammar\n    g.load_from_grammar_file(grammar_file)\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0001177499070763588,
+          "message": "test/test_merge_structural_not_operator.py:60: in test_semantic_operators_still_inserted\n    ws, g = _ws_and_grammar()\n            ^^^^^^^^^^^^^^^^^\ntest/test_merge_structural_not_operator.py:40: in _ws_and_grammar\n    g.load_from_grammar_file(grammar_file)\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00011912500485777855,
+          "message": "test/test_merge_structural_not_operator.py:69: in test_only_semantic_operators_in_codebook\n    ws, g = _ws_and_grammar()\n            ^^^^^^^^^^^^^^^^^\ntest/test_merge_structural_not_operator.py:40: in _ws_and_grammar\n    g.load_from_grammar_file(grammar_file)\nbin/Language.py:2021: in load_from_grammar_file\n    cfg = load_grammar(filename)\n          ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:472: in load_grammar\n    raise FileNotFoundError(f\"Grammar file not found: {path}\")\nE   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-009.json"
+      ],
+      "pid": 51858,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 429835560,
+      "elapsed_seconds": 3.6409553750418127,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_search_then_mint.py::test_gate_requires_the_knob",
+        "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+        "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+        "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+        "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+        "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+        "test/test_search_then_mint.py::test_folds_never_create_rows"
+      ],
+      "completed": [
+        "test/test_search_then_mint.py::test_gate_requires_the_knob",
+        "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+        "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+        "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+        "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+        "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+        "test/test_search_then_mint.py::test_folds_never_create_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_search_then_mint.py::test_gate_requires_the_knob",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00012900005094707012,
+          "message": "test/test_search_then_mint.py:49: in test_gate_requires_the_knob\n    ws.interpret_word(3)\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0001068750862032175,
+          "message": "test/test_search_then_mint.py:60: in test_unlicensed_miss_is_a_placeholder_never_a_row\n    d = ws.interpret_word(7, licensed=False)\n        ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.804199751466513e-05,
+          "message": "test/test_search_then_mint.py:73: in test_licensed_miss_mints_then_hits\n    d1 = ws.interpret_word(7, licensed=True, object_id=2)\n         ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.858297951519489e-05,
+          "message": "test/test_search_then_mint.py:90: in test_licensed_miss_without_object_stays_placeholder\n    d = ws.interpret_word(9, licensed=True, object_id=None)\n        ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00021404202561825514,
+          "message": "test/test_search_then_mint.py:103: in test_mint_gauge_orients_object_row\n    d = ws.interpret_word(5, licensed=True, object_id=0,\n        ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00018641597125679255,
+          "message": "test/test_search_then_mint.py:138: in test_mint_shift_pushes_the_oriented_row\n    d = ws.shift_word(ss, 0, 9, rows, licensed=True, object_id=1,\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_search_then_mint.py::test_folds_never_create_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.533394429832697e-05,
+          "message": "test/test_search_then_mint.py:157: in test_folds_never_create_rows\n    ws.interpret_word(1, licensed=True, object_id=0)\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-010.json"
+      ],
+      "pid": 51866,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 429950248,
+      "elapsed_seconds": 3.6681280839256942,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+        "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+        "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+        "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+        "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+        "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+        "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+        "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+        "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+        "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+        "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched"
+      ],
+      "completed": [
+        "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+        "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+        "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+        "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+        "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+        "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+        "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+        "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+        "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+        "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+        "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000325417029671371,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002633749973028898,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001676660031080246,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00012695800978690386,
+          "message": "test/test_serial_stm_split.py:140: in test_shift_pushes_the_semantic_referent\n    ws = _bound_ss(rows)\n         ^^^^^^^^^^^^^^^\ntest/test_serial_stm_split.py:131: in _bound_ss\n    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00011987506877630949,
+          "message": "test/test_serial_stm_split.py:157: in test_unknown_word_shifts_ignorance_placeholder\n    d = ws.shift_word(ss, 0, 99, rows, licensed=False)\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00011691695544868708,
+          "message": "test/test_serial_stm_split.py:173: in test_marker_word_binds_router_and_shifts_nothing\n    d = ws.shift_word(ss, 0, 5, rows, marker=True)\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0002502909628674388,
+          "message": "test/test_serial_stm_split.py:192: in test_mention_shifts_the_word_code_verbatim\n    d = ws.shift_word(ss, 0, 7, rows, mention=True, word_vec=code)\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00010837498120963573,
+          "message": "test/test_serial_stm_split.py:211: in test_one_move_one_workspace_write\n    ws = _bound_ss(rows)\n         ^^^^^^^^^^^^^^^\ntest/test_serial_stm_split.py:131: in _bound_ss\n    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00014483300037682056,
+          "message": "test/test_serial_stm_split.py:239: in test_deref_round_trip_preserves_extent\n    ws.interpret_word(7, licensed=True, object_id=1, extent=ext)\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0015915840631350875,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001231249189004302,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-011.json"
+      ],
+      "pid": 51874,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 457180528,
+      "elapsed_seconds": 3.7349746669642627,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+        "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+      ],
+      "completed": [
+        "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+        "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0024625000078231096,
+          "message": "test/test_basicmodel.py:3086: in test_symbol_objective_residual_primary_l1_secondary\n    terms = sym._compute_symbol_terms(predicted, target=target)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_compute_symbol_terms'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0018078749999403954,
+          "message": "test/test_basicmodel.py:3127: in test_symbol_objective_uses_nearest_codebook_target\n    terms = sym._compute_symbol_terms(predicted, use_codebook_target=True)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_compute_symbol_terms'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 2147483648,
+    "aggregate_memory_bytes": 2147483648,
+    "per_worker_memory_bytes": 2147483648,
+    "workers": 1,
+    "worker_seconds": 180,
+    "suite_seconds": 600,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before",
+  "elapsed_seconds": 50.01971458399203,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 474563856,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/collect.json"
+    ],
+    "pid": 51647,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435979536,
+    "elapsed_seconds": 4.52143750002142,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/sweep-fixtures/deleted-api-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_operator_codebook_shaping.py::test_shape_operators_selects_correct_op_per_context",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_writes_back_to_codebook",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_weak_signal_still_shapes",
+        "test/test_operator_codebook_shaping.py::test_shape_operators_handles_unary_and_binary_ops",
+        "test/test_topk_priming_codebook_growth.py::test_stale_short_boosts_after_codebook_growth_no_crash",
+        "test/test_topk_priming_codebook_growth.py::test_stale_long_boosts_truncated_no_crash",
+        "test/test_topk_priming_codebook_growth.py::test_no_intent_is_byte_identical_noop",
+        "test/test_topk_priming_codebook_growth.py::test_exact_length_boosts_unchanged",
+        "test/test_topk_priming_codebook_growth.py::test_n_equals_one_returns_none",
+        "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+        "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+        "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded",
+        "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+        "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+        "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+        "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+        "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+        "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+        "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail",
+        "test/test_analysis_attention_gate.py::test_no_intent_is_a_noop",
+        "test/test_analysis_attention_gate.py::test_mask_keeps_top_half_and_is_shape_safe",
+        "test/test_analysis_attention_gate.py::test_priming_selects_the_aligned_positions",
+        "test/test_analysis_attention_gate.py::test_no_codebook_is_a_noop",
+        "test/test_semantic_categories_pipeline.py::test_shape_then_recover_categorizes_by_operator_effect",
+        "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+        "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+        "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+        "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook",
+        "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+        "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+        "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+        "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols",
+        "test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator",
+        "test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted",
+        "test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook",
+        "test/test_search_then_mint.py::test_gate_requires_the_knob",
+        "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+        "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+        "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+        "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+        "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+        "test/test_search_then_mint.py::test_folds_never_create_rows",
+        "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+        "test/test_serial_stm_split.py::test_constituent_capacity_is_the_miller_cap",
+        "test/test_serial_stm_split.py::test_split_replaces_whole_with_parts",
+        "test/test_serial_stm_split.py::test_shift_pushes_the_semantic_referent",
+        "test/test_serial_stm_split.py::test_unknown_word_shifts_ignorance_placeholder",
+        "test/test_serial_stm_split.py::test_marker_word_binds_router_and_shifts_nothing",
+        "test/test_serial_stm_split.py::test_mention_shifts_the_word_code_verbatim",
+        "test/test_serial_stm_split.py::test_one_move_one_workspace_write",
+        "test/test_serial_stm_split.py::test_deref_round_trip_preserves_extent",
+        "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
+        "test/test_serial_stm_split.py::test_parallel_mode_leaves_serial_stacks_untouched",
+        "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_residual_primary_l1_secondary",
+        "test/test_basicmodel.py::TestSymbolObjective::test_symbol_objective_uses_nearest_codebook_target"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,2529 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ TestXorGrammarLearnsXor.test_xor_class_accuracy ________________
+test/test_explicit_dimensions.py:248: in test_xor_class_accuracy
+    self.assertGreaterEqual(
+E   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Train Loss: output=0.1762, reconstruction=0.3332
+Epoch [2/400]
+batch = 0 (Δ=0.209s, 100.00%)
+Train Loss: output=0.1835, reconstruction=0.3941
+Epoch [3/400]
+batch = 0 (Δ=0.192s, 100.00%)
+Train Loss: output=0.1760, reconstruction=0.3798
+Epoch [4/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1761, reconstruction=0.4536
+Epoch [5/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1790, reconstruction=0.3933
+Epoch [6/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1772, reconstruction=0.1942
+Epoch [7/400]
+batch = 0 (Δ=0.201s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.1802
+Epoch [8/400]
+batch = 0 (Δ=0.201s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.3902
+Epoch [9/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1766, reconstruction=0.3611
+Epoch [10/400]
+batch = 0 (Δ=0.203s, 100.00%)
+Train Loss: output=0.1764, reconstruction=0.3334
+Epoch [11/400]
+batch = 0 (Δ=0.200s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2104
+Epoch [12/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.2139
+Epoch [13/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.2318
+Epoch [14/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1758, reconstruction=0.1269
+Epoch [15/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1965
+Epoch [16/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.2046
+Epoch [17/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.2149
+Epoch [18/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.2198
+Epoch [19/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.2010
+Epoch [20/400]
+batch = 0 (Δ=0.202s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.2757
+Epoch [21/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.2011
+Epoch [22/400]
+batch = 0 (Δ=0.132s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.2263
+Epoch [23/400]
+batch = 0 (Δ=0.133s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2072
+Epoch [24/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.1986
+Epoch [25/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.1875
+Epoch [26/400]
+batch = 0 (Δ=0.159s, 100.00%)
+Train Loss: output=0.1738, reconstruction=0.1616
+Epoch [27/400]
+batch = 0 (Δ=0.200s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.1755
+Epoch [28/400]
+batch = 0 (Δ=0.201s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2551
+Epoch [29/400]
+batch = 0 (Δ=0.202s, 100.00%)
+Train Loss: output=0.1738, reconstruction=0.1826
+Epoch [30/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.2028
+Epoch [31/400]
+batch = 0 (Δ=0.265s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.1781
+Epoch [32/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.2235
+Epoch [33/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.1914
+Epoch [34/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.2340
+Epoch [35/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1730, reconstruction=0.1645
+Epoch [36/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1730, reconstruction=0.1462
+Epoch [37/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1728, reconstruction=0.1358
+Epoch [38/400]
+batch = 0 (Δ=0.190s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.1837
+Epoch [39/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.2486
+Epoch [40/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1732, reconstruction=0.1857
+Epoch [41/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1732, reconstruction=0.2063
+Epoch [42/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.1391
+Epoch [43/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.1954
+Epoch [44/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.2478
+Epoch [45/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.1926
+Epoch [46/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.1376
+Epoch [47/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.1920
+Epoch [48/400]
+batch = 0 (Δ=0.192s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.1889
+Epoch [49/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.2392
+Epoch [50/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.2343
+Epoch [51/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.2319
+Epoch [52/400]
+batch = 0 (Δ=0.192s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.2296
+Epoch [53/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1738, reconstruction=0.2282
+Epoch [54/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.2273
+Epoch [55/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.2261
+Epoch [56/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2262
+Epoch [57/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2261
+Epoch [58/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.2250
+Epoch [59/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.2239
+Epoch [60/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.2229
+Epoch [61/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.2215
+Epoch [62/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.2190
+Epoch [63/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.2167
+Epoch [64/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2178
+Epoch [65/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2198
+Epoch [66/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1405
+Epoch [67/400]
+batch = 0 (Δ=0.267s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2182
+Epoch [68/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2167
+Epoch [69/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2141
+Epoch [70/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2159
+Epoch [71/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1789
+Epoch [72/400]
+batch = 0 (Δ=0.188s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1731
+Epoch [73/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1748
+Epoch [74/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2036
+Epoch [75/400]
+batch = 0 (Δ=0.192s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1487
+Epoch [76/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2039
+Epoch [77/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1995
+Epoch [78/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1462
+Epoch [79/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1980
+Epoch [80/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1740
+Epoch [81/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1733
+Epoch [82/400]
+batch = 0 (Δ=0.192s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2000
+Epoch [83/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1882
+Epoch [84/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1734
+Epoch [85/400]
+batch = 0 (Δ=0.134s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2016
+Epoch [86/400]
+batch = 0 (Δ=0.133s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.4495
+Epoch [87/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.7023
+Epoch [88/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.6999
+Epoch [89/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6965
+Epoch [90/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6859
+Epoch [91/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.6974
+Epoch [92/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.6993
+Epoch [93/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.6993
+Epoch [94/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.6997
+Epoch [95/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.7013
+Epoch [96/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.7033
+Epoch [97/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.7064
+Epoch [98/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.6938
+Epoch [99/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7135
+Epoch [100/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7147
+Epoch [101/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6797
+Epoch [102/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7160
+Epoch [103/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8072
+Epoch [104/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7204
+Epoch [105/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8053
+Epoch [106/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7177
+Epoch [107/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7277
+Epoch [108/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7458
+Epoch [109/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7294
+Epoch [110/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7318
+Epoch [111/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7351
+Epoch [112/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7361
+Epoch [113/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7350
+Epoch [114/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7342
+Epoch [115/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6990
+Epoch [116/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7370
+Epoch [117/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7410
+Epoch [118/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7416
+Epoch [119/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7423
+Epoch [120/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7443
+Epoch [121/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7455
+Epoch [122/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7481
+Epoch [123/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8129
+Epoch [124/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7260
+Epoch [125/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7515
+Epoch [126/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7521
+Epoch [127/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7596
+Epoch [128/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7786
+Epoch [129/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7773
+Epoch [130/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7603
+Epoch [131/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7182
+Epoch [132/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7643
+Epoch [133/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8017
+Epoch [134/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7684
+Epoch [135/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7707
+Epoch [136/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7736
+Epoch [137/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7917
+Epoch [138/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7734
+Epoch [139/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7750
+Epoch [140/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7761
+Epoch [141/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8115
+Epoch [142/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7739
+Epoch [143/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7157
+Epoch [144/400]
+batch = 0 (Δ=0.132s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7789
+Epoch [145/400]
+batch = 0 (Δ=0.131s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7838
+Epoch [146/400]
+batch = 0 (Δ=0.132s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7868
+Epoch [147/400]
+batch = 0 (Δ=0.132s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7880
+Epoch [148/400]
+batch = 0 (Δ=0.133s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7890
+Epoch [149/400]
+batch = 0 (Δ=0.132s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8239
+Epoch [150/400]
+batch = 0 (Δ=0.131s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7943
+Epoch [151/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2674
+Epoch [152/400]
+batch = 0 (Δ=0.153s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2828
+Epoch [153/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2773
+Epoch [154/400]
+batch = 0 (Δ=0.158s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2743
+Epoch [155/400]
+batch = 0 (Δ=0.192s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2800
+Epoch [156/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.3069
+Epoch [157/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2760
+Epoch [158/400]
+batch = 0 (Δ=0.188s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2274
+Epoch [159/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2240
+Epoch [160/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.3396
+Epoch [161/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2555
+Epoch [162/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.3219
+Epoch [163/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2163
+Epoch [164/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2206
+Epoch [165/400]
+batch = 0 (Δ=0.187s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2252
+Epoch [166/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.2461
+Epoch [167/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.2374
+Epoch [168/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.3342
+Epoch [169/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.2476
+Epoch [170/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.2392
+Epoch [171/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.2640
+Epoch [172/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.2504
+Epoch [173/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.3988
+Epoch [174/400]
+batch = 0 (Δ=0.200s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.3689
+Epoch [175/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.3065
+Epoch [176/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.3196
+Epoch [177/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.0175
+Epoch [178/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.9990
+Epoch [179/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1753, reconstruction=1.0649
+Epoch [180/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1755, reconstruction=1.0011
+Epoch [181/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1755, reconstruction=0.9699
+Epoch [182/400]
+batch = 0 (Δ=0.259s, 100.00%)
+Train Loss: output=0.1755, reconstruction=1.3078
+Epoch [183/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1754, reconstruction=1.0243
+Epoch [184/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1754, reconstruction=1.2382
+Epoch [185/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1754, reconstruction=1.2758
+Epoch [186/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1754, reconstruction=1.0313
+Epoch [187/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1754, reconstruction=1.0603
+Epoch [188/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1753, reconstruction=1.0649
+Epoch [189/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1752, reconstruction=1.2405
+Epoch [190/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1752, reconstruction=1.0089
+Epoch [191/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1751, reconstruction=1.1189
+Epoch [192/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1751, reconstruction=1.0052
+Epoch [193/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.9998
+Epoch [194/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.0248
+Epoch [195/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.0414
+Epoch [196/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9962
+Epoch [197/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9563
+Epoch [198/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9947
+Epoch [199/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9547
+Epoch [200/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9962
+Epoch [201/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9989
+Epoch [202/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9881
+Epoch [203/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.0046
+Epoch [204/400]
+batch = 0 (Δ=0.187s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.0059
+Epoch [205/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.0071
+Epoch [206/400]
+batch = 0 (Δ=0.195s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.0100
+Epoch [207/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.0116
+Epoch [208/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.0116
+Epoch [209/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.0130
+Epoch [210/400]
+batch = 0 (Δ=0.201s, 100.00%)
+Train Loss: output=0.1748, reconstruction=1.0866
+Epoch [211/400]
+batch = 0 (Δ=0.196s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.9798
+Epoch [212/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1748, reconstruction=1.0276
+Epoch [213/400]
+batch = 0 (Δ=0.198s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.3472
+Epoch [214/400]
+batch = 0 (Δ=0.197s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2771
+Epoch [215/400]
+batch = 0 (Δ=0.199s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.2253
+Epoch [216/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.2754
+Epoch [217/400]
+batch = 0 (Δ=0.193s, 100.00%)
+Train Loss: output=0.1755, reconstruction=0.2735
+Epoch [218/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1754, reconstruction=0.2720
+Epoch [219/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2383
+Epoch [220/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.2374
+Epoch [221/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2252
+Epoch [222/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2335
+Epoch [223/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2262
+Epoch [224/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2336
+Epoch [225/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2664
+Epoch [226/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2664
+Epoch [227/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2659
+Epoch [228/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2651
+Epoch [229/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2641
+Epoch [230/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.2276
+Epoch [231/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2527
+Epoch [232/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2490
+Epoch [233/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2469
+Epoch [234/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.3492
+Epoch [235/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2444
+Epoch [236/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.4056
+Epoch [237/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.7056
+Epoch [238/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2407
+Epoch [239/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2401
+Epoch [240/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.5570
+Epoch [241/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.7487
+Epoch [242/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.1979
+Epoch [243/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.3344
+Epoch [244/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2393
+Epoch [245/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.1894
+Epoch [246/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.4059
+Epoch [247/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.5635
+Epoch [248/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.5044
+Epoch [249/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.7142
+Epoch [250/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.2451
+Epoch [251/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.2463
+Epoch [252/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.3524
+Epoch [253/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.2458
+Epoch [254/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.5704
+Epoch [255/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.2451
+Epoch [256/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.4192
+Epoch [257/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.5764
+Epoch [258/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.7258
+Epoch [259/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.5774
+Epoch [260/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.2550
+Epoch [261/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.3701
+Epoch [262/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.4430
+Epoch [263/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.2198
+Epoch [264/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1817, reconstruction=0.2571
+Epoch [265/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1801, reconstruction=0.2371
+Epoch [266/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1807, reconstruction=0.2306
+Epoch [267/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1899, reconstruction=0.2076
+Epoch [268/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1771, reconstruction=0.2078
+Epoch [269/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1792, reconstruction=0.2610
+Epoch [270/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1846, reconstruction=0.2122
+Epoch [271/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.2865
+Epoch [272/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.3346
+Epoch [273/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1801, reconstruction=0.2455
+Epoch [274/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1759, reconstruction=0.3440
+Epoch [275/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.2744
+Epoch [276/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1779, reconstruction=0.2290
+Epoch [277/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1769, reconstruction=0.2305
+Epoch [278/400]
+batch = 0 (Δ=0.131s, 100.00%)
+Train Loss: output=0.1730, reconstruction=0.2803
+Epoch [279/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.2278
+Epoch [280/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1768, reconstruction=0.2561
+Epoch [281/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.2270
+Epoch [282/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.2284
+Epoch [283/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1759, reconstruction=0.3469
+Epoch [284/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.3914
+Epoch [285/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1724, reconstruction=0.3864
+Epoch [286/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.3675
+Epoch [287/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.3690
+Epoch [288/400]
+batch = 0 (Δ=0.129s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.3584
+Epoch [289/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.3592
+Epoch [290/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.3548
+Epoch [291/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3529
+Epoch [292/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1724, reconstruction=0.3530
+Epoch [293/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1732, reconstruction=0.3533
+Epoch [294/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.3511
+Epoch [295/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1726, reconstruction=0.3454
+Epoch [296/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1730, reconstruction=0.3499
+Epoch [297/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1728, reconstruction=0.3537
+Epoch [298/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1721, reconstruction=0.3453
+Epoch [299/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1723, reconstruction=0.3385
+Epoch [300/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3286
+Epoch [301/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3485
+Epoch [302/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3467
+Epoch [303/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3457
+Epoch [304/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1725, reconstruction=0.3335
+Epoch [305/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1724, reconstruction=0.3371
+Epoch [306/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1727, reconstruction=0.3269
+Epoch [307/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3290
+Epoch [308/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3278
+Epoch [309/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3445
+Epoch [310/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1728, reconstruction=0.3243
+Epoch [311/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1727, reconstruction=0.3326
+Epoch [312/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.3330
+Epoch [313/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.3547
+Epoch [314/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.3330
+Epoch [315/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1759, reconstruction=0.3608
+Epoch [316/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1766, reconstruction=0.4347
+Epoch [317/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.4834
+Epoch [318/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1768, reconstruction=0.4892
+Epoch [319/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1798, reconstruction=0.1613
+Epoch [320/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1770, reconstruction=0.4252
+Epoch [321/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1768, reconstruction=0.3959
+Epoch [322/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1786, reconstruction=0.1577
+Epoch [323/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1758, reconstruction=0.3340
+Epoch [324/400]
+batch = 0 (Δ=0.194s, 100.00%)
+Train Loss: output=0.1772, reconstruction=0.2970
+Epoch [325/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1783, reconstruction=0.2841
+Epoch [326/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1756, reconstruction=0.2615
+Epoch [327/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1768, reconstruction=0.2173
+Epoch [328/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1785, reconstruction=0.1587
+Epoch [329/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1758, reconstruction=0.1591
+Epoch [330/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1762, reconstruction=0.2120
+Epoch [331/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1780, reconstruction=0.1600
+Epoch [332/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1760, reconstruction=0.2279
+Epoch [333/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1758, reconstruction=0.1605
+Epoch [334/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1784, reconstruction=0.1609
+Epoch [335/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1764, reconstruction=0.1611
+Epoch [336/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1754, reconstruction=0.1612
+Epoch [337/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1770, reconstruction=0.1613
+Epoch [338/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1764, reconstruction=0.1614
+Epoch [339/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.2053
+Epoch [340/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1765, reconstruction=0.1616
+Epoch [341/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1765, reconstruction=0.2331
+Epoch [342/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1611
+Epoch [343/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1759, reconstruction=0.1901
+Epoch [344/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1764, reconstruction=0.2102
+Epoch [345/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.1606
+Epoch [346/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1754, reconstruction=0.1605
+Epoch [347/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1761, reconstruction=0.2156
+Epoch [348/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1755, reconstruction=0.2217
+Epoch [349/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1941
+Epoch [350/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1755, reconstruction=0.1681
+Epoch [351/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.1635
+Epoch [352/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1656
+Epoch [353/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1754, reconstruction=0.1668
+Epoch [354/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2025
+Epoch [355/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1996
+Epoch [356/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.2121
+Epoch [357/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.1916
+Epoch [358/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2022
+Epoch [359/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.1856
+Epoch [360/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.2028
+Epoch [361/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.1804
+Epoch [362/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1604
+Epoch [363/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.1950
+Epoch [364/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1899
+Epoch [365/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1608
+Epoch [366/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.1607
+Epoch [367/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1606
+Epoch [368/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1612
+Epoch [369/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1942
+Epoch [370/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1840
+Epoch [371/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1766
+Epoch [372/400]
+batch = 0 (Δ=0.128s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1866
+Epoch [373/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1897
+Epoch [374/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1829
+Epoch [375/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1900
+Epoch [376/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1901
+Epoch [377/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1907
+Epoch [378/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1801
+Epoch [379/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1866
+Epoch [380/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1879
+Epoch [381/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1706
+Epoch [382/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1777
+Epoch [383/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1814
+Epoch [384/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1805
+Epoch [385/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1717
+Epoch [386/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1822
+Epoch [387/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1797
+Epoch [388/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1797
+Epoch [389/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1785
+Epoch [390/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1755
+Epoch [391/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1689
+Epoch [392/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1688
+Epoch [393/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1742
+Epoch [394/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1780
+Epoch [395/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1784
+Epoch [396/400]
+batch = 0 (Δ=0.124s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1738
+Epoch [397/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1759
+Epoch [398/400]
+batch = 0 (Δ=0.127s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1761
+Epoch [399/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1745
+Epoch [400/400]
+batch = 0 (Δ=0.126s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1763
+Final Stats:
+=== Selected operation grammar ===
+batch = 0 (Δ=0.138s, 100.00%)
+=== Input Reconstruction (test) ===
+  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.4932 MISMATCH
+  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5038 MISMATCH
+  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.4910 MISMATCH
+  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5016 MISMATCH
+_____ TestXorGrammarReconstruction.test_piecewise_overall_at_least_50_pct ______
+test/test_explicit_dimensions.py:289: in test_piecewise_overall_at_least_50_pct
+    self.assertGreaterEqual(
+E   AssertionError: 0.0 not greater than or equal to 0.5 : XOR_grammar reconstruction: 0/4 inputs recovered (expected >=50%). Sample reconstructions: [('hello world', ' there'), ('hello there', ' there')]
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+batch = 0 (warm-up, 100.00%)
+Train Loss: output=0.1780, reconstruction=0.7113
+Epoch [2/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1798, reconstruction=1.1983
+Epoch [3/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1774, reconstruction=0.5178
+Epoch [4/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5044
+Epoch [5/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1768, reconstruction=0.7835
+Epoch [6/400]
+batch = 0 (Δ=0.184s, 100.00%)
+Train Loss: output=0.1772, reconstruction=0.6450
+Epoch [7/400]
+batch = 0 (Δ=0.250s, 100.00%)
+Train Loss: output=0.1754, reconstruction=0.7546
+Epoch [8/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.6688
+Epoch [9/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1757, reconstruction=0.4962
+Epoch [10/400]
+batch = 0 (Δ=0.175s, 100.00%)
+Train Loss: output=0.1761, reconstruction=0.3390
+Epoch [11/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.2675
+Epoch [12/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.1898
+Epoch [13/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.1857
+Epoch [14/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1753, reconstruction=0.1829
+Epoch [15/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1812
+Epoch [16/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.1805
+Epoch [17/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.1805
+Epoch [18/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1805
+Epoch [19/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1900
+Epoch [20/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.2335
+Epoch [21/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.3403
+Epoch [22/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.4145
+Epoch [23/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.3245
+Epoch [24/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.2876
+Epoch [25/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2626
+Epoch [26/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.1826
+Epoch [27/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.1757
+Epoch [28/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.1814
+Epoch [29/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.1749
+Epoch [30/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.1791
+Epoch [31/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.1738
+Epoch [32/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.1751
+Epoch [33/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.1736
+Epoch [34/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.1727
+Epoch [35/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.1821
+Epoch [36/400]
+batch = 0 (Δ=0.185s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.1696
+Epoch [37/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.1805
+Epoch [38/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.1818
+Epoch [39/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.1732
+Epoch [40/400]
+batch = 0 (Δ=0.248s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.1756
+Epoch [41/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.1787
+Epoch [42/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1922
+Epoch [43/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1840
+Epoch [44/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1853
+Epoch [45/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.1862
+Epoch [46/400]
+batch = 0 (Δ=0.175s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1890
+Epoch [47/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1933
+Epoch [48/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1968
+Epoch [49/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.1987
+Epoch [50/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2002
+Epoch [51/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2025
+Epoch [52/400]
+batch = 0 (Δ=0.175s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2060
+Epoch [53/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2107
+Epoch [54/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2149
+Epoch [55/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2172
+Epoch [56/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2180
+Epoch [57/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2184
+Epoch [58/400]
+batch = 0 (Δ=0.177s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2210
+Epoch [59/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2255
+Epoch [60/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2303
+Epoch [61/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2343
+Epoch [62/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2362
+Epoch [63/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2379
+Epoch [64/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2402
+Epoch [65/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2439
+Epoch [66/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2471
+Epoch [67/400]
+batch = 0 (Δ=0.185s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2495
+Epoch [68/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2501
+Epoch [69/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2515
+Epoch [70/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2539
+Epoch [71/400]
+batch = 0 (Δ=0.184s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2566
+Epoch [72/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2588
+Epoch [73/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2606
+Epoch [74/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2605
+Epoch [75/400]
+batch = 0 (Δ=0.249s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2619
+Epoch [76/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2633
+Epoch [77/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2651
+Epoch [78/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2666
+Epoch [79/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2672
+Epoch [80/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2660
+Epoch [81/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5591
+Epoch [82/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9874
+Epoch [83/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8522
+Epoch [84/400]
+batch = 0 (Δ=0.176s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.0173
+Epoch [85/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.8654
+Epoch [86/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=1.0620
+Epoch [87/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.0784
+Epoch [88/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1749, reconstruction=1.0894
+Epoch [89/400]
+batch = 0 (Δ=0.177s, 100.00%)
+Train Loss: output=0.1748, reconstruction=1.0998
+Epoch [90/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1747, reconstruction=1.1102
+Epoch [91/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.9151
+Epoch [92/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1745, reconstruction=1.1082
+Epoch [93/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.7303
+Epoch [94/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.6270
+Epoch [95/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.8131
+Epoch [96/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.7420
+Epoch [97/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1740, reconstruction=1.0886
+Epoch [98/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.5515
+Epoch [99/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1738, reconstruction=1.0786
+Epoch [100/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.7097
+Epoch [101/400]
+batch = 0 (Δ=0.177s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.8917
+Epoch [102/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.6244
+Epoch [103/400]
+batch = 0 (Δ=0.177s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.7183
+Epoch [104/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1732, reconstruction=1.0686
+Epoch [105/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.8893
+Epoch [106/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.8959
+Epoch [107/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1728, reconstruction=0.7331
+Epoch [108/400]
+batch = 0 (Δ=0.176s, 100.00%)
+Train Loss: output=0.1727, reconstruction=0.5649
+Epoch [109/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1725, reconstruction=0.7307
+Epoch [110/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1724, reconstruction=1.0814
+Epoch [111/400]
+batch = 0 (Δ=0.248s, 100.00%)
+Train Loss: output=0.1723, reconstruction=0.8975
+Epoch [112/400]
+batch = 0 (Δ=0.171s, 100.00%)
+Train Loss: output=0.1722, reconstruction=0.8949
+Epoch [113/400]
+batch = 0 (Δ=0.171s, 100.00%)
+Train Loss: output=0.1722, reconstruction=0.7203
+Epoch [114/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1723, reconstruction=0.8970
+Epoch [115/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1722, reconstruction=1.0560
+Epoch [116/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1722, reconstruction=1.0489
+Epoch [117/400]
+batch = 0 (Δ=0.173s, 100.00%)
+Train Loss: output=0.1721, reconstruction=0.8801
+Epoch [118/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1721, reconstruction=0.7142
+Epoch [119/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1722, reconstruction=1.0477
+Epoch [120/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1722, reconstruction=0.8760
+Epoch [121/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1722, reconstruction=0.8853
+Epoch [122/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1722, reconstruction=1.0525
+Epoch [123/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1722, reconstruction=0.8832
+Epoch [124/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1723, reconstruction=1.0578
+Epoch [125/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1723, reconstruction=0.8865
+Epoch [126/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1723, reconstruction=1.0639
+Epoch [127/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1722, reconstruction=0.9007
+Epoch [128/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1720, reconstruction=0.7285
+Epoch [129/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1718, reconstruction=0.7216
+Epoch [130/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1718, reconstruction=0.9063
+Epoch [131/400]
+batch = 0 (Δ=0.184s, 100.00%)
+Train Loss: output=0.1720, reconstruction=1.0736
+Epoch [132/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1721, reconstruction=0.6923
+Epoch [133/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1723, reconstruction=1.0757
+Epoch [134/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1726, reconstruction=0.7977
+Epoch [135/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1730, reconstruction=1.0766
+Epoch [136/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1733, reconstruction=1.0740
+Epoch [137/400]
+batch = 0 (Δ=0.176s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.5591
+Epoch [138/400]
+batch = 0 (Δ=0.184s, 100.00%)
+Train Loss: output=0.1735, reconstruction=1.0766
+Epoch [139/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.9113
+Epoch [140/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1738, reconstruction=1.0726
+Epoch [141/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1738, reconstruction=1.0731
+Epoch [142/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1737, reconstruction=1.0748
+Epoch [143/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.7362
+Epoch [144/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.7296
+Epoch [145/400]
+batch = 0 (Δ=0.247s, 100.00%)
+Train Loss: output=0.1732, reconstruction=1.0826
+Epoch [146/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.7398
+Epoch [147/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1730, reconstruction=1.0825
+Epoch [148/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.8161
+Epoch [149/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1730, reconstruction=1.0873
+Epoch [150/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.9221
+Epoch [151/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1734, reconstruction=1.0882
+Epoch [152/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.9193
+Epoch [153/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.7361
+Epoch [154/400]
+batch = 0 (Δ=0.174s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.9252
+Epoch [155/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.7465
+Epoch [156/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1740, reconstruction=1.0915
+Epoch [157/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1742, reconstruction=1.0852
+Epoch [158/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.7346
+Epoch [159/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.5136
+Epoch [160/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1737, reconstruction=1.0894
+Epoch [161/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1729, reconstruction=1.0870
+Epoch [162/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1723, reconstruction=1.0905
+Epoch [163/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1717, reconstruction=1.0994
+Epoch [164/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1714, reconstruction=0.6996
+Epoch [165/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1719, reconstruction=1.0821
+Epoch [166/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1726, reconstruction=0.5090
+Epoch [167/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1730, reconstruction=1.0692
+Epoch [168/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1737, reconstruction=1.0565
+Epoch [169/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1746, reconstruction=1.0429
+Epoch [170/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1747, reconstruction=1.0401
+Epoch [171/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1745, reconstruction=1.0449
+Epoch [172/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.6399
+Epoch [173/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1735, reconstruction=1.0455
+Epoch [174/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1723, reconstruction=1.0388
+Epoch [175/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1721, reconstruction=0.5859
+Epoch [176/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1724, reconstruction=0.7456
+Epoch [177/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1724, reconstruction=0.8550
+Epoch [178/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1727, reconstruction=1.0421
+Epoch [179/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1734, reconstruction=1.0297
+Epoch [180/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1732, reconstruction=1.0193
+Epoch [181/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1732, reconstruction=0.4211
+Epoch [182/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1743, reconstruction=1.0133
+Epoch [183/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1747, reconstruction=1.0122
+Epoch [184/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1745, reconstruction=1.0038
+Epoch [185/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6836
+Epoch [186/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.9902
+Epoch [187/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.6184
+Epoch [188/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.5413
+Epoch [189/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2420
+Epoch [190/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.3362
+Epoch [191/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1728, reconstruction=0.4292
+Epoch [192/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.5809
+Epoch [193/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.3882
+Epoch [194/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.5056
+Epoch [195/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.2359
+Epoch [196/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1739, reconstruction=0.3225
+Epoch [197/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.4107
+Epoch [198/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1727, reconstruction=0.5282
+Epoch [199/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.3535
+Epoch [200/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.3771
+Epoch [201/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.3221
+Epoch [202/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1727, reconstruction=0.4051
+Epoch [203/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.4043
+Epoch [204/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.2262
+Epoch [205/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1729, reconstruction=0.2311
+Epoch [206/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1732, reconstruction=0.3189
+Epoch [207/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.2267
+Epoch [208/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.2266
+Epoch [209/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.2306
+Epoch [210/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2290
+Epoch [211/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2256
+Epoch [212/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2289
+Epoch [213/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1728, reconstruction=0.2342
+Epoch [214/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1727, reconstruction=0.3244
+Epoch [215/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2297
+Epoch [216/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.3203
+Epoch [217/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1726, reconstruction=0.3284
+Epoch [218/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1730, reconstruction=0.2359
+Epoch [219/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.4137
+Epoch [220/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.3178
+Epoch [221/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1723, reconstruction=0.2371
+Epoch [222/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1721, reconstruction=0.2377
+Epoch [223/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.3204
+Epoch [224/400]
+batch = 0 (Δ=0.123s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.3202
+Epoch [225/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1732, reconstruction=0.2379
+Epoch [226/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1723, reconstruction=0.2406
+Epoch [227/400]
+batch = 0 (Δ=0.185s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.4089
+Epoch [228/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.2352
+Epoch [229/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.4059
+Epoch [230/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1726, reconstruction=0.3293
+Epoch [231/400]
+batch = 0 (Δ=0.125s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.3168
+Epoch [232/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2240
+Epoch [233/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2259
+Epoch [234/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.3414
+Epoch [235/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.3356
+Epoch [236/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2277
+Epoch [237/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2273
+Epoch [238/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2316
+Epoch [239/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.2357
+Epoch [240/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.2356
+Epoch [241/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.2352
+Epoch [242/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.3430
+Epoch [243/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.4283
+Epoch [244/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.3335
+Epoch [245/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.3325
+Epoch [246/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.4471
+Epoch [247/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1738, reconstruction=0.2442
+Epoch [248/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1734, reconstruction=0.2461
+Epoch [249/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.2422
+Epoch [250/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.3261
+Epoch [251/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.4342
+Epoch [252/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.4430
+Epoch [253/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1736, reconstruction=0.4436
+Epoch [254/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.3289
+Epoch [255/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3313
+Epoch [256/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.4259
+Epoch [257/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1731, reconstruction=0.4347
+Epoch [258/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.4284
+Epoch [259/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.3368
+Epoch [260/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.4380
+Epoch [261/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.4462
+Epoch [262/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.3576
+Epoch [263/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.4426
+Epoch [264/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6348
+Epoch [265/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1738, reconstruction=0.4337
+Epoch [266/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1733, reconstruction=0.3522
+Epoch [267/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.3398
+Epoch [268/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2482
+Epoch [269/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.4437
+Epoch [270/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1738, reconstruction=0.2555
+Epoch [271/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1740, reconstruction=0.3495
+Epoch [272/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4377
+Epoch [273/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2472
+Epoch [274/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.4388
+Epoch [275/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1737, reconstruction=0.3558
+Epoch [276/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.3512
+Epoch [277/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2434
+Epoch [278/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.2467
+Epoch [279/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2520
+Epoch [280/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.2512
+Epoch [281/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.4489
+Epoch [282/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2477
+Epoch [283/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.3435
+Epoch [284/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.4495
+Epoch [285/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.4339
+Epoch [286/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2484
+Epoch [287/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2525
+Epoch [288/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2557
+Epoch [289/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5217
+Epoch [290/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.5162
+Epoch [291/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4217
+Epoch [292/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2622
+Epoch [293/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2640
+Epoch [294/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.4809
+Epoch [295/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4075
+Epoch [296/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2612
+Epoch [297/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.2646
+Epoch [298/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2635
+Epoch [299/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.4136
+Epoch [300/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3396
+Epoch [301/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.4206
+Epoch [302/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.4272
+Epoch [303/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1751, reconstruction=0.3498
+Epoch [304/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4330
+Epoch [305/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.2683
+Epoch [306/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.5240
+Epoch [307/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3483
+Epoch [308/400]
+batch = 0 (Δ=0.115s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4294
+Epoch [309/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3479
+Epoch [310/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.3562
+Epoch [311/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3584
+Epoch [312/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3562
+Epoch [313/400]
+batch = 0 (Δ=0.115s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5272
+Epoch [314/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2740
+Epoch [315/400]
+batch = 0 (Δ=0.122s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2739
+Epoch [316/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3643
+Epoch [317/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2740
+Epoch [318/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.5503
+Epoch [319/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1741, reconstruction=0.2768
+Epoch [320/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1746, reconstruction=0.2754
+Epoch [321/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.4522
+Epoch [322/400]
+batch = 0 (Δ=0.140s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.4525
+Epoch [323/400]
+batch = 0 (Δ=0.130s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.5526
+Epoch [324/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2727
+Epoch [325/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2714
+Epoch [326/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2722
+Epoch [327/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1748, reconstruction=0.2718
+Epoch [328/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.2692
+Epoch [329/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.3608
+Epoch [330/400]
+batch = 0 (Δ=0.115s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.2702
+Epoch [331/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1747, reconstruction=0.2714
+Epoch [332/400]
+batch = 0 (Δ=0.115s, 100.00%)
+Train Loss: output=0.1749, reconstruction=0.5464
+Epoch [333/400]
+batch = 0 (Δ=0.114s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6285
+Epoch [334/400]
+batch = 0 (Δ=0.121s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.2720
+Epoch [335/400]
+batch = 0 (Δ=0.117s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.3683
+Epoch [336/400]
+batch = 0 (Δ=0.185s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2725
+Epoch [337/400]
+batch = 0 (Δ=0.118s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.2714
+Epoch [338/400]
+batch = 0 (Δ=0.119s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.2730
+Epoch [339/400]
+batch = 0 (Δ=0.120s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2773
+Epoch [340/400]
+batch = 0 (Δ=0.116s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.3713
+Epoch [341/400]
+batch = 0 (Δ=0.143s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.5569
+Epoch [342/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.4821
+Epoch [343/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.6657
+Epoch [344/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.5390
+Epoch [345/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.6706
+Epoch [346/400]
+batch = 0 (Δ=0.177s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.6441
+Epoch [347/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.5801
+Epoch [348/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.6720
+Epoch [349/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.6196
+Epoch [350/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.6214
+Epoch [351/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1744, reconstruction=0.6899
+Epoch [352/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.6878
+Epoch [353/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.6273
+Epoch [354/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1743, reconstruction=0.5990
+Epoch [355/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6057
+Epoch [356/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4528
+Epoch [357/400]
+batch = 0 (Δ=0.172s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5402
+Epoch [358/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6232
+Epoch [359/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7019
+Epoch [360/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7003
+Epoch [361/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5698
+Epoch [362/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4836
+Epoch [363/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6177
+Epoch [364/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6852
+Epoch [365/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6817
+Epoch [366/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7041
+Epoch [367/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5739
+Epoch [368/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7170
+Epoch [369/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5694
+Epoch [370/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7187
+Epoch [371/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6431
+Epoch [372/400]
+batch = 0 (Δ=0.183s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7147
+Epoch [373/400]
+batch = 0 (Δ=0.250s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7089
+Epoch [374/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.7048
+Epoch [375/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6998
+Epoch [376/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4121
+Epoch [377/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6078
+Epoch [378/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6774
+Epoch [379/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4809
+Epoch [380/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4666
+Epoch [381/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5222
+Epoch [382/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6623
+Epoch [383/400]
+batch = 0 (Δ=0.177s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6333
+Epoch [384/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6598
+Epoch [385/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4677
+Epoch [386/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6587
+Epoch [387/400]
+batch = 0 (Δ=0.176s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5334
+Epoch [388/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6594
+Epoch [389/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6613
+Epoch [390/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6630
+Epoch [391/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5323
+Epoch [392/400]
+batch = 0 (Δ=0.180s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6614
+Epoch [393/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5928
+Epoch [394/400]
+batch = 0 (Δ=0.177s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5995
+Epoch [395/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.6574
+Epoch [396/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5456
+Epoch [397/400]
+batch = 0 (Δ=0.179s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4782
+Epoch [398/400]
+batch = 0 (Δ=0.178s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5345
+Epoch [399/400]
+batch = 0 (Δ=0.181s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.4324
+Epoch [400/400]
+batch = 0 (Δ=0.182s, 100.00%)
+Train Loss: output=0.1750, reconstruction=0.5939
+Final Stats:
+=== Selected operation grammar ===
+batch = 0 (Δ=0.151s, 100.00%)
+=== Input Reconstruction (test) ===
+  row[0] input='hello world' -> reconstructed='there there' label=0.0000 predicted=0.5017 MISMATCH
+  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.5017 MISMATCH
+  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.5002 MISMATCH
+  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.5002 MISMATCH
+=============================== warnings summary ===============================
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 2 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 6 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 5 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 9 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 8 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 12 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 11 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 15 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 14 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (6 rows): concept 16 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 18 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (1 rows): concept 17 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+FAILED test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+2 failed, 28 warnings in 124.49s (0:02:04)

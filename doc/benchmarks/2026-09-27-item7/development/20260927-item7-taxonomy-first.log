@@ -1,0 +1,32 @@
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+______ test_part_testimony_symbols_the_parent_one_order_above_the_object _______
+
+    def test_part_testimony_symbols_the_parent_one_order_above_the_object():
+        cs, interpret = _operator()
+        word_cat = interpret.lookup_word([7], [1], form='cat')
+        cat = interpret.forward(word_cat, order=1)
+        word_animal = interpret.lookup_word([8], [1], form='animal')
+        animal = interpret.forward(word_animal, order=1)
+        parent = cs.index_part_row(cat, animal)
+        assert parent != animal
+        assert cs._concept_source_order(parent) == cs._concept_source_order(cat) + 1
+        assert cat in cs.taxonomy_children(parent)
+        assert parent in cs.taxonomy_parents(cat)
+        assert parent in cs.word_concepts('animal')
+        assert cs.index_part_row(cat, animal) == parent
+>       assert not cs.is_meta(parent)
+E       assert not True
+E        +  where True = is_meta(6)
+E        +    where is_meta = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).is_meta
+
+test/test_item7_taxonomy.py:21: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+1 failed, 3 passed, 1 warning in 2.21s

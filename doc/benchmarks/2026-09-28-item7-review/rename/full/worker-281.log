@@ -1,0 +1,16 @@
+.........................F......                                         [100%]
+=================================== FAILURES ===================================
+___ test_complete_grammar_exposes_its_declared_canonical_thought_operations ____
+test/test_thought_operation_catalog.py:544: in test_complete_grammar_exposes_its_declared_canonical_thought_operations
+    assert "true" not in registry.executable_operation_ids
+E   AssertionError: assert 'true' not in ('part', 'equal', 'exist', 'true', 'lookup', 'quantize', ...)
+E    +  where ('part', 'equal', 'exist', 'true', 'lookup', 'quantize', ...) = <Queries.GrammaticalThoughtRegistry object at 0x126a48590>.executable_operation_ids
+=============================== warnings summary ===============================
+test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations
+1 failed, 31 passed, 1 warning in 2.44s

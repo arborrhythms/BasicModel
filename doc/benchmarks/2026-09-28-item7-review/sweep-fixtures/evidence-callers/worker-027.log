@@ -1,0 +1,32 @@
+......FF..                                                               [100%]
+=================================== FAILURES ===================================
+___________________ test_relational_evaluation_not_coverage ____________________
+test/test_two_truth_stores.py:152: in test_relational_evaluation_not_coverage
+    assert rs.evaluate(np1, vp, np2)[0] == pytest.approx(1.0, abs=1e-5)
+E   assert tensor(0.) == 1.0 ± 1.0e-05
+E     
+E     comparison failed
+E     Obtained: 0.0
+E     Expected: 1.0 ± 1.0e-05
+__________________ test_consequents_drive_the_reasoning_step ___________________
+test/test_two_truth_stores.py:171: in test_consequents_drive_the_reasoning_step
+    assert idx == 0 and match > 0.9
+E   assert (0 == 0 and 0.0 > 0.9)
+=============================== warnings summary ===============================
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [2] contradicts existing truth [1] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_two_truth_stores.py::test_relational_evaluation_not_coverage
+FAILED test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step
+2 failed, 8 passed, 3 warnings in 2.00s

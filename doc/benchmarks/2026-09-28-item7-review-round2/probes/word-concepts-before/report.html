@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 4/4 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.055389916989952326</pre></td><td><pre>test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol
+    assert all(owner.word_concepts(word) for word in words), {
+E   AssertionError: {&#x27;hello&#x27;: (), &#x27;loving&#x27;: (), &#x27;there&#x27;: (), &#x27;world&#x27;: ()}
+E   assert False
+E    +  where False = all(&lt;generator object test_every_read_word_has_a_concept_and_symbol.&lt;locals&gt;.&lt;genexpr&gt; at 0x11f6bcf20&gt;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.1423460830701515</pre></td><td><pre>test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol
+    assert all(owner.word_concepts(word) for word in words), {
+E   AssertionError: {&#x27;hello&#x27;: (), &#x27;loving&#x27;: (), &#x27;there&#x27;: (), &#x27;world&#x27;: ()}
+E   assert False
+E    +  where False = all(&lt;generator object test_every_read_word_has_a_concept_and_symbol.&lt;locals&gt;.&lt;genexpr&gt; at 0x11f81d7e0&gt;)</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.1461688750423491</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.059265040908940136</pre></td><td><pre>/Users/arogers/github/WikiOracle/basicmodel/test/test_output_synthesis.py:339: in test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+    assert not torch.allclose(first.actual, out_after)        # answer path moved
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert not True
+E    +  where True = &lt;built-in method allclose of type object at 0x10d0f53a0&gt;(tensor([[[0.]],\n\n        [[0.]]]), tensor([[[0.]],\n\n        [[0.]]]))
+E    +    where &lt;built-in method allclose of type object at 0x10d0f53a0&gt; = torch.allclose
+E    +    and   tensor([[[0.]],\n\n        [[0.]]]) = AnswerConstruction(actual=tensor([[[0.]],\n\n        [[0.]]]), derivation=AnswerDerivation(answer_symbol=tensor([[[0., 0...ceptual&#x27;, &#x27;shape&#x27;: (2, 8, 14), &#x27;selections&#x27;: ()}, {&#x27;operation&#x27;: &#x27;output:from_percepts&#x27;, &#x27;shape&#x27;: (2, 1, 1)}), texts=()).actual</pre></td><td><pre></pre></td></tr></table></body></html>

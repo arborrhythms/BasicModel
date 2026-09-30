@@ -1,0 +1,155 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+  ],
+  "completed": [
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-00/worker-000.json"
+      ],
+      "pid": 9396,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 441009520,
+      "elapsed_seconds": 3.6770753748714924,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+        "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+        "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+      ],
+      "completed": [
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+        "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+        "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.008649833966046572,
+          "message": "test/test_item7_predicate_identity.py:23: in test_closing_and_registry_share_predicate\n    assert stored.role_refs[1] == reference == ('sym', predicate_identity(relation))\nE   AssertionError: assert ('sym', 4010033338316264258) == ('sym', 1)\nE     \nE     At index 1 diff: 4010033338316264258 != 1\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.007591166999191046,
+          "message": "test/test_item7_predicate_identity.py:23: in test_closing_and_registry_share_predicate\n    assert stored.role_refs[1] == reference == ('sym', predicate_identity(relation))\nE   AssertionError: assert ('sym', 2837868419566309091) == ('sym', 9)\nE     \nE     At index 1 diff: 2837868419566309091 != 9\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00577250006608665,
+          "message": "test/test_item7_predicate_identity.py:25: in test_closing_and_registry_share_predicate\n    assert torch.equal(stored.roles[1], f.registry._payload(reference))\nE   AssertionError: assert False\nE    +  where False = <built-in method equal of type object at 0x10ea013a0>(tensor([-0.6386,  0.4060, -0.5675,  0.1066,  0.1928, -0.1667, -0.1569,  0.0658]), tensor([-0.0101, -0.1213,  0.0437, -0.7624,  0.5270, -0.0225, -0.2698, -0.2258],\\n       grad_fn=<CloneBackward0>))\nE    +    where <built-in method equal of type object at 0x10ea013a0> = torch.equal\nE    +    and   tensor([-0.0101, -0.1213,  0.0437, -0.7624,  0.5270, -0.0225, -0.2698, -0.2258],\\n       grad_fn=<CloneBackward0>) = _payload(('sym', 1))\nE    +      where _payload = <Queries.GrammaticalThoughtRegistry object at 0x12a234320>._payload\nE    +        where <Queries.GrammaticalThoughtRegistry object at 0x12a234320> = <test_item7_acceptance.SentenceFixture object at 0x12a283ce0>.registry",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0074446669314056635,
+          "message": "test/test_item7_predicate_identity.py:25: in test_closing_and_registry_share_predicate\n    assert torch.equal(stored.roles[1], f.registry._payload(reference))\nE   AssertionError: assert False\nE    +  where False = <built-in method equal of type object at 0x10ea013a0>(tensor([-0.0785,  0.6429,  0.1616, -0.2293, -0.0219,  0.4321,  0.1761,  0.5326]), tensor([-0.0714, -0.3026,  0.5261,  0.3561,  0.2685,  0.1762, -0.2427, -0.5812],\\n       grad_fn=<CloneBackward0>))\nE    +    where <built-in method equal of type object at 0x10ea013a0> = torch.equal\nE    +    and   tensor([-0.0714, -0.3026,  0.5261,  0.3561,  0.2685,  0.1762, -0.2427, -0.5812],\\n       grad_fn=<CloneBackward0>) = _payload(('sym', 9))\nE    +      where _payload = <Queries.GrammaticalThoughtRegistry object at 0x12a2838c0>._payload\nE    +        where <Queries.GrammaticalThoughtRegistry object at 0x12a2838c0> = <test_item7_acceptance.SentenceFixture object at 0x12a283230>.registry",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0032859579659998417,
+          "message": "test/test_item7_predicate_identity.py:37: in test_registry_allocates_no_inventory_rows_for_part_or_implies\n    assert f.cs._csw_row_of(reference[1]) is None\nE   assert 0 is None\nE    +  where 0 = _csw_row_of(1)\nE    +    where _csw_row_of = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ... (concept_source_readout): SigmaConceptsFromPercepts(\\n    (sigma): SigmaLayer(\\n      (layer): LinearLayer()\\n    )\\n  )\\n)._csw_row_of\nE    +      where ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ... (concept_source_readout): SigmaConceptsFromPercepts(\\n    (sigma): SigmaLayer(\\n      (layer): LinearLayer()\\n    )\\n  )\\n) = <test_item7_acceptance.SentenceFixture object at 0x12a26ae70>.cs",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00284145912155509,
+          "message": "test/test_item7_predicate_identity.py:60: in test_full_inventory_still_installs_and_forms_part_question\n    question = registry.form('part', *operands[:2])\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Queries.py:2022: in form\n    raise RuntimeError(\nE   RuntimeError: thought operation 'part' is unavailable: ConceptualSpace concept inventory exhausted while allocating 8 id(s) for grammatical thought VPs: snap block has 32 occupied rows and capacity 32. No concept was minted.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-00",
+  "elapsed_seconds": 7.528312291018665,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 441009520,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-00/collect.json"
+    ],
+    "pid": 9377,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 429671624,
+    "elapsed_seconds": 3.536058332771063,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/ak-before/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+        "test/test_item7_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+        "test/test_item7_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+        "test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

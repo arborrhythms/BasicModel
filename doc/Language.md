@@ -1,18 +1,17 @@
 # Language
 
-This document is synchronized to the code as of 2026-06-02. The source
-of truth is `bin/Language.py`, `bin/embed.py`, and (for the perceptual
-analyzer) `bin/perceptual_analyzer.py`. (The earlier
-`bin/typed_stack.py`, `bin/stm_driver.py`, and `bin/parse_state.py`
-modules were retired in the 2026-05-21 / 2026-05-29 refactors; their
-functionality folded into `bin/Layers.py` and `bin/Language.py`.)
+The live grammar is owned by `LanguageSpace` in `bin/Language.py`.
+The September 28 item 7 revision stores a sentence's end state and discards
+its temporary reading record after reconstruction and the explore trial.
+WholeSpace supplies primitive properties; ConceptualSpace owns word and
+object concepts, their index and learned taxonomy.
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
 ### Completed input reconstruction (September 16 migration)
 
 The input's identified `<compose>` derivation owns its reverse choices.
-Reconstruction runs after sealing and executes only operators selected by live
+Reconstruction runs after ending and executes only operators selected by live
 rows. Sigma/Pi undo their learned affine map, including bias, and use an
 occurrence-specific operand in the corresponding chart when available. Their
 balanced split without a witness establishes recomposition, not original-child
@@ -49,54 +48,12 @@ latent behaviors distributed across heads. Their operands are tied back to the
 Formal Concept Analysis side of the model through concept order, role
 participation, and part/whole support in the codebooks.
 
-> **2026-06-02 deltas (subsymbolic analyzer + terminal emitter).**
->
-> - **PS/SS grammar sections.** A `.grammar` file may nest its
->   `<compose>`/`<generate>` under `<PartSpace>` and
->   `<WholeSpace>`. `Grammar.configure` parses them into separate rule
->   tables: `ps_rules` (space-role `P`, read by the PS analyzer) and the
->   canonical symbolic `rules` (`ws_rules`). A bare `<compose>`/`<generate>`
->   file loads as `<WholeSpace>` (backward-compat). The legacy `.cfg`
->   loader is gone.
-> - **Grammar rewrite.** `*_MARK` categories and the copy/swap MARKER
->   helper rules are deleted; surface markers are learned and owned by the
->   operator. Each operator-argument position is its own category
->   (`CONJ_L45`/`CONJ_R45`, ...). copy/swap are retired from the symbolic
->   grammar (kept only as the T5 elision surface policies).
-> - **SurfaceSchema + absorb/emit** (`bin/Layers.py`). Five universal
->   templates T1-T5 declare each operator's marker slot + order; T4
->   `BINARY_JUXTAPOSE` is the default. `GrammarLayer.absorb` binds a
->   co-occurring marker to the operator (many-to-one); `emit` replays it
->   from recorded route metadata, never the lossy `generate()`.
-> - **Operators in the SS codebook, not the STM idea space** (amends plan
->   decision #2). `WholeSpace.insert_operations(grammar)` registers each
->   operation in a dedicated operator codebook on WholeSpace
->   (`_operation_vectors` / `_operation_positions`), separate from the
->   `subspace.what` whole-percept codebook so the percept / idea / `.where` position
->   namespace is untouched; it is wired into `SymbolSubSpace.__init__` so every
->   built model's operator-prefixed parse-tree nodes are codebook-resolvable. The STM idea space holds only combined meanings --
->   the operator says *how* meanings combine, contributing none of its own.
->   The rule-id stays in `.where` (its presence marks a slot as a *computed*
->   idea, which is by definition not a codebook vector).
-> - **IdeaSubSpace** (`bin/Language.py`) -- the PS-meronymic carrier
->   analogue of `SymbolSubSpace`: span buffers + parent/child links + route
->   ids/scores + the marker-route replay fields
->   (`_marker_ps_id`/`_marker_span`/`_order_bit`/`_marker_position`).
-> - **Perceptual analyzer** (`bin/perceptual_analyzer.py`). `EndpointSumWhere`
->   is the invertible span key $where = phase(start) + phase(end)$: the
->   angle decodes the span center, the magnitude the span length.
->   `MeronymicAnalyzer` analyzes a surface into terminals (compatibility
->   mode reuses the word/byte tokenizer as the `boundary` op, so it matches
->   the current lexer), writes durable spans to an `IdeaSubSpace`, exposes
->   a fixed-capacity terminal-stream view, and reverse-synthesizes surface
->   (`synthesize` exact replay; `synthesize_tree` from an operator-prefixed
->   tree with `emit`). `soft_operator_compose` + `WholeSpace
->   .operator_superposition` apply a soft operator distribution over the SS
->   operation codebook (one-hot $\to$ the typed grammar; spread $\to$ the
->   superposition that discriminates `A AND B` from `A OR B`).
-> - **PS-to-SS binding.** `WholeSpace.resolve_ps_terminal(ps_id)` emits
->   `null_sem()` before a binding exists, counts exposures, and promotes a
->   repeated terminal into a fresh SS row.
+The grammar's historical `<WholeSpace>` section name denotes symbolic
+rules (`ws_rules`); it does not give the property tower a word dictionary.
+PartSpace rules describe perceptual analysis. LanguageSpace shares numerical
+operators across compose, generation and the declared thought faces.
+ConceptualSpace's index supplies native concept references; WholeSpace has
+no operator codebook, terminal emitter, word rows or META taxonomy.
 
 > **2026-05-29 deltas:**
 >
@@ -146,7 +103,7 @@ reads the owner through [`_what_memory`](../bin/Models.py).
 The retired `whatThinkingMemory` switch and discourse delegates are removed.
 
 `sentenceExpectation` defaults to true, with structured NP1/VP/NP2 expectation.
-Composition has no expectation capability. Subtraction belongs to the seal;
+Composition has no expectation capability. Subtraction belongs to the closing;
 the chooser receives detached conceived roles. A declared `not.thought` may
 conclude a serial inference, but absence itself executes nothing. The positive
 production prior seeds `<generate>` only. See
@@ -159,18 +116,19 @@ stream; hard resets and document changes make the affected row cold.
 See [`InterSentenceLayer.Reset`](../bin/Layers.py) and
 [the integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#11-code-review-2026-09-16-local-role-expectation-implementation).
 
-## Recorded compose execution
+## Open reading and completed fields
 
-Answer materialization replays its captured compose program through
-[`_replay_program`](../bin/Models.py).
-[`forward_binary_step`](../bin/Language.py) executes the recorded
-operator for each live row, preserving the newest operand on inactive rows.
-Eager calls dispatch the selected operator set; compiled calls use conditional
-branches. Both retain the existing operator parameters and input gradients,
-verified by [mixed-row value and gradient tests](../test/test_recorded_compose_dispatch.py#L44).
-This avoids allocating every binary operator's intermediate transforms at
-every replayed word. The input inverse traversal remains the separate
-migration described in [the integrated spec §6](plans/2026-09-15-next-sentence-as-the-production-objective.md#6-code-review-compiled-reverse-loops-2026-09-12).
+The selected compose operations are recorded while reading for the tied
+inverse objective and the single forced exploration deviation. The numerical
+journal captures operands and results at execution time; closing assigns
+grammatical metadata without executing those operators again.
+
+After the row is written, generation begins from its actual one-slot or
+three-slot field and the current generate policy. Answer materialization and
+recall use `SentenceEndState`, with no saved input program. The standalone
+[`forward_binary_step`](../bin/Language.py) dispatch remains available for
+explicit operation calls and its
+[value and gradient checks](../test/test_recorded_compose_dispatch.py#L44).
 
 ## Retired XML Knobs
 
@@ -331,7 +289,7 @@ fabricating a split would corrupt the reconstruction.
 | `tense` | 1 | CS | phase rotation of the `.when` band (`shift_time(+delta)`) | exact inverse rotation (`shift_time(-delta)`) |
 | `aspect` | 1 | CS | identity (rewrite() planned; not a live rule) | identity |
 | `morphology` | 1 | CS | surface inflection $\to$ `.when` (tense/aspect feature ops) | analyzes features, undoes aspect ops in reverse order, then tense |
-| `symbolize` | 2 | CS | bind PS percept row + WS symbol row into an idempotent META node (fused average; `insert_meta`) | recover META children by nearest WS row; balanced `(parent/2, parent/2)` split without wired stores |
+| `symbolize` | 2 | CS | pure `(left + right) / 2` composition; no word/object admission | `(parent/2, parent/2)` numerical split; no store lookup |
 | `conjunction` | 2 | SS | `Ops.intersection` monotonic (scalar activation min; RadMin under `<radialStmReduce>`) | recommender (`monotonic=True`, radial-aware); `snap=True` $\to$ MEET-aware snap; no basis $\to$ raise |
 | `disjunction` | 2 | SS | `Ops.union` monotonic (scalar activation max; RadMax under `<radialStmReduce>`) | recommender; `snap=True` $\to$ JOIN snap; no basis $\to$ raise |
 | `exist` | 1 | SS | identity (EXISTS roots the minimal event) | identity |
@@ -373,8 +331,8 @@ perceptual layer reads coordinates.
 
 #### `interpret`: word-concept to object-concept (item 9b, 2026-09-25)
 
-Decided (Alec, 2026-09-25;
-[plan](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md)). The
+Decided (Alec, 2026-09-25; amended for DEF rows on September 29 in
+[item 7 §17](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29)). The
 resolution the paragraph above describes — a word resolved to its object
 concept — is a declared `<compose>` operator:
 
@@ -389,36 +347,43 @@ as, which PartSpace has already looked up as the recurring unit the fold
 ladder admitted — `interpret` is never the byte-to-word step.
 `interpret_O1` is the **object-concept** already associated with the word,
 at whatever order that object has. For example, *cat* returns a known cat
-kind if that is its association. Only an unknown association needs a new
-object; without a grammar request that new object is an order-1 particular.
-Grammar selects among ambiguous existing associations or requests the order
-of a new mint. A default call never adds a particular beside a known kind.
+kind if that is its association. Grammar selects among ambiguous existing
+associations. A new object replaces the word in its inventory row, with
+that row's order; no singleton fold raises it merely to bind a word.
+A default call never adds a particular beside a known kind.
 Reference orders follow
 [Lexicon](Lexicon.md#word-forms-and-concept-orders); the operator never
 reads the surface form, and no word is anchored to it.
 
-It is not a mode and not chooser-routed: in serial mode **every arriving
-word is interpreted before it takes part in composition**, so `lift`,
-`lower`, `part` and the rest compose object-concepts, not words. What is
-learned is only the resolution. An **unknown word mints** a provisional
-object row whose only literal is the word occurrence that named it —
-object-concepts without direct experience, by testimony; a second
-occurrence resolves to the same row, admission follows the ordinary
-recurrence rule, and a later witnessed percept or a sealed assertion
-(*a wug is a bird*) writes its definition. `interpret` replaces the
-host-side `create_word_object_meta` triple `(A = word, B = object,
-C = meta)` and its callers; the two-truths seal, which writes asserted
-part rows between the object concepts words resolve to, stops resolving
-them itself. The `<thought>` face is off by default; a per-model
-allow-list may add it for naming what is attended. Interleaving uses the
-ordinary serial reading after its parallel context pass.
+It is not a mode and not chooser-routed: **every arriving word is
+interpreted under every binding**. Its parts fuse before lookup, and its
+concept retains its parts and wholes. Presence requires the part inside
+the word's bracket; a shared property never evidences an absent word.
+Re-reading the same canonical parts mints and writes nothing, regardless
+of changes to the learned property reading. Different parts remain an
+alternative witnessed definition.
 
-The implementation keeps the operator outside the chooser's action catalog.
-The serial word transaction invokes its tensor face before the post-deposit
-grammar choice. Native parallel admission creates word predicates without
-invoking this serial forward face. The owned lexical inverse remains available
-for generation. Interleaving does not invoke a separate inverse pass or replace
-the native field with label feedback.
+A new word reserves one inventory row and one store row before allocating
+its two identities. The object takes the word's inventory seat; the word
+continues to exist by identity in `word DEF object`. DEF operands are
+symbols named by identity, with null operand vector slots. `interpret`
+alone writes these rows, and the closing alone writes assertions. Where
+the field discovers objects, the DEF row is completed when that field
+admits its case. Word admission never takes the case's place. Refusal
+leaves no partial word or definition.
+
+One derived index provides form/unit → word, word → objects, and
+object → words. It owns generation's lexical inverse as well as forward
+resolution; learned-code changes do not change its answers. The META
+triple, its fold, `ReferenceTable` and the allocator's duplicate binding
+records are retired. Old META checkpoints migrate to DEF rows.
+
+The eager word transaction runs before a graph; the serial tensor face
+publishes the resolved object's activation and atom. Sentence boundaries
+retain recognized-word and category-codebook work. A DEF row has its own
+fixed `.when`; re-reading refreshes its recency timestamp. It can be
+forgotten, after which the word is interpreted afresh. It has ordinary
+row provenance and does not inherit the sentence's source trust.
 
 #### Tensor reverses for the compiled loops (2026-09-13)
 
@@ -531,27 +496,12 @@ just the set of operator roles it can fill. Dimensionality is recovered
 from participation (`bin/participation.py`) rather than declared up
 front: symbols that fill the same roles cluster into the same category.
 
-Starts are scoped per space (`_configure_starts`):
-
-- `PartSpace.start` is the universal whole-input role `U` --- the
-  analyzer begins from the entire surface and decomposes it.
-- `WholeSpace.start` is the set of operator output roles
-  (`equal_O1`, `part_O1`, `exist_O1`, ...) --- parsing begins from
-  what an operator can *produce*.
-
-The **operator codebook** is a second codebook on `WholeSpace`,
-separate from the whole-percept codebook:
-
-- `_operation_vectors`: operator name $\to$ identity vector.
-- `_operation_positions`: operator name $\to$ codebook position.
-
-It stores one prototype per operator — the live codebook is `equal`,
-`part`, `whole`, `exist`, `conjunction`, `disjunction`, `adverb`, `bind`,
-`intersection`, `lift`, `lower`, `morphology`, `non`, `not`,
-`preposition`, `product`, `sum`, `tense`, `union`, `verb`
-(`insert_operations`, `bin/Spaces.py:19582`) — and is kept CPU-explicit
-so the host-side identity lookup never mixes with an ambient MPS / CUDA
-default device.
+The grammar declares its perceptual start and its symbolic start separately.
+The property tower has no grammar dictionary. The symbolic sentence finishes
+as one `S` slot or three `S REL S` slots. A relation's middle slot holds the
+native identity of `part`, `implies` or `operator`, supplied by the declared
+thought registry. Numerical operators live in LanguageSpace and their
+conceptual identities live in ConceptualSpace.
 
 ### Chooser architecture capacity
 
@@ -645,7 +595,7 @@ idea interrogative; only the completed-row boundary dispatcher can execute it.
 The historical `_SURFACE_TO_KIND` aliases remain an isolated compatibility
 adapter for the older reasoner. They do not define a production grammar
 operator, native VP, selected thought action, or learned feature.
-The operator-codebook utilities and participation clustering are live and tested.
+The declared thought catalog and participation clustering are live and tested.
 Production compose uses the hard derivations described below.
 
 ### Participation Categories as the Chooser's Syntactic-Category Context
@@ -674,35 +624,30 @@ This role-participation profile is the **primary determinant of syntax** — wha
 a constituent *is* (its category) governs what it can combine with more than its
 surface content does. So it is precisely the context the placement chooser
 (`MLPTransformChooser`, the soft route's scorer — see
-[Soft-superposition route](#soft-superposition-route-the-learning-two-pass))
+[One operation per round](#one-operation-per-round-item-75))
 needs when scoring "should this pair reduce, and with which operator?": the
 chooser must see the **category of the value already sitting in each slot**, not
 only the candidate operator's own output. The design realizes this as a small
-**Category codebook keyed by the MetaSymbol**, learned online by E/M from
+**Category codebook keyed by conceptual identity**, learned online by E/M from
 perception:
 
-- **The MetaSymbol unifies word and object (it already exists, live).** The
-  Concept codebook stores `concept -> code`; a **MetaSymbol** is the exception — one
-  symbol that holds *two* codes, the **word code and the object code**, a
-  deliberate equivalence class asserting *this word $\equiv$ this object*. This is the
-  live **META node** in the WholeSpace taxonomy: `WholeSpace.insert_meta`
-  allocates one SS-codebook row tagged `"meta"` whose two taxonomy children are
-  the PS object position and the SS word position, minted during **perception**
-  by the autobind hook (`ConceptualSpace._maybe_autobind_meta` at the sentence
-  boundary). Because the category attaches to the MetaSymbol, the syntactic
-  signal learned from the *word's* role participation directly shapes the
-  *object's* category, and vice versa.
+- **Word and object are conceptual identities.** `ConceptualSpace.interpret`
+  associates a word concept with its object interpretation through a DEF row.
+  The definition index resolves that association; the concept-level index
+  owns sigma edges. WholeSpace contributes no word or META rows.
+  Categories attach to the interpreted object's identity,
+  so observed word roles can condition its object interpretation.
 - **A small Category codebook, not a permanent per-word count table.** The VQ
   lives directly in role-participation space: $K \approx$ `n_roles` (55 on the
   live `complete.grammar`, `compute_role_vocabulary`) initial
   centroids, one seeded from each labelled role (`<op>_I<n>` inputs +
-  `<op>_O1` outputs). Unlearned MetaSymbols have only a bounded temporary row in
-  `MetaSymbolCategoryLearner`; learned MetaSymbols keep just
-  `MetaSymbol -> category_id`.
+  `<op>_O1` outputs). Unlearned identities have only a bounded temporary row in
+  the existing `MetaSymbolCategoryLearner` (its historical class name);
+  learned identities keep just `concept identity -> category_id`.
 - **E/M learned from perception, with emergent collapse.** Each analysis route
-  contributes a sparse role vector to the MetaSymbol that occupied the terminal
+  contributes a sparse role vector to the concept that occupied the terminal
   position. The pending row accumulates that evidence until mass, confidence,
-  margin, and short-term stability thresholds are met. Then the MetaSymbol
+  margin, and short-term stability thresholds are met. Then the concept
   commits to one VQ centroid and the pending row is discarded. Starting from one
   centroid per role and letting unused centroids decay, **effective K shrinks as
   role-use profiles pull centroids together** — the online realization of
@@ -710,34 +655,19 @@ perception:
 - **Feeds the per-slot category to the chooser.** The chooser conditions each
   slot on the **role vector of the committed centroid**; while a word is still
   unsettled, the pending row supplies a temporary role context. The gather path
-  is `percept id $\to$ taxonomy parent (MetaSymbol) $\to$ committed category or pending
+  is `percept id $\to$ conceptual identity $\to$ committed category or pending
   evidence $\to$ role vector`. `MLPTransformChooser` receives the vector as a
   feature block; anchor-dot/default routing uses the same vector as a
   labelled-role score prior.
 
-This splits into two phases: **(1)** learn the category codebook from perception
-in the autobind hook (no change to the layer forwards — reads the stashed
-analysis route); **(2)** thread the per-slot category through `compose` /
-`score_binary` / `score_unary` into the chooser `feat` (the larger change — the
-layer forwards carry only `[B,N,D]` today, with no per-slot symbol identity).
-
-**Status (implemented behind `<categoryCodebook>`, default true).**
-`WholeSpace.enable_category_codebook` builds the role-space VQ
-(`codebook_retire=False`) + `_category_role[K, n_roles]`, enumerated from
-`compute_role_vocabulary`; it is requested at build and **lazily enabled on the
-first perception forward**. `LanguageLayer._collect_round0_role_obs` stashes the
-first binary space-role's round-0 reduces (`op_I1`/`op_I2` per operand), and the
-autobind hook (`_maybe_autobind_meta`) feeds those observations to
-`MetaSymbolCategoryLearner`. The learner owns the pending per-MetaSymbol role
-rows, commits stable symbols into `WholeSpace._category_assign`, and drops the
-pending row. Structured grammar layers use the resulting role context for all
-transform choosers: MLP as an input feature, anchor-dot/default as a
-labelled-role score prior. The current round-0/first-space-role observation is
-parallel-mode-correct; serial (`<serial>true</serial>`) attribution is approximate.
-The old `WholeSpace.category_codebook` was retired 2026-05-20 and is gone; the
-dormant declared-POS tables (`category_embedding`, `category_logits`/
-`category_ids`, the order-taxonomy admissibility gate) are superseded and slated
-for follow-up retirement, not reuse.
+**Status (enabled by `<categoryCodebook>`, default true).**
+`ConceptualSpace.enable_category_codebook` owns the role-space VQ, pending
+observations and committed category assignments. LanguageSpace records the
+winning reading's selected operand roles while the sentence is still open,
+before discarding its operation record. Those observations train the existing
+category learner. The chooser reads the committed centroid, or the pending
+role context while a concept is unsettled. Both binary and unary candidates
+use the same category owner.
 
 ## One operation per round (item 7.5)
 
@@ -752,10 +682,10 @@ one for an absolute row and at depth three or below for a relative row.
 The tensor slab and round budget stay fixed. An active mask freezes a row after
 STOP; it does not change the compiled shape. The parallel budget is at least
 twice the slab width. Serial STM uses this same owned layer on its newest two
-slots, with three rounds after each word and a seal budget of twice STM capacity
+slots, with three rounds after each word and a closing budget of twice STM capacity
 (bounded by a positive `syntacticOrder`). Occupancy and the STOP test use the
 whole STM's depth, not just the two-slot window. Online rounds allow `K - 1`
-occupied slots, reserving admission for the next word. Seals allow one absolute
+occupied slots, reserving admission for the next word. Endings allow one absolute
 slot or three relative slots; two slots are a transient state, not an allowance.
 
 With depth `d`, allowance `a`, and `r` rounds left including the current round,
@@ -766,7 +696,7 @@ binary logit receives `reducePressure * (d/a + n/r)`, with zero pressure on an
 empty stack. `architecture.reducePressure` defaults to `1.0`; the fixed prior
 adds no learned parameters and enters the model's gradient credit. See
 [Params](Params.md) for the numerical guards and the declared measurement value.
-Three online rounds and `2K` seal rounds suffice to admit every word and finish
+Three online rounds and `2K` closing rounds suffice to admit every word and finish
 each row. A deliberately infeasible initial budget may still yield an incomplete
 forest that trains without publishing a row. Arrival at a full stack is an
 assertion failure; compose has no overflow-dropping or overflow-incomplete path.
@@ -784,7 +714,7 @@ rounds sample freely; earlier divergence or STOP already distinguishes paths.
 Packed sentences each receive their own forced round. A catalog with no legal
 alternative at that round raises explicitly.
 
-At each eager sentence seal between compiled word bricks, exploit runs compose,
+At each eager sentence closing between compiled word bricks, exploit runs compose,
 sentence reconstruction and prediction loss, backward and optimizer step.
 Explore repeats compose from the same cached pre-compose word vectors and the
 committed context after the preceding sentence, using updated parameters.
@@ -817,7 +747,120 @@ See the [7.5 specification](specs/2026-09-26-one-operation-per-round.md) and
 are recorded without tuning; the XOR_grammar and MM learning gates retain their
 original assertions.
 
+## Words narrow the domain of discourse (2026-09-28)
+
+Decided in direction by Alec on 2026-09-28. The statement and its
+consequences are in
+[the accessible-mind specification §2.0.1](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention);
+this section gives the language mechanics. Nothing in it is implemented as
+such or measured.
+
+**The parse.** "A fake gun" is `lower(fake(gun(thing)))`. `thing` is the
+domain of discourse. `gun()` and `fake()` are the same kind of operation,
+each a projection that narrows it, and they commute, so
+`gun(fake(thing))` means the same. The determiner's `lower` individuates
+from what is left. The operator that narrows nothing is the symbol
+`everything`, the top pole.
+
+**Parts of speech are roles.** A codebook row is an operator. Read against
+the whole domain it is a noun; applied to a narrowed domain it restricts.
+English shows both directions: "a fake" is a noun, and in "gun oil" `gun`
+restricts. This agrees with
+[independent components §2.7](specs/2026-09-26-independent-components.md#27-tie-to-the-grammatical-derivation):
+no word is anchored to an operator, and a row is routed per frame by
+learned credit.
+
+| word class | what it does | index |
+|---|---|---|
+| noun, adjective | narrows which thing | |
+| determiner | individuates: "a" mints, "the" binds, "every" does not lower | thing |
+| verb, adverb | narrows which stretch of time, and what changes | |
+| tense, aspect | individuates the time | time |
+| conditional | narrows which alternatives are in play | |
+| modal | individuates: "might" some, "must" all | alternative |
+
+**Which operators commute.** One that acts the same on any domain commutes
+with the others (*fake*, *wooden*, *noble*). One that reads its scale from
+the domain it is given does not, and must follow the noun (*big*,
+*skillful*). Compounds are the plainest case: "gun oil is a kind of oil; oil
+gun is a kind of gun", so order of application matters (Alec, 2026-09-28).
+The Ground the modifier is read against is the head's own shape, its cases
+at every order, which "already exists in virtue of the folds at every
+order, so no new parameterization should be necessary". A head must
+therefore have a shape: "'gun Felix' does not work precisely because Felix
+is a proper noun, not a kind". Modification keeps the head's order, "oil
+"Order only drops when the determiner is applied, adjectives do not perform
+that role." (*Amended, Alec, 2026-09-29:* "the order drops at the
+determiner and nowhere else" is "probably wrong"; what stands is that
+adjectives do not drop it.) Order and part of speech are different things and "only
+sometimes correspond": "Felix is a cat" and "cats are animals" are both
+taxonomic relations and both can take part in the sigma fold, the first
+between a proper noun and a count noun and the second between two count
+nouns. A set and a part are different relations: "cats and dogs, two
+discrete concepts, create animals, which is then necessarily of a different
+order", while "blue cats is a part of the extension of cats" and keeps its
+order. The determiner moves from a set to a member; the adjective moves
+from a whole to a part. A compound is neither: "oil gun and gun oil may be
+interesting cases of sub-typing without creating a new term, which is
+masquerading as an adjective" (decided, Alec, 2026-09-29: "Compounds are
+subtyping, which explains their order effects"). It sub-types
+its head, so the order of its two nouns matters, and adjectives are left
+free to commute. It does not lower the order: "I don't think compounds do
+the work of determiners, but they select from the determined set. An oil is
+a kind of oil, a gun oil is a specific kind of oil."  The order drops at the
+determiner; the words "and nowhere else" are withdrawn (Alec, 2026-09-29).
+The test is whether the word can stand as a noun over the
+whole domain. In both cases the domain is kept as the Ground against which
+the narrowed Figure has its meaning; it is not discarded as perceptual
+attention discards what it excludes.
+
+**"Every".** "Every cat sleeps" does not lower: "it remains a high-order
+relation" between the concepts at their own order, the subsumption
+`sleeps(cat) = cat`, and it is lowered only when thought applies it to a
+particular. The grammar rule `lower(DET, NP)` therefore covers "a" and
+"the"; "every" marks the subject generic, which by
+[two truths](specs/2026-09-16-two-truths-ideas-and-relations.md) writes a
+relation row. *Amended (Alec, 2026-09-30): "every lowers like all but has a
+different plurality", and a bare plural lowers by an implicit plural
+determiner, "all" or "some"; the determiner row of the table above is
+superseded
+([5.5 spec §6](specs/2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers)).*
+
+**Verbs.** A verb adds dimensions to the description and removes freedom
+from the thing described. The noun is silent on when, and on what the thing
+does; the verb constrains those dimensions. The verb operator already has
+this form, `VP(NP) = tanh(e^{w} ⊙ atanh(NP))` with `w` sparse, so it is the
+identity wherever the verb is silent ([Language.py](../bin/Language.py)).
+
+**What the code does today.** The adjective rule `AP = lower(ADJ, NP)`
+adds its two operands in the log-odds chart and applies one shared learned
+map, `tanh(W·(atanh a + atanh b) + b/2)`, and `lift` has the same form. So
+both commute by construction, and neither can treat a modifier differently
+from its head: "gun oil" and "oil gun" get one vector. The fold accumulates
+and is not idempotent, and its identity is the signed origin, not
+`[1, 1, …]`. Decided by Alec on 2026-09-29: the noun phrase combines by an
+idempotent election, "a red red bird is no more red than a red bird", "so
+perhaps a form of intersection", and the adverb multiplicatively
+([specification](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention);
+[operator catalogue §4](specs/2026-09-29-operator-catalogue.md#4-noun-adjective-verb-and-adverb)).
+`RadMin` is Boole's product only on presence. The verb's threshold `τ = 0.1` and clamp `±8` are
+hard-coded. These are recorded in the specification's code notes and in
+[FutureWork](FutureWork.md#modality-as-the-third-index-noted-2026-09-28);
+none is changed here.
+
 ## Future work: nouns from PartSpace, adjectives from WholeSpace
+
+> **Mostly superseded (Alec, 2026-09-28).** The opening of this section is
+> now decided in direction: a noun is the same kind of function as an
+> adjective, already mapped over the top domain, and that top domain is the
+> domain of discourse at its widest
+> ([above](#words-narrow-the-domain-of-discourse-2026-09-28)). The
+> conjecture that follows it — concrete nouns sourced from PartSpace and
+> adjectives from WholeSpace, so that part of speech falls out of the pole a
+> symbol is pre-applied to — is "an old conjecture, mostly undone by the
+> hypothesis that words are projection operators onto lower-dimensional or
+> smaller subspaces". Part of speech is a role in a derivation. The section
+> is kept for the record.
 
 The signed-space snap models a concrete
 noun as an adjective pre-applied to the top domain --- `black(cat($\ldots$))`

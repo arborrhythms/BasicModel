@@ -1,0 +1,9 @@
+{
+  "selector": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+  "diagnostic_only": true,
+  "memory_guard": null,
+  "returncode": 0,
+  "reason": "completed",
+  "peak_memory_bytes": 13093022016,
+  "elapsed_seconds": 9.528152875136584
+}

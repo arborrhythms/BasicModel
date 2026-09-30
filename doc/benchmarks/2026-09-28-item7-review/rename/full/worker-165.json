@@ -1,0 +1,133 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ],
+  "completed": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001456249738112092,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010900001507252455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.845895692706108e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024449999909847975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001373749691992998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0856400829507038,
+      "message": "test/test_stm_recon_from_cleared_cache.py:256: in test_forward_produces_single_S_and_targets\n    S, fwd_idx = _run_forward(model)\n                 ^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.07917912502307445,
+      "message": "test/test_stm_recon_from_cleared_cache.py:272: in test_cache_clears_and_chart_generate_rederives_from_stm\n    _run_forward(model)\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0777687500230968,
+      "message": "test/test_stm_recon_from_cleared_cache.py:309: in test_reverse_from_cleared_cache_is_drivable_and_decodable\n    S, _ = _run_forward(model)\n           ^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0835214169928804,
+      "message": "test/test_stm_recon_from_cleared_cache.py:328: in test_reverse_body_preserves_finiteness_on_finite_seed\n    _run_forward(model)\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.06631170900072902,
+      "message": "test/test_stm_recon_from_cleared_cache.py:364: in test_forward_stm_idea_is_finite\n    out = model.forward(x)\n          ^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0661964169703424,
+      "message": "test/test_stm_recon_from_cleared_cache.py:395: in test_reverse_perceptual_preserves_finiteness_on_finite_seed\n    _run_forward(model)\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+      "phase": "call",
+      "outcome": "xfailed",
+      "duration": 0.07091333298012614,
+      "message": "test/test_stm_recon_from_cleared_cache.py:436: in test_topk_recovered_words_overlap_input\n    S, fwd_idx = _run_forward(model)\n                 ^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:184: in _run_forward\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9007: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24288: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18222: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22617: in _forward_body_per_word\n    row = _append_observed_meaning(\nbin/Models.py:169: in _append_observed_meaning\n    raise ValueError('an observation requires its selected clause and shared index')\nE   ValueError: an observation requires its selected clause and shared index",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

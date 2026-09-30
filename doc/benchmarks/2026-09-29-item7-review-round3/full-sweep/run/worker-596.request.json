@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+    "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+    "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+    "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/full-sweep/run/worker-596.recycle.json"
+}

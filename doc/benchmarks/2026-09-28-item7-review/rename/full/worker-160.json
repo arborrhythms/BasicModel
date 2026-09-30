@@ -1,0 +1,55 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_recon_bench.py::test_exact_match_rate_is_1_on_identity",
+    "test/test_recon_bench.py::test_run_record_schema_smoke",
+    "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+    "test/test_recon_bench.py::test_byte_lexer_config_decodes"
+  ],
+  "completed": [
+    "test/test_recon_bench.py::test_exact_match_rate_is_1_on_identity",
+    "test/test_recon_bench.py::test_run_record_schema_smoke",
+    "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+    "test/test_recon_bench.py::test_byte_lexer_config_decodes"
+  ],
+  "slow_selected": [
+    "test/test_recon_bench.py::test_byte_lexer_config_decodes"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_recon_bench.py::test_exact_match_rate_is_1_on_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016425002831965685,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_run_record_schema_smoke",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.4821018750080839,
+      "message": "test/test_recon_bench.py:18: in test_run_record_schema_smoke\n    rec = run_config(\"data/MM_xor_fixture.xml\", epochs=1, seed=0,\nbin/recon_bench.py:213: in run_config\n    _epoch_loop()\nbin/recon_bench.py:197: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\n"
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.037137791980057955,
+      "message": "test/test_recon_bench.py:55: in test_decode_rows_align_with_last_eval_batch\n    rec = run_config(\"data/MM_xor_fixture.xml\", epochs=1, seed=0,\nbin/recon_bench.py:213: in run_config\n    _epoch_loop()\nbin/recon_bench.py:197: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\n"
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_byte_lexer_config_decodes",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012883299496024847,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_recon_bench.py', 65, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

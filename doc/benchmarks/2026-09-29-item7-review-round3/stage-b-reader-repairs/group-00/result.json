@@ -1,0 +1,181 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row"
+  ],
+  "completed": [
+    "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-00/worker-000.json"
+      ],
+      "pid": 10029,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 517899656,
+      "elapsed_seconds": 4.822350124944933,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+        "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+        "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+        "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+        "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+        "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row"
+      ],
+      "completed": [
+        "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+        "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+        "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+        "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+        "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+        "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.1535343340365216,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.17623870901297778,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.69491541699972,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.005984916002489626,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08635041699744761,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05351475009229034,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004837082931771874,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0041161669651046395,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-00",
+  "elapsed_seconds": 6.826442291028798,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 517899656,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-00/collect.json"
+    ],
+    "pid": 10017,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180552520,
+    "elapsed_seconds": 1.777162833022885,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-reader-repairs/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "test/test_item7_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "test/test_item7_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+        "test/test_item7_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+        "test/test_item7_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+        "test/test_item7_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+        "test/test_item7_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+        "test/test_item7_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

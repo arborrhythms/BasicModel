@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-085.recycle.json"
+}

@@ -1,0 +1,5 @@
+test/test_reference_table.py::test_symbol_code_shape_and_zero_bands
+test/test_reference_table.py::test_symbol_code_deterministic_identity
+test/test_reference_table.py::test_symbol_codes_are_mereologically_inert
+
+3 tests collected in 0.81s

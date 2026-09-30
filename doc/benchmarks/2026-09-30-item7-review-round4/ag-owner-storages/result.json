@@ -1,0 +1,22 @@
+{
+  "groups": [
+    {
+      "selector": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_graph_owners_v4.py",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "group-00/result.json"
+    }
+  ],
+  "diagnostic_only": [
+    {
+      "selector": "doc/benchmarks/2026-09-30-item7-review-round4/probe_graph_owners_v4.py::test_graph_release_memory_owners",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 14921641960,
+      "elapsed_seconds": 56.28223470901139
+    }
+  ],
+  "reason": "failed"
+}

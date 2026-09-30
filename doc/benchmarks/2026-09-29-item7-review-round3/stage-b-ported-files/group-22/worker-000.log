@@ -1,0 +1,18 @@
+..F......                                                                [100%]
+=================================== FAILURES ===================================
+____ test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk _____
+test/test_radix_layer_reverse.py:116: in test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk
+    cs.remember_word_surface(cs._csw_row_of(word), b'beta', object_row=row, object_id=obj)
+bin/Spaces.py:19401: in remember_word_surface
+    surfaces.setdefault(int(row), bytes(surface))
+                        ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+=============================== warnings summary ===============================
+test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk
+1 failed, 8 passed, 1 warning in 2.17s

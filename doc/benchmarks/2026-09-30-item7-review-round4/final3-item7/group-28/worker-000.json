@@ -1,0 +1,43 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+  ],
+  "completed": [
+    "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016638583038002253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_truth_text.py::test_given_truth_texts_are_plain_english",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000781375216320157,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004066833993420005,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

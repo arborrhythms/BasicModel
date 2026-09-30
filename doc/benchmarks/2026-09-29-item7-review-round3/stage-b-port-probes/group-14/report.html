@@ -1,0 +1,375 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 13/13 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004974542069248855</pre></td><td><pre>test/test_item7_acceptance.py:90: in test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+    clause = f.clause((&#x27;lift&#x27;, (&#x27;lower&#x27;, &#x27;the&#x27;, &#x27;cat&#x27;), (&#x27;verb&#x27;, &#x27;chased&#x27;, (&#x27;lower&#x27;, &#x27;the&#x27;, &#x27;mouse&#x27;))))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0030497079715132713</pre></td><td><pre>test/test_item7_acceptance.py:105: in test_04_absolute_clauses_closing_bottom_up_without_relation_rows
+    clause = f.clause((&#x27;lift&#x27;, &#x27;he&#x27;, (&#x27;verb&#x27;, &#x27;said&#x27;, middle)))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.055257625062949955</pre></td><td><pre>test/test_item7_acceptance.py:116: in test_05_embedded_part_is_unasserted_and_propagates_operator_kind
+    clause = f.clause((&#x27;lift&#x27;, &#x27;he&#x27;, (&#x27;verb&#x27;, &#x27;said&#x27;, inner)))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0029955829959362745</pre></td><td><pre>test/test_item7_acceptance.py:127: in test_12_generic_subject_is_a_relation_with_either_predicate
+    relative = f.clause((&#x27;lift&#x27;, (&#x27;generic&#x27;, &#x27;cats&#x27;), predicate))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0030349999433383346</pre></td><td><pre>test/test_item7_acceptance.py:134: in test_02_part_uses_object_concepts_and_reassertion_joins_evidence
+    clause = f.clause((&#x27;part&#x27;, &#x27;cats&#x27;, &#x27;animals&#x27;))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[black]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.002997457981109619</pre></td><td><pre>test/test_item7_acceptance.py:145: in test_03_particular_subject_ends_an_idea
+    row = f.store.write_clause(f.clause((&#x27;lift&#x27;, (&#x27;lower&#x27;, &#x27;the&#x27;, &#x27;cat&#x27;), predicate)))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0034232919570058584</pre></td><td><pre>test/test_item7_acceptance.py:145: in test_03_particular_subject_ends_an_idea
+    row = f.store.write_clause(f.clause((&#x27;lift&#x27;, (&#x27;lower&#x27;, &#x27;the&#x27;, &#x27;cat&#x27;), predicate)))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0030354580376297235</pre></td><td><pre>test/test_item7_acceptance.py:151: in test_06_implication_keeps_two_unasserted_relation_operands
+    clause = f.clause((&#x27;implies&#x27;, (&#x27;part&#x27;, &#x27;cats&#x27;, &#x27;animals&#x27;), (&#x27;part&#x27;, &#x27;cats&#x27;, &#x27;breathers&#x27;)))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0030121669406071305</pre></td><td><pre>test/test_item7_acceptance.py:161: in test_implication_closes_bare_np_arguments_as_idea_clauses
+    row = f.store.write_clause(f.clause((&#x27;implies&#x27;, &#x27;rain&#x27;, &#x27;wet&#x27;)))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_07_equality_writes_two_independent_part_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.003021584008820355</pre></td><td><pre>test/test_item7_acceptance.py:167: in test_07_equality_writes_two_independent_part_rows
+    first = f.store.write_clause(f.clause((&#x27;equal&#x27;, &#x27;morning-star&#x27;, &#x27;evening-star&#x27;)), trust=.7, evidence=(.7, 0.))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0029797080205753446</pre></td><td><pre>test/test_item7_acceptance.py:176: in test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row
+    eternal = f.store.write_clause(f.clause(&#x27;cat&#x27;, located=False))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.003018292016349733</pre></td><td><pre>test/test_item7_acceptance.py:187: in test_09_attribution_cannot_assert_its_child_and_negation_is_content
+    f.store.write_clause(f.clause((&#x27;lift&#x27;, &#x27;it&#x27;, (&#x27;verb&#x27;, attitude, inner))), trust=.8)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_acceptance.py::test_end_clause_survives_a_later_head_projection</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0030385839054360986</pre></td><td><pre>test/test_item7_acceptance.py:196: in test_end_clause_survives_a_later_head_projection
+    clause = f.clause((&#x27;lift&#x27;, (&#x27;lower&#x27;, earlier, &#x27;cat&#x27;), &#x27;runs&#x27;))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:85: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:72: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:67: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_item7_acceptance.py:59: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_item7_acceptance.py:51: in noun
+    wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:36: in lookup_word
+    alloc, index = _concept_alloc_of(cs), cs.definitions
+                                          ^^^^^^^^^^^^^^
+bin/Spaces.py:19583: in definitions
+    raise RuntimeError(&#x27;interpret requires the common truth store&#x27;)
+E   RuntimeError: interpret requires the common truth store</pre></td><td><pre></pre></td></tr></table></body></html>

@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+    "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+    "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+    "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries"
+  ],
+  "completed": [
+    "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+    "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+    "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+    "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002442500554025173,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.345798753201962e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.987503290176392e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010850001126527786,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

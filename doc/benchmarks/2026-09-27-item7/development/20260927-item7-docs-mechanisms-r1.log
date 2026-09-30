@@ -1,0 +1,74 @@
+........................................................................ [ 36%]
+..................................................s..................... [ 72%]
+.......................................................                  [100%]
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_item7_provenance.py::test_provisioning_retains_real_selected_derivations_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:18127: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+198 passed, 1 skipped, 17 warnings in 4.23s

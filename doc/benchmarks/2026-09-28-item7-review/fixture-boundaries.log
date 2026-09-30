@@ -1,0 +1,1803 @@
+...........F...............................................s............ [ 38%]
+.s.................FF........F....FF..F....................FF........... [ 76%]
+.FF.......................................F..                            [100%]
+=================================== FAILURES ===================================
+_________ test_normal_what_effect_enters_recency_and_detached_knowing __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1234e5d30>
+
+    def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
+        from dataclasses import replace
+        from QueryWork import QueryWorkBudget
+        from test_normal_thought_controller import _catalog_world
+        from Queries import ThoughtResult
+        model, registry, memory, part, whole = _catalog_world()
+        store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
+        fact = registry.form('part', part, whole, mode='assertive')
+        from MemoryIndex import configure_model_index
+        from Queries import _existing_row
+        configure_model_index(model, store)
+        terms = tuple((_existing_row(registry.space, ref),) for ref in fact.role_refs)
+        oldest = append_indexed(store, fact, terms=terms, trust=.7)
+        for _ in range(20):
+            append_indexed(store, replace(fact, roles=fact.roles + 20,
+                                        role_refs=(('sym', 500), None, ('sym', 501))),
+                           terms=((500,), (), (501,)), trust=.1)
+        cue = replace(fact, mode='interrogative', role_mask=torch.tensor([True, True, False]),
+                      role_refs=(part, fact.role_refs[1], None))
+        cue_row = store.append_meaning(cue, kind='question')
+        with model._query_boundary_scope((0,)):
+            meter = QueryWorkBudget(256)
+            context = model._thought_grammar_context(cue, row=0, work=meter, continuation=None)
+            question = registry.form('what', store.occurrence_of(cue_row), context=context)
+        def choose(root, active, actions, **kw):
+            if kw.get('evidence') is not None:
+                return None
+            return next(action for action in actions if action and action.semantic_id == 'what')
+        monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+        with model._query_boundary_scope((0,)):
+            before = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
+            result = model.run_selected_thought(question, work_budget=256)
+            after = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
+>       assert not bool(before[1].any()) and bool(after[1].any())
+E       assert (not False and False)
+E        +  where False = bool(tensor(False))
+E        +    where tensor(False) = <built-in method any of Tensor object at 0x123422170>()
+E        +      where <built-in method any of Tensor object at 0x123422170> = tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]).any
+E        +  and   False = bool(tensor(False))
+E        +    where tensor(False) = <built-in method any of Tensor object at 0x1235985f0>()
+E        +      where <built-in method any of Tensor object at 0x1235985f0> = tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]).any
+
+test/test_accessible_mind.py:250: AssertionError
+_____ test_forward_anchor_capture_survives_text_and_grammar_changes[False] _____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7932/test_forward_anchor_capture_su0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14e571280>
+packed = False
+
+    @pytest.mark.parametrize("packed", [False, True])
+    def test_forward_anchor_capture_survives_text_and_grammar_changes(
+            tmp_path, monkeypatch, packed):
+        """Real staging freezes the form before any observation writer captures it."""
+        from test_compiled_word_chunk import (
+            _stage_fullgraph_tensor_peer, _tiny_canonical_model,
+        )
+        from test_reverse_traversal import _stage_packed
+    
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16")
+        model.eval()
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        try:
+            with torch.no_grad():
+                if packed:
+                    _stage_packed(model, [["wholeOf", "partOf"], ["partOf"]])
+                else:
+                    _stage_fullgraph_tensor_peer(model, ["wholeOf", "partOf"])
+>               output = model._forward_with_compiled_sentence_state(None)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_selected_relation_meaning.py:317: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8161: in _forward_with_compiled_sentence_state
+    return self._forward_per_stage(
+bin/Models.py:23663: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17663: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21779: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21330: in _run_tensor_peer_word_pipeline
+    TensorPeerWhilePipeline().run_cs_lanes_banked(
+bin/Models.py:1304: in run_cs_lanes_banked
+    result = torch.while_loop(cond, body, _carries_with_grad(initial))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:254: in while_loop
+    return _hop_compile_and_call(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:118: in _hop_compile_and_call
+    return torch.compile(fn, backend=backend, fullgraph=True)(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (<function while_loop.<locals>.flat_cond_fn at 0x14fa07240>, <function while_loop.<locals>.flat_body_fn at 0x14d3e6660...tensor([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]), tensor([-1, -1]), tensor([0., 0.]), ...), ())
+kwargs = {}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E                   
+E                   HOP: Unsafe side effect
+E                     Higher Order Operator: torch.while_loop
+E                     Explanation: Mutating a variable from outside the scope of this HOP is not supported.
+E                     Hint: If the HOP is activation checkpointing (torch.utils.checkpoint.checkpoint), this points to a side effect in forward method. Eager activation checkpointing replays that side-effect while recomputing the forward in the backward. If you are ok with side-effect not replayed in the backward, try setting `torch._dynamo.config.skip_fwd_side_effects_in_bwd_under_checkpoint = True`
+E                   
+E                     Developer debug context: Attempted to mutate ListVariable(length=34)
+E                   
+E                    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0067.html
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 250, in _while_loop_op_wrapper
+E                       return while_loop_op(*args, **kwargs)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E                       return func(*args, **kwargs)
+E                              ^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E                       return body_fn(*carried, *additional)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1270, in body
+E                       proposed_feedback) = stage_cs_lang(
+E                                            ^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21110, in stage_cs_lang
+E                       object_idea = cs.interpret.forward(
+E                                     ^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 19165, in interpret
+E                       operator = InterpretLayer(conceptualSpace=self)
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/polyfills/__init__.py", line 378, in instantiate_user_defined_class_object
+E                       obj.__init__(*args, **kwargs)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py", line 19, in __init__
+E                       super().__init__(nInput=nInput, nOutput=nOutput)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 2564, in __init__
+E                       GrammarLayer._chart_authority.register_grammar_layer(self)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 12128, in register_grammar_layer
+E                       self._registered_grammar_layers.append(layer)
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: UncapturedHigherOrderOpError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_____ test_forward_anchor_capture_survives_text_and_grammar_changes[True] ______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7932/test_forward_anchor_capture_su1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14904a4b0>
+packed = True
+
+    @pytest.mark.parametrize("packed", [False, True])
+    def test_forward_anchor_capture_survives_text_and_grammar_changes(
+            tmp_path, monkeypatch, packed):
+        """Real staging freezes the form before any observation writer captures it."""
+        from test_compiled_word_chunk import (
+            _stage_fullgraph_tensor_peer, _tiny_canonical_model,
+        )
+        from test_reverse_traversal import _stage_packed
+    
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16")
+        model.eval()
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        try:
+            with torch.no_grad():
+                if packed:
+                    _stage_packed(model, [["wholeOf", "partOf"], ["partOf"]])
+                else:
+                    _stage_fullgraph_tensor_peer(model, ["wholeOf", "partOf"])
+>               output = model._forward_with_compiled_sentence_state(None)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_selected_relation_meaning.py:317: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8161: in _forward_with_compiled_sentence_state
+    return self._forward_per_stage(
+bin/Models.py:23663: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17663: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21779: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21330: in _run_tensor_peer_word_pipeline
+    TensorPeerWhilePipeline().run_cs_lanes_banked(
+bin/Models.py:1304: in run_cs_lanes_banked
+    result = torch.while_loop(cond, body, _carries_with_grad(initial))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:254: in while_loop
+    return _hop_compile_and_call(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:118: in _hop_compile_and_call
+    return torch.compile(fn, backend=backend, fullgraph=True)(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (<function while_loop.<locals>.flat_cond_fn at 0x1484f5120>, <function while_loop.<locals>.flat_body_fn at 0x1484f6700...tensor([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]), tensor([-1, -1]), tensor([0., 0.]), ...), ())
+kwargs = {}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E                   
+E                   HOP: Unsafe side effect
+E                     Higher Order Operator: torch.while_loop
+E                     Explanation: Mutating a variable from outside the scope of this HOP is not supported.
+E                     Hint: If the HOP is activation checkpointing (torch.utils.checkpoint.checkpoint), this points to a side effect in forward method. Eager activation checkpointing replays that side-effect while recomputing the forward in the backward. If you are ok with side-effect not replayed in the backward, try setting `torch._dynamo.config.skip_fwd_side_effects_in_bwd_under_checkpoint = True`
+E                   
+E                     Developer debug context: Attempted to mutate ListVariable(length=34)
+E                   
+E                    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0067.html
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 250, in _while_loop_op_wrapper
+E                       return while_loop_op(*args, **kwargs)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E                       return func(*args, **kwargs)
+E                              ^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E                       return body_fn(*carried, *additional)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1270, in body
+E                       proposed_feedback) = stage_cs_lang(
+E                                            ^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21110, in stage_cs_lang
+E                       object_idea = cs.interpret.forward(
+E                                     ^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 19165, in interpret
+E                       operator = InterpretLayer(conceptualSpace=self)
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/polyfills/__init__.py", line 378, in instantiate_user_defined_class_object
+E                       obj.__init__(*args, **kwargs)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py", line 19, in __init__
+E                       super().__init__(nInput=nInput, nOutput=nOutput)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 2564, in __init__
+E                       GrammarLayer._chart_authority.register_grammar_layer(self)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 12128, in register_grammar_layer
+E                       self._registered_grammar_layers.append(layer)
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: UncapturedHigherOrderOpError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+____________________ test_relative_mask_sees_cs_role_rules _____________________
+
+    def test_relative_mask_sees_cs_role_rules():
+        """complete.grammar's relative producers (part/whole/equal, ids 1-3)
+        are CS-role rules, so the router appends their fired ids under
+        ``current_rules['CS']`` — the mask must scan that list too. Measured
+        on the depth-3 campaign (2026-07-13): relative id 3 fired under 'CS'
+        while 'SS' carried only id_SS padding and the mask stayed False for
+        the whole read. The CS scan is ANCHOR-GATED (fired ids are argmax
+        picks at every reduce site — chance fires on absolute rows must not
+        flag): a row flips only when its pid grid carries an anchored
+        closed-class pid; without anchor state the CS scan contributes
+        False."""
+        model = _build_model()
+        B = 3
+        model.conceptualSpace.stm.ensure_batch(B)
+        rel_id = _forward_relative_rule_id()
+        abs_id = _forward_absolute_rule_id()
+        model.symbolSpace.current_rules = {
+            'SS': [[abs_id]] * B, 'CS': [[rel_id], [abs_id], [rel_id]]}
+    
+        # No anchor state at all -> CS scan contributes False (conservatism).
+        ws = model.symbolSpace.wholeSpace
+        saved = (getattr(ws, '_anchored_pids', None),
+                 getattr(ws, '_category_last_pid', None))
+        object.__setattr__(ws, '_anchored_pids', None)
+        object.__setattr__(ws, '_category_last_pid', None)
+        try:
+            m = model._sentence_relative_mask(B)
+>           assert not bool(m.any())
+E           assert not True
+E            +  where True = bool(tensor(True))
+E            +    where tensor(True) = <built-in method any of Tensor object at 0x14b6236b0>()
+E            +      where <built-in method any of Tensor object at 0x14b6236b0> = tensor([ True, False,  True]).any
+
+test/test_stm_relative_sentence_end_state.py:259: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 96-dim embedding (words added at runtime)
+___ test_actual_operation_trace_supplies_relative_capacity_without_a_reparse ___
+
+    def test_actual_operation_trace_supplies_relative_capacity_without_a_reparse():
+        model = _build_model()
+        model.symbolSpace.current_rules = {}
+        relative = _forward_relative_rule_id()
+        model.wholeSpace._anchored_pids = {123: 'equal'}
+        model.wholeSpace._category_last_pid = [[123]]
+        model.inputSpace._word_active_mask = torch.ones(1, 4, dtype=torch.bool)
+        model.inputSpace._packed_sentence_ids = torch.tensor([[0, 0, 1, 1]])
+        model._prepare_reconstruction_choices(1, 4, torch.device('cpu'))
+        trace = model._reconstruction_stack()
+        trace._choice_rule_ids[0, 3] = relative
+        trace._choice_mask[0, 3] = True
+        assert model._sentence_relative_mask(1, word=1).tolist() == [True]
+        assert model._sentence_relative_mask(1, word=2).tolist() == [False]
+        assert model._sentence_relative_mask(1).tolist() == [False]
+        trace._choice_rule_ids[0, 9] = relative
+        trace._choice_mask[0, 9] = True
+        assert model._sentence_relative_mask(1).tolist() == [True]
+        assert Language.sentence_relative_mask(model.symbolSpace, 1).tolist() == [True]
+        model.wholeSpace._anchored_pids = {}
+>       assert model._sentence_relative_mask(1).tolist() == [False]
+E       assert [True] == [False]
+E         
+E         At index 0 diff: True != False
+E         Use -v to get more diff
+
+test/test_stm_relative_sentence_end_state.py:425: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 96-dim embedding (words added at runtime)
+___ test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates ____
+
+    def test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates():
+        model = _build_model()
+        relative = _forward_relative_rule_id()
+        absolute = _forward_absolute_rule_id()
+        ids = torch.tensor([[relative, absolute], [absolute, relative], [relative, absolute]])
+        valid = torch.tensor([[True, True], [True, False], [True, True]])
+        anchors = torch.tensor([True, True, False])
+        compiled = torch.compile(model.languageSpace.relative_from_choices,
+                                 backend='eager', fullgraph=True)
+>       assert compiled(ids, valid, anchors).tolist() == [True, False, False]
+E       assert [True, False, True] == [True, False, False]
+E         
+E         At index 2 diff: True != False
+E         Use -v to get more diff
+
+test/test_stm_relative_sentence_end_state.py:437: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 96-dim embedding (words added at runtime)
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+______________________ test_symbolicspace_owns_its_starts ______________________
+
+    def test_symbolicspace_owns_its_starts():
+        """WholeSpace owns the operator-output starts, split by name."""
+        g = _load()
+        ws_syms = {sym for pat in g.ws_start_patterns for sym in pat}
+        # part / whole / equal are compositional relation forms heading the
+        # relative-truth start; exist_O1 remains the absolute-truth start.
+        assert "exist_O1" in ws_syms, ws_syms
+>       assert g.ws_relative_starts == frozenset({'S', 'REL'})
+E       AssertionError: assert frozenset({'e..., 'whole_O1'}) == frozenset({'REL', 'S'})
+E         
+E         Extra items in the left set:
+E         'equal_O1'
+E         'whole_O1'
+E         'part_O1'
+E         'implies_O1'
+E         'operator_O1'...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+test/test_role_collapsed_grammar.py:90: AssertionError
+______ TestAutobindFiresFromCS.test_autobind_creates_meta_taxonomy_entry _______
+
+self = <test_autobind_from_cs.TestAutobindFiresFromCS testMethod=test_autobind_creates_meta_taxonomy_entry>
+
+    def test_autobind_creates_meta_taxonomy_entry(self):
+        m = _make_radix_model()
+        ps = m.perceptualSpace
+        ps_store = ps.percept_store
+        ws = m._concept_owner()
+        # Use the FIRST conceptualSpace stage (stage_idx == 0) where the
+        # production autobind fires. NB: since the 2026-06-03 fullgraph
+        # refactor it fires from cs.Reset (sentence boundary), not mid-
+        # forward; this test calls _maybe_autobind_meta directly, so it is
+        # unaffected by that relocation.
+        cs = m.conceptualSpaces[0]
+        # Insert a fresh percept on the PS store and grab its vector.
+        D = int(ps_store.dim)
+        seed = torch.zeros(D)
+        seed[0] = 0.7
+        pid = ps_store.insert(b"taskg_unique", init_vector=seed)
+        # Synthesize a [B=1, N=1] pid grid + [B=1, N=1, D] vec tensor.
+        pid_grid = torch.tensor([[pid]], dtype=torch.long)
+        vec_event = seed.view(1, 1, -1)
+        # Snapshot the SS taxonomy size before the call.
+>       size_before = len(ws._concept_allocator.word_obj_meta)
+                          ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_autobind_from_cs.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_concept_allocator'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ TestAutobindFiresFromCS.test_autobind_skips_negative_pids ___________
+
+self = <test_autobind_from_cs.TestAutobindFiresFromCS testMethod=test_autobind_skips_negative_pids>
+
+    def test_autobind_skips_negative_pids(self):
+        m = _make_radix_model()
+        cs = m.conceptualSpaces[0]
+        # All-sentinel pid grid should be a no-op (no SS rows added).
+        D = int(m.perceptualSpace.percept_store.dim)
+        pid_grid = torch.tensor([[-1, -1]], dtype=torch.long)
+        vec_event = torch.zeros(1, 2, D)
+        ws = m._concept_owner()
+>       size_before = len(ws._concept_allocator.word_obj_meta)
+                          ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_autobind_from_cs.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_concept_allocator'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________ test_property_model_stm_grammar_resolves_from_symbolspace ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7932/test_property_model_stm_gramma0')
+
+    def test_property_model_stm_grammar_resolves_from_symbolspace(tmp_path):
+        """Bounded STM operators stay downstream of the property analyzer."""
+        model = _small_property_model(tmp_path)
+        ws = model.wholeSpace
+        symbols = model.symbolSpace
+    
+        assert not hasattr(ws, "syntacticLayer")
+        assert not hasattr(ws, "languageLayer")
+>       assert hasattr(symbols, "syntacticLayer")
+E       AssertionError: assert False
+E        +  where False = hasattr(SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ding()\n    (wordEncoding): WordEncoding()\n  )\n  (languageSpace): LanguageSpace(\n    (clause_scope): ClauseScope()\n  )\n), 'syntacticLayer')
+
+test/test_wholespace_property_migration.py:207: AssertionError
+________ test_symbolspace_and_grammar_use_conceptual_not_property_width ________
+
+self = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...ding()
+    (wordEncoding): WordEncoding()
+  )
+  (languageSpace): LanguageSpace(
+    (clause_scope): ClauseScope()
+  )
+)
+name = 'syntacticLayer'
+
+    def __getattr__(self, name):
+        # nn.Module.__getattr__ resolves registered submodules / params /
+        # buffers and real instance attrs first; everything else (the
+        # coordinator's API + Space-contract fields) forwards to the held
+        # SymbolSubSpace. Guarded so a lookup before ``subspace`` is
+        # registered raises cleanly instead of recursing.
+        try:
+>           return super().__getattr__(name)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+bin/Language.py:14618: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...ding()
+    (wordEncoding): WordEncoding()
+  )
+  (languageSpace): LanguageSpace(
+    (clause_scope): ClauseScope()
+  )
+)
+name = 'syntacticLayer'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'SymbolSpace' object has no attribute 'syntacticLayer'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7932/test_symbolspace_and_grammar_u0')
+
+    def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
+        """SS state is CS-width even when the upstream property basis is narrow."""
+        model = _small_property_model(
+            tmp_path, native_event=16, concept_event=24,
+            symbol_tower=True, symbolic_lift=True)
+        cs = model.conceptualSpace
+        ws = model.wholeSpace
+        ss = model.symbolSpace
+    
+        # Concepts are opaque codes: no conceptual band, the whole width is
+        # the code (2026-09-14).  Symbols are percepts and keep their band.
+        assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
+        assert ws.subspace.nWhat == 8
+        assert ws.subspace.muxedSize == 16
+    
+        assert ss.muxedSize == cs.subspace.muxedSize
+        assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
+        # Grammar consumes opaque concept codes, not the symbol's located-event
+        # content slice. No conceptual coordinate may be truncated here.
+        assert ss.languageLayer.feature_dim == cs.subspace.muxedSize
+        assert ss.truth_layer.nDim == cs.subspace.muxedSize      # ideas are concept codes
+        assert ss.ltm_store.nDim == cs.subspace.muxedSize
+        assert ss._stm_payload_dim == cs.subspace.muxedSize
+        assert ss.what.nDim == ss.nWhat
+    
+>       lift = ss.syntacticLayer._by_name["lift"]
+               ^^^^^^^^^^^^^^^^^
+
+test/test_wholespace_property_migration.py:244: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:14622: in __getattr__
+    return getattr(sub, name)
+           ^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:6423: in __getattr__
+    return super().__getattr__(name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = SymbolSubSpace(
+  (layers): ModuleList(
+    (0): LanguageLayer(
+      (operation_layer): OperationSelectionLayer(
+    ...     (2): Linear(in_features=150, out_features=75, bias=True)
+      )
+    )
+    (_ltm_store): TernaryTruthStore()
+  )
+)
+name = 'syntacticLayer'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'SymbolSubSpace' object has no attribute 'syntacticLayer'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___ test_model_boundary_builds_the_common_thought_context_without_a_reasoner ___
+
+    def test_model_boundary_builds_the_common_thought_context_without_a_reasoner():
+        """The production caller supplies capabilities, never its model graph."""
+        from types import SimpleNamespace
+        import torch
+        from Meaning import ConceptualMeaning
+        from Models import BasicModel
+        from Queries import ThoughtGrammarContext
+        from QueryWork import QueryWorkBudget
+    
+        space = _cs()
+        model = BasicModel()
+        model.spaces = []
+        object.__setattr__(model, "conceptualSpace", space)
+        primed = torch.tensor([[1.0, 1.5]])
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            taxonomy=SimpleNamespace(priming_mask=lambda: primed),
+            discourse=None, what_memory=None))
+        meaning = ConceptualMeaning(
+            torch.ones(3, 8, requires_grad=True), torch.tensor([True, True, True]),
+            mode="interrogative")
+        with model._query_boundary_scope((0,)):
+            context = model._thought_grammar_context(
+                meaning, row=0, work=QueryWorkBudget(8), continuation=None)
+    
+        assert isinstance(context, ThoughtGrammarContext)
+        assert context.conceptual_space.matches(space)
+        assert context.conceptual_space.width == 8
+        assert not context.word_stream.requires_grad
+        assert context.primed_symbols is not primed
+>       torch.testing.assert_close(context.primed_symbols, primed)
+E       AssertionError: None mismatch: None is not tensor([[1.0000, 1.5000]])
+
+test/test_thought_operation_catalog.py:1010: AssertionError
+=============================== warnings summary ===============================
+test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 6 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 9 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 8 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 12 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 11 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 15 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 14 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 18 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 17 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13590: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 19 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 21 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 20 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 22 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 24 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 23 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 25 gets records only, no weighted reading (overflow #26)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 27 gets records only, no weighted reading (overflow #28)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 26 gets records only, no weighted reading (overflow #29)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 28 gets records only, no weighted reading (overflow #31)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 30 gets records only, no weighted reading (overflow #33)
+    warnings.warn(
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18126: RuntimeWarning: CS relation pool exhausted (2 rows): concept 29 gets records only, no weighted reading (overflow #34)
+    warnings.warn(
+
+test/test_stm_relative_sentence_end_state.py::test_relative_mask_per_row_and_shared_shapes
+test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules
+test/test_stm_relative_sentence_end_state.py::test_relative_sentence_reduces_to_depth_three
+test/test_stm_relative_sentence_end_state.py::test_absolute_sentence_still_collapses_to_depth_one
+test/test_stm_relative_sentence_end_state.py::test_protect_depth_floor_one_is_byte_identical_to_no_arg
+test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse
+test/test_stm_relative_sentence_end_state.py::test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7631: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/test/../data/MentalModel.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:392: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing
+FAILED test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]
+FAILED test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[True]
+FAILED test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules
+FAILED test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse
+FAILED test/test_stm_relative_sentence_end_state.py::test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates
+FAILED test/test_role_collapsed_grammar.py::test_symbolicspace_owns_its_starts
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry
+FAILED test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids
+FAILED test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace
+FAILED test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width
+FAILED test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner
+12 failed, 175 passed, 2 skipped, 56 warnings in 102.19s (0:01:42)

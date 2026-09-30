@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+  ],
+  "completed": [
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-34/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-34/worker-000.json"
+      ],
+      "pid": 83372,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 428655984,
+      "elapsed_seconds": 8.419736000010744,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-34/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+        "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+      ],
+      "completed": [
+        "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+        "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0051251661498099566,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0047667918261140585,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010482498910278082,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-34",
+  "elapsed_seconds": 12.765523750102147,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 428655984,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-34/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-34/collect.json"
+    ],
+    "pid": 83353,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263553960,
+    "elapsed_seconds": 3.9287197501398623,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/explicit-final2/group-34/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+        "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

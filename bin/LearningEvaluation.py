@@ -61,7 +61,7 @@ def validated_progress(value):
 def record_fineweb_training(model, *, split, source_rows):
     """Called once after the main optimizer step, excluding exploration.
 
-    Count completed owned programs, including ragged packed rows, against
+    Count completed fields, including ragged packed rows, against
     the source addresses of this batch. This is presentations, not unique
     sentences: repeated training epochs count, inference does not.
     """
@@ -75,13 +75,13 @@ def record_fineweb_training(model, *, split, source_rows):
         return
     addresses = getattr(data, 'source_addresses', {}).get('train', ())
     understanding = getattr(model, '_last_understanding', None)
-    programs = getattr(understanding, 'sentence_programs', {})
+    programs = getattr(understanding, 'sentence_fields', {})
     if not programs:
-        programs = {0: getattr(understanding, 'answer_program', ())}
+        programs = {0: getattr(understanding, 'sentence_states', ())}
     count = 0
     for slot, rows in programs.items():
         for row, program in enumerate(rows):
-            if program is None or row >= len(source_rows) or not len(program.leaves):
+            if program is None or row >= len(source_rows):
                 continue
             source = source_rows[row]
             if isinstance(source, (tuple, list)):

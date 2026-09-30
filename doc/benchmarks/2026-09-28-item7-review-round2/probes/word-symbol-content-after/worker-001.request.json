@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/probes/word-symbol-content-after/worker-001.recycle.json"
+}

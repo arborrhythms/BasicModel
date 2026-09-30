@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "collect": false,
+  "recycle_file": "/private/tmp/item7-isolated-fixtures/worker-009.recycle.json"
+}

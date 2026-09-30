@@ -1,0 +1,156 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_order0_percept_definitions.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_word_store.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_attention_promotion.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_iterated_symbolic_wave.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-03/result.json"
+    },
+    {
+      "selector": "test/test_ir_fullgraph_compile.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-04/result.json"
+    },
+    {
+      "selector": "test/test_concept_capacity_policy.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-05/result.json"
+    },
+    {
+      "selector": "test/test_structural_checkpoint.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-06/result.json"
+    },
+    {
+      "selector": "test/test_cs_symbol_table.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-07/result.json"
+    },
+    {
+      "selector": "test/test_autobind_from_cs.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-08/result.json"
+    },
+    {
+      "selector": "test/test_item9b_corrections.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-09/result.json"
+    },
+    {
+      "selector": "test/test_codebook_update_law.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-10/result.json"
+    },
+    {
+      "selector": "test/test_dual_towers.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-11/result.json"
+    },
+    {
+      "selector": "test/test_two_codebook_meta_taxonomy.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-12/result.json"
+    },
+    {
+      "selector": "test/test_item9b_interpret.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-13/result.json"
+    },
+    {
+      "selector": "test/test_item7_acceptance.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-14/result.json"
+    },
+    {
+      "selector": "test/test_reconstruction_bank_contract.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-15/result.json"
+    },
+    {
+      "selector": "test/test_reference_table.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-16/result.json"
+    },
+    {
+      "selector": "test/test_item7_definitions.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-17/result.json"
+    },
+    {
+      "selector": "test/test_item7_taxonomy.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-18/result.json"
+    },
+    {
+      "selector": "test/test_relevance_bases.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-19/result.json"
+    },
+    {
+      "selector": "test/test_wholespace_property_migration.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-20/result.json"
+    },
+    {
+      "selector": "test/test_sparse_concept_e2e.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-21/result.json"
+    },
+    {
+      "selector": "test/test_radix_layer_reverse.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-22/result.json"
+    },
+    {
+      "selector": "test/test_aligned_capacity_checkpoint_growth.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-23/result.json"
+    },
+    {
+      "selector": "test/test_mereology_word_binding.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-24/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

@@ -1,0 +1,43 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____________________ test_merge_not_inserted_as_operator ______________________
+test/test_merge_structural_not_operator.py:48: in test_merge_not_inserted_as_operator
+    ws, g = _ws_and_grammar()
+            ^^^^^^^^^^^^^^^^^
+test/test_merge_structural_not_operator.py:40: in _ws_and_grammar
+    g.load_from_grammar_file(grammar_file)
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f"Grammar file not found: {path}")
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar
+____________________ test_semantic_operators_still_inserted ____________________
+test/test_merge_structural_not_operator.py:60: in test_semantic_operators_still_inserted
+    ws, g = _ws_and_grammar()
+            ^^^^^^^^^^^^^^^^^
+test/test_merge_structural_not_operator.py:40: in _ws_and_grammar
+    g.load_from_grammar_file(grammar_file)
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f"Grammar file not found: {path}")
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar
+___________________ test_only_semantic_operators_in_codebook ___________________
+test/test_merge_structural_not_operator.py:69: in test_only_semantic_operators_in_codebook
+    ws, g = _ws_and_grammar()
+            ^^^^^^^^^^^^^^^^^
+test/test_merge_structural_not_operator.py:40: in _ws_and_grammar
+    g.load_from_grammar_file(grammar_file)
+bin/Language.py:2021: in load_from_grammar_file
+    cfg = load_grammar(filename)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:472: in load_grammar
+    raise FileNotFoundError(f"Grammar file not found: {path}")
+E   FileNotFoundError: Grammar file not found: /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/test/fixtures/transitional_pos.grammar
+=========================== short test summary info ============================
+FAILED test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator
+FAILED test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted
+FAILED test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook
+3 failed in 2.30s

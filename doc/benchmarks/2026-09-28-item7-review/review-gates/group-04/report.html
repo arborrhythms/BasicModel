@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.17656445794273168</pre></td><td><pre>test/test_mm_xor.py:187: in test_mm_grammar_learns_xor_signal
+    self._fit_xor(os.path.join(_PROJECT, &quot;data&quot;, &quot;MM_grammar.xml&quot;),
+test/test_mm_xor.py:162: in _fit_xor
+    _, _, output, _ = m.forward(inp)
+                      ^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8768: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23741: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17672: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21917: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21459: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20722: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20506: in _commit_sentence
+    row = _append_observed_meaning(store, view[&#x27;clauses&#x27;][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:301: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:256: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:256: in &lt;genexpr&gt;
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:271: in preflight
+    raise ValueError(&#x27;a relation requires three resolved row references&#x27;)
+E   ValueError: a relation requires three resolved row references</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr></table></body></html>

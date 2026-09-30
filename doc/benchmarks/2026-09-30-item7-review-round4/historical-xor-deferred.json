@@ -1,0 +1,10 @@
+{
+  "stopped_unstarted_drivers": [
+    82254,
+    82271,
+    85440
+  ],
+  "release_record": "final-reconstruction-complete.json",
+  "reason": "The prior candidate measurements were superseded by saved gate failures; release historical-source jobs after the corrected-source reconstruction campaign completes.",
+  "dispatch_note": "PID 85440 was the dispatch shell itself, matched by text embedded in its command. The bookkeeping child completed, but the AH launch was interrupted; it was launched once in a follow-up command. No test was running in these queues."
+}

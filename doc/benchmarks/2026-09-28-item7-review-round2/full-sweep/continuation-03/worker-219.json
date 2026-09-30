@@ -1,0 +1,86 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_frozen_concepts.py::test_frozen_no_forming",
+    "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+    "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+    "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+    "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "completed": [
+    "test/test_frozen_concepts.py::test_frozen_no_forming",
+    "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+    "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+    "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+    "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "slow_selected": [
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_no_forming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003758957958780229,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022085000528022647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01511625002603978,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002335915924049914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019321250729262829,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010874995496124029,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_frozen_concepts.py', 98, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.179196786135435e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_frozen_concepts.py', 120, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

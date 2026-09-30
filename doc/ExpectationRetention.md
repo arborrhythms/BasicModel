@@ -1,4 +1,4 @@
-# Expectation at the seal
+# Expectation at the closing
 
 Composition reads no expectation. The removed comprehension prior has no runtime
 flag or compatibility path: neither serial comprehension nor parallel binding
@@ -6,7 +6,7 @@ accepts a predicted seed. `generate_sentence` understands any supplied seed text
 normally, then sends the positive predicted idea to the existing `<generate>`
 walk and full owned spelling inverse. Generated output is not an observation.
 
-The seal retains the pure observation `o` and its prior estimate `e`. Per role,
+The closing retains the pure observation `o` and its prior estimate `e`. Per role,
 the derived negative image is `n = -g * (1-m) * k * e`, and the conceived idea is
 `c = o + n`. `k` is sigmoid predicted presence; `m` is the active question's
 explicit grammatical open-role mask, not every unoccupied syntactic position.
@@ -73,7 +73,7 @@ catalogue must provide `arma`, and `ltmConsolidation` must be enabled to own
 the prior occurrence. A positive policy weight rejects a missing owner. These are ordinary `run_selected_thought` episodes,
 using the same chooser, checked executors, interaction history and optimizer.
 They run before the incoming batch. Later packed slots have an empty optional
-query phase and still receive chronological prediction at their seals. No query
+query phase and still receive chronological prediction at their endings. No query
 runs in the packed drain after unseen input has changed staging.
 
 Anticipation reads the row's prior observation chain and cued frames. It excludes

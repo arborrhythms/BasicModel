@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_space_carrier_bridge.py::test_space_exports_sparse_selection_with_live_read_only_identity",
+    "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+    "test/test_space_carrier_bridge.py::test_legacy_spaces_pipeline_via_fresh_snapshot_adapters",
+    "test/test_space_carrier_bridge.py::test_legacy_stage_requires_explicit_training_safety_migration",
+    "test/test_space_carrier_bridge.py::test_legacy_stage_requires_an_explicit_pipeline_safety_audit",
+    "test/test_space_carrier_bridge.py::test_dense_carrier_round_trips_through_unowned_legacy_input_adapter",
+    "test/test_space_carrier_bridge.py::test_prior_trace_and_typed_mutations_survive_legacy_snapshot",
+    "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-233.recycle.json"
+}

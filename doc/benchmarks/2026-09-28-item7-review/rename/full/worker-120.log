@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_relative_mask_sees_cs_role_rules _____________________
+test/test_stm_relative_sentence_end_state.py:249: in test_relative_mask_sees_cs_role_rules
+    assert not bool(m.any())
+E   assert not True
+E    +  where True = bool(tensor(True))
+E    +    where tensor(True) = <built-in method any of Tensor object at 0x1288c0140>()
+E    +      where <built-in method any of Tensor object at 0x1288c0140> = tensor([ True, False,  True]).any
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 96-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_stm_relative_sentence_end_state.py::test_relative_mask_sees_cs_role_rules
+1 failed, 1 warning in 2.52s

@@ -79,7 +79,7 @@ from checkpoint_migrations import (
     stamp_checkpoint_schema,
 )
 from data import Data, TheData
-from Understanding import AnswerProgram, ConceptualField, InputReconstruction, Understanding
+from Understanding import AnswerProgram, ConceptualField, InputReconstruction, SentenceEndState, Understanding
 from Output import AnswerConstruction, AnswerDerivation, thought_answer_meanings
 from contextlib import contextmanager as _contextmanager
 from What import (LTMSlot, What, WhatAnswer, WhatQuestion, WhatRelation,
@@ -96,7 +96,7 @@ from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
 from Teacher import Teacher
 from Mereology import Mereology
 from Layers import _CHAR_CLASS_RANGES
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
@@ -157,52 +157,11 @@ def _sentence_query_mask(method):
     return masked
 
 
-def _append_observed_meaning(store, payload, depth, *, trust=0.0, meaning=None,
-                             expectation=None, program=None, stream=-1):
-    """Record one understood input without certifying a world fact.
-
-    ``meaning`` is an already formed grammatical description when the owned
-    compose program selected one.  The store performs its normal detached
-    durable write; the caller can still hand the corresponding live roles to
-    the predictor first.  When the preceding external context yielded an
-    estimate with fully bound source occurrences, retain that estimate before
-    this observation and link the two append-only records.
-    """
-    from MemoryIndex import recorded_leaf_terms
-    leaf_codes = recorded_leaf_terms(program, meaning, depth)
-    if meaning is None:
-        meaning = ConceptualMeaning.from_payload(
-            payload, depth=depth, layout="stm", mode="unspecified")
-    if not isinstance(meaning, ConceptualMeaning):
-        raise TypeError("observed meaning must be a ConceptualMeaning")
-    kind = "question" if meaning.mode == "interrogative" else "observation"
-    if expectation is not None:
-        prediction = getattr(expectation, "estimate", None)
-        sources = tuple(getattr(expectation, "source_occurrences", ()) or ())
-        if prediction is not None and sources:
-            logits = prediction.presence_logits.detach()
-            if logits.shape != (3,) or not bool(torch.isfinite(logits).all()):
-                raise ValueError("retained expectation requires three finite presence logits")
-            # All three estimated vectors survive, even for low presence.
-            # The carrier mask describes stored coordinates; k is retained
-            # separately as logits, never thresholded into lost information.
-            estimate = ConceptualMeaning(
-                prediction.roles.detach(), torch.ones(3, dtype=torch.bool,
-                    device=logits.device), mode="unspecified",
-                bindings=prediction.bindings, scope=prediction.scope)
-            _estimate, observed = store.append_expectation_pair(
-                estimate, meaning, presence_logits=logits,
-                source_occurrences=sources,
-                stream=getattr(expectation, "stream", None),
-                document=getattr(expectation, "document", None),
-                observation_kind=kind, trust=trust, leaf_codes=leaf_codes, index_stream=stream)
-            return observed
-    from Meaning import expectation_surprise
-    prediction = None if expectation is None else expectation.estimate
-    surprise = (-1. if prediction is None else expectation_surprise(
-        meaning.roles, prediction.roles, meaning.role_mask, prediction.presence_logits.sigmoid()))
-    return store.append_meaning(meaning, kind=kind, trust=trust, leaf_codes=leaf_codes,
-                                stream=stream, surprise=surprise)
+def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stream=-1):
+    """Write the completed field with caller-owned provenance."""
+    kind = 'question' if clause.meaning.mode == 'interrogative' else 'observation'
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+        expectation=expectation)
 
 
 def _is_external_expectation_observation(discourse):
@@ -220,7 +179,7 @@ def _is_external_expectation_observation(discourse):
 
 
 def _boundary_observation_view(language, registry, entries, payloads, depths,
-                               *, structured):
+                               *, structured, clauses=None):
     """Return owned meanings plus the appropriate live predictor view.
 
     Physical STM is newest-first, while a selected grammatical relation owns
@@ -238,9 +197,19 @@ def _boundary_observation_view(language, registry, entries, payloads, depths,
         if payload is None or depth < 1:
             meanings.append(None)
             selected.append(False)
+            if clauses is not None:
+                clauses.append(None)
             continue
         entry = entries[b] if b < len(entries) else None
         meaning = form(entry, registry) if callable(form) and registry is not None else None
+        clause = None
+        if entry is not None:
+            from ClauseJournal import finish_clause
+            clause = finish_clause(language, entry, meaning=meaning,
+                depth=depth, registry=registry)
+            meaning = clause.meaning
+        if clauses is not None:
+            clauses.append(clause)
         is_selected = meaning is not None
         if meaning is None:
             meaning = ConceptualMeaning.from_payload(
@@ -256,15 +225,6 @@ def _boundary_observation_view(language, registry, entries, payloads, depths,
             [None if meaning is None else meaning.role_mask for meaning in meanings],
         )
     return meanings, payloads, depths, "stm", None
-
-
-def _boundary_programs(owner):
-    """Read the owned answer programs once at an eager sentence boundary."""
-    capture = getattr(owner, "_capture_answer_programs", None)
-    if not callable(capture):
-        return (), {}
-    current, by_sentence = capture()
-    return tuple(current or ()), by_sentence or {}
 
 
 def _boundary_registry(owner):
@@ -2050,7 +2010,7 @@ class BaseModel(Mereology, nn.Module):
 
         # syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the parse-tree
         # DEPTH cap for the serial grammatical reduction. 0 (default) =
-        # unbounded (the NULL-seal reduce sweep collapses to a single S, exactly
+        # unbounded (the NULL-closing reduce sweep collapses to a single S, exactly
         # as before -- byte-identical). A positive value caps the sweep to that
         # many forced fold levels; the <= word-count bound holds structurally
         # (a reduce micro-step no-ops once a row's depth reaches 1). Inert in
@@ -2409,26 +2369,12 @@ class BaseModel(Mereology, nn.Module):
         # Model-level trust in incoming assertions/testimony. Personal
         # experience remains the model's own evidence; third-party words enter
         # TruthLayer/LTM with their supplied DegreeOfTruth multiplied by this
-        # scalar before the existing ``truthCriterion`` gate/factors read them.
+        # scalar; grammar does not grant assertion authority.
         self.trust = self._unit_interval(
             TheXMLConfig.get("architecture.trust", default=1.0),
             default=1.0)
 
-        # LTM consolidation (doc/specs/mereological-order-raising.md "Truth /
-        # Ideas processing"; Alec 2026-06-18). When true, the discourse LTM
-        # (InterSentenceLayer end-state chain) and the RelativeTruthStore are
-        # COMBINED into ONE unified Layers.TernaryTruthStore on SymbolSubSpace
-        # (``ltm_store``): rows (NP1, VP, NP2) of full idea vectors + a per-row
-        # timestamp + a scalar trust, stored UNSCALED, persisted (rides the
-        # state_dict) and surviving Reset. The observe site appends each
-        # end-state, ``_route_learned_relation`` appends ineffable relations,
-        # and reason/verify_relation read it on the content slice. RTS is
-        # constructed only when this gate is OFF. Off -> the legacy two-store
-        # path (byte-identical). Row trust values are still scaled by the
-        # incoming ``trust`` multiplier when descriptions/testimony are
-        # persisted.
-        self.ltm_consolidation = bool(TheXMLConfig.get(
-            "architecture.ltmConsolidation", default=False))
+        self.ltm_consolidation = True
 
         # Stateless server (mirrors WikiOracle's server.stateless; the
         # shipped deployment runs --stateless). Default TRUE: the runtime
@@ -2700,6 +2646,15 @@ class BaseModel(Mereology, nn.Module):
             _t("conceptualContextLearningRate", 0.0) or 0.0)
         self.contextual_concept_negatives = int(
             _t("conceptualContextNegatives", 4) or 0)
+        self.contextual_situation_weight = float(_t("conceptualContextSituationWeight", 0.0))
+        self.contextual_situation_anchors = int(_t("conceptualContextSituationAnchors", 8))
+        self.contextual_expectation_weight = float(_t("conceptualContextExpectationWeight", 0.0))
+        for name, value in (("conceptualContextSituationWeight", self.contextual_situation_weight),
+                            ("conceptualContextExpectationWeight", self.contextual_expectation_weight)):
+            if not math.isfinite(value) or not 0. <= value <= 1.:
+                raise ValueError(f"{name} must be in [0, 1]")
+        if self.contextual_situation_anchors < 0:
+            raise ValueError("conceptualContextSituationAnchors must be nonnegative")
         if self.contextual_concept_learning_rate < 0.0:
             raise ValueError("conceptualContextLearningRate must be >= 0")
         if self.contextual_concept_negatives < 0:
@@ -2877,7 +2832,7 @@ class BaseModel(Mereology, nn.Module):
             accumulate_objective_gradients(captured, weighted,
                 self._shared_operator_parameter_groups(self._sentence_optimizer),
                 gradient_fn=getattr(self._sentence_pullback, 'gradients', None))
-            self._last_operator_gradient_seals += 1
+            self._last_operator_gradient_sentences += 1
         except Exception as exc:
             # A diagnostic failure must neither alter training nor report a
             # partial sum as complete. The batch-end reporter exposes this error.
@@ -3390,7 +3345,7 @@ class BaseModel(Mereology, nn.Module):
         """Stage the retired ARMA snapshot only for non-sentence-loop paths.
 
         The canonical complete W-loop has a separate, eager
-        pure-composition contract; expectation is compared at the seal.  The
+        pure-composition contract; expectation is compared at the closing.  The
         older ``_predicted_snapshot`` tuple has no consumer in that path.
         Parking ``(None, None)`` on the first sentence and tensors on the
         next one made Dynamo guard on a Python tuple and recompile the entire
@@ -3508,8 +3463,7 @@ class BaseModel(Mereology, nn.Module):
         legacy divergent checkpoint loads strictly without letting later
         aliases overwrite the shared physical module.
         """
-        if not (bool(getattr(self, "wholePropertyBasis", False))
-                and getattr(self, "concept_binding", None) == "aligned"):
+        if not getattr(self, 'concept_binding', None) == 'aligned':
             return 0
         spaces = list(getattr(self, "conceptualSpaces", None) or ())
         if not spaces:
@@ -4039,6 +3993,38 @@ class BaseModel(Mereology, nn.Module):
         W.data.clamp_(0.0, 1.0)
 
     @torch.no_grad()
+    def _capture_contextual_situation(self, sid, active):
+        """Own bounded predictor context before the arriving sentence is read."""
+        if (getattr(self, 'contextual_situation_weight', 0.) == 0
+                and getattr(self, 'contextual_expectation_weight', 0.) == 0):
+            return
+        disc = getattr(getattr(self, 'symbolSpace', None), 'discourse', None)
+        if disc is None:
+            return
+        limit = int(getattr(self, 'contextual_situation_anchors', 8))
+        priors = []
+        for b, present in enumerate(active):
+            situation, estimate = None, None
+            if bool(present):
+                chain = list(disc._inter_context[b])[-limit:] if limit else ()
+                anchors = []
+                for _depth, roles, occupied in chain:
+                    if occupied is None:
+                        occupied = torch.ones(roles.shape[0], device=roles.device, dtype=torch.bool)
+                    if bool(occupied.any()):
+                        anchors.append(roles[occupied].mean(0))
+                if anchors:
+                    situation = torch.stack(anchors).mean(0).detach().clone()
+                pending = disc._inter_last_meaning[b]
+                if pending is not None:
+                    p = pending.prediction
+                    presence = p.presence_logits.sigmoid()
+                    estimate = ((p.roles * presence[:, None]).sum(0) /
+                                presence.sum().clamp_min(1e-12)).detach().clone()
+            priors.append((situation, estimate))
+        self.__dict__.setdefault('_contextual_sentence_priors', {})[int(sid)] = tuple(priors)
+
+    @torch.no_grad()
     def _update_contextual_concept_codebooks(self):
         """Commit the context-owned SBOW rotation for one completed sentence.
 
@@ -4080,6 +4066,7 @@ class BaseModel(Mereology, nn.Module):
         rows = rows.to(device=W.device, dtype=torch.long)
         active = active.to(device=W.device, dtype=torch.bool)
         valid = active & rows.ge(0) & rows.lt(active_rows)
+        observed_valid = valid.clone()
 
         # A harmless in-range source is gathered for unknown/padded positions,
         # then immediately masked.  That keeps the contextual snapshot wholly
@@ -4129,6 +4116,27 @@ class BaseModel(Mereology, nn.Module):
             context = (
                 masked_atoms.sum(dim=1, keepdim=True) - masked_atoms)
             context = context / denom.unsqueeze(-1)
+        situation_weight = float(getattr(self, 'contextual_situation_weight', 0.))
+        expectation_weight = float(getattr(self, 'contextual_expectation_weight', 0.))
+        expected = torch.zeros_like(context)
+        if situation_weight > 0 or expectation_weight > 0:
+            situation = torch.zeros_like(context)
+            ids = (sentence_ids.to(rows) if torch.is_tensor(sentence_ids)
+                   and sentence_ids.shape == rows.shape else torch.zeros_like(rows))
+            for sid, priors in getattr(self, '_contextual_sentence_priors', {}).items():
+                for b, (prior, prediction) in enumerate(priors):
+                    if b >= rows.shape[0]:
+                        break
+                    gate = ids[b] == sid
+                    for destination, value in ((situation, prior), (expected, prediction)):
+                        if value is not None:
+                            # Event bands never supply a distributional code.
+                            vector = value.flatten()[:context.shape[-1]].to(context)
+                            vector = F.pad(vector, (0, context.shape[-1] - vector.numel()))
+                            destination[b] = torch.where(gate[:, None], vector, destination[b])
+            context = context + situation_weight * situation
+            valid = observed_valid & ((context.ne(0).any(-1) & (expectation_weight < 1))
+                                      | (expected.ne(0).any(-1) & (expectation_weight > 0)))
         atom_mask = valid.unsqueeze(-1).to(dtype=atoms.dtype)
         # This normalizes only the *ephemeral context direction*.  It never
         # normalizes a percept input or re-projects a stored codebook row.
@@ -4138,6 +4146,11 @@ class BaseModel(Mereology, nn.Module):
         beta = 10.0
         positive_score = (target * context).sum(dim=-1, keepdim=True)
         tangent = (beta * torch.sigmoid(-beta * positive_score)) * context
+        if expectation_weight > 0:
+            expected = F.normalize(expected.float(), p=2, dim=-1, eps=1e-12)
+            predicted_score = (target * expected).sum(dim=-1, keepdim=True)
+            predicted_tangent = beta * torch.sigmoid(-beta * predicted_score) * expected
+            tangent = (1 - expectation_weight) * tangent + expectation_weight * predicted_tangent
 
         # Stateless integer hashing makes the negative pool deterministic for
         # a given staged sentence and training step.  The negative atoms are a
@@ -4171,7 +4184,10 @@ class BaseModel(Mereology, nn.Module):
             negative_pull = (
                 beta * torch.sigmoid(beta * negative_score) * negative_atoms
             ).mean(dim=-2)
-            tangent = tangent - negative_pull
+            mass = (1. if situation_weight == expectation_weight == 0 else
+                    (1 - expectation_weight) * context.ne(0).any(-1, keepdim=True)
+                    + expectation_weight * expected.ne(0).any(-1, keepdim=True))
+            tangent = tangent - mass * negative_pull
 
         # The exponential-map update consumes only tangential evidence.  A
         # word absent from its sentence context carries zero evidence and is
@@ -4425,13 +4441,8 @@ class BaseModel(Mereology, nn.Module):
                 ) is not None else None,
             },
         }
-        if bool(getattr(self, "wholePropertyBasis", False)):
-            bundle = stamp_checkpoint_schema(
-                bundle, optimizer_param_names=optimizer_manifest)
-        elif optimizer_manifest is not None:
-            # Parameter names are safe/useful for legacy resumes too; only the
-            # schema-2 property-role marker is gated on explicit opt-in.
-            bundle[OPTIMIZER_PARAM_NAMES_KEY] = optimizer_manifest
+        bundle = stamp_checkpoint_schema(
+            bundle, optimizer_param_names=optimizer_manifest)
         util.atomic_torch_save(bundle, path)
         TheMessage(f"[{self.name}] Weights saved to {path}")
 
@@ -4449,38 +4460,9 @@ class BaseModel(Mereology, nn.Module):
         emb = self._get_embedding()
         whole_space = getattr(self, 'wholeSpace', None)
         concept_space = getattr(self, 'conceptualSpace', None)
-        property_basis = bool(getattr(self, "wholePropertyBasis", False))
         conceptual_extras = (
-            concept_space.vocab_extras()
-            if property_basis and concept_space is not None
-            and hasattr(concept_space, "vocab_extras") else None)
-        surface_extras = {}
-        for i, owner in enumerate(getattr(self, "conceptualSpaces", None)
-                                  or [concept_space]):
-            collect = getattr(owner, "word_surface_extras", None)
-            payload = collect() if callable(collect) else None
-            if payload is not None:
-                surface_extras[str(i)] = payload
-        if property_basis and whole_space is not None:
-            if hasattr(whole_space, "property_extras"):
-                whole_extras = whole_space.property_extras()
-            elif hasattr(whole_space, "vocab_extras"):
-                # Transitional compatibility: never let an older broad
-                # WholeSpace serializer leak concept/taxonomy fields into a
-                # schema-2 checkpoint.
-                raw_whole = whole_space.vocab_extras() or {}
-                whole_extras = {
-                    key: value for key, value in raw_whole.items()
-                    if (str(key).startswith(("property", "type_"))
-                        or str(key) == "ramsification")
-                }
-            else:
-                whole_extras = None
-        else:
-            whole_extras = (
-                whole_space.vocab_extras()
-                if whole_space is not None
-                and hasattr(whole_space, "vocab_extras") else None)
+            concept_space.vocab_extras() if concept_space is not None and hasattr(concept_space, 'vocab_extras') else None)
+        whole_extras = whole_space.property_extras() if whole_space is not None else None
         # Canonical abstraction-order provenance for the PS percept
         # codebook (the WS tables ride inside ws_extras). None when there
         # is nothing stamped, so pre-feature blobs stay byte-identical.
@@ -4501,7 +4483,7 @@ class BaseModel(Mereology, nn.Module):
                      and len(ps_store) > 0 else None)
         if emb is None or getattr(emb, 'wv', None) is None:
             if (conceptual_extras is None and whole_extras is None
-                    and ps_rams is None and ps_pstore is None and not surface_extras):
+                    and ps_rams is None and ps_pstore is None):
                 return None
             # Lexicon-less radix mode: only structural/PS state needs to
             # travel; we still wrap it in the standard envelope so
@@ -4511,21 +4493,14 @@ class BaseModel(Mereology, nn.Module):
                 "counts": [],
                 "total_count": 0,
             }
-            if property_basis:
-                if conceptual_extras is not None:
-                    blob["conceptual_structure"] = conceptual_extras
-                if whole_extras is not None:
-                    blob["whole_properties"] = whole_extras
-            elif whole_extras is not None:
-                blob["well_known_atoms"] = whole_extras.get(
-                    "well_known_atoms", {})
-                blob["ws_taxonomy_extras"] = whole_extras
+            if conceptual_extras is not None:
+                blob["conceptual_structure"] = conceptual_extras
+            if whole_extras is not None:
+                blob["whole_properties"] = whole_extras
             if ps_rams is not None:
                 blob["ps_ramsification"] = ps_rams
             if ps_pstore is not None:
                 blob["ps_percept_extras"] = ps_pstore
-            if surface_extras:
-                blob["concept_word_surfaces"] = surface_extras
             return blob
         wv = emb.wv
         counts = getattr(wv, 'counts', None)
@@ -4537,21 +4512,14 @@ class BaseModel(Mereology, nn.Module):
             "total_count": int(getattr(wv, 'total_count', 0) or 0),
             "physical_capacity": int(emb.lexicon_capacity),
         }
-        if property_basis:
-            if conceptual_extras is not None:
-                blob["conceptual_structure"] = conceptual_extras
-            if whole_extras is not None:
-                blob["whole_properties"] = whole_extras
-        elif whole_extras is not None:
-            blob["well_known_atoms"] = dict(
-                getattr(whole_space, 'well_known_atoms', {}) or {})
-            blob["ws_taxonomy_extras"] = whole_extras
+        if conceptual_extras is not None:
+            blob["conceptual_structure"] = conceptual_extras
+        if whole_extras is not None:
+            blob["whole_properties"] = whole_extras
         if ps_rams is not None:
             blob["ps_ramsification"] = ps_rams
         if ps_pstore is not None:
             blob["ps_percept_extras"] = ps_pstore
-        if surface_extras:
-            blob["concept_word_surfaces"] = surface_extras
         return blob
 
     def _collect_bpe_extras(self):
@@ -4590,14 +4558,12 @@ class BaseModel(Mereology, nn.Module):
         """
         alloc_fields = (
             "placement", "raised", "singletons", "retired", "identity",
-            "relate_idx", "chain_idx", "word_obj_meta", "word_forms", "joint",
-            "lexical_words", "interpretations", "reference_orders", "testimony_seen",
+            "relate_idx", "word_forms", "reference_orders", "testimony_seen",
             "testimony_current",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
-            "_words_concept_id", "_percept_word_concept",
-            "_object_word_concept", "_priming_bridge", "_frozen_concepts",
+            "_words_concept_id", "_priming_bridge", "_frozen_concepts",
             "_frozen_named",
             "_concept_admission_drops",
             # Fold-ladder plan (contracts 4, 6, 7): utility counts, phrase
@@ -4605,17 +4571,11 @@ class BaseModel(Mereology, nn.Module):
             "_cu", "_chunk_hits", "_chunk_admitted", "_chunk_rows",
             "_chunk_utility_gain",
         )
-        legacy_ws_fields = (
-            "_word_whole_ss",
-            "_property_class_whole", "_anchored_pids",
-            "_pending_words_summary", "_standalone_run_bytes",
-            "_lbg_disp_sum", "_lbg_disp_sum_sq", "_lbg_count",
-        )
+        legacy_ws_fields = ("_standalone_run_bytes",)
         # Schema-2 WholeSpace sidecars contain perceptual analysis state only.
         # LBG accumulators belong to the retired WS concept/META dictionary and
         # must not be serialized beside the fixed property basis.
         property_ws_fields = ("_standalone_run_bytes", "_property_rows_used")
-        property_basis = bool(getattr(self, "wholePropertyBasis", False))
 
         conceptual = {}
         for i, cs in enumerate(list(
@@ -4659,6 +4619,12 @@ class BaseModel(Mereology, nn.Module):
             }
             if attrs:
                 entry["attributes"] = attrs
+            interpretation = cs.__dict__.get('_interpret_operator')
+            if interpretation is not None and interpretation._pending:
+                entry['pending_definitions'] = {
+                    'words': _checkpoint_host_copy(interpretation._pending),
+                    'field': sorted(interpretation._field_pending),
+                }
             carrier = getattr(cs, 'subspace', None)
             evidence = getattr(carrier, '_concept_activations', None)
             if torch.is_tensor(evidence):
@@ -4679,9 +4645,7 @@ class BaseModel(Mereology, nn.Module):
             if perception is not None:
                 entry['perception'] = {name: _checkpoint_host_copy(getattr(perception, name))
                                        for name in perception.__dataclass_fields__}
-            if (property_basis and cs is getattr(
-                    self, "conceptualSpace", None)
-                    and hasattr(cs, "vocab_extras")):
+            if (cs is getattr(self, 'conceptualSpace', None) and hasattr(cs, 'vocab_extras')):
                 snapshot = cs.vocab_extras()
                 if snapshot is not None:
                     entry["conceptual_structure"] = (
@@ -4693,17 +4657,16 @@ class BaseModel(Mereology, nn.Module):
         for i, ws in enumerate(list(
                 getattr(self, "wholeSpaces", None) or ())):
             entry = {}
-            if property_basis and hasattr(ws, "property_extras"):
+            if hasattr(ws, 'property_extras'):
                 vocab_snapshot = ws.property_extras()
             elif hasattr(ws, "vocab_extras"):
                 vocab_snapshot = ws.vocab_extras()
-                if property_basis:
-                    vocab_snapshot = {
-                        key: value for key, value in
-                        (vocab_snapshot or {}).items()
-                        if (str(key).startswith(("property", "type_"))
-                            or str(key) == "ramsification")
-                    }
+                vocab_snapshot = {
+                    key: value for key, value in
+                    (vocab_snapshot or {}).items()
+                    if (str(key).startswith(("property", "type_"))
+                        or str(key) == "ramsification")
+                }
             else:
                 vocab_snapshot = None
             if vocab_snapshot is not None:
@@ -4712,8 +4675,7 @@ class BaseModel(Mereology, nn.Module):
                 entry["vocab_extras"] = _checkpoint_host_copy(vocab_snapshot)
             attrs = {
                 name: _checkpoint_host_copy(getattr(ws, name))
-                for name in (property_ws_fields if property_basis
-                             else legacy_ws_fields)
+                for name in (property_ws_fields)
                 if hasattr(ws, name) and getattr(ws, name) is not None
             }
             if attrs:
@@ -4732,10 +4694,9 @@ class BaseModel(Mereology, nn.Module):
         if not conceptual and not wholes and not truth_semantics and what_history is None:
             return None
         return {
-            "version": 2 if property_basis else 1,
+            "version": 2,
             "conceptual_spaces": conceptual,
-            ("whole_properties" if property_basis else "whole_spaces"):
-                wholes,
+            "whole_properties": wholes,
             "truth_semantics": truth_semantics,
             "what_history": what_history,
         }
@@ -4755,8 +4716,7 @@ class BaseModel(Mereology, nn.Module):
 
         fields = (
             "placement", "raised", "singletons", "retired", "identity",
-            "relate_idx", "chain_idx", "word_obj_meta", "word_forms", "joint",
-            "lexical_words", "interpretations", "reference_orders", "testimony_seen",
+            "relate_idx", "word_forms", "reference_orders", "testimony_seen",
             "testimony_current",
         )
         for name in fields:
@@ -4765,7 +4725,7 @@ class BaseModel(Mereology, nn.Module):
             incoming = _checkpoint_host_copy(saved[name])
             current = getattr(alloc, name, None)
             # Preserve dict/set identities because ConceptualSpace exposes
-            # aliases such as ``_word_obj_meta`` and ``_joint_concepts``.
+            # aliases to native constituent records.
             if isinstance(current, dict) and isinstance(incoming, dict):
                 current.clear()
                 current.update(incoming)
@@ -4851,6 +4811,7 @@ class BaseModel(Mereology, nn.Module):
 
             layer._constituents = _checkpoint_host_copy(
                 blob.get("constituents") or {})
+            layer._record_revision = getattr(layer, '_record_revision', 0) + 1
             layer._tensor_rows = _checkpoint_host_copy(
                 blob.get("tensor_rows") or {})
             layer._tensor_row_keys = {row: key for key, row in layer._tensor_rows.items()}
@@ -4885,8 +4846,9 @@ class BaseModel(Mereology, nn.Module):
                     for r, c in layer.conjunctive._index):
                 raise ValueError('checkpoint pi edges require order-0 field concepts')
 
-        object.__setattr__(cs, "_word_obj_meta", alloc.word_obj_meta)
-        object.__setattr__(cs, "_joint_concepts", alloc.joint)
+        # Migration is deferred until the common store's semantic rows load.
+        if saved.get('word_obj_meta') or saved.get('interpretations'):
+            object.__setattr__(cs, '_legacy_definition_bindings', saved)
         register = getattr(cs, "_sparse_families", None)
         if callable(register) and layer_blobs:
             register(0)
@@ -4903,20 +4865,30 @@ class BaseModel(Mereology, nn.Module):
         if version not in (1, 2):
             raise ValueError(
                 f"unsupported structural checkpoint version {version}")
-        property_basis = bool(getattr(self, "wholePropertyBasis", False))
 
         conceptual_spaces = list(
             getattr(self, "conceptualSpaces", None) or ())
+        entries = []
         for raw_i, entry in (extras.get("conceptual_spaces") or {}).items():
             i = int(raw_i)
             if not 0 <= i < len(conceptual_spaces):
                 raise ValueError(
                     f"checkpoint ConceptualSpace index {i} is not present")
-            cs = conceptual_spaces[i]
+            entries.append((conceptual_spaces[i], entry))
+        # Knowing in one space can name the terminal space's inventory.
+        # Restore all identity and row owners before rebuilding any reader.
+        for cs, entry in entries:
             alloc_blob = entry.get("allocator")
             if isinstance(alloc_blob, dict):
                 self._restore_allocator_extras(cs, alloc_blob)
+        for cs, entry in entries:
+            pending = entry.get('pending_definitions') or {}
+            if pending or hasattr(cs, 'interpret'):
+                cs.interpret._pending = _checkpoint_host_copy(pending.get('words', {}))
+                cs.interpret._field_pending = set(pending.get('field', ()))
             for name, value in (entry.get("attributes") or {}).items():
+                if name in ('_percept_word_concept', '_object_word_concept', '_word_obj_meta'):
+                    continue  # replaced by the index over migrated DEF rows
                 if name == "_promotion_cache_state":
                     raise ValueError("host promotion candidates require an explicit row-pool migration")
                 object.__setattr__(cs, str(name), _checkpoint_host_copy(value))
@@ -4973,10 +4945,7 @@ class BaseModel(Mereology, nn.Module):
                 refresh()
 
         whole_spaces = list(getattr(self, "wholeSpaces", None) or ())
-        if property_basis:
-            whole_entries = extras.get("whole_properties") or {}
-        else:
-            whole_entries = extras.get("whole_spaces") or {}
+        whole_entries = extras.get("whole_properties") or {}
         for raw_i, entry in whole_entries.items():
             i = int(raw_i)
             if not 0 <= i < len(whole_spaces):
@@ -4985,20 +4954,14 @@ class BaseModel(Mereology, nn.Module):
             ws = whole_spaces[i]
             ws_vocab = entry.get("vocab_extras")
             if isinstance(ws_vocab, dict):
-                if property_basis and hasattr(ws, "load_property_extras"):
-                    ws.load_property_extras(ws_vocab)
-                elif hasattr(ws, "load_vocab_extras"):
-                    ws.load_vocab_extras(ws_vocab)
+                ws.load_property_extras(ws_vocab)
             cb = getattr(getattr(ws, "subspace", None), "what", None)
             W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
             for name, value in (entry.get("attributes") or {}).items():
-                if (property_basis
-                        and str(name) not in ("_standalone_run_bytes",
-                                              "_row_bytes",
-                                              "_property_rows_used")):
+                if str(name) not in ("_standalone_run_bytes", "_row_bytes", "_property_rows_used"):
                     continue
                 restored = _checkpoint_host_copy(value)
-                if property_basis and str(name) == "_row_bytes":
+                if str(name) == '_row_bytes':
                     # Old acquired predicates become primitive teaching
                     # examples; their host dictionary is never reinstated.
                     primitive = cb.primitive_properties
@@ -5010,31 +4973,11 @@ class BaseModel(Mereology, nn.Module):
                     continue
                 elif str(name) == "_property_rows_used":
                     restored = set(int(r) for r in restored)
-                if (not property_basis
-                        and str(name).startswith("_lbg_disp_")
-                        and torch.is_tensor(W)):
-                    restored = {
-                        k: (v.to(W.device) if torch.is_tensor(v) else v)
-                        for k, v in restored.items()
-                    }
+                pass
                 object.__setattr__(ws, str(name), restored)
 
-        if property_basis:
-            # Version-1 broad WS state is concept/META structure. Import all
-            # stage blobs through terminal CS's explicit merge policy; never
-            # replay them onto the eight-row property basis.
-            legacy_stages = extras.get("whole_spaces")
-            quarantine = (legacy_whole_structure
-                          if isinstance(legacy_whole_structure, dict) else {})
-            if not isinstance(legacy_stages, dict):
-                legacy_stages = quarantine.get("structural_whole_spaces")
-            terminal_cs = getattr(self, "conceptualSpace", None)
-            if (isinstance(legacy_stages, dict) and legacy_stages
-                    and terminal_cs is not None
-                    and hasattr(terminal_cs, "load_vocab_extras")):
-                terminal_cs.load_vocab_extras({
-                    "legacy_whole_spaces": legacy_stages,
-                })
+        if extras.get('whole_spaces') or legacy_whole_structure:
+            warnings.warn('Dropping retired WholeSpace word and META structure (§11.4).', UserWarning)
 
         modules = dict(self.named_modules())
         for name, saved in (extras.get("truth_semantics") or {}).items():
@@ -5042,6 +4985,12 @@ class BaseModel(Mereology, nn.Module):
             if not isinstance(store, TernaryTruthStore):
                 raise ValueError(f"checkpoint truth store {name!r} is not present")
             store.load_semantic_extras(saved)
+
+        from Definitions import migrate_meta_definitions
+        for cs in conceptual_spaces:
+            legacy = cs.__dict__.pop('_legacy_definition_bindings', None)
+            if legacy is not None:
+                migrate_meta_definitions(cs, legacy)
 
         what_history = extras.get("what_history")
         if what_history is not None:
@@ -5123,27 +5072,13 @@ class BaseModel(Mereology, nn.Module):
                 raise
             saved = torch.load(
                 path, map_location="cpu", weights_only=False)
-        if bool(getattr(self, "wholePropertyBasis", False)):
-            migration = migrate_wholespace_checkpoint(
-                saved, dict(self.state_dict()))
-            saved = migration.checkpoint
-            for message in migration.diagnostics.messages():
-                TheMessage(f"[{self.name}] {message}")
-            legacy_state_shapes = migration.legacy_state_shapes
-            reset_wholespace_optimizer = bool(migration.migrated)
-        else:
-            # Legacy configs have not opted into the ownership migration; do
-            # not strip their WS tensors or stamp property-basis semantics.
-            state_for_shapes = (
-                saved.get("state_dict")
-                if isinstance(saved, dict) and "state_dict" in saved
-                else saved)
-            legacy_state_shapes = {
-                str(key): tuple(int(v) for v in value.shape)
-                for key, value in (state_for_shapes or {}).items()
-                if hasattr(value, "shape")
-            }
-            reset_wholespace_optimizer = False
+        migration = migrate_wholespace_checkpoint(
+            saved, dict(self.state_dict()))
+        saved = migration.checkpoint
+        for message in migration.diagnostics.messages():
+            TheMessage(f"[{self.name}] {message}")
+        legacy_state_shapes = migration.legacy_state_shapes
+        reset_wholespace_optimizer = bool(migration.migrated)
 
         if isinstance(saved, dict) and "state_dict" in saved:
             state = saved["state_dict"]
@@ -5364,7 +5299,7 @@ class BaseModel(Mereology, nn.Module):
                     ['conceptualSpaces', _parts[1], *_parts[2:]])
                 if _candidate in model_state:
                     _target = _candidate
-                elif bool(getattr(self, "wholePropertyBasis", False)):
+                else:
                     _legacy_ws_category_dropped.append(_old_key)
                     del state[_old_key]
                     continue
@@ -5380,7 +5315,7 @@ class BaseModel(Mereology, nn.Module):
                 _candidate = f'conceptualSpaces.{_last_cs}.{_rest}'
                 if _candidate in model_state:
                     _target = _candidate
-                elif bool(getattr(self, "wholePropertyBasis", False)):
+                else:
                     _legacy_ws_category_dropped.append(_old_key)
                     del state[_old_key]
                     continue
@@ -5404,16 +5339,12 @@ class BaseModel(Mereology, nn.Module):
                     ['conceptualSpaces', _parts[1], *_parts[3:]])
                 if _candidate in model_state:
                     _target = _candidate
-                elif bool(getattr(self, "wholePropertyBasis", False)):
+                else:
                     _legacy_ws_category_dropped.append(_old_key)
                     del state[_old_key]
                     continue
             elif (
-                len(_parts) >= 4
-                and _parts[0] == 'wholeSpaces'
-                and _parts[1].isdigit()
-                and _parts[2] == 'syntacticLayer'
-                and bool(getattr(self, "wholePropertyBasis", False))
+                len(_parts) >= 4 and _parts[0] == 'wholeSpaces' and _parts[1].isdigit() and (_parts[2] == 'syntacticLayer')
             ):
                 _rest = '.'.join(_parts[3:])
                 _grammar_candidates = (
@@ -5428,9 +5359,7 @@ class BaseModel(Mereology, nn.Module):
                     _legacy_ws_grammar_dropped.append(_old_key)
                     del state[_old_key]
                     continue
-            elif (bool(getattr(self, "wholePropertyBasis", False))
-                  and _old_key.startswith('wholeSpace.syntacticLayer.')
-                  and _last_ws >= 0):
+            elif (_old_key.startswith('wholeSpace.syntacticLayer.') and _last_ws >= 0):
                 _rest = _old_key[len('wholeSpace.syntacticLayer.'):]
                 _grammar_candidates = (
                     f'symbolSpace.syntacticLayer.{_rest}',
@@ -5445,12 +5374,7 @@ class BaseModel(Mereology, nn.Module):
                     del state[_old_key]
                     continue
             elif (
-                len(_parts) >= 5
-                and _parts[0] == 'body_stages'
-                and _parts[1].isdigit()
-                and _parts[2] == 'ws'
-                and _parts[3] == 'syntacticLayer'
-                and bool(getattr(self, "wholePropertyBasis", False))
+                len(_parts) >= 5 and _parts[0] == 'body_stages' and _parts[1].isdigit() and (_parts[2] == 'ws') and (_parts[3] == 'syntacticLayer')
             ):
                 _rest = '.'.join(_parts[4:])
                 _grammar_candidates = (
@@ -5680,15 +5604,14 @@ class BaseModel(Mereology, nn.Module):
         # the new columns at zero, exactly like a fresh head.
         self._widen_what_projection_checkpoint_state(state, model_state)
 
-        # LeafCodeIndex persists its used prefix, not its spare allocation.
-        # TernaryTruthStore validates and resizes this one variable-length
-        # column in _load_from_state_dict; the eager shape audit must let it
-        # reach that owner. Fixed row columns and malformed ranks still fail.
+        # Only global inverted postings have variable-length checkpoint columns.
         from Layers import TernaryTruthStore
-        variable_leaf_columns = {
-            name + ".leaf_codes" for name, module in
-            self.named_modules(remove_duplicate=False)
-            if isinstance(module, TernaryTruthStore)}
+        index_owners = [name for name, module in self.named_modules(remove_duplicate=False)
+                        if isinstance(module, TernaryTruthStore)]
+        variable_leaf_columns = {name + '.' + column for name in index_owners
+            for column in ('posting_codes', 'posting_roles', 'posting_rows')}
+        retired_leaf_columns = {name + '.' + column for name in index_owners
+                                for column in ('leaf_codes', 'leaf_offsets')}
         mismatches = [
             (k, list(state[k].shape), list(model_state[k].shape))
             for k in state if k in model_state
@@ -5697,7 +5620,7 @@ class BaseModel(Mereology, nn.Module):
                      and state[k].dtype == model_state[k].dtype)
         ]
         missing = [k for k in model_state if k not in state]
-        unexpected = [k for k in state if k not in model_state]
+        unexpected = [k for k in state if k not in model_state and k not in retired_leaf_columns]
         fatal_unexpected = unexpected if (strict or require_match) else []
         # Under ``require_match`` (autoload path), tolerate missing-only
         # mismatches: the current architecture may have grown new
@@ -5851,74 +5774,31 @@ class BaseModel(Mereology, nn.Module):
         Parameter and its optimizer ownership remain unchanged.
 
         Space-side restores run first, independent of the Embedding: a radix
-        envelope may carry them with an empty lexicon. In property-basis mode,
-        concept/META structure goes only to terminal ConceptualSpace and WS
-        receives property metadata only. Legacy WS structural blobs are handed
-        to ConceptualSpace's explicit migration loader, never replayed on WS.
+        envelope may carry them with an empty lexicon. Concept structure
+        belongs to ConceptualSpace; WholeSpace receives property metadata.
+        Retired WholeSpace word/META sidecars are discarded with a warning.
         """
         whole_space = getattr(self, 'wholeSpace', None)
         concept_space = getattr(self, 'conceptualSpace', None)
-        property_basis = bool(getattr(self, "wholePropertyBasis", False))
         surface_owners = getattr(self, "conceptualSpaces", None) or [concept_space]
         for stage, payload in (extras.get("concept_word_surfaces") or {}).items():
             index = int(stage)
             if not 0 <= index < len(surface_owners):
                 raise ValueError(f"word-surface checkpoint has unknown CS stage {stage}")
-            surface_owners[index].load_word_surface_extras(payload)
-        if property_basis:
-            conceptual_blob = extras.get("conceptual_structure")
-            if (concept_space is not None
-                    and isinstance(conceptual_blob, dict)
-                    and hasattr(concept_space, "load_vocab_extras")):
-                concept_space.load_vocab_extras(conceptual_blob)
-            property_blob = extras.get("whole_properties")
-            if whole_space is not None and isinstance(property_blob, dict):
-                if hasattr(whole_space, "load_property_extras"):
-                    whole_space.load_property_extras(property_blob)
-                elif hasattr(whole_space, "load_vocab_extras"):
-                    whole_space.load_vocab_extras(property_blob)
+            # Legacy row-to-spelling caches are superseded by migrated DEF forms.
+            if int(payload.get("version", 0)) != 1:
+                raise ValueError("unsupported legacy word-surface version")
+        conceptual_blob = extras.get("conceptual_structure")
+        if (concept_space is not None
+                and isinstance(conceptual_blob, dict)
+                and hasattr(concept_space, "load_vocab_extras")):
+            concept_space.load_vocab_extras(conceptual_blob)
+        property_blob = extras.get("whole_properties")
+        if whole_space is not None and isinstance(property_blob, dict):
+            whole_space.load_property_extras(property_blob)
 
-            # Raw version-1 fields (for callers that bypassed the checkpoint
-            # migrator) and quarantined fields both import downstream into CS.
-            legacy_vocab = {}
-            raw_ws = extras.get("ws_taxonomy_extras")
-            if isinstance(raw_ws, dict):
-                legacy_vocab.update(raw_ws)
-            raw_atoms = extras.get("well_known_atoms")
-            if isinstance(raw_atoms, dict) and raw_atoms:
-                legacy_vocab.setdefault("well_known_atoms", raw_atoms)
-            quarantine = (legacy_whole_structure
-                          if isinstance(legacy_whole_structure, dict) else {})
-            quarantined_vocab = quarantine.get("vocab_extras")
-            if isinstance(quarantined_vocab, dict):
-                old_ws = quarantined_vocab.get("ws_taxonomy_extras")
-                if isinstance(old_ws, dict):
-                    legacy_vocab.update(old_ws)
-                old_atoms = quarantined_vocab.get("well_known_atoms")
-                if isinstance(old_atoms, dict) and old_atoms:
-                    legacy_vocab.setdefault("well_known_atoms", old_atoms)
-            if (legacy_vocab and concept_space is not None
-                    and hasattr(concept_space, "load_vocab_extras")):
-                concept_space.load_vocab_extras(legacy_vocab)
-            legacy_stages = quarantine.get("structural_whole_spaces")
-            if (isinstance(legacy_stages, dict)
-                    and concept_space is not None
-                    and hasattr(concept_space, "load_vocab_extras")):
-                concept_space.load_vocab_extras({
-                    "legacy_whole_spaces": legacy_stages,
-                })
-        else:
-            # Legacy ownership path, retained only for unmigrated configs.
-            well_known = extras.get("well_known_atoms")
-            if (whole_space is not None and isinstance(well_known, dict)
-                    and well_known):
-                whole_space.well_known_atoms = {
-                    str(k): int(v) for k, v in well_known.items()
-                }
-            ws_extras = extras.get("ws_taxonomy_extras")
-            if (whole_space is not None and isinstance(ws_extras, dict)
-                    and hasattr(whole_space, 'load_vocab_extras')):
-                whole_space.load_vocab_extras(ws_extras)
+        if extras.get('ws_taxonomy_extras') or extras.get('well_known_atoms') or legacy_whole_structure:
+            warnings.warn('Dropping retired WholeSpace word and META structure (§11.4).', UserWarning)
         # The PS percept store's trie/inverse-table state (the WORD
         # surfaces; absent in pre-feature blobs). Runs pre-state-dict per
         # the envelope contract: load_vocab_extras re-allocates the shared
@@ -6085,7 +5965,7 @@ class BaseModel(Mereology, nn.Module):
         if ps_store is None:
             return b""
         ws = getattr(self, "wholeSpace", None)
-        return ps_store.reverse(vec, symbolic_space=ws)
+        return ps_store.reverse(vec, symbolic_space=getattr(self, 'conceptualSpace', None))
 
     def _decode_reconstructed_inputs(self, recon, originals):
         if not isinstance(recon, torch.Tensor) or recon.numel() == 0:
@@ -6101,8 +5981,7 @@ class BaseModel(Mereology, nn.Module):
         ps_space = getattr(self, "perceptualSpace", None)
         ps_store = (getattr(ps_space, "percept_store", None)
                     if ps_space is not None else None)
-        if (ps_store is not None and self.wholePropertyBasis
-                and not self.serial and self.concept_binding == 'aligned'):
+        if (ps_store is not None and (not self.serial) and (self.concept_binding == 'aligned')):
             # Native reconstruction has already decoded attributed radix
             # activity. Neither original lengths nor live perception is read.
             return [bytes(row.reshape(-1).to(torch.uint8).tolist()).rstrip(b'\0')
@@ -6321,8 +6200,7 @@ class BasicModel(BaseModel):
         """Build the one capability-scoped context for a selected thought.
 
         This is intentionally the only model-to-thought bridge.  It freezes
-        the completed row's owned leaves (or the completed meaning when no
-        retained program is available), snapshots priming, and supplies narrow
+        the completed field's occupied contents, reads current priming, and supplies narrow
         readers rather than a model or ``TruthGroundedReasoner`` object.  The
         descriptor-specific facade in :mod:`Queries` narrows those readers
         again immediately before each executor call.
@@ -6347,25 +6225,9 @@ class BasicModel(BaseModel):
             return value
 
         stream = meaning.roles
-        understanding = getattr(self, '_last_understanding', None)
-        programs = tuple(getattr(understanding, 'answer_program', ()) or ())
-        if getattr(self, "_anticipating_expectation_row", None) != row and 0 <= row < len(programs):
-            candidate = programs[row]
-            leaves = getattr(candidate, 'leaves', None)
-            if torch.is_tensor(leaves):
-                stream = leaves
-
         symbol_space = getattr(self, 'symbolSpace', None)
-        primed = None
-        priming_owner = getattr(symbol_space, 'taxonomy', None)
-        if (priming_owner is not None
-                and getattr(priming_owner, 'priming_enabled', True)):
-            snapshot = getattr(priming_owner, 'priming_mask', None)
-            if callable(snapshot):
-                try:
-                    primed = snapshot(batch=row)
-                except TypeError:
-                    primed = snapshot()
+        concept_owner = self._concept_owner()
+        primed = concept_owner.priming_weights()
 
         from reasoning import TruthGroundedReasoner
         reasoner = TruthGroundedReasoner(
@@ -6390,11 +6252,9 @@ class BasicModel(BaseModel):
 
     @staticmethod
     def _completed_query_rows(understanding):
-        """Read committed program ownership, not mutable sentence staging."""
-        return tuple(
-            row for row, program in enumerate(understanding.answer_program)
-            if program is not None and program.leaves.shape[0] > 0
-        )
+        """Read completed field ownership, independent of sentence staging."""
+        return tuple(row for row, field in enumerate(understanding.sentence_states)
+                     if field is not None and bool(field.meaning.role_mask.any()))
 
     @staticmethod
     def _selected_thought_context(root, active=None, candidate=None, *, level,
@@ -6461,7 +6321,7 @@ class BasicModel(BaseModel):
                           expectation_context)).detach()
 
     def _selected_thought_expectation(self, active, *, row, work=None):
-        """Read the seal's conceived roles; this never changes reading attention.
+        """Read the closing's conceived roles; this never changes reading attention.
 
         The active question supplies only its grammatical open-role mask.
         Gain/presence/mask and both paired payloads are detached evidence.
@@ -6574,9 +6434,12 @@ class BasicModel(BaseModel):
                     result = self.run_selected_thought(root, row=row,
                         work_budget=self.expectation_query_budget, registry=registry)
                 frames = self._what_memory().retrieved_frames(b=row, limit=discourse._inter_chain_window - 1)
+                from ReferenceContext import SituationFrame
+                reference_frames = tuple(frame for value in frames
+                    if (frame := SituationFrame.from_row(value)) is not None)
                 discourse.expect_next_meaning(row, frames=tuple(f['meaning'] for f in frames),
                     frame_occurrences=tuple(f['occurrence'] for f in frames), policy=tuple(self._anticipatory_choices), policy_work=result.work.spent,
-                    refresh=True)
+                    refresh=True, reference_frames=reference_frames)
             finally:
                 self._anticipating_expectation_row = None
                 self._anticipatory_choices = []
@@ -7197,36 +7060,17 @@ class BasicModel(BaseModel):
             outcome["meaning"], dict(outcome["evidence"]), meter, records,
             outcome.get("result"))
 
-    def _run_selected_program_thoughts(self, programs, *, work_budget=32):
-        """Execute the interrogative meanings owned by completed programs.
-
-        This is the only bridge from pure compose into normal thought
-        execution.  It reads the immutable per-model rule snapshot through
-        ``LanguageSpace.program_meaning`` and runs only completed, selected
-        relations while ``resolveAnswer`` holds the row boundary permission.
-        Assertions and unrecognized/nested physical folds remain ordinary
-        observed meanings; they do not manufacture a checked query.
-        """
+    def _run_selected_sentence_thoughts(self, fields, *, work_budget=32):
+        """Execute the typed questions fixed while their readings were open."""
         if type(work_budget) is not int or work_budget < 0:
-            raise ValueError("selected program work_budget must be a non-negative integer")
+            raise ValueError('selected sentence work_budget must be a non-negative integer')
         registry = _boundary_registry(self)
-        language = getattr(self, "languageSpace", None)
-        if language is None:
-            language = getattr(getattr(self, "symbolSpace", None),
-                               "languageSpace", None)
-        form = getattr(language, "program_meaning", None)
-        if registry is None or not callable(form):
+        if registry is None:
             return ()
-        results = []
-        for row, program in enumerate(tuple(programs or ())):
-            if program is None:
-                continue
-            meaning = form(program, registry)
-            if meaning is None or meaning.mode != "interrogative":
-                continue
-            results.append((row, self.run_selected_thought(
-                meaning, row=row, work_budget=work_budget, registry=registry)))
-        return tuple(results)
+        return tuple((row, self.run_selected_thought(field.query, row=row,
+                      work_budget=work_budget, registry=registry))
+                     for row, field in enumerate(fields)
+                     if field is not None and field.query is not None)
 
     def _end_finished_selected_thought_episodes(self):
         """Close detached eval credit for ordinary completed episodes only.
@@ -7480,7 +7324,7 @@ class BasicModel(BaseModel):
                if getattr(self, "conceptualSpaces", None) else None)
         rows = (getattr(cs0, "_cs_level_rows", None)
                 if cs0 is not None else None)
-        if rows:
+        if rows and not getattr(self, '_sentence_priming_written', False):
             packed = torch.cat(rows)
             binding = cs0._field_inventory_rows(packed.device)
             addresses = binding.gather(0, packed) if binding.ndim == 2 else binding[packed]
@@ -7497,39 +7341,23 @@ class BasicModel(BaseModel):
                  if getattr(self, "wholeSpaces", None) else None),
                 gain=self.priming_spread)
 
+    @torch.no_grad()
+    def _prime_sentence_symbols(self, sid):
+        """Write seen activity to the semantic-priming owner before indexing."""
+        isp = self.inputSpace
+        rows = self._word_symbol_rows()
+        if not torch.is_tensor(rows):
+            return
+        active = isp._word_active_mask.to(torch.bool)
+        sentence_ids = getattr(isp, '_packed_sentence_ids', None)
+        if torch.is_tensor(sentence_ids):
+            active = active & (sentence_ids == sid)
+        valid = active & (rows >= 0)
+        self._concept_owner().prime_seen(rows[valid])
+        self._sentence_priming_written = True
+
     def store_truths(self, entries):
-        """Store user-supplied truth entries (the request-body TruthSet).
-
-        LTM-BACKED PATH (``<ltmConsolidation>`` on, ``ltm_store`` built and
-        attached to the TruthLayer): the canonical home is the unified
-        ``TernaryTruthStore``. Each entry text runs through the real
-        forward (``_ltm_ingest_truth_texts``, the same path XML
-        provisioning uses) so the Change-1 observe-site push appends one
-        real parsed end-state row per truth ALONGSIDE the STM-derived
-        conversation rows; the landed rows get the effective DoT and the
-        ``ORIGIN_USER`` tag + source text. Runtime user rows have
-        replace-on-resubmit semantics (the client sends its full TruthSet
-        each request), so previous ``ORIGIN_USER`` rows are compacted out
-        first -- provisioned and conversation rows persist untouched.
-        Finally ``truth_layer.sync_from_ltm()`` rematerializes the
-        compatibility view so the flat-field readers (luminosity, falsity
-        penalty, consistency, clarifications, assess) read the LTM-backed
-        data.
-
-        LEGACY PATH (gate off): encode via a runtime epoch into the
-        standalone TruthLayer. Recording is governed by the continuous
-        ``truthCriterion`` bar (no binary switch); to capture every
-        provided gold truth the bar drops to 0 for the ingestion epoch,
-        during which WholeSpace.forward() records the gold activations,
-        then restores. Each stored activation is scaled by its effective
-        DegreeOfTruth (incoming DoT multiplied by model-level ``<trust>``).
-
-        Both paths end with the same consistency / clarification /
-        assessment tail read by the serve layer.
-
-        Args:
-            entries: list of dicts with 'content' and 'trust' keys.
-        """
+        """Parse externally trusted user assertions through the clause closing."""
         truth_layer = getattr(self.symbolSpace, 'truth_layer', None) if self.symbolSpace is not None else None
         if truth_layer is None:
             return
@@ -7548,75 +7376,10 @@ class BasicModel(BaseModel):
         if not texts:
             return
 
-        ltm_store = (getattr(self.symbolSpace, 'ltm_store', None)
-                     if getattr(self, 'ltm_consolidation', False) else None)
-        if ltm_store is not None and truth_layer.ltm_backed is ltm_store:
-            # 2a. Consolidated path: user rows land in the unified LTM,
-            # then the TruthLayer view is rebuilt from it.
-            self._store_truths_into_ltm(ltm_store, truth_layer,
-                                        texts, trusts)
-        else:
-            # 2b. Legacy path: reset the truth store and run a forced
-            #    epoch over the gold texts. Recording is governed by the
-            #    continuous ``truthCriterion`` bar (no binary arm): the
-            #    WholeSpace.forward recording block captures the gold
-            #    activations during this epoch exactly as it does during
-            #    training. To capture ALL provided gold truths regardless
-            #    of the configured bar, drop truthCriterion to 0 for the
-            #    ingestion epoch, then restore it.
-            truth_layer.clear()
-            # Property-basis WholeSpaces deliberately omit the normal truth
-            # configuration at construction, but gold ingestion still uses
-            # the raw-unity recording seam. Install a temporary bar in that
-            # compatibility case and restore the absence afterward.
-            _had_truth_criterion = hasattr(
-                self.wholeSpace, "truth_criterion")
-            prev_tc = getattr(self.wholeSpace, "truth_criterion", None)
-            self.wholeSpace.truth_criterion = 0.0
-            self.eval()
-            self.set_sigma(0)
-            try:
-                with torch.no_grad(), self._runtime_batch(texts):
-                    self.runEpoch(batchSize=len(texts), split="runtime")
-            finally:
-                if _had_truth_criterion:
-                    self.wholeSpace.truth_criterion = prev_tc
-                else:
-                    delattr(self.wholeSpace, "truth_criterion")
-
-            # A property-basis WholeSpace intentionally emits properties, not
-            # sentence propositions, so its raw-unity path has no legacy truth
-            # record to compact.  Use the sentence symbols already produced by
-            # the same runtime forward as the compatibility TruthLayer value.
-            if int(truth_layer.count.item()) == 0:
-                sentence_symbols = getattr(
-                    self, "_current_discourse_s", None)
-                if (torch.is_tensor(sentence_symbols)
-                        and sentence_symbols.dim() == 3):
-                    rows = sentence_symbols.mean(dim=1)
-                    width = int(truth_layer.nDim)
-                    for row in rows[:len(texts)]:
-                        if int(row.shape[-1]) < width:
-                            row = torch.cat([
-                                row, row.new_zeros(width - int(row.shape[-1]))])
-                        truth_layer.record(row[:width], degree=1.0)
-
-            # 3. Apply DoT to each stored activation
-            n = min(truth_layer.count.item(), len(trusts))
-            for i in range(n):
-                truth_layer.truths[i] *= trusts[i]
-
-            # 4. Attach sources/trusts for clarification surfacing (the
-            # LTM path gets these from sync_from_ltm).
-            stored_count = truth_layer.count.item()
-            truth_layer._sources = (
-                list(texts[:stored_count])
-                + [None] * max(0, stored_count - len(texts))
-            )
-            truth_layer._trusts = (
-                list(trusts[:stored_count])
-                + [None] * max(0, stored_count - len(trusts))
-            )
+        ltm_store = getattr(self.symbolSpace, 'ltm_store', None)
+        if ltm_store is None:
+            raise RuntimeError('TruthSet ingestion requires the clause row store')
+        self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts)
 
         # 5. Run the consistency report and cache any clarification
         # messages on the model for the serve layer to expose.
@@ -7651,8 +7414,7 @@ class BasicModel(BaseModel):
         when the first thing a served model does is ingest a user
         TruthSet. Then previous ``ORIGIN_USER`` rows are compacted out
         (replace-on-resubmit), the texts run through the real forward
-        (rows land via the observe-site push, NOT gated by
-        ``truthCriterion``), each landed row gets its effective DoT +
+        (rows land at the sentence boundary), each landed row gets its effective DoT +
         user origin + source text, and the view is rematerialized."""
         if not getattr(self, '_ltm_provisioned', True):
             self._ltm_provisioned = True
@@ -7663,62 +7425,27 @@ class BasicModel(BaseModel):
             # would duplicate those rows (they survive a stateless reload).
             already = len(store.rows_of_origin(store.ORIGIN_PROVISIONED)) > 0
             if not already:
-                try:
-                    self.provision_ltm()
-                except Exception:
-                    pass
+                self.provision_ltm()
         memory = getattr(getattr(self, 'symbolSpace', None), 'what_memory', None)
         namespace = bytes(store._occurrence_namespace.tolist()).hex()
         roots = (memory.retained_ltm_occurrences(namespace)
                  if memory is not None else ())
         store.clear_origin(store.ORIGIN_USER, retained_occurrences=roots)
-        per_text_rows = self._ltm_ingest_truth_texts(store, texts)
-        for (start, end), text, trust in zip(per_text_rows, texts, trusts):
-            for row in range(start, end):
-                store.set_trust(row, trust)
-                store.set_origin(row, store.ORIGIN_USER, text=text)
-                store.accept_fact(row)
+        self._ltm_ingest_truth_texts(store, texts, trusts=trusts, origin=store.ORIGIN_USER)
         truth_layer.sync_from_ltm()
 
     # -- LTM consolidation: XML TruthSet provisioning ------------------
     @torch.no_grad()
     def provision_ltm(self):
-        """Append the XML ``<truthSet>`` rows to the consolidated LTM by
-        RUNNING THE TRUTH TEXTS THROUGH THE REAL FORWARD PIPELINE (LTM
-        consolidation FU1+FU2, Change 3, 2026-06-18; doc/specs/mereological-
-        order-raising.md "Truth / Ideas processing").
+        """Read the configured English assertions through the sentence driver.
 
-        No-op (returns 0) unless ``<ltmConsolidation>`` is on AND an
-        ``ltm_store`` exists AND there is a ``<truthSet>``. Each truth text is
-        run through the REAL forward (``self.eval()`` / ``self.set_sigma(0)``
-        then, PER TEXT, ``with no_grad(), TheData.runtime_batch([text]):
-        self.forward(inputSpace.prepInput(...))`` -- the same working
-        inference forward :meth:`_infer_ir` uses; the documented
-        ``runEpoch(split="runtime")`` entry has a no-batch_override raise on
-        its inference fast path, so the equivalent ``prepInput`` + ``forward``
-        is driven directly). The Change-1 store-append (the observe-site
-        conversation push) fires DURING each forward, appending one REAL
-        parsed end-state row per truth, in submission order. After all texts
-        the rows ``[n_before : len(store)]`` are exactly the provisioned
-        truths: each gets its effective XML ``trust`` overwritten
-        (``set_trust``; XML DoT multiplied by model-level ``<trust>``), the
-        ``ORIGIN_PROVISIONED`` tag + source text (``set_origin``) and,
-        when the entry carries a ``kind`` (``partOf`` / ``implies`` /
-        ``other``), its ``rel_type`` overridden to the tagged relation.
-
-        This REPLACES the old bounded mean-pool encode + the NP1=VP=NP2
-        relation hack: the encoding is now a REAL parse. Returns the number
-        of rows appended.
-
-        PARSE-FIDELITY CAVEAT (documented): what the parse yields depends on
-        the config's grammar / vocabulary. An IN-GRAMMAR relative sentence
-        parses to a real depth-3 ``[predicate, idea1, idea2]`` end-state (a
-        relation row); out-of-grammar / out-of-vocab text yields WHATEVER the
-        parser produces (often a depth-1 absolute idea) -- but the encoding is
-        REAL (no placeholder mean-pool). A ``kind`` tag still forces the
-        ``rel_type`` so a relation is stored as a relation even when the
-        surface parse collapsed it (the row's slots are then the real parsed
-        end-state, not the NP1=VP=NP2 hack)."""
+        Each text supplies only external trust, origin and source text. Its
+        trained grammar selects an idea or relation and the writer preserves
+        that actual end state. An untrained chooser is not a provisioning
+        mechanism for relation fixtures (§11.5 of the two-truths spec).
+        Returns the number of newly appended rows; repeated relation evidence
+        can update an existing row without allocating another one.
+        """
         if not getattr(self, 'ltm_consolidation', False):
             return 0
         ss = getattr(self, 'symbolSpace', None)
@@ -7733,13 +7460,8 @@ class BasicModel(BaseModel):
             return 0
         if isinstance(entries, dict):           # singleton un-listed by parser
             entries = [entries]
-        kind_map = {
-            'partof': TernaryTruthStore.REL_PARTOF,
-            'implies': TernaryTruthStore.REL_IMPLIES,
-            'other': TernaryTruthStore.REL_OTHER,
-        }
-        # Gather (text, trust, kind) in order; skip blank texts.
-        texts, trusts, kinds = [], [], []
+        # TruthSet supplies plain English and provenance, never grammar.
+        texts, trusts = [], []
         for ent in entries:
             if not isinstance(ent, dict):
                 continue
@@ -7752,77 +7474,58 @@ class BasicModel(BaseModel):
                     ent.get('trust', 0.0) or 0.0)
             except (TypeError, ValueError):
                 trust = 0.0
-            kind = str(ent.get('kind', '') or '').strip().lower()
             texts.append(text)
             trusts.append(trust)
-            kinds.append(kind)
         if not texts:
             return 0
 
         n_before = len(store)
-        per_text_rows = self._ltm_ingest_truth_texts(store, texts)
-
-        # Overwrite each text's landed rows with the XML trust, tag the
-        # provisioned origin + source text, and override the rel_type from
-        # the entry's kind (when tagged). Robust to a text landing 0 rows
-        # (the range is empty) or >1 (all its rows get the same trust /
-        # kind).
-        for (start, end), text, trust, kind in zip(
-                per_text_rows, texts, trusts, kinds):
-            for row in range(start, end):
-                store.set_trust(row, trust)
-                store.set_origin(
-                    row, TernaryTruthStore.ORIGIN_PROVISIONED, text=text)
-                store.accept_fact(row)
-                if kind in kind_map:
-                    store.rel_type[row] = kind_map[kind]
+        try:
+            self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+                origin=store.ORIGIN_PROVISIONED)
+        finally:
+            # Provisioning is outside the live interaction. Reading the
+            # truths creates temporary what context as well as durable rows.
+            memory = self._what_memory()
+            if memory is not None:
+                memory.Reset(hard=True)
         return max(0, len(store) - n_before)
 
-    def _ltm_ingest_truth_texts(self, store, texts):
-        """Run each truth text through the REAL forward (the working
-        inference path, as _infer_ir): eval + sigma 0, then PER TEXT stage
-        it via runtime_batch and run prepInput + forward. The Change-1
-        observe-site store-append fires per sentence, landing one real
-        parsed end-state row per truth in submission order. Per-text (B=1)
-        keeps the row ordering 1:1 with the truth list (a B>1 batch would
-        append B rows in a single boundary, mixing the order). Best-effort
-        PER TEXT: a parse failure on one truth must not abort the others
-        or crash the caller. Returns the per-text landed row RANGE
-        ``[(start, end), ...]`` so trust / origin / rel_type overrides stay
-        aligned even if a text lands 0 (parse failure) or >1 rows. Shared
-        by XML provisioning (``provision_ltm``) and runtime user ingestion
-        (``store_truths``)."""
+    def _ltm_ingest_truth_texts(self, store, texts, *, trusts=None, origin=None):
+        """Understand each external assertion through the ordinary sentence closing.
+
+        Registration writes child clauses without assertion authority. Only
+        each text's outer endings receive supplied provenance. The returned row
+        ids include deduplicated relations; append ranges are not identities.
+        """
         self.eval()
         self.set_sigma(0)
-        per_text_rows = []                         # list of (start, end)
-        discourse = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        trusts = [0.] * len(texts) if trusts is None else trusts
+        if len(trusts) != len(texts):
+            raise ValueError('TruthSet provenance must align with its texts')
+        per_text_rows = []
+        discourse = getattr(getattr(self, 'symbolSpace', None), 'discourse', None)
         sequence = (discourse.suspend_external_observations()
                     if discourse is not None else nullcontext())
-        # Provisioning opens a separate interaction context. Only the
-        # external expectation stream is suspended/restored; an unfinished
-        # What episode cannot resume through provisioning's hard boundary.
         interaction = self._what_memory()
         if interaction is not None and texts:
             interaction.Reset(hard=True)
         with sequence:
-            for text in texts:
-                start = len(store)
-                try:
+            for text, trust in zip(texts, trusts):
+                with store.clause_assertions(trust=trust, origin=origin, text=text) as rows:
                     with torch.no_grad(), self._runtime_batch([text]):
-                        inp = self.inputSpace.prepInput(
-                            list(self.data.train_input))
-                        self.forward(inp)
-                    # Provisioned text still learns its lexical bindings and
-                    # persists its parsed meaning; it is not an external
-                    # predecessor or an observed target for prediction.
-                    for _cs in (list(getattr(self, 'conceptualSpaces', []) or [])
-                                or [getattr(self, 'conceptualSpace', None)]):
-                        if _cs is not None and hasattr(_cs, 'Reset'):
-                            _cs.Reset(hard=True)
-                except Exception:
-                    pass
-                end = len(store)
-                per_text_rows.append((start, end))
+                        from What import What
+                        inp = self.inputSpace.prepInput(list(self.data.train_input))
+                        self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+                            batch_override=(inp, torch.empty(1, 0, device=inp.device)),
+                            questions=(What.present(0, split='runtime'),))
+                    if not rows:
+                        raise ValueError('TruthSet input did not produce a selected grammatical closing')
+                    per_text_rows.append(tuple(rows))
+                for cs in (list(getattr(self, 'conceptualSpaces', []) or [])
+                           or [getattr(self, 'conceptualSpace', None)]):
+                    if cs is not None and hasattr(cs, 'Reset'):
+                        cs.Reset(hard=True)
         return per_text_rows
 
     def infer(self, text, max_length=None, mode='IR'):
@@ -8308,10 +8011,7 @@ class BasicModel(BaseModel):
         # so materialize the requested terminal VQ on the same device as the
         # owning concept/property dictionary. Otherwise its learned
         # prototype/buffer keys in a checkpoint are classified as stale.
-        category_owner = (
-            getattr(self, "conceptualSpace", None)
-            if bool(getattr(self, "wholePropertyBasis", False))
-            else getattr(self, "wholeSpace", None))
+        category_owner = getattr(self, "conceptualSpace", None)
         if (category_owner is not None
                 and getattr(category_owner,
                             "_category_codebook_requested", False)
@@ -8531,20 +8231,6 @@ class BasicModel(BaseModel):
             object.__setattr__(self, "_tensor_sentence_roots_depth", recon_depth)
             object.__setattr__(self, "_tensor_final_end_slots", recon_end_slots)
             object.__setattr__(self, "_tensor_final_end_depth", recon_end_depth)
-            if (getattr(self, "_compiled_word_loop_fullgraph", False)
-                    and getattr(self, "_active_compiled_step", None) is not None
-                    and self._compose_records_enabled()
-                    and not getattr(self.inputSpace, "_sentence_pack_enabled", False)):
-                # Attribute-only graph escapes may be eliminated. Publish
-                # the unpacked observation from the same explicit sealed
-                # state used by reconstruction; packed rows have their own
-                # chronological drain. Both publication sites precede the
-                # consume-once teardown, so they cannot double-observe.
-                word_mask = getattr(self.inputSpace, "_word_active_mask", None)
-                active = (word_mask.any(dim=1) if torch.is_tensor(word_mask)
-                          else recon_end_depth > 0)
-                object.__setattr__(self, "_pending_stm_end_state", (
-                    recon_end_slots, recon_end_depth, active & (recon_end_depth > 0)))
             if self._recon_placement() != "graph":
                 # placeholders: the traversal runs after the forward from
                 # the published references and roots (see ``runBatch``)
@@ -9089,21 +8775,17 @@ class BasicModel(BaseModel):
 
     @_sentence_query_mask
     def forward(self, inputData):
-        """IR-only forward: stem -> body -> head.
-
-        Dispatches to ``_forward_per_stage`` (the single per-stage
-        forward path).  Within-sentence training is BERT-style masked-
-        LM at the P-space_role; sentence-level AR is delegated to
-        ``InterSentenceLayer`` (ARMA(p, q) over sentence reps).
-        """
-        external_start = bool(getattr(self, '_spaces_started_for_forward',
-                                      False))
-        if not external_start:
-            self._start_spaces_for_forward()
-        try:
-            return self._forward_per_stage(inputData)
-        finally:
-            self._spaces_started_for_forward = False
+        """Read through the common sentence driver; raw calls never optimize."""
+        own_context = self.serial and not getattr(self, '_sentence_run_active', False)
+        context = self._sentence_run(training=False) if own_context else nullcontext()
+        with context:
+            external_start = bool(getattr(self, '_spaces_started_for_forward', False))
+            if not external_start:
+                self._start_spaces_for_forward()
+            try:
+                return self._forward_per_stage(inputData)
+            finally:
+                self._spaces_started_for_forward = False
 
     def _what_memory(self):
         """Return SymbolSpace's one interaction owner and apply its credit mode."""
@@ -9198,7 +8880,7 @@ class BasicModel(BaseModel):
             "combine_last_cs_sub": getattr(self, "_combine_last_cs_sub", None),
             "merge_diffs": merge_diffs,
         }
-        if not self.serial and self.concept_binding == 'aligned' and self.wholePropertyBasis:
+        if not self.serial and self.concept_binding == 'aligned':
             live = self._combine_last_cs_sub
             evidence = getattr(live, '_concept_activations', None)
             carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
@@ -9217,7 +8899,7 @@ class BasicModel(BaseModel):
                 and torch.is_tensor(symbols) and conceptual.dim() == 3
                 and symbols.dim() == 3 and conceptual.shape[-1] == symbols.shape[-1]):
             answer_seed = conceptual
-        answer_program, sentence_programs = (self._capture_answer_programs()
+        sentence_states, sentence_fields = (self._capture_sentence_end_states()
                                              if self.serial else ((), {}))
         input_reconstruction = self._complete_input_reconstruction()
         return Understanding(
@@ -9225,11 +8907,11 @@ class BasicModel(BaseModel):
             conceptual_state=conceptual,
             symbolic_state=symbols,
             reconstruction_carriers=carriers,
-            execution=(tuple(execution)
+            execution=(tuple(execution[:4])
                        if isinstance(execution, (tuple, list)) else execution),
             answer_seed=answer_seed,
-            answer_program=answer_program,
-            sentence_programs=sentence_programs,
+            sentence_states=sentence_states,
+            sentence_fields=sentence_fields,
             input_reconstruction=input_reconstruction,
         )
 
@@ -9344,9 +9026,9 @@ class BasicModel(BaseModel):
         if rev_ev is None:
             terminal_idea = understanding.conceptual_state
             # Evaluation decode from the idea (``reconstructFromIdea``): the
-            # sealed sentence is unwound through the recorded derivation
+            # ended sentence is unwound through the recorded derivation
             # with the tied inverses (``_reconstruct_sentences``: the
-            # end state's slots, the seal un-folds, one pop per word),
+            # end state's slots, the closing un-folds, one pop per word),
             # and the recovered per-word ideas are the event the reverse
             # chain realises.  The eager trace replay and the exact
             # leaves teacher it replaced are retired (2026-09-13).
@@ -9425,53 +9107,54 @@ class BasicModel(BaseModel):
     def _resolve_answer(self, understanding, question):
         """Resolve owned concepts for an answer, before question conditioning.
 
-        The indexed path selects the current or recalled compose program and
+        The indexed path selects the current or recalled completed field and
         materialises its full-width ideas once. Thinking transforms those ideas;
         no dense symbol event is needed. Future answers remain unresolved until
-        a conceptual predictor exists. Topologies without row programs retain
+        a conceptual predictor exists. Topologies without row fields retain
         their established dense-state resolution as a compatibility path.
         """
         questions = question_batch(question)
         first = questions[0] if questions else None
-        current_program = understanding.answer_program
+        current_fields = understanding.sentence_states
         symbolic = understanding.symbolic_state
         seed = getattr(understanding, "answer_seed", None)
         if torch.is_tensor(seed):
             symbolic = seed
-        if current_program:
-            B = len(current_program)
+        if current_fields:
+            B = len(current_fields)
         elif torch.is_tensor(symbolic):
             B = int(symbolic.shape[0])
         else:
-            raise RuntimeError("cannot resolve an answer without a program or symbolic state")
+            raise RuntimeError("cannot resolve an answer without a completed field or symbolic state")
         per_row = [questions[min(b, len(questions) - 1)] for b in range(B)]
         temporal = tuple(q.context_values() for q in questions)
         # Direct ``answer_query`` remains an explicit compatibility API, but a
-        # normal answer boundary is grammar-owned.  An unselected program is
+        # normal answer boundary is grammar-owned.  An unselected field is
         # therefore unresolved here; raw surface text may not choose the
         # legacy controller behind the grammatical trace.
-        row_sources, programs = [], []
+        row_sources, fields = [], []
         resolved_all = True
-        if current_program:
-            template = next((p.leaves for p in current_program if p is not None), None)
+        if current_fields:
+            template = next((p.end_state for p in current_fields if p is not None), None)
             if template is None:
                 template = next(self.parameters())
             base = template.new_zeros(B, 3, int(self.conceptualSpace.stm.concept_dim))
             for b, q in enumerate(per_row):
                 source = "identity"
-                entry = current_program[b]
+                entry = current_fields[b]
                 if q.relation is WhatRelation.PAST:
                     k = abs(int(q.offset))
-                    history = self._recall_program_history().get(b)
+                    history = self._recall_sentence_history().get(b)
                     entry = (history[-k] if history is not None
                              and k >= 1 and len(history) >= k else None)
                     source = "recall" if entry is not None else "identity:cold-memory"
                 elif q.relation is WhatRelation.FUTURE:
                     entry, source = None, "prediction"
                 resolved_all = resolved_all and entry is not None
-                programs.append(entry)
+                fields.append(entry)
                 row_sources.append(source)
-            answer, _ = self._materialize_entries(programs, base, self._walk_budget())
+            answer = torch.stack([base[b] if field is None else field.end_state.to(base)
+                                  for b, field in enumerate(fields)])
         else:
             answer = symbolic.clone()
             for b, q in enumerate(per_row):
@@ -9487,7 +9170,7 @@ class BasicModel(BaseModel):
                 row_sources.append(source)
         # Only a completed interrogative opens the normal controller episode.
         selected_thoughts = ()
-        if current_program:
+        if current_fields:
             try:
                 selected_budget = int(getattr(
                     self, "selected_thought_budget", 32) or 0)
@@ -9498,9 +9181,9 @@ class BasicModel(BaseModel):
             # Never replace another live episode on the chronological owner.
             if memory is None or not any(
                     getattr(memory, "in_episode", lambda _row: False)(row)
-                    for row in range(len(programs))):
-                selected_thoughts = self._run_selected_program_thoughts(
-                    tuple(programs), work_budget=selected_budget)
+                    for row in range(len(fields))):
+                selected_thoughts = self._run_selected_sentence_thoughts(
+                    tuple(fields), work_budget=selected_budget)
         selected_rows = tuple(row for row, _result in selected_thoughts)
         # All checked result kinds have an explicit target-free adapter.
         # Sets preserve every member as separate role triples; no averaging,
@@ -9510,15 +9193,15 @@ class BasicModel(BaseModel):
         selected_answer_applied = False
         # A declarative relation has the same full semantic operands as an
         # interrogative one. Its lossy numerical root is not an answer seed.
-        # Recover only its actual selected grammar program; this performs no
+        # Recover only its actual selected completed field; this performs no
         # extra parse, learned classification, thought execution or LTM write.
         language = getattr(self, "languageSpace", None)
         registry = getattr(self, "grammatical_thoughts", None)
         if language is not None and registry is not None:
-            for row, entry in enumerate(programs):
+            for row, entry in enumerate(fields):
                 if row in selected_rows or entry is None:
                     continue
-                meaning = language.program_meaning(entry, registry)
+                meaning = entry.meaning
                 if meaning is None or meaning.mode == "interrogative":
                     continue
                 answer_meanings[row] = (meaning,)
@@ -9571,13 +9254,13 @@ class BasicModel(BaseModel):
                 "incomplete": result.evidence.get("incomplete", ()),
             } for row, result in selected_thoughts)
         return AnswerDerivation(
-            answer_symbol=None if current_program else answer,
-            conceptual_answer=answer if current_program else None,
+            answer_symbol=None if current_fields else answer,
+            conceptual_answer=answer if current_fields else None,
             grammar_trace=trace + tuple(step_trace),
             bindings={"perceptual_slots": references},
             synthesis_references=references, sentence_location=0, prefix=None,
             resolved=resolved_all, source=source, row_sources=tuple(row_sources),
-            step=steps, exact_steps=exact_steps, program=tuple(programs),
+            step=steps, exact_steps=exact_steps, sentence_states=tuple(fields),
             conditioning_context=context, questions=questions,
             selected_thoughts=selected_thoughts,
             answer_meanings=tuple(answer_meanings))
@@ -9753,31 +9436,25 @@ class BasicModel(BaseModel):
         return cands[: self.WHAT_STEP_MAX_CANDIDATES]
 
     def _referent_representation(self, understanding, b, referents, word,
-                                 answer_row, *, detach=True, programs=None):
-        """QUERY(w) uses the owned interpretation at the referent's WORD row.
+                                 answer_row, *, detach=True):
+        """Use an unambiguous lexical association, or retain the answer root.
 
-        Indexed programs carry full-width leaves; a missing referent retains
-        the root. The older perceptual-slot adapter applies only to topologies
-        without programs. Openings detach; subquestion answers stay live.
+        A completed field has no word list. An opening supplies no grammatical
+        order, so competing associations remain unresolved.
         """
-        entries = understanding.answer_program if programs is None else programs
-        if entries:
-            entry = entries[b] if b < len(entries) else None
-            rep = answer_row[0, 0]
-            if entry is not None:
-                owner = self._concept_owner()
-                triple = owner._concept_allocator.word_obj_meta.get(word)
-                row = owner._csw_row_of(int(triple[0])) if triple is not None else None
-                if row is not None:
-                    found = (entry.word_rows == int(row)).nonzero().reshape(-1)
-                    if found.numel():
-                        rep = entry.leaves[int(found[0])]
-            if rep.numel() != answer_row.shape[-1]:
-                raise ValueError("referent leaf must have the full conceptual width")
+        if understanding.sentence_states:
+            owner = self._concept_owner()
+            definitions = owner.definitions
+            word_id = definitions.word(form=word)
+            candidates = (() if word_id is None else tuple(
+                cid for cid in definitions.objects(word_id)
+                if cid not in definitions.word_ids))
+            cid = candidates[0] if len(candidates) == 1 else None
+            row = None if cid is None else owner._csw_row_of(cid)
+            rep = answer_row[0, 0] if row is None else owner.similarity_codebook.getW()[row]
             root = answer_row.detach() if detach else answer_row
             rep = rep.detach() if detach else rep
-            rep = rep.to(device=root.device, dtype=root.dtype)
-            return torch.cat((rep.reshape(1, 1, -1), root[:, 1:]), dim=1)
+            return self._install_root_slot(root, rep.to(root))
         field = understanding.perceptual_context
         rep = None
         if torch.is_tensor(field) and field.dim() == 3 and word in referents:
@@ -9885,17 +9562,12 @@ class BasicModel(BaseModel):
         """
         return self.__dict__.setdefault("_what_recall_history", {})
 
-    def _recall_idea_history(self):
-        """Per-row chronological conceptual end states (``[3, D]``: the top
-        three STM slots at the sentence's end, the three LTM slots of a
-        relative sentence) beside the pooled reps of ``_recall_history``:
-        the concept-level operand of a ``past -k`` answer."""
-        return self.__dict__.setdefault("_what_recall_idea_history", {})
+
 
     def _sentence_end_state(self, t=None):
         """``[B, 3, D]`` end state of packed sentence slot ``t`` (from the
         end-state bank the word loop carried) or of the row's last sentence
-        (``t`` None: the final seal's buffer); ``None`` when unknown."""
+        (``t`` None: the final closing's buffer); ``None`` when unknown."""
         if t is not None:
             bank = getattr(self, "_tensor_sentence_roots_live", None)
             if torch.is_tensor(bank) and bank.dim() == 3 and 0 <= int(t) < int(bank.shape[1]):
@@ -9919,8 +9591,8 @@ class BasicModel(BaseModel):
         result = disc.observe(sentence, mask=mask) if mask is not None else disc.observe(sentence)
         pooled = disc._pool_sentence_rep(sentence) if hasattr(disc, "_pool_sentence_rep") else None
         entries = (() if understanding is None else
-                   understanding.answer_program if slot is None else
-                   understanding.sentence_programs.get(int(slot), ()))
+                   understanding.sentence_states if slot is None else
+                   understanding.sentence_fields.get(int(slot), ()))
         if torch.is_tensor(pooled):
             if pooled.dim() == 1:
                 pooled = pooled.unsqueeze(0)
@@ -9935,13 +9607,9 @@ class BasicModel(BaseModel):
                         pass
                 row = history.setdefault(b, collections.deque(maxlen=keep))
                 row.append(pooled[b].detach().clone())
-                ideas = self._recall_idea_history().setdefault(
+                programs = self._recall_sentence_history().setdefault(
                     b, collections.deque(maxlen=keep))
                 entry = entries[b] if b < len(entries) else None
-                ideas.append(entry.end_state.detach().clone()
-                             if entry is not None else None)
-                programs = self._recall_program_history().setdefault(
-                    b, collections.deque(maxlen=keep))
                 programs.append(entry.detached() if entry is not None else None)
         return result
 
@@ -10422,7 +10090,7 @@ class BasicModel(BaseModel):
         output_truncated = None
         walked = None
         idea = None
-        if derivation.program:
+        if derivation.sentence_states:
             # The answer-materialisation boundary (spec sections 1-2): the
             # resolved answer as its own conceptual idea, the operand of the
             # output loop; the walk un-folds it into words (the second
@@ -11108,7 +10776,7 @@ class BasicModel(BaseModel):
             }
             construction = self.reverseOutput(self._last_understanding, derivation)
             produced_all = construction.actual
-        programs = self._last_understanding.answer_program
+        programs = self._last_understanding.sentence_states
         if programs:
             # The interaction's input is the captured 1-3 idea form, including
             # every retained slot. Neither a one-slot STM view nor a dense
@@ -11154,7 +10822,7 @@ class BasicModel(BaseModel):
                 continue
             if memory is not None and memory.thought_state(b=b) is not None:
                 # The ordinary controller already owns this row's history.
-                # A declarative presentation is retained by the seal, not as
+                # A declarative presentation is retained by the closing, not as
                 # a legacy input/output parity slot or a new thought episode.
                 answers.append(WhatAnswer(
                     question=current, what=produced, available=True,
@@ -11804,6 +11472,99 @@ class BasicModel(BaseModel):
         if isinstance(emb, Embedding):
             emb.normalize()
 
+    def _stage_reading_word_concepts(self):
+        """Admit native word objects before either binding enters its graph.
+
+        TEMPORARY reading forcing (item 7 §§17–18): run the whole interpret
+        unary on every read word, including its object and DEF row. Reading
+        mode will eventually decide when an object is interpreted. The
+        learned mixing of the two percept towers remains in place.
+        """
+        self._reading_word_percepts = None
+        self._reading_word_extents = None
+        if self._aligned_serial_word_mode():
+            return  # the canonical word boundary already calls interpret
+        ps, ws, owner = self.perceptualSpace, self.wholeSpaces[0], self._concept_owner()
+        fi = getattr(ps, '_forward_input', None) or {}
+        raw = self._staged_concepts_in
+        ids = fi.get('native_indices', fi.get('indices'))
+        if not torch.is_tensor(raw) or not torch.is_tensor(ids):
+            return
+        spans = fi.get('native_part_spans', fi.get('part_spans'))
+        if not torch.is_tensor(spans):
+            # The lexicon's native units are tokens, including separator
+            # tokens. Give those observed units their original byte extents.
+            spans = ids.new_zeros(*ids.shape, 2)
+            for b, tokens in enumerate(fi.get('tokens', ())):
+                offset = 0
+                for i, token in enumerate(tokens[:ids.shape[1]]):
+                    end = offset + len(str(token).encode('latin1', 'replace'))
+                    spans[b, i] = spans.new_tensor((offset, end))
+                    offset = end
+        from Meronomy import word_spans
+        raw_rows = raw.detach().to('cpu').reshape(raw.shape[0], -1).long().tolist()
+        id_rows, span_rows = ids.detach().to('cpu').tolist(), spans.detach().to('cpu').tolist()
+        extents = []
+        for b, values in enumerate(raw_rows):
+            data = bytes(values).split(b'\0', 1)[0]
+            words = []
+            for lo, hi in word_spans(data):
+                # A single byte at a clipped input edge is still a percept,
+                # not an identified word. Complete one-letter words remain
+                # eligible, including when their supplied sentence ends here.
+                sentences = getattr(self.inputSpace, '_last_sentences', None)
+                complete = (sentences is not None and b < len(sentences)
+                            and len(sentences[b].encode('utf-8')) <= len(data))
+                if hi - lo == 1 and hi == len(data) == len(values) and not complete:
+                    continue
+                selected = [i for i, (a, z) in enumerate(span_rows[b])
+                            if lo <= a < z <= hi and id_rows[b][i] >= 0]
+                if not selected:
+                    continue
+                # Admit only the part of the input actually exposed by PS.
+                # A truncated or unresolved native unit cannot name unseen bytes.
+                if sum(span_rows[b][i][1] - span_rows[b][i][0] for i in selected) != hi - lo:
+                    continue
+                form = data[lo:hi].decode('latin1')
+                word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+                    ws.property_rows_for_bytes(form), form=form, word_reading=True)
+                if word is not None:
+                    owner.interpret.forward(word)
+                words.append((lo, hi))
+            extents.append(words)
+        width = max(map(len, extents), default=0)
+        if not width:
+            return
+        brackets = spans.new_tensor([row + [(0, 0)] * (width - len(row)) for row in extents])
+        positions, _ = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
+        self._reading_word_percepts = (ids, spans,
+            getattr(ws.subspace.what, 'primitive_properties', None), raw, positions)
+        self._reading_word_extents = brackets
+
+    def _publish_reading_symbols(self, concept_sub):
+        """Publish the native word evidence through its concept identities."""
+        percepts = getattr(self, '_reading_word_percepts', None)
+        if percepts is None or concept_sub is None:
+            return None
+        owner = self._concept_owner()
+        if owner._sparse_active() and torch.is_tensor(
+                getattr(concept_sub, '_concept_activations', None)):
+            # The completed symbolic phase includes higher-order and negative
+            # evidence; retain that field instead of rereading its word leaves.
+            return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+        field = owner.cs_read_memberships(percepts, self._reading_word_extents)
+        # Symbolization reads the native field; the continuous mixing carrier
+        # remains the forward/reconstruction state of ConceptualSpace.
+        for name, value in dict(activations=field,
+                codes=owner._field_codes(owner.similarity_codebook.getW()),
+                ids=owner._cs_field_concept_ids, inventory_rows=owner._cs_field_rows,
+                where=owner._cs_field_where, when=owner._cs_field_when).items():
+            object.__setattr__(concept_sub, '_concept_' + name, value)
+        object.__setattr__(concept_sub, '_concept_code_owner',
+                           next(i for i, cs in enumerate(self.conceptualSpaces) if cs is owner))
+        object.__setattr__(concept_sub, '_thought_occurrence', None)
+        return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+
     def _stage_serial_concept_rows(self):
         """Resolve each staged word to one exact joint CS identity eagerly.
 
@@ -11904,7 +11665,7 @@ class BasicModel(BaseModel):
         # Perceptual passes change attention, not conceptual order. Native
         # word definitions are order 0; only symbolization raises an object.
         fold_support = owner._ordered_fold_support((), ())
-        wom = getattr(alloc, "word_obj_meta", {}) if alloc is not None else {}
+        definitions = owner.definitions
         language = getattr(self, "languageSpace", None)
         if language is None:
             language = getattr(getattr(self, "symbolSpace", None),
@@ -11933,13 +11694,14 @@ class BasicModel(BaseModel):
                     pending.append((b, p, None))
                     continue
                 key = str(value)
-                triple = wom.get(key)
+                word_id = definitions.word(form=key)
+                triple = None if word_id is None else (word_id, definitions.deref(word_id))
                 ordered_parts = [
                     int(pid_host[b][p][j]) for j in range(P)
                     if bool(mask_host[b][p][j])
                     and int(pid_host[b][p][j]) >= 0
                 ]
-                current_parts = set(ordered_parts)
+                current_parts = set(self.perceptualSpace.fuse_parts(ordered_parts))
                 current_wholes = set(int(v) for v in
                                      ws.property_rows_for_bytes(key))
                 if triple is None:
@@ -11956,8 +11718,6 @@ class BasicModel(BaseModel):
                         pending.append((b, p, key))
                         continue
                     alloc = getattr(owner, "_concept_allocator", None)
-                    wom = (getattr(alloc, "word_obj_meta", {})
-                           if alloc is not None else wom)
                 A = int(triple[0])
                 object_id = owner.interpret.forward(A, occurrence=(
                     self._word_observation_serial, b, p))
@@ -11967,14 +11727,10 @@ class BasicModel(BaseModel):
                 # support must already belong to the durable concept. A trie
                 # promotion or newly-discovered property therefore receives an
                 # honest unknown tick, then autobind accrues it at Reset.
-                if (not current_parts.issubset(stored_parts)
-                        or not current_wholes.issubset(stored_wholes)):
+                if not current_parts.issubset(set(self.perceptualSpace.fuse_parts(stored_parts))):
                     pending.append((b, p, key))
                     continue
-                row = owner._csw_row_of(A)
-                if row is None:
-                    row = owner._csw_concept_row(
-                        owner._concept_source_order(A), A)
+                row = owner._csw_row_of(object_id)
                 if row is None:
                     pending.append((b, p, key))
                     continue
@@ -12013,9 +11769,6 @@ class BasicModel(BaseModel):
                 object_row_host[b][p] = int(object_row)
                 object_cid_host[b][p] = object_id
                 object_order_host[b][p] = object_order
-                owner.remember_word_surface(
-                    row, key.encode('utf-8'), object_row=object_row,
-                    object_id=object_id)
 
         rows = torch.tensor(row_host, dtype=torch.long, device=part_ids.device)
         object_rows = torch.tensor(
@@ -12338,6 +12091,13 @@ class BasicModel(BaseModel):
         rows = getattr(isp, "_ar_word_concept_rows", None)
         if not torch.is_tensor(rows) or rows.ndim != 2:
             return None
+        objects = getattr(isp, "_ar_word_object_rows", None)
+        has_objects = torch.is_tensor(objects) and objects.shape == rows.shape
+        # The fixed pipeline metadata also covers unaligned numerical input.
+        # Its all-unknown row slab is not a native identity carrier.
+        if not bool((rows >= 0).any()) and not (
+                has_objects and bool((objects >= 0).any())):
+            return None
         unknown = torch.full_like(rows, -1, dtype=torch.long)
         def addresses(name):
             values = getattr(isp, name, None)
@@ -12348,8 +12108,7 @@ class BasicModel(BaseModel):
             values = values.to(device=rows.device)
             return torch.where(values > 0, values, unknown)
         ids = torch.where(rows >= 0, addresses("_ar_word_concept_ids"), unknown)
-        objects = getattr(isp, "_ar_word_object_rows", None)
-        if torch.is_tensor(objects) and objects.shape == rows.shape:
+        if has_objects:
             ids = torch.where(objects.to(rows.device) >= 0,
                               addresses("_ar_word_object_ids"), ids)
         return ids
@@ -12448,7 +12207,7 @@ class BasicModel(BaseModel):
 
     def _final_end_state(self, S, post_depth):
         """``(end_slots [B, 3, D], end_depth [B])`` of the row's last
-        sentence after the final seal: the top three STM slots (newest at
+        sentence after the final closing: the top three STM slots (newest at
         0; a relative sentence keeps its depth-3 end state, an absolute
         one its single root) and the depth."""
         B, D = int(S.shape[0]), int(S.shape[-1])
@@ -12512,10 +12271,10 @@ class BasicModel(BaseModel):
         backend = getattr(_util, "TheCompileBackend", "none")
         fn = self._reconstruct_sentences
         placement = self._recon_placement()
-        # Sentence seals are eager optimizer boundaries. A reconstruction
+        # Sentence endings are eager optimizer boundaries. A reconstruction
         # formerly inside the batch graph is now its own numerical brick.
         separate = placement == "compiled" or (
-            placement == "graph" and getattr(self, '_sentence_seals', False))
+            placement == "graph" and getattr(self, '_sentence_ends', False))
         if backend and backend != "none" and separate:
             # "auto" is our backend policy, not a torch backend name. Match
             # util.compile's first choice before resolving the torch compiler.
@@ -12559,12 +12318,12 @@ class BasicModel(BaseModel):
         numerical passes below follow the completed sentence's recorded trace.
 
         Pass A (one ``torch.while_loop`` trip per sentence slot, bounded by
-        the row's highest sentence id): the sentence's sealed root (the live root the loop stored
-        at its intermediate end; ``S`` after the final seal for the row's
-        last sentence) is un-sealed through the recorded seal binaries into
-        the pre-seal STM stack.  Pass B (one ``torch.while_loop`` over the
+        the row's highest sentence id): the sentence's ended root (the live root the loop stored
+        at its intermediate end; ``S`` after the final closing for the row's
+        last sentence) is un-ended through the recorded closing binaries into
+        the pre-closing STM stack.  Pass B (one ``torch.while_loop`` over the
         word index, latest word first): at a word that ends a sentence the
-        stack becomes that sentence's pre-seal stack; then the word's
+        stack becomes that sentence's pre-closing stack; then the word's
         recorded unary and post-binary folds are undone with the tied
         inverses, the word is popped and scored, then its pre-binary fold
         is undone (idea
@@ -12593,7 +12352,7 @@ class BasicModel(BaseModel):
                    int(reference.shape[2]))
         slots = int(roots_live.shape[1])
         cap = int(stm.capacity)
-        seal_width = max(1, 2 * cap)
+        closing_width = max(1, 2 * cap)
         if end_slots is None or end_depth is None:
             end_slots, end_depth = self._final_end_state(S, None)
         if roots_depth is None:
@@ -12602,9 +12361,13 @@ class BasicModel(BaseModel):
             roots_live = torch.cat(
                 (roots_live, roots_live.new_zeros(B, slots, 2 * D)), dim=-1)
         _syn = int(getattr(self, "syntacticOrder", 0) or 0)
-        n_levels = min(seal_width, _syn) if _syn > 0 else seal_width
+        n_levels = min(closing_width, _syn) if _syn > 0 else closing_width
         rule_ids, arities, mask = trace.choices()
         choice_positions = getattr(trace, '_choice_positions', torch.zeros_like(rule_ids))
+        reference_offsets = getattr(trace, '_choice_reference_offsets', None)
+        if reference_offsets is None:
+            reference_offsets = reference.new_zeros(B, rule_ids.shape[1], 2 * D)
+        reference_offsets = reference_offsets.detach()
         binary_map = trace.rule_map(2)
         unary_map = trace.rule_map(1)
         active = isp._word_active_mask.to(dtype=torch.bool)
@@ -12618,7 +12381,7 @@ class BasicModel(BaseModel):
         positions = torch.arange(W, device=dev).reshape(1, W)
         # A word ends its sentence when the next word is inactive or
         # belongs to another sentence; the row's last active word ends the
-        # sentence the final seal closed.
+        # sentence the final closing closed.
         cont = torch.logical_and(ids[:, 1:] == ids[:, :-1], active[:, 1:])
         cont = torch.cat((cont, torch.zeros(B, 1, dtype=torch.bool, device=dev)), dim=1)
         is_end = torch.logical_and(active, torch.logical_not(cont))       # [B, W]
@@ -12709,8 +12472,8 @@ class BasicModel(BaseModel):
                         stack, depth, lefts, rights, bad, slot + r, wa, arity)
             ending = _col(is_end, w) & wa
             final = w == last_index
-            base = torch.where(final, 3 * W, 3 * W + (w + 1) * seal_width)
-            for k in range(seal_width):
+            base = torch.where(final, 3 * W, 3 * W + (w + 1) * closing_width)
+            for k in range(closing_width):
                 ready = ending & (~final | (k < n_levels))
                 for arity in (2, 1):
                     stack, depth, lefts, rights, bad = metadata_fold(
@@ -12734,6 +12497,11 @@ class BasicModel(BaseModel):
         occurrence_left, occurrence_right = occurrence_left.clone(), occurrence_right.clone()
         malformed = malformed.clone()
 
+        def _reference_offsets(slot_b):
+            index = slot_b.clamp(
+                0, reference_offsets.shape[1] - 1).reshape(B, 1, 1).expand(B, 1, 2 * D)
+            return reference_offsets.gather(1, index).reshape(B, 2, D)
+
         def _operand_reference(slot_b):
             """The retained leaf at the actual operand occurrence, if any."""
             pos_l = _col_rows(occurrence_left, slot_b)
@@ -12745,6 +12513,8 @@ class BasicModel(BaseModel):
             pos = torch.where(use_right, pos_r, pos_l).clamp(0, W - 1)
             valid = torch.logical_or(found_r, found_l)
             ref = reference.gather(1, pos.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D).detach()
+            offsets = _reference_offsets(slot_b)
+            ref = ref + torch.where(use_right[:, None], offsets[:, 1], offsets[:, 0])
             return torch.where(valid[:, None], ref, torch.zeros_like(ref)), (use_right, valid)
 
         def _undo_binary(stack, depth, slot_b, ok, ref, side="right", *, sentence):
@@ -12761,6 +12531,8 @@ class BasicModel(BaseModel):
                 basis=basis, basis_valid=basis_valid & (bank_sentence_ids == sentence[:, None]),
                 candidate_limit=basis_limit,
                 return_status=True)
+            offsets = _reference_offsets(slot_b)
+            left, right = left - offsets[:, 0], right - offsets[:, 1]
             split = torch.cat(
                 (right.unsqueeze(1), left.unsqueeze(1), stack[:, 1:cap - 1, :]), dim=1)
             new_stack = torch.where(valid.reshape(B, 1, 1), split, stack)
@@ -12775,6 +12547,7 @@ class BasicModel(BaseModel):
             valid = ok & (slot_b >= 0) & _col_rows(mask, slot_b) & known
             valid = valid & (_col_rows(arities, slot_b) == 1) & (recorded_position >= 0) & (position < depth)
             undone, unavailable = language.reverse_unary_step(top, local, valid, return_status=True)
+            undone = undone - _reference_offsets(slot_b)[:, 0]
             updated = stack.scatter(1, position[:, None, None].expand(B, 1, D), undone[:, None])
             return torch.where(valid[:, None, None], updated, stack), depth, unavailable
 
@@ -12784,7 +12557,7 @@ class BasicModel(BaseModel):
             stack, depth, bad_unary = _undo_unary(stack, depth, slot, ready)
             return stack, depth, bad_binary | bad_unary
 
-        # Pass A: the pre-seal stack of every sentence present, one
+        # Pass A: the pre-closing stack of every sentence present, one
         # ``torch.while_loop`` trip per sentence slot up to the row's
         # highest sentence id (a tensor bound: a host sentence count would
         # specialise the graph once per distinct count).
@@ -12804,20 +12577,20 @@ class BasicModel(BaseModel):
                 1, col.reshape(1, 1, 1).expand(B, 1, 3 * D)).reshape(B, 3, D)
             root_depth = roots_depth.gather(1, col.reshape(1, 1).expand(B, 1)).reshape(B)
             # the sentence's end state: its top three slots and depth (the
-            # row's last sentence: the state after the final seal)
+            # row's last sentence: the state after the final closing)
             top3 = torch.where(is_last.reshape(B, 1, 1), end_slots, root_slots3)
             depth0 = torch.where(is_last, end_depth.reshape(B), root_depth)
-            seal_base = torch.where(
-                is_last, torch.full_like(hi, 3 * W), 3 * W + (hi.clamp_min(0) + 1) * seal_width)
-            seal_count = torch.where(
-                is_last, torch.full_like(hi, n_levels), torch.full_like(hi, seal_width))
+            closing_base = torch.where(
+                is_last, torch.full_like(hi, 3 * W), 3 * W + (hi.clamp_min(0) + 1) * closing_width)
+            closing_count = torch.where(
+                is_last, torch.full_like(hi, n_levels), torch.full_like(hi, closing_width))
             stack = torch.cat((top3, S.new_zeros(B, max(0, cap - 3), D)), dim=1)[:, :cap, :]
             depth = torch.where(present, depth0.clamp(1, cap), torch.zeros_like(depth0))
             bad = present & ((depth0 < 1) | (depth0 > cap))
-            for k in reversed(range(seal_width)):
-                ok = torch.logical_and(present, seal_count > k)
+            for k in reversed(range(closing_width)):
+                ok = torch.logical_and(present, closing_count > k)
                 stack, depth, unavailable = undo_operation(
-                    stack, depth, seal_base + k, ok, s_idx.expand(B))
+                    stack, depth, closing_base + k, ok, s_idx.expand(B))
                 bad = bad | unavailable
             sel = (slot_ids == s_idx)                                       # [1, slots]
             pre_stack = torch.where(sel.reshape(1, slots, 1, 1), stack.unsqueeze(1), pre_stack)
@@ -13020,6 +12793,15 @@ class BasicModel(BaseModel):
             return idea.new_zeros(B)
         idea_n = torch.nn.functional.normalize(idea, dim=-1)
         present = bank_valid.any(dim=-1)                                 # [B, L]
+        # Packing may place the same sentence's candidates in different
+        # columns. Compact them stably before the dot products and softmax,
+        # preserving the fixed bank capacity and the candidates' order.
+        columns = torch.arange(L, device=bank_n.device).expand(B, L)
+        compact = torch.argsort(columns + (~present).to(columns.dtype) * L, dim=1)
+        bank_n = bank_n.gather(1, compact[:, :, None].expand_as(bank_n))
+        bank_bytes = bank_bytes.gather(1, compact[:, :, None].expand_as(bank_bytes))
+        bank_valid = bank_valid.gather(1, compact[:, :, None].expand_as(bank_valid))
+        present = present.gather(1, compact)
         bank_n = torch.where(present[:, :, None], bank_n, torch.zeros_like(bank_n))
         # a symbol's value is its signed activation and its identity its
         # row: the snap reads the row regardless of the sign
@@ -13079,45 +12861,24 @@ class BasicModel(BaseModel):
         return max(0, int(event_width) - 8)
 
     def _materialize_answer_idea(self, understanding, derivation, question):
-        """Condition the resolved conceptual answer's root once.
-
-        Neither subsequent staging nor advancing recall memory can change a
-        held derivation. Grammar parameters remain shared; rows, activations,
-        leaves, actions and target-free question context belong to the value.
-        Resolution has already materialised and transformed the ideas. An
-        older manually constructed derivation can replay its owned program.
-        Missing programs are explicitly unresolved, with no current-input
-        substitute. Returned compose targets are reconstruction metadata only.
-        """
-        entries = derivation.program
-        if not entries:
-            return None, None, (), None
-        B = len(entries)
-        D = int(self.conceptualSpace.stm.concept_dim)
-        context = derivation.conditioning_context
-        base = context.new_zeros(B, 3, D)
-        T = self._walk_budget()
+        """Condition a resolved end state once, then let the grammar generate."""
+        fields = derivation.sentence_states
         idea = derivation.conceptual_answer
-        if torch.is_tensor(idea):
-            targets = self._program_reconstruction_targets(entries, base, T)
-        else:
-            idea, targets = self._materialize_entries(entries, base, T)
-        resolved = torch.tensor([entry is not None for entry in entries],
-                                dtype=torch.bool, device=base.device)
+        if not fields or not torch.is_tensor(idea):
+            return None, None, (), None
+        resolved = torch.tensor([field is not None for field in fields],
+                                dtype=torch.bool, device=idea.device)
         sources = []
-        for b, entry in enumerate(entries):
-            src = (derivation.row_sources[b]
-                   if b < len(derivation.row_sources) else "identity")
-            if entry is None:
-                src = ("no-concept-predictor" if src == "prediction" else
-                       "cold-memory" if "cold-memory" in src or src == "recall"
-                       else "unresolved")
-            sources.append("idea:" + src)
-        # Cut the state before generation's conditioner, so output can train
-        # that conditioner and shared operators without revising the answer.
-        idea = self._condition_answer_on_question(idea.detach(), context.detach())
-        idea = torch.where(resolved[:, None, None], idea, torch.zeros_like(idea))
-        return idea, resolved, tuple(sources), targets
+        for b, field in enumerate(fields):
+            source = derivation.row_sources[b] if b < len(derivation.row_sources) else 'identity'
+            if field is None:
+                source = ('no-concept-predictor' if source == 'prediction' else
+                          'cold-memory' if 'cold-memory' in source or source == 'recall' else 'unresolved')
+            sources.append('idea:' + source)
+        context = derivation.conditioning_context
+        idea = self._condition_answer_on_question(idea.detach(),
+            context.detach() if torch.is_tensor(context) else context)
+        return torch.where(resolved[:, None, None], idea, torch.zeros_like(idea)), resolved, tuple(sources), None
 
     def _sentence_scope(self, t=None):
         """``[B, W]`` bool: the active words of sentence slot ``t``
@@ -13196,7 +12957,7 @@ class BasicModel(BaseModel):
 
     def _walk_budget(self):
         """Trips of the generate walk: every word's pop plus its three
-        possible folds plus the seals (the longest derivation the trace can
+        possible folds plus the endings (the longest derivation the trace can
         record), a static bound so the compiled walk keeps one shape."""
         W = int(getattr(self, "serial_word_capacity", 0) or 8)
         cap = int(getattr(getattr(self.conceptualSpace, "stm", None), "capacity", 0) or 0)
@@ -13231,7 +12992,7 @@ class BasicModel(BaseModel):
         order, ``(kind, local op, local word)``: kind 0 pushes the word,
         1 folds the two tops by the binary op, 2 rewrites the top by the
         unary op; -1 padded) and ``targets [B, T]`` (reconstruction's reverse
-        order: the seals last applied first, then per word latest
+        order: the endings last applied first, then per word latest
         first its unary, post-binary, pop and pre-binary, in the walk's
         action ids: a binary local id, ``R2 +`` a unary local id,
         ``R2 + R1`` = pop; -1 once exhausted).  Assembled on the host at
@@ -13269,7 +13030,7 @@ class BasicModel(BaseModel):
         op = torch.where(known_b, local_b, torch.where(
             known_u, local_u, torch.full_like(local_b, -1))).reshape(B, S)
         cap = int(getattr(self.conceptualSpace.stm, "capacity", 0) or 0)
-        seal_width = max(1, 2 * cap)
+        closing_width = max(1, 2 * cap)
         packed = bool(getattr(isp, "_sentence_pack_enabled", False))
         ids = getattr(isp, "_packed_sentence_ids", None)
         if packed and torch.is_tensor(ids) and tuple(ids.shape) == (B, W):
@@ -13283,17 +13044,17 @@ class BasicModel(BaseModel):
         op_l = op.to("cpu").tolist()
         rows = active.to("cpu").tolist()
         T = int(budget) if budget is not None else self._walk_budget()
-        positions_l, actions_l, targets_l = [], [], []
+        positions_l, actions_l, targets_l, columns_l = [], [], [], []
         for b in range(B):
             words_all = [w for w in range(W) if rows[b][w]]
-            words, actions, targets = [], [], []
+            words, actions, targets, columns = [], [], [], []
             if words_all:
                 last = words_all[-1]
                 sid = ids[b][last] if t is None else int(t)
                 words = [w for w in words_all if ids[b][w] == sid]
             if words:
                 hi = words[-1]
-                base = 3 * W if hi == words_all[-1] else 3 * W + (hi + 1) * seal_width
+                base = 3 * W if hi == words_all[-1] else 3 * W + (hi + 1) * closing_width
 
                 def _at(slot):
                     if 0 <= slot < S and kind_l[b][slot] >= 0:
@@ -13306,25 +13067,27 @@ class BasicModel(BaseModel):
                         if len(forest) < 2:
                             raise ValueError('compose trace binary operation underflows')
                         right, left = forest.pop(), forest.pop()
-                        forest.append((1, o, left, right))
+                        forest.append((1, o, slot, left, right))
                     elif k == 2:
                         position = pos_l[b][slot]
                         if not 0 <= position < len(forest):
                             raise ValueError('compose trace unary position is not occupied')
-                        forest[-1 - position] = (2, o, forest[-1 - position])
+                        forest[-1 - position] = (2, o, slot, forest[-1 - position])
                 for i, w in enumerate(words):
                     forest.append((0, i))
                     for r in range(3):
                         apply(3 * w + r)
-                for k in range(seal_width):
+                for k in range(closing_width):
                     apply(base + k)
                 def emit(node):
                     if node[0] == 0:
                         actions.append((0, -1, node[1]))
+                        columns.append(-1)
                     else:
-                        for child in node[2:]:
+                        for child in node[3:]:
                             emit(child)
                         actions.append((node[0], node[1], -1))
+                        columns.append(node[2])
                 for node in forest:
                     emit(node)
                 targets = [stop if k == 0 else o if k == 1 else R2 + o
@@ -13332,20 +13095,23 @@ class BasicModel(BaseModel):
             positions_l.append(words)
             actions_l.append(actions)
             targets_l.append(targets[:T])
+            columns_l.append(columns)
         n_max = max(1, max(len(p) for p in positions_l))
         L_max = max(1, max(len(a) for a in actions_l))
         positions = torch.full((B, n_max), -1, dtype=torch.long)
         actions = torch.full((B, L_max, 3), -1, dtype=torch.long)
+        columns = torch.full((B, L_max), -1, dtype=torch.long)
         targets = torch.full((B, T), -1, dtype=torch.long)
         for b in range(B):
             if positions_l[b]:
                 positions[b, :len(positions_l[b])] = torch.tensor(positions_l[b], dtype=torch.long)
             if actions_l[b]:
                 actions[b, :len(actions_l[b])] = torch.tensor(actions_l[b], dtype=torch.long)
+                columns[b, :len(columns_l[b])] = torch.tensor(columns_l[b], dtype=torch.long)
             if targets_l[b]:
                 targets[b, :len(targets_l[b])] = torch.tensor(targets_l[b], dtype=torch.long)
         dev = active.device
-        return positions.to(dev), actions.to(dev), targets.to(dev)
+        return positions.to(dev), actions.to(dev), targets.to(dev), columns.to(dev)
 
     def _derivation_targets(self, t=None, budget=None):
         """``[B, T]`` teacher actions of the recorded derivation (see
@@ -13353,13 +13119,30 @@ class BasicModel(BaseModel):
         program = self._derivation_program(t, budget)
         return None if program is None else program[2]
 
-    def _capture_answer_programs(self, sentence_slot=None, *, admit=True):
+    def _capture_sentence_end_states(self):
+        """Current and packed completed fields, already fixed by their endings."""
+        captured = dict(getattr(self, '_sentence_fields', {}))
+        if not captured:
+            return (), {}
+        B = len(next(iter(captured.values())))
+        active = self.inputSpace._word_active_mask.to(torch.bool)
+        ids = getattr(self.inputSpace, '_packed_sentence_ids', None)
+        if torch.is_tensor(ids) and ids.shape == active.shape:
+            final = torch.where(active, ids, -1).amax(-1).tolist()
+        else:
+            final = [max(captured)] * B
+        return tuple(captured.get(int(sid), (None,) * B)[b]
+                     for b, sid in enumerate(final)), captured
+
+    def _capture_reading_programs(self, sentence_slot=None, *, admit=True):
         """Capture one program per sentence, sharing final rows with their slot.
 
         This is the eager boundary after forward publication. The whole brick's
         indexed leaves are gathered once, then copied into compact per-row
         records. A packed row with no sentence in a slot contributes None.
         """
+        if getattr(self, '_open_sentence_slot', None) is None:
+            raise RuntimeError('operation records exist only while a sentence is open')
         reference = getattr(self, "_tensor_pushed_ideas", None)
         isp = getattr(self, "inputSpace", None)
         active = getattr(isp, "_word_active_mask", None)
@@ -13396,7 +13179,7 @@ class BasicModel(BaseModel):
             last_ids = torch.where(last >= 0, last_ids, -1).tolist()
         else:
             slots, last_ids = [0], [0] * B
-        captured = dict(getattr(self, '_sentence_programs', {})) if getattr(self, '_sentence_seals', False) else {}
+        captured = {}
         if sentence_slot is not None:
             slots = [sentence_slot]
         bank = getattr(self, "_tensor_sentence_roots_live", None)
@@ -13429,7 +13212,10 @@ class BasicModel(BaseModel):
         word slab.  It is selected by the same retained positions as leaves;
         the answer record never stores the source text that supplied it.
         """
-        positions, actions, targets = program
+        positions, actions, targets, columns = program
+        journal = getattr(self._reconstruction_stack(), "_choice_values", None)
+        addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
+        relations = getattr(self._reconstruction_stack(), "_choice_ref_relations", None)
         entries = []
         for b in range(int(positions.shape[0])):
             pos = positions[b]
@@ -13464,8 +13250,21 @@ class BasicModel(BaseModel):
                 activations=activations[b].index_select(0, pos.to(activations.device)),
                 leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
                 actions=acts[:L], targets=targets[b], end_state=end_state[b],
+                word_ids=(None if not torch.is_tensor(getattr(getattr(self, 'inputSpace', None), '_ar_word_concept_ids', None)) else
+                          self.inputSpace._ar_word_concept_ids[b].index_select(0, pos.to(self.inputSpace._ar_word_concept_ids.device))),
                 concept_ids=selected_ids, reference_ids=reference_ids,
                 reference_orders=reference_orders, lexical_forms=selected_forms,
+                **{name: value[b].index_select(0, pos.to(value.device))
+                   for name, value in (
+                       ('leaf_orders', getattr(self.symbolSpace, '_word_reference_orders', None)),
+                       ('leaf_evidence', getattr(self.symbolSpace, '_word_reference_evidence', None)))
+                   if torch.is_tensor(value)},
+                operation_values=(None if journal is None else
+                    journal[b, columns[b, :L].clamp_min(0)].reshape(L, 3, leaf_slab.shape[-1])),
+                operation_refs=(None if addresses is None else
+                    addresses[b, columns[b, :L].clamp_min(0)]),
+                operation_relations=(None if relations is None else
+                                     relations[b, columns[b, :L].clamp_min(0)]),
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value in (
                        ('symbol_where', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_where', None)),
@@ -13474,79 +13273,12 @@ class BasicModel(BaseModel):
             entries.append(entry)
         return tuple(entries)
 
-    @staticmethod
-    def _program_reconstruction_targets(entries, base, T):
-        """Batch the owned reconstruction metadata without replaying an idea."""
-        targets = torch.full((len(entries), T), -1, dtype=torch.long, device=base.device)
-        for b, entry in enumerate(entries):
-            if entry is not None:
-                tg = entry.targets.to(device=base.device, dtype=torch.long).reshape(-1)
-                n = min(int(tg.numel()), T)
-                targets[b, :n] = tg[:n]
-        return targets
 
-    def _materialize_entries(self, entries, base, T):
-        """Replay owned programs together; absent rows remain zero."""
-        B, K, D = base.shape
-        dev = base.device
-        targets = self._program_reconstruction_targets(entries, base, T)
-        programs = [b for b, entry in enumerate(entries) if entry is not None]
-        if not programs:
-            return torch.zeros_like(base), targets
-        n_max = max(int(entries[b].leaves.shape[0]) for b in programs)
-        L_max = max(int(entries[b].actions.shape[0]) for b in programs)
-        leaves = base.new_zeros(B, max(1, n_max), D)
-        actions = torch.full((B, max(1, L_max), 3), -1, dtype=torch.long, device=dev)
-        for b in programs:
-            entry = entries[b]
-            lv = entry.leaves.to(device=dev, dtype=base.dtype)
-            ac = entry.actions.to(device=dev, dtype=torch.long)
-            if lv.shape[-1] != D:
-                raise ValueError("answer program has a different conceptual width")
-            leaves[b, :lv.shape[0]] = lv
-            actions[b, :ac.shape[0]] = ac
-        replayed, _depth = self._replay_program(leaves, actions)
-        return replayed[:, :K], targets
 
-    def _replay_program(self, leaves, actions):
-        """``(slots [B, 3, D], depth [B])``: the fold of ``leaves
-        [B, n, D]`` by ``actions [B, L, 3]`` through the grammar's forward
-        ops (the recorded local ops, forced) on a stack of the STM
-        capacity, newest at slot 0; the top three slots are the
-        derivation's end state, the answer's conceptual idea."""
-        language = self.languageSpace
-        B, n, D = int(leaves.shape[0]), int(leaves.shape[1]), int(leaves.shape[2])
-        L = int(actions.shape[1])
-        cap = max(3, int(getattr(self.conceptualSpace.stm, "capacity", 3) or 3))
-        stack = leaves.new_zeros(B, cap, D)
-        depth = torch.zeros(B, dtype=torch.long, device=leaves.device)
-        ar = torch.arange(B, device=leaves.device)
-        for j in range(L):
-            kind = actions[:, j, 0].to(device=leaves.device)
-            op = actions[:, j, 1].to(device=leaves.device).clamp_min(0)
-            word = actions[:, j, 2].to(device=leaves.device).clamp(0, max(0, n - 1))
-            is_push = torch.logical_and(kind == 0, depth < cap)
-            is_bin = torch.logical_and(kind == 1, depth >= 2)
-            is_un = torch.logical_and(kind == 2, depth >= 1)
-            leaf = leaves[ar, word]                                         # [B, D]
-            pushed = torch.cat((leaf.unsqueeze(1), stack[:, :cap - 1]), dim=1)
-            parent = language.forward_binary_step(stack[:, 1], stack[:, 0], op, is_bin)
-            reduced = torch.cat(
-                (parent.unsqueeze(1), stack[:, 2:], stack.new_zeros(B, 1, D)), dim=1)
-            rewritten = language.forward_unary_step(stack[:, 0], op, is_un)
-            unary_stack = torch.cat((rewritten.unsqueeze(1), stack[:, 1:]), dim=1)
-            stack = torch.where(
-                is_push.reshape(B, 1, 1), pushed,
-                torch.where(is_bin.reshape(B, 1, 1), reduced,
-                            torch.where(is_un.reshape(B, 1, 1), unary_stack, stack)))
-            depth = depth + is_push.to(depth.dtype) - is_bin.to(depth.dtype)
-        return stack[:, :3], depth
 
-    def _recall_program_history(self):
-        """Per-row chronological frozen programs (see ``AnswerProgram``) of each observed
-        sentence, beside ``_recall_idea_history``: the symbols and
-        derivation a ``past -k`` answer is materialised from."""
-        return self.__dict__.setdefault("_what_recall_program_history", {})
+    def _recall_sentence_history(self):
+        """Bounded recency of completed fields; no compose history survives."""
+        return self.__dict__.setdefault('_what_recall_sentence_history', {})
 
     def _generate_walk_width(self):
         """Concept width consumed by the answer's generate chooser."""
@@ -13845,36 +13577,6 @@ class BasicModel(BaseModel):
                             memory_format=torch.contiguous_format)
                 _ss._staged_analysis_spans = _live_spans
                 _ss._staged_analysis_kinds = _live_kinds
-            # Phase 5 adopt-on-first-sight (host-eager): VIRGIN WS
-            # codebook rows adopt the stage-0 evidence BEFORE the
-            # compiled body snaps, so the STE substitutes data-
-            # initialised prototypes rather than frozen random rows
-            # (the #13 forward-poison). Data-dependent (``unique``) --
-            # must stay out of the compiled graph.
-            if (self.training and concepts_in is not None
-                    and hasattr(_ws_list[0], "adopt_stage0_evidence")):
-                _ws_list[0].adopt_stage0_evidence(concepts_in, _spans)
-            # Step 1 (2026-06-10 symbolic-iteration plan): CS-leg
-            # adopt-on-first-sight + virgin staging. Stage t's WS adopts
-            # from stage t-1's PERSISTENT CS view (one-step-stale: the
-            # in-step evidence is produced inside the compiled body,
-            # where the data-dependent ``unique`` cannot live), then
-            # parks the virgin-row mask the body's symbolic emission
-            # reads -- continuous fallback until the winner row has been
-            # adopted. Serial/grammar spaces no-op inside the methods.
-            _dev = (concepts_in.device
-                    if torch.is_tensor(concepts_in) else None)
-            _prev_cs = None
-            for _stage_k in (getattr(self, "body_stages", None) or []):
-                _ws_k = _stage_k["ws"] if "ws" in _stage_k else None
-                if _ws_k is not None:
-                    if (self.training and _prev_cs is not None
-                            and hasattr(_ws_k, "adopt_symbolic_evidence")):
-                        _ws_k.adopt_symbolic_evidence(
-                            getattr(_prev_cs, "_subspaceForWS", None))
-                    if hasattr(_ws_k, "stage_symbolic_virgin_rows"):
-                        _ws_k.stage_symbolic_virgin_rows(device=_dev)
-                _prev_cs = _stage_k["cs"] if "cs" in _stage_k else None
         if in_sub is None:
             return in_sub
         if hasattr(in_sub, "is_empty") and in_sub.is_empty():
@@ -13908,6 +13610,7 @@ class BasicModel(BaseModel):
         # property analysis. This remains wholly eager; the compiled word cell
         # sees fixed tensors and performs no dictionary walk or host sync.
         self._stage_serial_concept_rows()
+        self._stage_reading_word_concepts()
         # the snapshot's surfaces need the bank the concept rows just staged
         self._stage_snapshot_bytes()
         if getattr(self, "reconstruct_in_loop", False):
@@ -13963,19 +13666,6 @@ class BasicModel(BaseModel):
             depth = getattr(stm, "_depth", None) if stm is not None else None
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
-        isp = getattr(self, "inputSpace", None)
-        if (isp is not None
-                and bool(getattr(isp, "_sentence_pack_enabled", False))
-                and torch.is_tensor(getattr(
-                    self, "_packed_sentence_roots", None))):
-            if not getattr(self, "_packed_prediction_drained", False):
-                self._drain_packed_stm_end_states()
-                self._packed_prediction_drained = True
-            # The ordinary compiled boundary parked the final sentence too;
-            # packed draining already consumed it in chronological slot order.
-            object.__setattr__(self, "_pending_stm_end_state", None)
-        else:
-            self._drain_pending_stm_end_state()
         self._staged_in_sub = None
         self._staged_concepts_in = None
         self._active_compiled_step = None
@@ -14074,188 +13764,6 @@ class BasicModel(BaseModel):
         return [documents[b][slot]
                 if b < len(documents) and slot < len(documents[b]) else None
                 for b in range(int(batch))]
-
-    def _drain_pending_stm_end_state(self):
-        """Persist a compiled forward's parked STM boundary on the host.
-
-        The forward graph produces only tensors. Ragged payload construction,
-        ``tolist`` and persistent-store mutation run here, after the compiled
-        callable returns and before the rest of the batch consumes the staged
-        discourse prediction. Eager forwards continue using their existing
-        in-place boundary path and leave this slot empty.
-        """
-        pending = getattr(self, "_pending_stm_end_state", None)
-        object.__setattr__(self, "_pending_stm_end_state", None)
-        if pending is None:
-            return
-        if len(pending) == 3:
-            cs_buf, end_depth, active = pending
-            rel_mask = (end_depth >= 3) & active
-        else:
-            # Compatibility with the older word-cell boundary, which parks
-            # only a buffer and the one-versus-three relative-row mask.
-            cs_buf, rel_mask = pending
-            end_depth = torch.where(rel_mask, 3, 1).clamp(max=cs_buf.shape[1])
-            active = torch.ones_like(end_depth, dtype=torch.bool)
-        discourse = (self.symbolSpace.discourse
-                     if getattr(self, "symbolSpace", None) is not None
-                     else None)
-        ltm_store = getattr(self.symbolSpace, "ltm_store", None)
-        ltm_on = bool(
-            getattr(self.conceptualSpace, "_ltm_consolidation", False)
-            and ltm_store is not None)
-        discourse_live = bool(
-            discourse is not None
-            and hasattr(discourse, "observe_stm_end_state"))
-        if not (discourse_live or ltm_on):
-            return
-        B, cap = int(cs_buf.shape[0]), int(cs_buf.shape[1])
-        depth_rows = end_depth.reshape(-1).to("cpu").tolist()
-        active_rows = active.reshape(-1).to("cpu").tolist()
-        if any(live and not 1 <= int(depth) <= min(3, cap)
-               for live, depth in zip(active_rows, depth_rows)):
-            raise RuntimeError("completed sentence has no valid occupied roles")
-        depths = [int(depth_rows[b]) if active_rows[b] else 0 for b in range(B)]
-        payloads = [cs_buf[b, :depths[b], :] if active_rows[b] else None
-                    for b in range(B)]
-        tetralemmas = self.conceptualSpace.stm_end_state_trust(
-            cs_buf, rel_mask)
-        entries, _by_sentence = _boundary_programs(self)
-        meanings, observed_payloads, observed_depths, layout, role_masks = (
-            _boundary_observation_view(
-                getattr(self, "languageSpace", None), _boundary_registry(self),
-                entries, payloads, depths,
-                structured=(getattr(discourse, "expectation_scope", None)
-                            == "structured")))
-        if discourse_live:
-            keyword = {}
-            if layout != "stm":
-                keyword.update(layout=layout, role_masks=role_masks)
-            discourse.predict_and_observe_stm_end_state(
-                observed_depths, observed_payloads, tetralemmas=tetralemmas,
-                mask=active, documents=self._expectation_documents_for_slot(0, B),
-                **keyword)
-        if ltm_on:
-            retain_expectation = (
-                discourse_live and _is_external_expectation_observation(discourse))
-            for b, payload in enumerate(payloads):
-                if payload is None or int(payload.shape[0]) < 1:
-                    continue
-                d = max(1, min(int(depths[b]), int(payload.shape[0])))
-                tet = (tetralemmas[b]
-                       if tetralemmas is not None and b < len(tetralemmas)
-                       else None)
-                trust = float(tet) if tet is not None else 0.0
-                comparison = (discourse.last_expectation_comparison(b)
-                              if retain_expectation
-                              and hasattr(discourse, "last_expectation_comparison")
-                              else None)
-                row = _append_observed_meaning(
-                    ltm_store, payload, d, trust=trust,
-                    meaning=meanings[b] if b < len(meanings) else None,
-                    expectation=comparison, program=entries[b] if b < len(entries) else None, stream=b)
-                if (row >= 0 and retain_expectation
-                        and hasattr(discourse, "bind_observation_occurrence")):
-                    discourse.bind_observation_occurrence(
-                        b, ltm_store.row(row)["occurrence"])
-
-    def _drain_packed_stm_end_states(self):
-        """Observe each sealed meaning once, in row/document/time order."""
-        roots = getattr(self, "_packed_sentence_roots", None)
-        isp = getattr(self, "inputSpace", None)
-        discourse = (self.symbolSpace.discourse
-                     if getattr(self, "symbolSpace", None) is not None
-                     else None)
-        ltm_store = getattr(getattr(self, "symbolSpace", None), "ltm_store", None)
-        ltm_on = bool(
-            getattr(self.conceptualSpace, "_ltm_consolidation", False)
-            and ltm_store is not None)
-        if (not torch.is_tensor(roots) or isp is None
-                or (discourse is None and not ltm_on)):
-            return
-        positions = isp._packed_sentence_slot_end_positions
-        valid = isp._packed_sentence_slot_mask
-        if (not torch.is_tensor(positions) or not torch.is_tensor(valid)
-                or tuple(positions.shape) != tuple(valid.shape)
-                or int(positions.shape[0]) != int(roots.shape[0])):
-            raise RuntimeError(
-                "packed STM roots are missing chronological sentence slots")
-        B, root_slots, _D = (
-            int(roots.shape[0]), int(roots.shape[1]),
-            int(roots.shape[2]))
-        if int(positions.shape[1]) != root_slots:
-            raise RuntimeError(
-                "packed STM root FIFO differs from its chronological slots")
-        counts = tuple(getattr(
-            isp, "_packed_sentence_counts_host", ()) or ())
-        full = getattr(self, "_tensor_sentence_roots_live", None)
-        full_depth = getattr(self, "_tensor_sentence_roots_depth", None)
-        final_slots = getattr(self, "_tensor_final_end_slots", None)
-        final_depth = getattr(self, "_tensor_final_end_depth", None)
-        has_full = all(torch.is_tensor(x) for x in (
-            full, full_depth, final_slots, final_depth))
-        if not has_full and getattr(discourse, "expectation_scope", "root") == "structured":
-            raise RuntimeError("structured prediction requires sealed sentence slots and depths")
-        _current, by_sentence = _boundary_programs(self)
-        for t in range(int(positions.shape[1])):
-            sentence = roots[:, t, :]
-            mask = valid[:, t].to(
-                device=roots.device, dtype=torch.bool).clone()
-            payloads, depths = [], []
-            for b in range(B):
-                if b >= len(counts) or t >= int(counts[b]) or not bool(mask[b]):
-                    payloads.append(None)
-                    depths.append(0)
-                elif has_full:
-                    last = t == int(counts[b]) - 1
-                    depth = int(final_depth[b] if last else full_depth[b, t])
-                    slots = final_slots[b] if last else full[b, t].reshape(3, _D)
-                    if depth <= 0:
-                        mask[b] = False
-                        payloads.append(None)
-                        depths.append(0)
-                    else:
-                        if depth > 3:
-                            raise RuntimeError("completed sentence has no valid occupied roles")
-                        payloads.append(slots[:depth])
-                        depths.append(depth)
-                else:
-                    payloads.append(sentence[b:b + 1])
-                    depths.append(1)
-            entries = (by_sentence.get(t, ())
-                       if hasattr(by_sentence, "get") else ())
-            meanings, observed_payloads, observed_depths, layout, role_masks = (
-                _boundary_observation_view(
-                    getattr(self, "languageSpace", None), _boundary_registry(self),
-                    entries, payloads, depths,
-                    structured=(getattr(discourse, "expectation_scope", None)
-                                == "structured")))
-            if discourse is not None:
-                keyword = {}
-                if layout != "stm":
-                    keyword.update(layout=layout, role_masks=role_masks)
-                discourse.predict_and_observe_stm_end_state(
-                    observed_depths, observed_payloads, mask=mask,
-                    documents=self._expectation_documents_for_slot(t, B),
-                    **keyword)
-            if ltm_on:
-                retain_expectation = _is_external_expectation_observation(discourse)
-                for b, (depth, payload) in enumerate(zip(depths, payloads)):
-                    if payload is not None:
-                        comparison = (discourse.last_expectation_comparison(b)
-                                      if retain_expectation
-                                      and hasattr(discourse, "last_expectation_comparison")
-                                      else None)
-                        row = _append_observed_meaning(
-                            ltm_store, payload, depth,
-                            meaning=meanings[b] if b < len(meanings) else None,
-                            expectation=comparison, program=entries[b] if b < len(entries) else None, stream=b)
-                        if (row >= 0 and retain_expectation
-                                and hasattr(discourse, "bind_observation_occurrence")):
-                            discourse.bind_observation_occurrence(
-                                b, ltm_store.row(row)["occurrence"])
-
-
 
     def _discourse_arma_loss(self):
         """Inter-sentence ARMA(p, q) loss term for this step, or ``None``.
@@ -14459,8 +13967,8 @@ class BasicModel(BaseModel):
         Both query and vocabulary axes are tiled to bound temporary storage.
         """
         owner = self._concept_owner()
-        vocabulary = sorted(set(getattr(owner, "_row_surfaces", ())) |
-                            set(getattr(owner, "_surface_object_rows", ())))
+        vocabulary = sorted({row for cid in owner.definitions.object_ids
+                             if (row := owner._csw_row_of(cid)) is not None})
         spellings = {row: owner.word_surface_for_row(row) for row in vocabulary}
         vocabulary = [row for row in vocabulary if spellings[row] is not None]
         counts = lengths.detach().cpu().tolist()
@@ -14490,17 +13998,16 @@ class BasicModel(BaseModel):
     def _grammar_target_word(self, word):
         """Teacher-side full concept of a word already in the live vocabulary."""
         owner = self._concept_owner()
-        allocator = getattr(owner, "_concept_allocator", None)
-        triple = getattr(allocator, "word_obj_meta", {}).get(word)
-        if triple is None:
+        word_id = owner.definitions.word(form=word)
+        if word_id is None:
             return None
-        row = owner._csw_row_of(int(triple[1]))
+        row = owner._csw_row_of(owner.definitions.deref(word_id))
         if row is None:
             raise ValueError("grammar target word has no live conceptual row")
         reference = owner.similarity_codebook.W
         return owner.similarity_codebook.lookup_rows(torch.tensor(row, device=reference.device)).detach()
 
-    def _grammar_lesson_objectives(self, understanding, *, split, source_rows):
+    def _grammar_lesson_objectives(self, programs, *, split, source_rows):
         """Score supplied annotations after the student has fixed its parse.
 
         No labels enter forward, resolution or generation. Ordinary unlabelled
@@ -14512,10 +14019,10 @@ class BasicModel(BaseModel):
         table = getattr(self.inputSpace.data, "grammar_lessons", {}).get(split, ())
         if not table:
             return None
-        if source_rows is None or len(source_rows) != len(understanding.answer_program):
+        if source_rows is None or len(source_rows) != len(programs):
             raise ValueError("annotated grammar training requires stable source rows")
         lessons = []
-        for row, program in zip(source_rows, understanding.answer_program):
+        for row, program in zip(source_rows, programs):
             if isinstance(row, (tuple, list)) and len(row) == 1:
                 row = row[0]
             if not isinstance(row, (int, np.integer)):
@@ -14531,8 +14038,8 @@ class BasicModel(BaseModel):
                 raise ValueError("grammar lesson text does not match its captured forward words")
             lessons.append(lesson)
         from GrammarLessons import compose_loss, generate_loss
-        costs = {"compose": compose_loss(self.languageSpace, understanding.answer_program, lessons),
-                 "generate": generate_loss(self.languageSpace, understanding.answer_program, lessons,
+        costs = {"compose": compose_loss(self.languageSpace, programs, lessons),
+                 "generate": generate_loss(self.languageSpace, programs, lessons,
                                self.grammatical_thoughts, self._grammar_target_word)}
         return {name: cost for name, cost in costs.items() if cost is not None} or None
 
@@ -14600,7 +14107,7 @@ class BasicModel(BaseModel):
         return not getattr(self, '_exploration_trial', False)
 
     def _compose_round_owners(self, actions):
-        """Sentence identity for every fixed word/seal operation slot."""
+        """Sentence identity for every fixed word/closing operation slot."""
         B, T = actions.shape
         active = self.inputSpace._word_active_mask
         W = active.shape[1]
@@ -14608,14 +14115,14 @@ class BasicModel(BaseModel):
         ids = ids if torch.is_tensor(ids) else torch.zeros_like(active, dtype=torch.long)
         owners = torch.full_like(actions, -1)
         owners[:, :3 * W] = ids.repeat_interleave(3, 1)[:, :T]
-        seal_width = max(1, 2 * int(self.conceptualSpace.stm.capacity))
+        closing_width = max(1, 2 * int(self.conceptualSpace.stm.capacity))
         last = torch.where(active, torch.arange(W, device=active.device)[None, :], -1).amax(1).clamp_min(0)
         last_id = ids.gather(1, last[:, None])
         if T > 3 * W:
-            # Group zero belongs to the final seal. An intermediate sentence
+            # Group zero belongs to the final closing. An intermediate sentence
             # ending at word w uses group w+1, including the one-word case.
-            seal_ids = torch.cat((last_id, ids[:, :-1]), dim=1)
-            owners[:, 3 * W:] = seal_ids.repeat_interleave(seal_width, 1)[:, :T - 3 * W]
+            closing_ids = torch.cat((last_id, ids[:, :-1]), dim=1)
+            owners[:, 3 * W:] = closing_ids.repeat_interleave(closing_width, 1)[:, :T - 3 * W]
         return owners, ids, last_id
 
 
@@ -14639,49 +14146,54 @@ class BasicModel(BaseModel):
                 1, selected[:, None], eligible.any(-1)[:, None])
         return actions, forced, owners
 
-    def _run_sentence_batch(self, *args, **kwargs):
-        """One public batch, with two local training trials at each seal."""
-        import inspect
-        from contextlib import nullcontext
+    @contextmanager
+    def _sentence_run(self, *, training=False, optimizer=None, split='runtime',
+                      source_rows=None, trial_mode='reconstruct'):
+        """One sentence-boundary context for raw forward, evaluation and training."""
         from SentenceCompose import saved_sentence_values
-        bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
-        bound.apply_defaults()
-        call = dict(bound.arguments)
         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
-        self._sentence_seals = (self.serial and not call['exploration_trial']
-            and getattr(language, 'operation_layer', None) is not None)
-        # Word-major sentences use the tied traversal at both training seals,
+        self._sentence_ends = (self.serial and  getattr(language, 'operation_layer', None) is not None)
+        # Word-major sentences use the tied traversal at both training endings,
         # including configurations that retain the older event-loss report.
         # A reporting switch must not turn both compose objectives into zero.
-        self._sentence_reconstruction = self._sentence_seals and (
-            self.reconstruct_in_loop or (self.serial_object_meta
+        self._sentence_training = bool(training)
+        self._sentence_run_active = True
+        self._open_sentence_slot = None
+        self._sentence_reconstruction = self._sentence_ends and (
+            self.reconstruct_in_loop or (self._aligned_serial_word_mode()
                 and not self.detached_reverse and self.loss.reconstruction_scale > 0))
         keep_ideas = self._recon_keep_ideas
         self._recon_keep_ideas = keep_ideas or self._sentence_reconstruction
-        self._sentence_optimizer = call['optimizer'] if call['train'] else None
+        self._sentence_optimizer = optimizer if training else None
         self._sentence_trial_costs = []
         self._sentence_winners = []
-        self._sentence_programs = {}
+        self._sentence_fields = {}
+        self._sentence_priming_written = False
+        self._reading_lesson_sources = source_rows
+        self._reading_lesson_split = split
+        self._reading_lesson_enabled = training and trial_mode != 'predict'
+        self._reading_lesson_reports = []
+        self._contextual_sentence_priors = {}
         self._sentence_reconstructions = []
         every = int(getattr(self, 'branch_diagnostics_every', 0) or 0)
-        sample_gradients = (call['train'] and self._sentence_seals and every > 0
+        sample_gradients = (training and self._sentence_ends and every > 0
             and int(getattr(self, '_training_step_count', 0) or 0) % every == 0)
         self._sentence_operator_gradients = {} if sample_gradients else None
         self._sentence_gradient_objectives = None
         self._sentence_gradient_error = None
         if sample_gradients:
             self._last_operator_gradients = None
-            self._last_operator_gradient_seals = 0
+            self._last_operator_gradient_sentences = 0
         # Perception is shared by two backward/step pairs. Saved values must
         # remain those of its one forward even when the first update mutates
         # parameters. The graph itself still credits the perception parameters.
         hooks = (saved_sentence_values(self.parameters(), self.buffers())
-                 if call['train'] and self._sentence_seals else nullcontext())
+                 if training and self._sentence_ends else nullcontext())
         try:
             with hooks:
-                return self._run_batch_once(**call)
+                yield
         finally:
-            self._sentence_seals = False
+            self._sentence_ends = False
             self._sentence_reconstruction = False
             self._recon_keep_ideas = keep_ideas
             self._sentence_optimizer = None
@@ -14693,6 +14205,21 @@ class BasicModel(BaseModel):
             self._compose_exploit_actions = self._compose_forced_slots = None
             self._compose_prefix_slots = None
 
+            self._sentence_training = False
+            self._sentence_run_active = False
+            self._open_sentence_slot = None
+            self.languageSpace._reference_bank = None
+
+    def _run_sentence_batch(self, *args, **kwargs):
+        """One public batch, with two local trials only when training is requested."""
+        import inspect
+        bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+        bound.apply_defaults()
+        call = dict(bound.arguments)
+        with self._sentence_run(training=call['train'], optimizer=call['optimizer'],
+                split=call['split'], source_rows=call['source_rows'], trial_mode=call['trial_mode']):
+            return self._run_batch_once(**call)
+
     def _run_batch_once(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None,
                  exploration_trial=False,
@@ -14700,7 +14227,7 @@ class BasicModel(BaseModel):
                  source_rows=None, attach_outputs=False):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
-        Sentence trials are completed by the eager seal driver during forward.
+        Sentence trials are completed by the eager closing driver during forward.
         ``exploration_trial`` is the non-recording mode-schedule context read;
         it does not run a second batch derivation.
 
@@ -15050,7 +14577,7 @@ class BasicModel(BaseModel):
                         if self.symbolSpace is not None else None)
                 self._stage_legacy_discourse_prediction(
                     disc, fullgraph_word_loop=_fullgraph_word_loop)
-            _fwd = (self.forward if exploration_trial or getattr(self, '_sentence_seals', False) else
+            _fwd = (self.forward if exploration_trial or getattr(self, '_sentence_ends', False) else
                     (self._active_compiled_step if torch.is_grad_enabled()
                      and self._active_compiled_step is not None else self.forward))
             self._exploration_trial = bool(exploration_trial)
@@ -15506,18 +15033,14 @@ class BasicModel(BaseModel):
                     "output": (1.0 - _rr) * lossOut,
                     "expectation": lossIn.new_zeros(()),
                 }
-            if train and trial_mode != "predict":
-                grammar_objectives = self._grammar_lesson_objectives(
-                    self._last_understanding, split=split, source_rows=source_rows)
-                if grammar_objectives is not None:
-                    grammar_lesson = torch.stack(tuple(grammar_objectives.values())).sum()
-                    totalLoss = totalLoss + self.grammar_lesson_weight * grammar_lesson
-                    if gradient_objectives is not None and "generate" in grammar_objectives:
-                        gradient_objectives["output"] = (gradient_objectives["output"]
-                            + self.grammar_lesson_weight * grammar_objectives["generate"])
-                    self.record_loss("grammar_lesson", grammar_lesson,
-                                     weight=self.grammar_lesson_weight,
-                                     space="LanguageSpace", category="grammar")
+            lesson_reports = getattr(self, '_reading_lesson_reports', ())
+            if train and trial_mode != 'predict' and lesson_reports:
+                grammar_lesson = torch.stack(lesson_reports).mean()
+                # Already trained inside the sentence; this detached term
+                # keeps the batch's reported total complete without replay.
+                totalLoss = totalLoss + self.grammar_lesson_weight * grammar_lesson
+                self.record_loss('grammar_lesson', grammar_lesson,
+                    weight=self.grammar_lesson_weight, space='LanguageSpace', category='grammar')
             if train and trial_mode != "predict" and output_policy_loss is not None:
                 totalLoss = totalLoss + self.output_policy_weight * output_policy_loss
                 if gradient_objectives is not None:
@@ -15680,7 +15203,7 @@ class BasicModel(BaseModel):
                     symbol_acts = self.symbol_states[-1]
                 totalLoss = self.symbolSpace.truth_modulated_loss(
                     totalLoss,
-                    symbolic_space=self.wholeSpace,
+                    symbolic_space=self.conceptualSpace,
                     symbol_acts=symbol_acts,
                     universality_score=getattr(self, '_universality_score', None),
                     luminosity_weight=getattr(self, 'luminosity_weight', 0.1),
@@ -15816,7 +15339,7 @@ class BasicModel(BaseModel):
                     self, "_training_step_count", 0) or 0) % _every == 0):
                 self._sample_gradient_diagnostics(gradient_objectives, optimizer)
             if not totalLoss.requires_grad:
-                # An input-only batch already trained at its sentence seals.
+                # An input-only batch already trained at its sentence endings.
                 # With no batch-end teacher term there is no third backward.
                 _fineweb_step_performed = bool(self._sentence_trial_costs)
             elif amp_scaler is not None:
@@ -16128,13 +15651,7 @@ class BasicModel(BaseModel):
         if ss is not None:
             tl = getattr(ss, 'truth_layer', None)
             if tl is not None and hasattr(tl, 'compact'):
-                # Gold ingestion (store_truths drops truth_criterion to 0
-                # to capture ALL provided truths): drop the compact bar the
-                # same way -- unity-analysis magnitudes are small by
-                # construction, unlike the retired body-snap norms.
-                _min_trust = 0.0 if float(getattr(
-                    self.wholeSpace, "truth_criterion", 1.0)) == 0.0 else 0.5
-                tl.compact(min_trust=_min_trust)
+                tl.sync_from_ltm()
         self._detach_persistent_state()
 
     def _detach_persistent_state(self):
@@ -16197,7 +15714,8 @@ class BasicModel(BaseModel):
 
         for mod in self.modules():
             for tn in ("_live_buffer", "_last_output", "_last_root_state",
-                       "_intent_boosts", "_stage0_recon_loss"):
+                       "_intent_boosts", "_stage0_recon_loss",
+                       "_stage0_property_membership"):
                 _sever(mod, tn)
             rs = getattr(mod, "routing_state", None)
             if rs is not None:
@@ -16392,10 +15910,7 @@ class BasicModel(BaseModel):
         if not getattr(self, '_ltm_provisioned', True):
             self._ltm_provisioned = True
             if getattr(self, 'ltm_consolidation', False):
-                try:
-                    self.provision_ltm()
-                except Exception:
-                    pass
+                self.provision_ltm()
 
         self.train(training)
         self.outputSpace.clearBatchResults()
@@ -16412,7 +15927,7 @@ class BasicModel(BaseModel):
         # ``data_loader(split="runtime")`` serves the data ``runtime_batch``
         # staged into ``train_input``, the cursor builds a real per-tick
         # ``batch_override``, and ``runBatch(train=False)`` runs the forward
-        # (which records gold truths under ``truthCriterion``). The previous
+        # (which records supplied truths with external provenance). The previous
         # bespoke fast-path called ``runBatch`` WITHOUT a batch_override (the
         # retired ARIR/arir_step entry), so EVERY ``runEpoch(split="runtime")``
         # raised "no batch_override supplied" -- ``store_truths``' documented
@@ -16957,8 +16472,7 @@ class BasicModel(BaseModel):
         # Canonical WS role: an upstream property basis, independent of the
         # concept/symbol namespace. Legacy configs omit the knob and retain the
         # pre-migration construction path until they are converted explicitly.
-        self.wholePropertyBasis = bool(TheXMLConfig.space(
-            "WholeSpace", "propertyBasis", default=False))
+
         self.subsymbolicOrder = subsymbolicOrder
         self.subsymbolic_loop = self._subsymbolic_loop_passes(
             TheXMLConfig.get('architecture.subsymbolicLoop', default='all'),
@@ -17232,8 +16746,7 @@ class BasicModel(BaseModel):
         # stage 0 and hand that module to later folds at construction time.
         # Mixing and legacy WholeSpace models retain per-stage dictionaries.
         _share_concept_dictionary = (
-            self.wholePropertyBasis
-            and getattr(self, "concept_binding", "mixing") == "aligned")
+            getattr(self, "concept_binding", "mixing") == "aligned")
         _serial_meta_raw = TheXMLConfig.get(
             "architecture.serialObjectMeta", default=False)
         _serial_meta = (
@@ -17353,9 +16866,7 @@ class BasicModel(BaseModel):
             else:
                 _ser_v = str(_ser_raw).strip().lower() in (
                     "true", "1", "yes", "on")
-            if (self.wholePropertyBasis
-                    and getattr(self, "concept_binding", "mixing")
-                    == "aligned"):
+            if (getattr(self, 'concept_binding', 'mixing') == 'aligned'):
                 # Canonical aligned models address concepts by CS inventory
                 # row. Every stage therefore owns the full preallocated CS
                 # dictionary; WholeSpace's much smaller property basis is not
@@ -17392,21 +16903,7 @@ class BasicModel(BaseModel):
             # growth must rebuild optimizer/compiled ownership at an explicit
             # reset boundary. Legacy configs retain their prior terminal-only
             # inventory sizing until explicitly migrated.
-            _ws_codebook_mode = Space.normalize_codebook_mode(
-                TheXMLConfig.space(
-                    "WholeSpace", "codebook", default="quantize"))
-            _whole_property_codebook = (
-                self.wholePropertyBasis
-                and _ws_codebook_mode == "quantize")
-            _legacy_terminal_dictionary = (
-                not self.wholePropertyBasis
-                and is_last and _ws_codebook_mode == "quantize")
-            stage_space_symbol = [
-                (spaceShape_symbol[0]
-                 if (_whole_property_codebook
-                     or _legacy_terminal_dictionary) else ws_out[0]),
-                spaceShape_symbol[1],
-            ]
+            stage_space_symbol = [spaceShape_symbol[0], spaceShape_symbol[1]]
             # Right-half loopback widening retired (see ConceptualSpace
             # docstring): per-order input sourcing replaces the concat,
             # so the C-space_role PiLayer input width is just nInputDim.
@@ -17433,8 +16930,7 @@ class BasicModel(BaseModel):
                 # sparsity in backward so the dedicated row-local optimizer
                 # never allocates a dense 1M x ConceptDim gradient/moment set.
                 cs.similarity_codebook.sparse_lookup_grad = True
-            ws = WholeSpace(ws_in, stage_space_symbol, ws_out,
-                               conceptualSpace=cs)
+            ws = WholeSpace(ws_in, stage_space_symbol, ws_out)
             # Non-owning back-ref CS->WS (mirrors the perceptualSpace_ref
             # idiom below): object.__setattr__ so it is NOT registered as
             # an nn.Module child of cs. Read-only structural pairing.
@@ -17461,7 +16957,7 @@ class BasicModel(BaseModel):
         # references; WS/intent tower: bound WORD ids (WS also
         # self-installs at table creation; this is idempotent).
         _law_ss = self.wholeSpace
-        _law_get = lambda: getattr(_law_ss, 'reference_table', None)
+        _law_get = lambda: self._concept_owner()._definition_index()
         if getattr(self, 'perceptualSpace', None) is not None:
             self.perceptualSpace.install_reference_update_law(
                 _law_get, side='object')
@@ -17518,12 +17014,10 @@ class BasicModel(BaseModel):
         for _ws_stage in self.wholeSpaces:
             _ws_codebooks = [getattr(
                 getattr(_ws_stage, 'subspace', None), 'what', None)]
-            if not self.wholePropertyBasis:
-                _ws_codebooks.append(getattr(
-                    _ws_stage, 'analysis_store', None))
+            pass
             for _cb in _ws_codebooks:
                 _vq = getattr(_cb, 'vq', None) if _cb is not None else None
-                if self.wholePropertyBasis and _vq is None:
+                if _vq is None:
                     # Canonical properties are a direct learned Parameter,
                     # without VQ/EMA shadow tensors. WholeSpace constructs and
                     # registers W; enlist that one physical owner explicitly.
@@ -17593,7 +17087,7 @@ class BasicModel(BaseModel):
             object.__setattr__(cs, 'terminalSymbolSpace_ref',
                                self.wholeSpace)
             # serialObjectMeta reaches CS here (a NEW stamp site — _mereology_
-            # raise never reaches CS; _maybe_autobind_meta reads it off self).
+            # raise never reaches CS; _maybe_autobind_words reads it off self).
             # Read the live config directly: _create_per_stage runs DURING
             # construction, before self.serial_object_meta is parsed (same
             # order-safety idiom as the mereologyRaise request below).
@@ -17604,15 +17098,7 @@ class BasicModel(BaseModel):
             object.__setattr__(cs, '_trust', self._unit_interval(
                 TheXMLConfig.get("architecture.trust", default=1.0),
                 default=1.0))
-            # ltmConsolidation reaches CS here too (same NEW stamp site). When
-            # on, _route_learned_relation's ineffable branch appends to the
-            # unified ltm_store instead of the (retired) RelativeTruthStore, and
-            # reason/verify_relation select the ltm_store. Read the live config
-            # directly (order-safe during construction, before
-            # self.ltm_consolidation is parsed).
-            object.__setattr__(cs, '_ltm_consolidation', bool(
-                TheXMLConfig.get("architecture.ltmConsolidation",
-                                 default=False)))
+            object.__setattr__(cs, '_ltm_consolidation', True)
 
         # S3 relocation (2026-06-17): ConceptualSpace is the OWNER of the
         # relation-only symbol table / taxonomy (doc/specs/mereological-order-
@@ -17634,7 +17120,7 @@ class BasicModel(BaseModel):
             object.__setattr__(sp, 'terminalConceptualSpace_ref',
                                self.conceptualSpace)
         for sp in self.wholeSpaces:
-            if not bool(getattr(sp, 'property_basis', False)):
+            if not bool(isinstance(sp, WholeSpace)):
                 object.__setattr__(sp, 'terminalConceptualSpace_ref',
                                    self.conceptualSpace)
 
@@ -17732,9 +17218,7 @@ class BasicModel(BaseModel):
         # source (the config is loaded before any space is created).
         _category_codebook = bool(TheXMLConfig.get(
             "architecture.categoryCodebook", default=True))
-        category_owner = (
-            self.conceptualSpace
-            if self.wholePropertyBasis else terminal_ss)
+        category_owner = self.conceptualSpace
         if _category_codebook and category_owner is not None:
             # REQUEST allocation; the actual enable runs LAZILY from the
             # autobind hook on the first perception forward, when TheGrammar is
@@ -17834,11 +17318,7 @@ class BasicModel(BaseModel):
             sub = getattr(space, 'subspace', None)
             if sub is not None:
                 sub.normalizer = self.normalizer
-            if (space is not self.symbolSpace
-                    and not (self.wholePropertyBasis
-                             and isinstance(space, WholeSpace))
-                    and getattr(space, 'symbolSpace', None) is None
-                    and hasattr(space, 'attach_symbolSpace')):
+            if (space is not self.symbolSpace and (not isinstance(space, WholeSpace)) and (getattr(space, 'symbolSpace', None) is None) and hasattr(space, 'attach_symbolSpace')):
                 space.attach_symbolSpace(self.symbolSpace)
 
         # Slice C: the per-stage ConceptualSpace cells (which run bind_streams)
@@ -17907,7 +17387,6 @@ class BasicModel(BaseModel):
         # ownership diagnostics as an explicitly compiled model.
         self._debug_peer_mutation = (
             os.environ.get("BASICMODEL_DEBUG_PEER_MUTATION", "0") == "1")
-        self._pending_stm_end_state = None
         self._current_discourse_s = None
         # Fullgraph sentence products consumed by the eager loss/diagnostic
         # tail.  The lazy compiled wrapper returns these explicitly so their
@@ -17995,8 +17474,7 @@ class BasicModel(BaseModel):
         # Compatibility-only ownership: legacy WholeSpace doubled as the
         # symbolic stage. Canonical property-basis WS is strictly upstream and
         # must not retain a downstream SymbolSpace pointer.
-        if not self.wholePropertyBasis:
-            self.wholeSpace.attach_symbolSpace(self.symbolSpace)
+        pass
 
         # Stage 1.F substrate refactor (doc/plans/2026-05-26-two-loop-
         # pi-sigma-substrate.md): the per-stage forward capture lists
@@ -18161,21 +17639,9 @@ class BasicModel(BaseModel):
 
     @property
     def symbol_cache(self):
-        """Terminal stage's symbolic subspace, or None if not yet set.
+        """The last SymbolSpace-owned result of the current forward."""
+        return getattr(self, '_reading_symbol_result', None)
 
-        Post Stage 1.F of the two-loop pi/sigma substrate refactor
-        (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the
-        per-stage ``_ws_cache`` capture list is retired. The terminal
-        WholeSpace's ``.subspace`` is the canonical owner of the
-        terminal symbolic state — each stage's ``ws.forward(...)``
-        writes there in place — so this property resolves directly to
-        ``self.wholeSpace.subspace``. Read-only consumer surface;
-        same role as before, no per-stage list lookup.
-        """
-        ws = getattr(self, 'wholeSpace', None)
-        if ws is None:
-            return None
-        return getattr(ws, 'subspace', None)
 
 
     def _forward_head(self, sub):
@@ -18297,7 +17763,7 @@ class BasicModel(BaseModel):
         #     sentence: each ground-truth word ``[B,1,D]`` is pumped
         #     through the SAME per-stage PS->CS->WS computation and the
         #     resulting per-word concept is SHIFTed onto
-        #     ConceptualSpace.stm; the NULL seal (next_word -> None)
+        #     ConceptualSpace.stm; the NULL closing (next_word -> None)
         #     ends the loop. The accumulated STM then feeds the EXISTING
         #     compose-to-S / chart / head / reverse() / IR-loss TAIL
         #     entirely unchanged.
@@ -18796,7 +18262,7 @@ class BasicModel(BaseModel):
         ps = getattr(self, "perceptualSpace", None)
         if ws is None or ps is None or not getattr(ps, "_meronomy", False):
             return
-        if not hasattr(ws, "record_property_pull") or not getattr(ws, "property_basis", False):
+        if not hasattr(ws, 'record_property_pull'):
             return
         fi = getattr(ps, "_forward_input", None) or {}
         texts = fi.get("word_texts"); codes = getattr(ps, "_embedded_input", None)
@@ -18828,8 +18294,17 @@ class BasicModel(BaseModel):
             ws.record_property_pulls(unit_rows, torch.stack(unit_codes, dim=0), unit_bytes)
 
     def _concept_owner(self):
-        """The ConceptualSpace that owns the concept store and the utility
-        counts (stage 0 of an aligned body; the only stage otherwise)."""
+        """The grammar's shared identity owner, including unshared bodies.
+
+        An unshared multi-stage body gives the grammar its terminal space.
+        Word definitions must use that same allocator as clause endings;
+        stage-local integer IDs are not interchangeable in the common store.
+        Before registry construction the shared aligned owner is stage zero.
+        """
+        registry = getattr(self, "grammatical_thoughts", None)
+        owner = getattr(registry, "space", None)
+        if owner is not None:
+            return owner
         spaces = list(getattr(self, "conceptualSpaces", None) or ())
         return spaces[0] if spaces else getattr(self, "conceptualSpace", None)
 
@@ -19066,6 +18541,9 @@ class BasicModel(BaseModel):
             replay_action=self._compose_replayed_action(trace_slot, state[1]),
             op_prior=self._chunk_structural_prior(stm.ensure_whole_state(), B, state[0]))
         next_state = self.conceptualSpace.apply_language_choice(state, choice)
+        scope = self.languageSpace.clause_scope
+        stm._clause_state, closing_kind = scope.apply(stm.ensure_clause_state(), choice,
+            torch.as_tensor(0 if trace_slot is None else trace_slot, device=state[0].device))
         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
          stm._concept_rows, stm._concept_activations) = next_state
         self._record_operation_choice(trace_slot, choice, state)
@@ -19133,21 +18611,21 @@ class BasicModel(BaseModel):
         return torch.where(mask, chosen, -1)
 
     def _exploration_prefix_slots(self, actions, forced, owners):
-        """Chronological prefix per sentence, including interleaved seal slots.
+        """Chronological prefix per sentence, including interleaved closing slots.
 
         Exploit already updated the parameters. Replaying its hard choices
         preserves the zero-temperature counterfactual's prefix under those
         updated weights, while recomputing candidates and their live credit.
         """
         words = self.inputSpace._word_active_mask.shape[1]
-        seal = max(1, 2 * int(self.conceptualSpace.stm.capacity))
+        closing = max(1, 2 * int(self.conceptualSpace.stm.capacity))
         order = []
         for word in range(words):
             order.extend(range(3 * word, 3 * word + 3))
             if word + 1 < words:
-                begin = 3 * words + (word + 1) * seal
-                order.extend(range(begin, begin + seal))
-        order.extend(range(3 * words, 3 * words + seal))
+                begin = 3 * words + (word + 1) * closing
+                order.extend(range(begin, begin + closing))
+        order.extend(range(3 * words, 3 * words + closing))
         order = [slot for slot in order if slot < actions.shape[1]]
         ranks = torch.tensor(order, device=actions.device).argsort()[None, :]
         prefix = torch.zeros_like(forced)
@@ -19190,7 +18668,12 @@ class BasicModel(BaseModel):
         uses its selected operation trace, with the same closed-class anchor
         condition. It never reruns a parser to infer choices.
         """
-        from Language import sentence_relative_mask, sentence_anchor_mask
+        from Language import sentence_relative_mask
+        stm = getattr(getattr(self, 'conceptualSpace', None), 'stm', None)
+        scope = getattr(getattr(self, 'languageSpace', None), 'clause_scope', None)
+        clause_state = getattr(stm, '_clause_state', None)
+        if scope is not None and torch.is_tensor(clause_state) and clause_state.shape[0] == B:
+            return scope.slots(clause_state, stm._depth) == 3
         owner = getattr(self, 'symbolSpace', None)
         trace = self._reconstruction_stack()
         ids = getattr(trace, '_choice_rule_ids', None)
@@ -19202,11 +18685,12 @@ class BasicModel(BaseModel):
             owners, sentences, last = self._compose_round_owners(ids)
             selected = last if word is None else sentences[:, word:word + 1]
             valid = valid & (owners == selected)
-        anchored = sentence_anchor_mask(owner, B, device=device)
-        return self.languageSpace.relative_from_choices(ids, valid, anchored)
+        from Language import sentence_anchor_mask
+        return self.languageSpace.relative_from_choices(ids, valid,
+            sentence_anchor_mask(owner, B, device=device))
 
     def _stm_reduce_to_single_S(self):
-        """Run the fixed seal budget, admitting STOP only when the row fits.
+        """Run the fixed closing budget, admitting STOP only when the row fits.
 
         An unfinished forest remains a training result. Its depth is tagged
         negative at the publication boundary so it cannot become a program
@@ -19240,16 +18724,16 @@ class BasicModel(BaseModel):
         _trace_word_count = (
             int(_trace_word_slab.shape[1])
             if torch.is_tensor(_trace_word_slab) else 0)
-        _seal_active = stm._depth > 0
-        for _seal_index in range(_n_levels):
+        _closing_active = stm._depth > 0
+        for _closing_index in range(_n_levels):
             protect_depth = sentence_row_slots(self._sentence_relative_mask(B, device=device))
             _trace_slot = (
-                3 * _trace_word_count + _seal_index
+                3 * _trace_word_count + _closing_index
                 if _trace_word_count > 0 else None)
             _operated = self._stm_operation_step(
-                protect_depth=protect_depth, row_gate=_seal_active, trace_slot=_trace_slot,
-                allowance=protect_depth, rounds_left=_n_levels - _seal_index)
-            _seal_active = _seal_active & _operated
+                protect_depth=protect_depth, row_gate=_closing_active, trace_slot=_trace_slot,
+                allowance=protect_depth, rounds_left=_n_levels - _closing_index)
+            _closing_active = _closing_active & _operated
         protect_depth = sentence_row_slots(self._sentence_relative_mask(B, device=device))
         complete = (stm._depth <= protect_depth) & (stm._depth > 0)
         self._compose_complete = complete
@@ -19282,7 +18766,7 @@ class BasicModel(BaseModel):
             cs = self.conceptualSpace
             for _c in (list(getattr(self, "conceptualSpaces", []) or [])
                        or [cs]):
-                if getattr(_c, "_percept_word_concept", None):
+                if _c._definition_index() is not None and _c.definitions.word_ids:
                     cs = _c
                     break
             ps = self.perceptualSpace
@@ -19799,6 +19283,9 @@ class BasicModel(BaseModel):
 
         ps_out_slot = self._per_word_percept_contributions
         cs = self.conceptualSpace
+        # The first compiled push must see the same module layout as later
+        # chunks; otherwise lazy clause state creation invalidates its guard.
+        cs.stm.ensure_clause_state()
         loss_terms = list(getattr(cs, "_intra_loss_accum", None) or [])
         loss_weights = list(
             getattr(cs, "_intra_loss_weight_accum", None) or [])
@@ -19913,7 +19400,7 @@ class BasicModel(BaseModel):
         stm = cs.stm
         if stm is not None and torch.is_tensor(getattr(stm, "_depth", None)):
             # One boundary sync, outside every compiled replay.  Snapshot and
-            # the NULL-seal reducer need the current logical width; no word
+            # the NULL-closing reducer need the current logical width; no word
             # cell reads this Python mirror in chunk mode.
             stm._max_depth_host = int(stm._depth.max().item())
         return last_cs
@@ -20685,7 +20172,7 @@ class BasicModel(BaseModel):
         ws = self.wholeSpace
         cs = self.conceptualSpace
         stm = getattr(cs, "stm", None)
-        if stm is None or not getattr(ws, "property_basis", False):
+        if stm is None:
             return False
         required = (
             getattr(isp, "_ar_embedded_N", None),
@@ -20757,6 +20244,43 @@ class BasicModel(BaseModel):
         column = index.clamp(0, width - 1).reshape(-1, 1).expand(B, 1)
         return (left_slab.scatter(1, column, torch.where(active[:, None], left[:, None], left_slab.gather(1, column))),
                 right_slab.scatter(1, column, torch.where(active[:, None], right[:, None], right_slab.gather(1, column))))
+
+    @staticmethod
+    def _tensor_record_selected_values(journal, slot, value, active):
+        B = journal.shape[0]
+        column = slot.reshape(-1, 1, 1).expand(B, 1,
+                                               journal.shape[-1]).clamp(0, journal.shape[1] - 1)
+        selected = torch.where(active[:, None], value, journal.gather(1, column)[:, 0])
+        return journal.scatter(1, column, selected[:, None])
+
+    @staticmethod
+    def _tensor_record_operation_values(journal, slot, state, choice):
+        """Capture actual operands before fusion and the selected result."""
+        buffer = state[0]
+        B, K, D = buffer.shape
+        selected = buffer.gather(1,
+            choice.position.clamp(0, K - 1)[:, None, None].expand(B, 1, D))[:, 0]
+        binary = choice.kind == 1
+        left = torch.where(binary[:, None], buffer[:, min(1, K - 1)], selected)
+        right = torch.where(binary[:, None], buffer[:, 0], torch.zeros_like(selected))
+        values = torch.cat((left, right, choice.candidate), -1)
+        column = slot.reshape(-1, 1, 1).expand(B, 1, 3 * D).clamp(0, journal.shape[1] - 1)
+        values = torch.where(choice.applied[:, None], values, journal.gather(1, column)[:, 0])
+        return journal.scatter(1, column, values[:, None])
+
+    @staticmethod
+    def _tensor_record_operation_refs(journal, slot, scope, choice):
+        """Cache the two addresses held immediately before this operation."""
+        refs = scope[..., 1]
+        B, K = refs.shape
+        selected = refs.gather(1, choice.position.clamp(0, K - 1)[:, None])[:, 0]
+        binary = choice.kind == 1
+        left = torch.where(binary, refs[:, min(1, K - 1)], selected)
+        right = torch.where(binary, refs[:, 0], -1)
+        values = torch.stack((left, right), -1)
+        column = slot.reshape(-1, 1, 1).expand(B, 1, 2).clamp(0, journal.shape[1] - 1)
+        values = torch.where(choice.applied[:, None], values, journal.gather(1, column)[:, 0])
+        return journal.scatter(1, column, values[:, None])
 
     @staticmethod
     def _tensor_record_choice(trace_state, index, local_op, valid,
@@ -20877,6 +20401,7 @@ class BasicModel(BaseModel):
         stm = self.conceptualSpace.stm
         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
          stm._concept_rows, stm._concept_activations) = current_stm
+        stm._clause_state = lang[20]
         stm._wholes = lang[10]
         trace = self._reconstruction_stack()
         for name, value in zip(('_choice_rule_ids', '_choice_arities', '_choice_mask',
@@ -20885,6 +20410,11 @@ class BasicModel(BaseModel):
         for name, value in zip(('_choice_left_rows', '_choice_right_rows',
                                 '_choice_positions', '_choice_actions', '_choice_attempted'), lang[15:20]):
             setattr(trace, name, value)
+        trace._choice_ends = lang[21]
+        trace._choice_values = lang[22]
+        trace._choice_refs = lang[23]
+        trace._choice_reference_offsets = lang[24]
+        trace._choice_ref_relations = lang[25]
         self._packed_sentence_roots = lang[9]
         self._tensor_sentence_roots_live = lang[13]
         self._tensor_sentence_roots_depth = lang[14]
@@ -20908,15 +20438,16 @@ class BasicModel(BaseModel):
         slots = lang[13][:, sid].reshape(B, 3, D)
         payloads = [slots[b, :int(depths[b])] if bool(mask[b]) else None for b in range(B)]
         depth_list = [int(d) if bool(m) else 0 for d, m in zip(depths, mask)]
-        _current, programs = self._capture_answer_programs(sentence_slot=sid, admit=admit)
+        _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)
         entries = programs.get(sid, (None,) * B)
         disc = getattr(self.symbolSpace, 'discourse', None)
+        clauses = []
         meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
             self.languageSpace, _boundary_registry(self), entries, payloads, depth_list,
-            structured=getattr(disc, 'expectation_scope', None) == 'structured')
+            structured=getattr(disc, 'expectation_scope', None) == 'structured', clauses=clauses)
         return dict(payloads=payloads, depths=depth_list, mask=mask, entries=entries,
                     meanings=meanings, observed=observed, observed_depths=observed_depths,
-                    layout=layout, roles=roles)
+                    layout=layout, roles=roles, clauses=clauses)
 
     def _sentence_path_cost(self, state, sid, active):
         """The same reconstruction and prediction objective for either trial."""
@@ -20939,15 +20470,35 @@ class BasicModel(BaseModel):
             reconstruction = (root.new_zeros(B, W, D), cost, cost,
                               torch.zeros(B, dtype=torch.bool, device=root.device),
                               lang[14].to(root) * 0)
-        reconstruction_cost, expectation_cost = cost, None
+        reconstruction_cost, expectation_cost, output_cost = cost, None, None
         observation = self._sentence_observation(state, sid, active)
+        if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
+            programs, sources = [], []
+            source_rows = self._reading_lesson_sources
+            for b, program in enumerate(observation['entries']):
+                if program is None or not bool(active[b]):
+                    continue
+                programs.append(program)
+                source = None if source_rows is None else source_rows[b]
+                if isinstance(source, (tuple, list)):
+                    source = source[sid] if sid < len(source) else None
+                sources.append(source)
+            objectives = self._grammar_lesson_objectives(programs,
+                split=self._reading_lesson_split, source_rows=sources)
+            if objectives:
+                lesson = torch.stack(tuple(objectives.values())).sum()
+                cost = cost + self.grammar_lesson_weight * lesson
+                if 'generate' in objectives:
+                    output_cost = self.grammar_lesson_weight * objectives['generate']
+                self._reading_lesson_reports.append(lesson.detach())
         disc = getattr(self.symbolSpace, 'discourse', None)
         pending = None
         if disc is not None:
             inter, contrast, pending = disc.sentence_prediction_cost(
                 observation['observed_depths'], observation['observed'], observation['mask'],
                 documents=self._expectation_documents_for_slot(sid, B),
-                layout=observation['layout'], role_masks=observation['roles'])
+                layout=observation['layout'], role_masks=observation['roles'],
+                sentence_kinds=[None if m is None else m.sentence_kind for m in observation['meanings']])
             if self.inter_loss_weight > 0:
                 expectation_cost = self.inter_loss_weight * inter
                 cost = cost + expectation_cost
@@ -20958,15 +20509,102 @@ class BasicModel(BaseModel):
                 cost = cost + contrast_cost
         if getattr(self, '_sentence_operator_gradients', None) is not None:
             self._sentence_gradient_objectives = dict(
-                reconstruction=reconstruction_cost, expectation=expectation_cost)
+                reconstruction=reconstruction_cost, expectation=expectation_cost,
+                output=output_cost)
         return cost, reconstruction, observation, pending
+
+    @staticmethod
+    def _clause_end_state(state, sid, clauses, row_ids):
+        """Publish the chosen clause field; a relation never occupies a point."""
+        current, lang, feedback = state
+        values = [value.clone() for value in current]
+        updated = list(lang)
+        for index in (9, 13, 14, 20):
+            updated[index] = lang[index].clone()
+        for b, clause in enumerate(clauses):
+            if clause is None:
+                continue
+            depth = 1 if clause.relation is None else 3
+            if values[0].shape[1] < depth:
+                raise ValueError('STM cannot hold the ended clause field')
+            field = (clause.point[None] if depth == 1 else clause.meaning.roles[[2, 0, 1]])
+            values[0][b].zero_()
+            values[0][b, :depth] = field.detach()
+            values[1][b] = depth
+            values[2][b].fill_(-1)
+            values[2][b, :depth] = clause.order
+            values[3][b].zero_()
+            values[4][b].fill_(-1)
+            values[5][b].zero_()
+            values[5][b, :depth] = 1.
+            slots = field.new_zeros(3, field.shape[-1])
+            slots[:depth] = field.detach()
+            updated[9][b, sid] = field[-1].detach()
+            updated[13][b, sid] = slots.flatten()
+            updated[14][b, sid] = depth
+            updated[20][b].zero_()
+            updated[20][b, :, 1] = -1
+            from ClauseScope import ClauseScope
+            updated[20][b, 0, 0] = ClauseScope.SENTENCE | (ClauseScope.RELATIVE if depth == 3 else 0)
+            updated[20][b, 0, 1] = int(row_ids[b]) if depth == 3 else -1
+        return tuple(values), tuple(updated), feedback
+
+    @staticmethod
+    def _discard_sentence_record(state, active):
+        """After both trials train, discard their operations at the closing."""
+        stm, lang, feedback = state
+        lang = list(lang)
+        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25):
+            value = lang[index]
+            blank = torch.full_like(value, -1) if index in (4, 5, 15, 16, 17, 18, 23) else torch.zeros_like(value)
+            mask = active.reshape(active.shape[0], *((1,) * (value.ndim - 1)))
+            lang[index] = torch.where(mask, blank, value)
+        return stm, tuple(lang), feedback
 
     def _commit_sentence(self, state, sid, active, observations, predictions, wins):
         """Publish only the chosen rows before the next sentence's perception."""
         self._publish_sentence_scratch(state)
         rows = wins.detach().cpu().tolist()
         view = self._sentence_observation(state, sid, active, admit=True)
-        self._sentence_programs[sid] = tuple(view['entries'])
+        # Optimizer updates have already happened. Admission may allocate
+        # native addresses, but it must not re-read their updated dictionary
+        # values or change the discrete identity choice that was scored.
+        chosen = [observations[-1 if win else 0] for win in rows]
+        admitted = view['entries']
+        entries = []
+        for b, source in enumerate(chosen):
+            program, native = source['entries'][b], admitted[b]
+            if program is None:
+                entries.append(None)
+                continue
+            references = program.reference_ids
+            if references is not None and native.reference_ids is not None:
+                references = torch.where(references == program.concept_ids,
+                                         native.reference_ids, references)
+            entries.append(replace(program,
+                reference_ids=references, reference_orders=native.reference_orders,
+                reference_values=(program.leaves if program.reference_values is None
+                                  and references is not None else program.reference_values)).detached())
+        view['entries'] = tuple(entries)
+        for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths'):
+            view[key] = [source[key][b] for b, source in enumerate(chosen)]
+        if any(source['roles'] is not None for source in chosen):
+            view['roles'] = [None if source['roles'] is None else source['roles'][b]
+                             for b, source in enumerate(chosen)]
+        from ClauseJournal import finish_clause
+        def frozen_values(admitted, scored):
+            if (len(admitted.children) != len(scored.children)
+                    or len(admitted.companions) != len(scored.companions)):
+                raise RuntimeError('admission changed the selected clause structure')
+            return replace(admitted, point=scored.point,
+                meaning=replace(admitted.meaning, roles=scored.meaning.roles,
+                                role_mask=scored.meaning.role_mask),
+                children=tuple(frozen_values(a, s) for a, s in zip(admitted.children, scored.children)),
+                companions=tuple(frozen_values(a, s) for a, s in zip(admitted.companions, scored.companions)))
+        view['clauses'] = [None if entry is None else frozen_values(
+            finish_clause(self.languageSpace, entry, meaning=view['meanings'][b],
+                                registry=_boundary_registry(self)), chosen[b]['clauses'][b])
+            for b, entry in enumerate(entries)]
         disc = getattr(self.symbolSpace, 'discourse', None)
         # The preview owns each trial's estimate. Commit its comparison and
         # prior-query policy outcome without training prediction twice.
@@ -20978,27 +20616,139 @@ class BasicModel(BaseModel):
                                          for b, win in enumerate(rows)]
             disc.observe_stm_end_state(view['observed_depths'], view['observed'],
                 mask=view['mask'], documents=self._expectation_documents_for_slot(sid, len(rows)),
-                layout=view['layout'], role_masks=view['roles'], train_prediction=False)
+                layout=view['layout'], role_masks=view['roles'], train_prediction=False,
+                sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']])
             disc.detach_prediction_context()
+        self._prime_sentence_symbols(sid)
         store = getattr(self.symbolSpace, 'ltm_store', None)
+        row_ids = [-1] * len(rows)
         if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
             retain = _is_external_expectation_observation(disc)
             for b, payload in enumerate(view['payloads']):
                 if payload is None:
                     continue
                 comparison = (disc.last_expectation_comparison(b) if retain else None)
-                row = _append_observed_meaning(store, payload, view['depths'][b],
-                    meaning=view['meanings'][b], expectation=comparison,
-                    program=view['entries'][b], stream=b)
+                row = _append_observed_meaning(store, view['clauses'][b],
+                    trust=self.conceptualSpace._incoming_trust_multiplier(),
+                    expectation=comparison, stream=b)
+                if row >= 0:
+                    row_ids[b] = int(store.row_ids[row])
                 if row >= 0 and retain:
                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
+        fields = []
+        registry = _boundary_registry(self)
+        for b, clause in enumerate(view['clauses']):
+            if clause is None:
+                fields.append(None)
+                continue
+            index = None if store is None or row_ids[b] < 1 else store.index_of_row(row_ids[b])
+            if index is not None:
+                meaning = store.meaning_of(index)
+                refs = tuple(store.refs[index].tolist())
+            else:
+                meaning = (clause.meaning if clause.relation is not None else
+                           replace(ConceptualMeaning.from_description(clause.point),
+                                   mode=clause.meaning.mode, polarity=clause.meaning.polarity,
+                                   sentence_kind='idea'))
+                refs = tuple(ref if type(ref) is int and ref > 0 else -1 for ref in clause.refs)
+            query = (self.languageSpace.program_meaning(entries[b], registry)
+                     if clause.meaning.mode == 'interrogative' and registry is not None else None)
+            fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query,
+                clause.order if index is None else int(store.order[index]),
+                clause.evidence if index is None else (float(store.c_plus[index]), float(store.c_minus[index])),
+                self.conceptualSpace._incoming_trust_multiplier() if index is None else float(store.trust[index])))
+        self._sentence_fields[sid] = tuple(fields)
+        record_categories = getattr(self.languageSpace, 'record_category_observations', None)
+        trace = getattr(self, '_reconstruction_stack', lambda: None)()
+        if callable(record_categories) and trace is not None:
+            inputs = getattr(self, 'inputSpace', None)
+            word_mask = getattr(inputs, '_word_active_mask', None)
+            sentence_ids = getattr(inputs, '_packed_sentence_ids', None)
+            if torch.is_tensor(word_mask) and torch.is_tensor(sentence_ids):
+                word_mask = word_mask & (sentence_ids == sid)
+            record_categories(trace, word_mask)
+        state = self._clause_end_state(state, sid, view['clauses'], row_ids)
+        state = self._discard_sentence_record(state, active)
+        self._publish_sentence_scratch(state)
+        return state
 
-    def _run_sealed_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
+    def _sentence_reference_types(self, like):
+        """Stage existing typed dictionary points for this open reading only."""
+        from ReferenceContext import ReferenceTypes
+        language = self.languageSpace
+        orders = sorted({order for rule in (*language._compose_binary_rules,
+                                            *language._compose_unary_rules)
+                         for _role, order in getattr(rule, 'reference_orders', ())})
+        sources = self._word_symbol_concept_ids()
+        words = getattr(self.inputSpace, '_ar_word_concept_rows', None)
+        if not orders or not torch.is_tensor(sources) or not torch.is_tensor(words):
+            return None
+        batch, count = sources.shape
+        owner = self._concept_owner()
+        basis = owner.similarity_codebook.getW()
+        identities = torch.full((batch, count, len(orders)), -1,
+                                device=like.device, dtype=torch.long)
+        values = like.new_zeros(batch, count, len(orders), like.shape[-1])
+        for b in range(batch):
+            for w in range(count):
+                surface = owner.word_surface_for_row(int(words[b, w]))
+                if surface is None:
+                    continue
+                for index, order in enumerate(orders):
+                    identity = owner.resolve_word_concept(
+                        surface, order=order, previous=int(sources[b, w]))
+                    row = None if identity is None else owner._csw_row_of(identity)
+                    if row is not None:
+                        identities[b, w, index] = identity
+                        values[b, w, index] = basis[row].to(like)
+        return ReferenceTypes(sources, sources.new_tensor(orders), identities, values)
+
+    def _sentence_reference_bank(self, active, like):
+        """Read only the predictor's bounded situation, with a fresh trial graph."""
+        from ReferenceContext import ReferenceBank
+        disc = getattr(self.symbolSpace, 'discourse', None)
+        B, D = active.shape[0], like.shape[-1]
+        C = max(1, int(getattr(disc, '_inter_chain_window', 1)))
+        ids = torch.full((B, C), -1, device=like.device, dtype=torch.long)
+        values = like.new_zeros(B, C, D)
+        valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
+        relations = torch.zeros_like(valid)
+        predicted = torch.zeros(B, device=like.device, dtype=torch.bool)
+        queries = []
+        for b in range(B):
+            query = like.new_zeros(D)
+            pending = (None if disc is None or b >= len(disc._inter_last_meaning)
+                       else disc._inter_last_meaning[b])
+            prediction = getattr(pending, 'prediction', None)
+            if prediction is not None and bool(active[b]):
+                query = prediction.roles[0].to(like)
+                inputs = getattr(pending, 'inputs', None)
+                if self._sentence_training and torch.is_grad_enabled() and inputs is not None:
+                    estimates, _, _ = disc._inter_predictor(*(v.detach() for v in inputs))
+                    query = estimates[0, 0].to(like)
+                predicted[b] = True
+                for i, frame in enumerate(disc.situation_references(b)[-C:]):
+                    if frame.order != 1:
+                        continue
+                    ids[b, i] = frame.row_id
+                    valid[b, i] = True
+                    relations[b, i] = frame.point is None
+                    if frame.point is not None:
+                        values[b, i] = frame.point.detach().to(like)
+            queries.append(query)
+        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
+                             self._sentence_reference_types(like))
+
+    def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, compose_word):
         from SentenceCompose import sentence_pair, fork_perception
+        # Raw forward enters here without runBatch's eager setup. Compiled
+        # reconstruction must find its autograd anchors already allocated.
+        _ensure_grad_anchors(words.device)
         B, W = active.shape
         slots = self.inputSpace._packed_sentence_slot_mask
         feedback = empty_feedback
+        live_root = None
         for sid in range(slots.shape[1]):
             present = slots[:, sid].to(torch.bool)
             if not bool(present.any()):
@@ -21009,6 +20759,7 @@ class BasicModel(BaseModel):
                 for b in range(B):
                     if bool(present[b]):
                         disc.predict_next_end_state(b)
+            self._capture_contextual_situation(sid, present)
             questions = getattr(self, '_active_what_questions', None)
             if questions:
                 context, detail = self._what_grammar_context(questions, device=words.device, dtype=words.dtype)
@@ -21025,11 +20776,12 @@ class BasicModel(BaseModel):
                 payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
                 payload, sym = symbolize(payload, empty_feedback, index, None, sym)
                 cache.append((index, payload))
+            self._open_sentence_slot = sid
             before = self._snapshot_sentence_state((stm, lang, feedback))
             observations, predictions = [], []
             def compose(cached, exploit):
                 self._sentence_trial = 'exploit' if exploit is None else 'explore'
-                if self.training and torch.is_grad_enabled():
+                if self._sentence_training and torch.is_grad_enabled():
                     cached, self._sentence_pullback = fork_perception(cached)
                 if exploit is not None:
                     self._publish_sentence_scratch(exploit)
@@ -21040,8 +20792,14 @@ class BasicModel(BaseModel):
                     self._compose_prefix_slots = (
                         self._exploration_prefix_slots(actions, forced, owners)
                         if self.languageSpace._tree_layer(2).temperature == 0 else None)
-                self._restore_sentence_state(before)
-                current_stm, current_lang, current_feedback = before
+                # Every trial begins with restored history. Give its first
+                # word the same grad contract as subsequent word carries,
+                # without connecting it to a previous optimizer version.
+                restored = tuple(_carries_with_grad(bank) for bank in before)
+                self._restore_sentence_state(restored)
+                self.languageSpace._reference_bank = self._sentence_reference_bank(
+                    present, before[0][0])
+                current_stm, current_lang, current_feedback = restored
                 latches = [empty_feedback, empty_feedback]
                 for index, payload in cached:
                     # Grammar feedback changes with this derivation, while
@@ -21059,7 +20817,7 @@ class BasicModel(BaseModel):
                     if not bool((different | ~present).all()):
                         raise RuntimeError('exploration repeated an exploit sentence derivation')
                 cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
-                if self.training and self.legacy_prediction_enabled:
+                if self._sentence_training and self.legacy_prediction_enabled:
                     numerator = path[1][1] - before[1][1]
                     denominator = path[1][2] - before[1][2]
                     intra = self.conceptualSpace.intra_loss_weight * numerator / denominator.clamp_min(1)
@@ -21076,13 +20834,22 @@ class BasicModel(BaseModel):
             try:
                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
                     self._sentence_train_step, active=present,
-                    training=self.training and torch.is_grad_enabled())
+                    training=self._sentence_training and torch.is_grad_enabled())
             finally:
                 self._compose_exploit_actions = self._compose_forced_slots = None
                 self._compose_prefix_slots = None
             self._sentence_trial = None
             self._sentence_trial_costs.append(costs)
             self._sentence_winners.append(wins)
+            if not self._sentence_training and torch.is_grad_enabled():
+                # Raw forward has not backpropagated. Expose its current
+                # numerical root to callers, while the committed history and
+                # the next sentence's carries remain detached below.
+                buffer, depth = chosen[0][:2]
+                root = buffer[torch.arange(B, device=words.device),
+                              (depth - 1).clamp(0, buffer.shape[1] - 1)]
+                live_root = (root if live_root is None else
+                             torch.where(present[:, None], root, live_root))
             # Each compose graph has already trained and been freed. The
             # durable path is discrete history; word activations still expose
             # the original perception to the separate batch-end answer loss.
@@ -21094,21 +20861,25 @@ class BasicModel(BaseModel):
                 value = torch.where(payload[7], payload[3].reshape(B, 1), 0.)
                 activations = self._tensor_write_word_column(activations, index, value)
             chosen = (chosen[0], (activations, *chosen[1][1:]), chosen[2])
-            self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+            chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+            observations.clear()
+            predictions.clear()
+            self._open_sentence_slot = None
             self._sentence_reconstructions.append(tuple(v.detach() for v in reconstruction))
             stm, lang, feedback = chosen
-            # The next seal starts with the committed discrete history and
+            # The next closing starts with the committed discrete history and
             # detached context. No gradient crosses optimizer versions via STM.
             stm = tuple(v.detach() for v in stm)
             lang = tuple(v.detach() for v in lang)
             reset = present & ((sentence_ids.amax(-1) > sid) | (lang[14][:, sid] <= 0))
             stm = FunctionalPeerSTM.soft_reset_rows(stm, reset)
             lang = (*lang[:10], ShortTermMemory.functional_wholes_reset(lang[10], reset),
-                    *lang[11:])
+                    *lang[11:20], self.languageSpace.clause_scope.reset(lang[20], reset), *lang[21:])
         self._publish_sentence_scratch((stm, lang, feedback))
         depth = stm[1]
-        self._stm_single_S = stm[0][torch.arange(B, device=words.device),
-                                     (depth - 1).clamp(0, stm[0].shape[1] - 1)]
+        self._stm_single_S = (live_root if live_root is not None else
+            stm[0][torch.arange(B, device=words.device),
+                   (depth - 1).clamp(0, stm[0].shape[1] - 1)])
         final_ids = sentence_ids.amax(-1).clamp_min(0)
         self._stm_post_depth = lang[14].gather(1, final_ids[:, None]).reshape(B)
         self._tensor_final_end_slots = lang[13].gather(1,
@@ -21169,20 +20940,16 @@ class BasicModel(BaseModel):
         whole_reference_vectors = getattr(isp, '_ar_whole_reference_vectors', None)
         readout_coefficients = getattr(isp, '_ar_readout_coefficients', None)
         whole_reference_presence = getattr(isp, '_ar_whole_reference_presence', None)
-        if not torch.is_tensor(getattr(isp, '_packed_sentence_end_mask', None)):
-            positions = torch.arange(width, device=words.device).expand(B, -1)
-            last = torch.where(active, positions, -1).amax(-1)
-            isp._packed_sentence_end_mask = active & (positions == last[:, None])
-            isp._packed_sentence_intermediate_end_mask = torch.zeros_like(active)
-            isp._packed_sentence_ids = torch.where(active, 0, -1)
-            isp._packed_sentence_slot_end_positions = last[:, None]
-            isp._packed_sentence_slot_mask = (last >= 0)[:, None]
-            isp._packed_sentence_counts_host = tuple((last >= 0).to(torch.long).tolist())
+        # Ordinary batches can differ from provisioning and from each other.
+        # Rebuild their boundaries at the host entry; a compiled forward
+        # consumes the layout already prepared by the lexical stem.
+        if not torch.compiler.is_compiling():
+            isp._finalize_sentence_word_layout(active)
         sentence_end_mask = isp._packed_sentence_end_mask.to(
             dtype=torch.bool)
         intermediate_end_mask = (
             isp._packed_sentence_intermediate_end_mask.to(dtype=torch.bool))
-        sentence_transactions = bool(getattr(self, '_sentence_seals', False))
+        sentence_transactions = bool(getattr(self, '_sentence_ends', False))
         sentence_ids = isp._packed_sentence_ids.to(dtype=torch.long)
         commit_mask = getattr(isp, "_word_last_slot_mask", None)
         if not torch.is_tensor(commit_mask):
@@ -21196,6 +20963,13 @@ class BasicModel(BaseModel):
             concept_orders = concept_orders if torch.is_tensor(concept_orders) else empty_rows.clone()
             object_rows = object_rows if torch.is_tensor(object_rows) else empty_rows.clone()
             object_orders = object_orders if torch.is_tensor(object_orders) else empty_rows.clone()
+            # Publish the current batch's complete reference slab even when
+            # this path has no native rows. Scratch publication must not keep
+            # the previous (often one-row provisioning) batch's metadata.
+            isp._ar_word_concept_rows = concept_rows
+            isp._ar_word_concept_orders = concept_orders
+            isp._ar_word_object_rows = object_rows
+            isp._ar_word_object_orders = object_orders
 
         percept_dim = int(ps.subspace.muxedSize)
         whole_dim = int(ws.subspace.muxedSize)
@@ -21210,8 +20984,8 @@ class BasicModel(BaseModel):
         forward_slots = (
             trace.forward_loss_slots()
             if trace is not None else (None, None))
-        seal_trace_width = max(1, 2 * capacity)
-        required_trace_width = 3 * width + seal_trace_width * width
+        closing_trace_width = max(1, 2 * capacity)
+        required_trace_width = 3 * width + closing_trace_width * width
         trace_ready = (
             all(torch.is_tensor(value) for value in choices)
             and all(torch.is_tensor(value) for value in forward_slots)
@@ -21350,6 +21124,12 @@ class BasicModel(BaseModel):
             torch.full_like(choices[0], -1),
             torch.full_like(choices[0], -1),
             torch.zeros_like(choices[2]),
+            language.clause_scope.empty(stm._buffer),
+            torch.zeros_like(choices[0]),
+            words.new_zeros(B, choices[0].shape[1], 3 * concept_dim),
+            torch.full((B, choices[0].shape[1], 2), -1, dtype=torch.long, device=words.device),
+            words.new_zeros(B, choices[0].shape[1], 2 * concept_dim),
+            torch.zeros(B, choices[0].shape[1], 2, dtype=torch.bool, device=words.device),
         )
         empty_cs_sub = (
             zero_concept.clone(),
@@ -21517,17 +21297,14 @@ class BasicModel(BaseModel):
                 routed_feedback, routed_valid)
             return payload, (next_sym,)
 
-        from Language import sentence_anchor_mask
-        initial_relative = self._sentence_relative_mask(B, device=words.device)
-        anchored = sentence_anchor_mask(self.symbolSpace, B, device=words.device)
-        round_owners, _, _ = self._compose_round_owners(choices[0])
+        scope = language.clause_scope
 
-        def slots_from_trace(state, index):
-            sentence = _gather_word(sentence_ids, index).reshape(B, 1)
-            valid = state[2] & (round_owners == sentence)
-            relative = initial_relative | language.relative_from_choices(state[0], valid, anchored)
-            from Language import sentence_row_slots
-            return sentence_row_slots(relative)
+        def record_clause_end(events, slot, kind):
+            column = slot.reshape(-1, 1).expand(B, 1)
+            index = column.clamp(0, events.shape[1] - 1)
+            value = torch.where((column >= 0) & (column < events.shape[1]),
+                                kind[:, None], events.gather(1, index))
+            return events.scatter(1, index, value)
 
         def stage_cs_lang(cs_sym_payload, index, _live,
                           current_cs_lang, current_stm):
@@ -21593,6 +21370,15 @@ class BasicModel(BaseModel):
             left_rows, right_rows = current_cs_lang[15], current_cs_lang[16]
             position_slab, action_slab, attempted_slab = current_cs_lang[17:20]
             final_stm = resolved
+            native_ids = getattr(isp, '_ar_word_object_ids', None)
+            word_ids = (_gather_word(native_ids, index).reshape(B) if torch.is_tensor(native_ids)
+                        else torch.full_like(current_stm[1], -1))
+            clause_state = scope.push(current_cs_lang[20], commit.reshape(B), word_ids)
+            closing_events = current_cs_lang[21]
+            operation_values = current_cs_lang[22]
+            operation_refs = current_cs_lang[23]
+            reference_offsets = current_cs_lang[24]
+            reference_relations = current_cs_lang[25]
             round_active = commit.reshape(B)
             post_op = unary_op = torch.full_like(current_stm[1], -1)
             post_valid = unary_valid = torch.zeros_like(round_active)
@@ -21601,13 +21387,33 @@ class BasicModel(BaseModel):
                     break
                 before = final_stm
                 slot = 3 * index + round_index
-                choice = language.choose_operation(
-                    before, round_active, slots=slots_from_trace(trace_state, index),
+                proposal = language.choose_operation(
+                    before, round_active, slots=scope.slots(clause_state, before[1]),
                     allowance=capacity - 1, rounds_left=3 - round_index,
                     masked_action=self._compose_masked_action(slot, before[1]),
                     replay_action=self._compose_replayed_action(slot, before[1]),
-                    op_prior=self._chunk_structural_prior(wholes, B, before[0]))
+                    op_prior=self._chunk_structural_prior(wholes, B, before[0]),
+                    reference_scope=clause_state if sentence_transactions else None)
+                choice = proposal[0] if sentence_transactions else proposal
+                if sentence_transactions:
+                    _, refs, relative, operands, offsets = proposal
+                    clause_state = scope.resolve(clause_state, choice, refs, relative)
+                    operation_values = self._tensor_record_selected_values(operation_values, slot,
+                                                                           torch.cat((operands.flatten(1), choice.candidate), -1), choice.applied)
+                    operation_refs = self._tensor_record_selected_values(
+                        operation_refs, slot, refs, choice.applied)
+                    reference_offsets = self._tensor_record_selected_values(reference_offsets, slot,
+                                                                            offsets.flatten(1), choice.applied)
+                    reference_relations = self._tensor_record_selected_values(
+                        reference_relations, slot, relative, choice.applied)
+                else:
+                    operation_refs = self._tensor_record_operation_refs(
+                        operation_refs, slot, clause_state, choice)
+                    operation_values = self._tensor_record_operation_values(
+                        operation_values, slot, before, choice)
                 final_stm = cs.apply_language_choice(before, choice)
+                clause_state, ended = scope.apply(clause_state, choice, slot)
+                closing_events = record_clause_end(closing_events, slot, ended)
                 binary = choice.applied & (choice.kind == 1)
                 unary_chosen = choice.applied & (choice.kind == 2)
                 post_op = torch.where(binary, choice.local_op, post_op)
@@ -21642,63 +21448,83 @@ class BasicModel(BaseModel):
                 current_cs_lang[2] + loss_weight
                 if capture_intra else current_cs_lang[2])
             # Every non-final packed sentence receives the same bounded NULL
-            # seal as the ordinary post-loop sentence boundary. The root is
+            # closing as the ordinary post-loop sentence boundary. The root is
             # stored at that sentence's end-word column, then only those rows
             # receive the CS-owned soft reset before the next word arrives.
             intermediate_end = _gather_word(
                 sentence_end_mask if sentence_transactions else intermediate_end_mask, index).reshape(B)
-            sealed_stm = final_stm
-            seal_width = max(1, 2 * capacity)
+            end_stm = final_stm
+            closing_width = max(1, 2 * capacity)
             syntactic_budget = int(getattr(self, 'syntacticOrder', 0) or 0)
-            seal_budget = min(seal_width, syntactic_budget) if syntactic_budget > 0 else seal_width
-            seal_active = intermediate_end
-            for seal_index in range(seal_budget):
-                if not torch.compiler.is_compiling() and not bool(seal_active.any()):
+            closing_budget = min(closing_width, syntactic_budget) if syntactic_budget > 0 else closing_width
+            closing_active = intermediate_end
+            for closing_index in range(closing_budget):
+                if not torch.compiler.is_compiling() and not bool(closing_active.any()):
                     break
-                pre_seal = sealed_stm
+                pre_closing = end_stm
                 group = ((index + 1) % width).expand(B)
                 if sentence_transactions:
                     final = _gather_word(sentence_end_mask & ~intermediate_end_mask, index).reshape(B)
                     group = torch.where(final, 0, group)
-                slot = 3 * width + group * seal_width + seal_index
-                choice = language.choose_operation(
-                    pre_seal, seal_active, slots=slots_from_trace(trace_state, index),
-                    allowance=slots_from_trace(trace_state, index), rounds_left=seal_budget - seal_index,
-                    masked_action=self._compose_masked_action(slot, pre_seal[1]),
-                    replay_action=self._compose_replayed_action(slot, pre_seal[1]),
-                    op_prior=self._chunk_structural_prior(wholes, B, pre_seal[0]))
-                sealed_stm = cs.apply_language_choice(pre_seal, choice)
+                slot = 3 * width + group * closing_width + closing_index
+                proposal = language.choose_operation(
+                    pre_closing, closing_active, slots=scope.slots(clause_state, pre_closing[1]),
+                    allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=closing_budget - closing_index,
+                    masked_action=self._compose_masked_action(slot, pre_closing[1]),
+                    replay_action=self._compose_replayed_action(slot, pre_closing[1]),
+                    op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
+                    reference_scope=clause_state if sentence_transactions else None)
+                choice = proposal[0] if sentence_transactions else proposal
+                if sentence_transactions:
+                    _, refs, relative, operands, offsets = proposal
+                    clause_state = scope.resolve(clause_state, choice, refs, relative)
+                    operation_values = self._tensor_record_selected_values(operation_values, slot,
+                                                                           torch.cat((operands.flatten(1), choice.candidate), -1), choice.applied)
+                    operation_refs = self._tensor_record_selected_values(
+                        operation_refs, slot, refs, choice.applied)
+                    reference_offsets = self._tensor_record_selected_values(reference_offsets, slot,
+                                                                            offsets.flatten(1), choice.applied)
+                    reference_relations = self._tensor_record_selected_values(
+                        reference_relations, slot, relative, choice.applied)
+                else:
+                    operation_refs = self._tensor_record_operation_refs(
+                        operation_refs, slot, clause_state, choice)
+                    operation_values = self._tensor_record_operation_values(
+                        operation_values, slot, pre_closing, choice)
+                end_stm = cs.apply_language_choice(pre_closing, choice)
+                clause_state, ended = scope.apply(clause_state, choice, slot)
+                closing_events = record_clause_end(closing_events, slot, ended)
                 binary = choice.applied & (choice.kind == 1)
                 (wholes, phrase, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
                     wholes, choice.local_op, binary, chunk_slab, chunk_count, table=chunk_table)
-                sealed_stm = cs.apply_phrase_rows(sealed_stm, phrase, binary)
+                end_stm = cs.apply_phrase_rows(end_stm, phrase, binary)
                 (trace_state, position_slab, action_slab, attempted_slab) = self._tensor_record_operation(
                     trace_state, position_slab, action_slab, attempted_slab,
                     slot, choice, binary_map, unary_map)
                 left_rows, right_rows = self._tensor_record_operands(
-                    left_rows, right_rows, slot, pre_seal, binary)
-                seal_active = seal_active & choice.applied
-            sealed_depth = sealed_stm[1]
-            root_index = (sealed_depth - 1).clamp(
+                    left_rows, right_rows, slot, pre_closing, binary)
+                closing_active = closing_active & choice.applied
+            end_depth = end_stm[1]
+            root_index = (end_depth - 1).clamp(
                 min=0, max=capacity - 1)
             root_rows = torch.arange(B, device=words.device)
-            sealed_root = sealed_stm[0][root_rows, root_index].clone()
+            end_root = end_stm[0][root_rows, root_index].clone()
             root_slot = _gather_word(
                 sentence_ids, index).reshape(B).clamp(
                     0, root_slots - 1)
             root_candidate = self._tensor_write_word_column(
-                current_cs_lang[9], root_slot, sealed_root)
+                current_cs_lang[9], root_slot, end_root)
             next_sentence_roots = torch.where(
                 intermediate_end.reshape(B, 1, 1),
                 root_candidate, current_cs_lang[9])
             # The sentence's end state with its gradient, for the
             # per-sentence reconstruction traversal (compiled reverse-loops
             # plan): the top three slots (newest at 0) and the depth.
-            _k3 = min(3, int(sealed_stm[0].shape[1]))
-            end_slots = sealed_stm[0][:, :_k3, :]
+            _k3 = min(3, int(end_stm[0].shape[1]))
+            end_slots = end_stm[0][:, :_k3, :]
             if _k3 < 3:
                 end_slots = torch.cat(
-                    (end_slots, sealed_stm[0].new_zeros(B, 3 - _k3, concept_dim)), dim=1)
+                    (end_slots, end_stm[0].new_zeros(B, 3 - _k3, concept_dim)), dim=1)
             live_candidate = self._tensor_write_word_column(
                 current_cs_lang[13], root_slot,
                 end_slots.reshape(B, 3 * concept_dim))
@@ -21707,20 +21533,23 @@ class BasicModel(BaseModel):
                 live_candidate, current_cs_lang[13])
             depth_candidate = current_cs_lang[14].scatter(
                 1, root_slot.reshape(B, 1),
-                torch.where((sealed_depth <= slots_from_trace(trace_state, index)) & (sealed_depth > 0),
-                            sealed_depth.to(torch.long), -1).reshape(B, 1))
+                torch.where((end_depth <= scope.slots(clause_state, end_depth)) & (end_depth > 0),
+                            end_depth.to(torch.long), -1).reshape(B, 1))
             next_live_depth = torch.where(
                 intermediate_end.reshape(B, 1),
                 depth_candidate, current_cs_lang[14])
             reset = torch.zeros_like(intermediate_end) if sentence_transactions else intermediate_end
-            final_stm = FunctionalPeerSTM.soft_reset_rows(sealed_stm, reset)
+            final_stm = FunctionalPeerSTM.soft_reset_rows(end_stm, reset)
             wholes = ShortTermMemory.functional_wholes_reset(wholes, reset)
+            clause_state = scope.reset(clause_state, reset)
 
             next_cs_lang = (
                 next_symbol_activations, next_loss_sum, next_loss_weight,
                 prediction, *trace_state, next_sentence_roots,
                 wholes, chunk_slab, chunk_count, next_live_roots,
-                next_live_depth, left_rows, right_rows, position_slab, action_slab, attempted_slab)
+                next_live_depth, left_rows, right_rows, position_slab, action_slab, attempted_slab,
+                clause_state, closing_events, operation_values, operation_refs,
+                reference_offsets, reference_relations)
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
                 unary_op, unary_valid, like=word_idea)
@@ -21773,7 +21602,7 @@ class BasicModel(BaseModel):
                 return payload, (payload[0],)
         if sentence_transactions:
             (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
-             feedback, trip_count) = self._run_sealed_word_bricks(
+             feedback, trip_count) = self._run_sentence_word_bricks(
                 words, active, sentence_ids, stm_state, cs_sub_state,
                 cs_sym_state, cs_lang_state, empty_feedback,
                 stage_cs_sub, stage_cs_sym, stage_cs_lang)
@@ -21884,6 +21713,12 @@ class BasicModel(BaseModel):
             trace._choice_positions = final_cs_lang[17].clone()
             trace._choice_actions = final_cs_lang[18].clone()
             trace._choice_attempted = final_cs_lang[19].clone()
+            trace._choice_ends = final_cs_lang[21].clone()
+            trace._choice_values = final_cs_lang[22].clone()
+            trace._choice_refs = final_cs_lang[23].clone()
+            trace._choice_reference_offsets = final_cs_lang[24].clone()
+            trace._choice_ref_relations = final_cs_lang[25].clone()
+        stm._clause_state = final_cs_lang[20].clone()
         sentence_roots = final_cs_lang[9].clone()
         final_wholes = final_cs_lang[10].clone()
         final_prop_slab = final_cs_lang[11].clone()
@@ -22217,7 +22052,7 @@ class BasicModel(BaseModel):
         tensor_sentence_roots = None
         tensor_chunk_state = None
         _tensor_peer_pipeline = (
-            bool(getattr(self, '_sentence_seals', False))
+            bool(getattr(self, '_sentence_ends', False))
             or (_peer_pipeline and self._tensor_peer_while_ready(N_words)))
         if _tensor_peer_pipeline:
             # W is a capacity. The tensor loop stops at the last live column,
@@ -22274,7 +22109,7 @@ class BasicModel(BaseModel):
         # advances. Pins: test_bounded_stm_fold::test_cap_equivalence (the
         # high-water mark survives) + test_per_word_ss_padding_noop (the
         # per-forward advance == active-prefix count, not N).
-        if (stm is not None and not _chunk_replayed
+        if (stm is not None and not _tensor_peer_pipeline and not _chunk_replayed
                 and not _compiled_static_loop):
             # Only the columns that ACTUALLY ran advanced the mirror, so the
             # over-count is ``_n_trips - N_loop`` (== ``N_words - N_loop`` on
@@ -22380,7 +22215,7 @@ class BasicModel(BaseModel):
         # and an O(B*W*D) clone in the compiled sentence body.
         self._per_word_contributions = []
 
-        # 2b-2-i: NULL-seal finalize -- the BOUNDED soft REDUCE sweep
+        # 2b-2-i: NULL-closing finalize -- the BOUNDED soft REDUCE sweep
         # composes the accumulated STM down to a SINGLE idea S (the
         # start-symbol root). The legacy ``_chart_compose_at_C`` CKY
         # chart stays dormant/dead (it was a 100% runtime no-op on
@@ -22389,7 +22224,7 @@ class BasicModel(BaseModel):
         # REPLACED -- not resurrected -- by this bounded soft
         # shift-reduce / selector-in-S producer. The per-word SHIFT
         # loop above filled STM (bounded <= cap by back-pressure); the
-        # NULL seal (``next_word`` -> None ended the loop) now fires
+        # NULL closing (``next_word`` -> None ended the loop) now fires
         # the final bounded reduce sweep to the root.
         #
         # SCOPE FENCE (2b-2-i): the IR loss is UNCHANGED this
@@ -22431,8 +22266,8 @@ class BasicModel(BaseModel):
                     final_valid.reshape(
                         int(S.shape[0]), 1, 1),
                     root_candidate, tensor_sentence_roots)
-                # The loop bank owns intermediate seals; complete it with
-                # each row's final seal before capturing answer programs.
+                # The loop bank owns intermediate endings; complete it with
+                # each row's final closing before capturing answer programs.
                 # Ragged rows can finish in different sentence slots.
                 end_slots, end_depth = self._final_end_state(S, post_depth)
                 live_roots, live_depth = tensor_chunk_state[4:6]
@@ -22450,183 +22285,6 @@ class BasicModel(BaseModel):
             # and the post-sweep STM depth (must be 1 across rows).
             self._stm_single_S = S
             self._stm_post_depth = post_depth
-            # ``cs_buf`` / ``rel_mask`` feed the boundary discourse hook
-            # (``observe_stm_end_state``) below. Relative-relation LEARNING
-            # (``learn_relations_from_stm``) is HOISTED out of this captured
-            # forward into ``ConceptualSpace.Reset`` (host-side sentence
-            # boundary): it does ``mask.tolist()`` + taxonomy/codebook
-            # mutation, untraceable under ``fullgraph``. See that Reset.
-            cs_buf = self.conceptualSpace.stm._buffer
-            rel_mask = self._sentence_relative_mask(
-                int(cs_buf.shape[0]), device=cs_buf.device)
-
-            # Task 7 (§8): LTM — record EVERY sentence's STM end-state on
-            # the InterSentenceLayer's per-row chain (the AR sequence for
-            # inter-sentence prediction). This is ADDITIVE to the ARMA /
-            # reduce / IR-loss path: it reads the already-computed STM
-            # end-state buffer (``cs_buf``) and the same host-side
-            # ``rel_mask`` the reduce used, then hands them to the
-            # boundary-only ``observe_stm_end_state`` (which is
-            # ``@torch.compiler.disable``'d — host-side, outside the
-            # captured per-word graph). It NO-OPS gracefully when there
-            # is no discourse layer (``sentenceExpectation`` off /
-            # absolute-only configs), so MM_xor stays byte-identical.
-            # Note: LTM is NOT gated by ``truthCriterion`` — every
-            # end-state lands here; ``truthCriterion`` only gates the
-            # separate WS-codebook insertion above.
-            discourse = (self.symbolSpace.discourse
-                         if getattr(self, 'symbolSpace', None) is not None
-                         else None)
-            # LTM consolidation FU (Change 1, 2026-06-18): the persistent
-            # ``ltm_store`` (conversation push) is now an INDEPENDENT sink
-            # from the discourse AR deque -- a config without a predictor
-            # (no ``sentenceExpectation``) must still push conversation into
-            # the unified store. So compute ``depths`` / ``payloads`` /
-            # ``tetralemmas`` ONCE here (they only need ``cs_buf`` /
-            # ``rel_mask`` / ``B`` / ``cap``, all available regardless of a
-            # discourse) and drive TWO independent sinks below:
-            #   (a) the persistent store-append (the SINGLE conversation
-            #       push), gated on ``ltmConsolidation`` + an ``ltm_store``;
-            #   (b) the discourse AR predict+observe, when a discourse
-            #       exists -- unchanged.
-            # The whole block stays byte-identical with both gates off / no
-            # discourse: the compute is skipped entirely unless at least one
-            # sink is live.
-            ltm_store = getattr(self.symbolSpace, 'ltm_store', None)
-            ltm_consolidation_on = (
-                getattr(self.conceptualSpace, '_ltm_consolidation', False)
-                and ltm_store is not None)
-            discourse_live = (discourse is not None and hasattr(
-                discourse, 'observe_stm_end_state'))
-            if getattr(self, '_packed_prediction_drained', False):
-                discourse_live = ltm_consolidation_on = False
-            if ((discourse_live or ltm_consolidation_on) and not torch.compiler.is_compiling()
-                    and bool(getattr(self.inputSpace, "_sentence_pack_enabled", False))
-                    and torch.is_tensor(tensor_sentence_roots)):
-                # The ordinary eager forward returns four public values;
-                # unlike the compiled boundary it cannot defer observation
-                # via an explicit root slab. Drain the same live slab here,
-                # once, including every intermediate sentence in each row.
-                self._packed_sentence_roots = tensor_sentence_roots
-                end_slots, end_depth = self._final_end_state(S, post_depth)
-                object.__setattr__(self, "_tensor_final_end_slots", end_slots)
-                object.__setattr__(self, "_tensor_final_end_depth", end_depth)
-                if self._compose_records_enabled():
-                    self._drain_packed_stm_end_states()
-                    self._packed_prediction_drained = True
-                discourse_live = False
-                ltm_consolidation_on = False
-            if ((discourse_live or ltm_consolidation_on)
-                    and torch.compiler.is_compiling()):
-                # A compiled graph may only park fixed tensors. The eager step
-                # teardown reconstructs ragged rows and performs both sinks.
-                object.__setattr__(
-                    self, "_pending_stm_end_state",
-                    (cs_buf.clone(), post_depth.detach(), post_depth > 0))
-                discourse_live = False
-                ltm_consolidation_on = False
-            if discourse_live or ltm_consolidation_on:
-                B = int(cs_buf.shape[0])
-                cap = int(cs_buf.shape[1])
-                # Per-row end-state depth: 3 for a relative row (the
-                # depth-3 ``[predicate, idea1, idea2]`` preserve), else 1
-                # (the collapsed absolute root). Single host hop on the
-                # boundary mask — outside any captured region. Clamp to
-                # the buffer capacity so the recorded depth always equals
-                # the stored payload's row count (the reduce site only
-                # preserves depth 3 when cap >= 3, so this is defensive).
-                rel_rows = rel_mask.reshape(-1).tolist()
-                actual_depths = post_depth.detach().tolist()
-                depths = [int(d) if d > 0 else 0 for d in actual_depths]
-                # Ragged per-row payloads: the ``depth`` leading slots of
-                # this row's STM buffer. Newest-at-slot-0 convention: slot
-                # 0 is the newest (absolute: the collapsed root; relative:
-                # the folded-rest idea2), and the OLDEST slot (``depth-1``)
-                # is the root/predicate. ``_reduce_end_state_to_root``
-                # reads that last slot to recover the root.
-                payloads = [cs_buf[b, :depths[b], :] if depths[b] > 0 else None
-                            for b in range(B)]
-                # Attach per-row scalar trust to the LTM row ("LTM is
-                # persisted STM"). Absolute rows carry the model's trust that
-                # the description refers to an actual event; relative rows
-                # carry that trust applied to the relation's t - f scalar.
-                tetralemmas = self.conceptualSpace.stm_end_state_trust(
-                    cs_buf, rel_mask)
-                entries, _by_sentence = _boundary_programs(self)
-                meanings, observed_payloads, observed_depths, layout, role_masks = (
-                    _boundary_observation_view(
-                        getattr(self, "languageSpace", None),
-                        _boundary_registry(self), entries, payloads, depths,
-                        structured=(getattr(discourse, "expectation_scope", None)
-                                    == "structured")))
-                # Pair trials write into independent runtime states; only
-                # the selected state's chain and persistent store survive.
-                if self._compose_records_enabled():
-                    # SINK (b) -- the discourse AR predict+observe (Task 7/8)
-                    # runs FIRST so its prediction is staged from the chain
-                    # state BEFORE this boundary's end-state lands in the
-                    # store. Use the combined predict+observe so the inter-
-                    # predictor STAGES a next-end-state prediction (from the
-                    # chain BEFORE this boundary's end-state is appended) and
-                    # then SCORES it against the arriving end-state —
-                    # accumulating ``L_inter`` during training. ``predict_and_
-                    # observe_stm_end_state`` degenerates to a bare observe
-                    # when there is no inter-predictor (absolute-only no-op)
-                    # or on the cold first sentence (nothing to predict from
-                    # yet). Prediction reads the row's scoped observation
-                    # view before adding this boundary. Consolidated mode
-                    # skips the duplicate durable deque; the store append
-                    # (a) below remains the single durable conversation write.
-                    if discourse_live:
-                        keyword = {}
-                        if layout != "stm":
-                            keyword.update(layout=layout, role_masks=role_masks)
-                        discourse.predict_and_observe_stm_end_state(
-                            observed_depths, observed_payloads,
-                            tetralemmas=tetralemmas, mask=post_depth > 0,
-                            documents=self._expectation_documents_for_slot(0, B),
-                            **keyword)
-                    # SINK (a) -- the SINGLE conversation push into the
-                    # persistent unified ``ltm_store`` (LTM consolidation,
-                    # gated ``ltmConsolidation``). Independent of any
-                    # discourse: a predictor-less config still records
-                    # conversation here. Slot mapping is newest-at-slot-0
-                    # (matching ``learn_relations_from_stm``): for a relative
-                    # (depth>=3) row the predicate is the OLDEST slot
-                    # (depth-1), idea1 the 2nd-oldest (depth-2) and idea2 the
-                    # newest folded rest (slot 0); stored as NP1=idea1,
-                    # VP=predicate, NP2=idea2. Host-side (this whole block is
-                    # @torch.compiler.disable'd) and fully guarded so the
-                    # off-path stays byte-identical.
-                    if ltm_consolidation_on:
-                        retain_expectation = (
-                            discourse_live
-                            and _is_external_expectation_observation(discourse))
-                        for b in range(B):
-                            payload = payloads[b]
-                            if payload is None or payload.shape[0] < 1:
-                                continue
-                            d = int(depths[b]) if b < len(depths) else int(
-                                payload.shape[0])
-                            d = max(1, min(d, int(payload.shape[0])))
-                            tet = (tetralemmas[b]
-                                   if (tetralemmas is not None
-                                       and b < len(tetralemmas))
-                                   else None)
-                            trust = float(tet) if tet is not None else 0.0
-                            comparison = (discourse.last_expectation_comparison(b)
-                                          if retain_expectation
-                                          and hasattr(discourse, "last_expectation_comparison")
-                                          else None)
-                            row = _append_observed_meaning(
-                                ltm_store, payload, d, trust=trust,
-                                meaning=meanings[b] if b < len(meanings) else None,
-                                expectation=comparison, program=entries[b] if b < len(entries) else None, stream=b)
-                            if (row >= 0 and retain_expectation
-                                    and hasattr(discourse, "bind_observation_occurrence")):
-                                discourse.bind_observation_occurrence(
-                                    b, ltm_store.row(row)["occurrence"])
-
         # Existing loss_head plumbing (dormant: ``loss_head`` is always
         # None today) -- kept identical to the whole-slab tail so the
         # two paths stay structurally symmetric.
@@ -22853,7 +22511,7 @@ class BasicModel(BaseModel):
         producer's round-trip primitive. It is intentionally NOT yet
         wired into the live forward as the STM read/write -- the STM
         producer lifecycle (when to push, when ``snapshot`` is read,
-        the bounded soft shift-reduce controller, the NULL-seal
+        the bounded soft shift-reduce controller, the NULL-closing
         finalize, per-word vs per-sentence) is the still-pending,
         owner-perf-gated Phase-2B architecture
         (``doc/plans/2026-05-18-two-loop-pipeline-architecture.md``
@@ -23248,20 +22906,18 @@ class BasicModel(BaseModel):
         if isinstance(user_msg, ConceptualMeaning):
             meaning = user_msg
         elif isinstance(user_msg, Understanding):
-            programs = user_msg.answer_program
-            meaning = (self.languageSpace.program_meaning(programs[0], _boundary_registry(self))
-                       if programs and programs[0] is not None else None)
+            programs = user_msg.sentence_states
+            meaning = (programs[0].query if programs and programs[0] is not None else None)
         else:
             if not isinstance(user_msg, str):
                 raise TypeError("answer_query requires text or a completed meaning")
             with self._runtime_batch([user_msg]):
                 inputs = self.inputSpace.prepInput(list(self.data.train_input))
                 understanding = self.understand(inputs)
-                programs = understanding.answer_program
+                programs = understanding.sentence_states
                 if not programs or programs[0] is None:
                     return None
-                meaning = self.languageSpace.program_meaning(
-                    programs[0], _boundary_registry(self))
+                meaning = programs[0].query
         if meaning is None or meaning.mode != "interrogative":
             return None
         result = self._run_public_thought(meaning, work_budget=budget)
@@ -23419,7 +23075,7 @@ class BasicModel(BaseModel):
         reconstruction (approximate through the averaged loops, per the
         single-input-reverse contract) instead of aborting.
         """
-        if not self.serial and self.concept_binding == 'aligned' and self.wholePropertyBasis:
+        if not self.serial and self.concept_binding == 'aligned':
             # A free inverse cannot substitute the latest perception. Only
             # the explicitly supplied forward field supplies evidence.
             return self._reverse_field(sub, field) if field is not None else sub
@@ -23605,56 +23261,24 @@ class BasicModel(BaseModel):
         return x
 
     @torch.compiler.disable
-    def _idea_decode_ws(self):
-        """The WholeSpace that owns the grammar ``<generate>`` machinery.
-
-        It is ``symbolSpace.wholeSpace`` -- the S-space_role host where
-        ``_attach_per_space_syntactic_layer`` installs the SyntacticLayer
-        (Language.py) and whose subspace is populated by the forward. This is the
-        LAST per-stage WholeSpace (``wholeSpaces[-1]``), NOT ``wholeSpaces[0]``
-        (which has no syntacticLayer and an empty subspace). Falls back to the
-        last per-stage WS."""
-        ws = getattr(getattr(self, "symbolSpace", None), "wholeSpace", None)
-        if ws is None and getattr(self, "wholeSpaces", None):
-            ws = self.wholeSpaces[-1]
-        return ws
-
-    @torch.compiler.disable
     def _run_idea_decode_generate(self):
-        """Run the grammar ``<generate>`` reverse (idea -> symbol expansion ->
-        concept) on the SYNTACTIC WholeSpace and return its result (Stage D3).
-        Runs ``WholeSpace.reverse`` -> ``SyntacticLayer.reverse`` (the generate
-        rules) -> ``reverseSymbols`` -> ``reverseEnd``. Best-effort: any failure
-        returns ``None`` so the reconstruction path is never broken."""
-        ws = self._idea_decode_ws()
-        if ws is None or getattr(ws, "subspace", None) is None:
+        """Generate from the completed clause with the common output chooser."""
+        seed = self._sentence_end_state(None)
+        if seed is None:
             return None
-        try:
-            return ws.reverse(ws.subspace)
-        except (RuntimeError, AssertionError, ValueError, TypeError, IndexError):
-            return None
+        words, _count, _truncated, _cost = self._output_generate_walk(
+            self._walk_operand(seed), self._walk_budget(), False)
+        carrier = self.conceptualSpace.subspace.carrier_like()
+        carrier.set_event(words)
+        return carrier
 
     @torch.compiler.disable
     def _idea_decode_drive(self, x):
-        """Stage D3 CONSUMER: drive the reverse SEED from the grammar
-        ``<generate>`` decode, so the surface words come from the grammar
-        (generation = dual of comprehension), not the carried reconstruction.
+        """Use generated concepts as the reverse seed when its shape agrees.
 
-        The grammar decode (``_run_idea_decode_generate`` on the syntactic WS)
-        yields the idea's symbol expansion; ``decode_to_concept`` maps it to
-        concept space. When that matches the reverse seed ``x``'s event shape
-        EXACTLY, we set it as the seed and let the existing ``_reverse_body ->
-        _reverse_perceptual -> _reverse_text`` chain render it to words (the
-        injection point verified by the D3 map: the seed event drives the words).
-
-        SHAPE-GUARDED: drives only on an exact shape match. The
-        ``symbol_dim == concept_dim`` design invariant makes ``decode_to_concept``
-        an exact (identity) lift; the COMPACT-symbol configs (``nOutputDim`` 8 <<
-        concept width, e.g. MM_20M) need a LEARNED ``symbol_dim -> concept_dim``
-        expander (a lossy bottleneck, a training follow-on) -- there the widths
-        differ and this falls back to ``x`` unchanged. Best-effort + gated by
-        ``idea_decode`` (default off -> never called -> byte-identical). The
-        grammar decode is also parked on ``_idea_decode_parked`` for observability."""
+        The shared generate walk owns the choice of words. Its fresh carrier
+        never writes into the completed field or the property basis.
+        """
         self._idea_decode_parked = None
         gen = self._run_idea_decode_generate()
         if gen is None or x is None:
@@ -23667,8 +23291,6 @@ class BasicModel(BaseModel):
             return x
         self._idea_decode_parked = gev.detach().clone()
         try:
-            ws = self._idea_decode_ws()
-            gev = ws.decode_to_concept(gev) if ws is not None else gev
             cur = x.materialize()
         except Exception:
             return x
@@ -23686,46 +23308,19 @@ class BasicModel(BaseModel):
         return x
 
     def _grammar_reverse_ops(self):
-        """Enumerate the arity-2 REVERSE ops from the grammar's ``<generate>``
-        section (Alec 2026-07-14, doc/plans/2026-07-14-signed-space-snap-
-        design.md) — symmetric to ``_stm_reducer``'s ``<compose>`` enumeration.
-
-        A generate rule (``op_I1, op_I2 = op.reverse(op_O1)``) carries
-        ``.reverse`` in its canonical string; its ``method_name`` resolves the
-        SAME host layer the forward uses (``syntacticLayer._by_name``). Keep
-        the arity-2 hosts whose ``reverse`` accepts ``left_rows`` (the
-        snap/recommender family — union / intersection / …). Returns
-        ``[(name, host), …]``; the reverse operation set the derivation
-        chooses from, DETERMINED FROM THE GRAMMAR FILE, not the forward
-        trace."""
-        ws = getattr(self, "wholeSpace", None)
-        sl = getattr(ws, "syntacticLayer", None)
-        if sl is None or not hasattr(sl, "_by_name"):
-            return []
-        try:
-            from Language import TheGrammar
-        except ImportError:
-            return []
-        ops, seen = [], set()
-        for rdef in TheGrammar.rules:
-            if ".reverse" not in (getattr(rdef, "canonical", "") or ""):
-                continue                        # a <compose> (forward) rule
-            mn = getattr(rdef, "method_name", None)
-            if not mn or mn in seen:
-                continue
-            host = sl._by_name.get(mn)
-            if host is None or int(getattr(host, "arity", 1)) != 2:
-                continue
-            rv = getattr(host, "reverse", None)
-            try:
-                names = rv.__code__.co_varnames
-            except AttributeError:
-                continue
-            if "left_rows" not in names:
-                continue                        # not snap/recommender-capable
-            seen.add(mn)
-            ops.append((mn, host))
-        return ops
+        """Declared binary generate hosts that support a dictionary witness."""
+        language = self.languageSpace
+        result = []
+        seen = set()
+        for name, operation in zip(language._generate_binary_names,
+                                   language._generate_binary_ops):
+            host = getattr(operation, 'gl', operation)
+            reverse = getattr(host, 'reverse', None)
+            parameters = getattr(getattr(reverse, '__code__', None), 'co_varnames', ())
+            if name not in seen and 'left_rows' in parameters:
+                seen.add(name)
+                result.append((name, host))
+        return result
 
     def _reverse_choose_op(self, parent, reverse_ops, basis, word_rows):
         """Reverse chooser (Alec 2026-07-14): the reverse derivation's own
@@ -24234,7 +23829,7 @@ class BasicModel(BaseModel):
         # Inter-sentence prior (read-only at forward time; the actual
         # ARMA observe + loss happen in ``runBatch`` after the body). The
         # full-sentence W loop receives its actual prior through the eager
-        # seal-time expectation pair.  The older ARMA snapshot below
+        # closing-time expectation pair.  The older ARMA snapshot below
         # has no consumer there, so skip its Python tuple reader: cold
         # ``(None, None)`` followed by a tensor tuple would otherwise guard
         # and recompile the complete graph on sentence two.
@@ -24336,62 +23931,22 @@ class BasicModel(BaseModel):
         if pred is not None and not self.outputSpace.concept_ids:
             pred = self.normalizer.denormalize(pred, which="output")
 
-        # Capture symbol_states by iterating per-stage WholeSpaces
-        # directly. Each stage's ``ws.forward(...)`` in
-        # ``_forward_body`` writes its result onto that stage's
-        # ``.subspace``; reading per-stage straight off
-        # ``self.wholeSpaces`` is the canonical replacement for the
-        # retired ``self._ws_cache`` per-forward capture list (Stage
-        # 1.F of doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md).
-        # Per-word path only fires the terminal stage's ws.forward, so
-        # match the legacy ``_ws_cache`` populating pattern by walking
-        # only the terminal stage there — preserves the legacy
-        # symbol_states cardinality (1 entry in per-word path; T
-        # entries in the whole-slab path).
-        isp = getattr(self, 'inputSpace', None)
-        per_word_path = (isp is not None
-                         and getattr(isp, '_per_word_enabled', False))
-        if per_word_path:
-            stages_iter = (
-                [self.wholeSpaces[-1]] if self.wholeSpaces
-                else [])
-        else:
-            stages_iter = list(self.wholeSpaces)
-        captured_states = []
-        for ws in stages_iter:
-            sub = getattr(ws, 'subspace', None)
-            if sub is None:
-                continue
-            sv = sub.materialize()
-            if sv is None:
-                continue
-            captured_states.append(sv.clone())
-        self.symbol_states = captured_states
-        self._unified_j_iterations = min(
-            self.subsymbolicOrder, len(captured_states))
+        # WholeSpace owns properties only. The public symbolic state is the
+        # paired activation of concept identities, published by SymbolSpace.
+        sym_sub = self._publish_reading_symbols(body_sub)
+        if sym_sub is None:
+            sym_sub = self.symbolSpace.forward_concept_to_symbol(body_sub)
+        object.__setattr__(self, '_reading_symbol_result', sym_sub)
+        sym_vectors = sym_sub.materialize() if sym_sub is not None else None
+        self.symbol_states = [sym_vectors] if sym_vectors is not None else []
+        self._unified_j_iterations = min(self.subsymbolicOrder, len(self.symbol_states))
 
-        # Phase 1.5: the five inputs/percepts/concepts/symbols/outputs
-        # back-ref aliases (formerly stamped here via object.__setattr__)
-        # were subsumed -- they were read-only handles to each Space's
-        # terminal subspace, not cross-round state. Every reader now goes
-        # through the owning Space directly (``self.perceptualSpace
-        # .subspace`` etc.), so nothing is stamped on ``self`` here and
-        # ``self._modules`` stays constant in the traced forward without
-        # the band-aid.
-
-        # forwardInput contract for runBatch: ``[B, N, D]`` embedded input.
+        # forwardInput contract for runBatch: [B, N, D] embedded input.
         input_state = self.inputSpace._ar_embedded
         if input_state is None:
             input_state = self.inputSpace.subspace.materialize()
         if input_state is None:
             input_state = self.perceptualSpace._embedded_input
-
-        # Symbol vectors at last stage.
-        sym_sub = self.symbol_cache
-        if sym_sub is not None:
-            sym_vectors = sym_sub.materialize()
-        else:
-            sym_vectors = self.wholeSpace.subspace.materialize()
 
         # Inter-sentence snapshot: pass the S-space_role event to runBatch,
         # which calls ``InterSentenceLayer.observe`` to capture the

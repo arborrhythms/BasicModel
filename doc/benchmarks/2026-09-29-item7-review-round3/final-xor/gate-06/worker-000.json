@@ -1,0 +1,25 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "completed": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "slow_selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 123.93741937493905,
+      "message": "test/test_mm_xor.py:179: in test_mm_grammar_learns_xor_signal\n    self._fit_xor(os.path.join(_PROJECT, \"data\", \"MM_grammar.xml\"),\ntest/test_mm_xor.py:165: in _fit_xor\n    self.assertLess(best_loss, threshold,\nE   AssertionError: 0.20906077325344086 not less than 0.2 : XOR loss 0.209061 after at most 900 epochs",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

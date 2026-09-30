@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
+    "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
+    "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders"
+  ],
+  "completed": [
+    "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
+    "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
+    "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-24/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-24/worker-000.json"
+      ],
+      "pid": 9791,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436372776,
+      "elapsed_seconds": 3.6346134999766946,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-24/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
+        "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
+        "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders"
+      ],
+      "completed": [
+        "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
+        "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
+        "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0037507920060306787,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0025542089715600014,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0020549161126837134,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-24",
+  "elapsed_seconds": 7.371342458995059,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 436372776,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-24/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-24/collect.json"
+    ],
+    "pid": 9783,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432538848,
+    "elapsed_seconds": 3.504203416989185,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/stage-b-ported-files/group-24/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
+        "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
+        "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

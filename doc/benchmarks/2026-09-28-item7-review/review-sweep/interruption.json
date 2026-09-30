@@ -1,0 +1,10 @@
+{
+  "reason": "Stopped to diagnose the preceding MM gate runtime failure before treating a sweep as final.",
+  "gate": "review-gates/summary.json",
+  "runtime_error": "a relation requires three resolved row references",
+  "source_unchanged": true,
+  "source_digest": "d69f91c82138ecaaa5cd6c50842d5bddbb43c345746374406db580a8bdec1a98",
+  "selected": 5020,
+  "completed": 9,
+  "elapsed_seconds": 58.65868604101706
+}

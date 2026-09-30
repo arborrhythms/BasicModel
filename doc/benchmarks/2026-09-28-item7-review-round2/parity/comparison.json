@@ -1,0 +1,169 @@
+{
+  "processes": {
+    "packed": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/probe.py",
+        "--config",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/parity.xml",
+        "--parity",
+        "packed",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/parity/packed.json"
+      ],
+      "pid": 79405,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5606610536,
+      "elapsed_seconds": 398.1500332909636,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/parity/packed.log"
+    },
+    "single": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/probe.py",
+        "--config",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/parity.xml",
+        "--parity",
+        "single",
+        "--out",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/parity/single.json"
+      ],
+      "pid": 79531,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5630056088,
+      "elapsed_seconds": 650.4309814999579,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/parity/single.log"
+    }
+  },
+  "protocol": "Prior declared seed 42, vocabulary warmup, 4 validation sentences, no optimizer; no seed selection or tolerance.",
+  "complete": true,
+  "initial_parameters_equal": true,
+  "initial_dictionary_equal": true,
+  "means": {
+    "packed": 0.38411849636759143,
+    "single": 0.38411849636759143
+  },
+  "sentences": [
+    {
+      "source_row": 0,
+      "text": "9 plus 1",
+      "packed_cost": 0.44944193959236145,
+      "single_cost": 0.44944193959236145,
+      "dictionary_equal": true,
+      "differences": {
+        "root": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "reference": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "recovered": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "byte_cost": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        }
+      }
+    },
+    {
+      "source_row": 1,
+      "text": "14 plus 1",
+      "packed_cost": 0.004643341992050409,
+      "single_cost": 0.004643341992050409,
+      "dictionary_equal": true,
+      "differences": {
+        "root": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "reference": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "recovered": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "byte_cost": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        }
+      }
+    },
+    {
+      "source_row": 2,
+      "text": "2 plus 1",
+      "packed_cost": 1.0818591117858887,
+      "single_cost": 1.0818591117858887,
+      "dictionary_equal": true,
+      "differences": {
+        "root": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "reference": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "recovered": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "byte_cost": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        }
+      }
+    },
+    {
+      "source_row": 3,
+      "text": "3 plus 1",
+      "packed_cost": 0.0005295921000652015,
+      "single_cost": 0.0005295921000652015,
+      "dictionary_equal": true,
+      "differences": {
+        "root": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "reference": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "recovered": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        },
+        "byte_cost": {
+          "exact": true,
+          "max_absolute_difference": 0.0
+        }
+      }
+    }
+  ],
+  "all_sentence_values_exact": true,
+  "truncated": {
+    "packed": [
+      [
+        false,
+        false
+      ]
+    ],
+    "single": [
+      [
+        false,
+        false
+      ],
+      [
+        false,
+        false
+      ]
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "validated_source_file": "ai-native-id-source.json",
+  "source_manifest_sha256": "b1473f693c056a33fe3b3bbc31d9459c9b9ce9194c2300a8384a32ab477f9a17",
+  "changed_files": [
+    "bin/ClauseJournal.py",
+    "bin/ClauseRow.py",
+    "bin/ConceptIndex.py",
+    "bin/Interpret.py",
+    "bin/Language.py",
+    "bin/Models.py",
+    "bin/PerceptProperties.py",
+    "bin/Spaces.py",
+    "test/test_item7_closing_identities.py",
+    "test/test_item7_nested_references.py",
+    "test/test_item7_point_owners.py",
+    "test/test_item7_predicate_storage.py",
+    "test/test_item7_property_cache_release.py",
+    "test/test_item7_property_read_storage.py",
+    "test/test_item7_selected_property_rows.py",
+    "test/test_item7_taxonomy.py",
+    "test/test_order0_attended_field.py",
+    "test/test_output_path_supervised.py",
+    "test/test_reduction_pressure.py",
+    "test/test_sentence_expectation.py",
+    "test/test_word_store.py"
+  ],
+  "configuration_changes": [],
+  "test_port_ledger": "test-ports.json",
+  "head": "1678ee1fb79c474ffaee5725fd035716de5f1913"
+}

@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_synthesized_answer_checkpoint_reloads_into_a_fresh_model _________
+test/test_output_synthesis.py:507: in test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+    assert fresh.load_weights(str(path), require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5696: in load_weights
+    self._restore_structural_extras(
+bin/Models.py:4914: in _restore_structural_extras
+    layer = owner_space._concept_allocator.layer(0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.039s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8844/test_synthesized_answer_checkp0/synth.ckpt
+=============================== warnings summary ===============================
+test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+1 failed, 1 warning in 5.95s

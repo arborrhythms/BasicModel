@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item11c_attribution.py::test_descent_intersects_cases_with_the_present_field",
+    "test/test_item11c_attribution.py::test_descent_without_a_field_chooses_one_case",
+    "test/test_item11c_attribution.py::test_descent_keeps_the_source_pole_and_scope",
+    "test/test_item11c_attribution.py::test_percept_attribution_follows_signed_definitions_without_complements"
+  ],
+  "completed": [
+    "test/test_item11c_attribution.py::test_descent_intersects_cases_with_the_present_field",
+    "test/test_item11c_attribution.py::test_descent_without_a_field_chooses_one_case",
+    "test/test_item11c_attribution.py::test_descent_keeps_the_source_pole_and_scope",
+    "test/test_item11c_attribution.py::test_percept_attribution_follows_signed_definitions_without_complements"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item11c_attribution.py::test_descent_intersects_cases_with_the_present_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0045718749752268195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_attribution.py::test_descent_without_a_field_chooses_one_case",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030122080352157354,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_attribution.py::test_descent_keeps_the_source_pole_and_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026445840485394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item11c_attribution.py::test_percept_attribution_follows_signed_definitions_without_complements",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022905830992385745,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

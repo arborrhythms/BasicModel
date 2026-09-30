@@ -1,6 +1,6 @@
 """MetaSymbol Category codebook scaffolding (Phase 1, increment B).
 
-WholeSpace.enable_category_codebook allocates a small role-space VectorQuantize
+ConceptualSpace.enable_category_codebook allocates a small role-space VectorQuantize
 plus a bounded pending learner for uncommitted MetaSymbols. assign_category is
 the role-profile E-step, update_category_role updates the centroid prototype,
 and category_role_of / category_role_for_meta gather the per-slot context.
@@ -54,7 +54,7 @@ def _whole_space(d=8):
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    return Spaces.WholeSpace([nP, d], [nS, d], [nS, d])
+    return Spaces.ConceptualSpace([nP, d], [nS, d], [nS, d])
 
 
 def test_enable_allocates_codebook_and_role_table():
@@ -190,7 +190,7 @@ def test_checkpoint_prewarm_materializes_requested_category_codebook(
     Language.TheGrammar._configured = False
     Models.TheData.load("xor")
     model, _ = Models.BasicModel.from_config(config, data=Models.TheData)
-    ws = model.wholeSpace
+    ws = model.conceptualSpace
 
     assert ws._category_codebook_requested is True
     assert not ws.category_codebook_enabled()
@@ -201,13 +201,13 @@ def test_checkpoint_prewarm_materializes_requested_category_codebook(
     assert tuple(ws._category_role.shape) == (n_roles, n_roles)
 
     state = model.state_dict()
-    terminal = len(model.wholeSpaces) - 1
+    terminal = len(model.conceptualSpaces) - 1
     expected = {
-        f"wholeSpaces.{terminal}._category_role",
-        f"wholeSpaces.{terminal}._category_vq._codebook",
-        f"wholeSpaces.{terminal}._category_vq.cluster_size",
-        f"wholeSpaces.{terminal}._category_vq.embed_avg",
-        f"wholeSpaces.{terminal}._category_vq._b_norms_sq",
+        f"conceptualSpaces.{terminal}._category_role",
+        f"conceptualSpaces.{terminal}._category_vq._codebook",
+        f"conceptualSpaces.{terminal}._category_vq.cluster_size",
+        f"conceptualSpaces.{terminal}._category_vq.embed_avg",
+        f"conceptualSpaces.{terminal}._category_vq._b_norms_sq",
     }
     assert expected <= set(state)
 

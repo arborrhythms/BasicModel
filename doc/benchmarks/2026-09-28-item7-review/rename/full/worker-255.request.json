@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding",
+    "test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition",
+    "test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-255.recycle.json"
+}

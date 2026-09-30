@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_cursor_universal.py::test_xor_runs_through_trial_cursor",
+    "test/test_cursor_universal.py::test_trial_cursor_no_dataloader_iteration",
+    "test/test_cursor_universal.py::test_trial_cursor_three_tuple_signature"
+  ],
+  "completed": [
+    "test/test_cursor_universal.py::test_xor_runs_through_trial_cursor",
+    "test/test_cursor_universal.py::test_trial_cursor_no_dataloader_iteration",
+    "test/test_cursor_universal.py::test_trial_cursor_three_tuple_signature"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_cursor_universal.py::test_xor_runs_through_trial_cursor",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.49256804201286286,
+      "message": "test/test_cursor_universal.py:57: in test_xor_runs_through_trial_cursor\n    model.runEpoch(optimizer=optimizer, batchSize=2, split=\"train\")\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16701: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:15975: in dispatch_per_row_reset\n    space.Reset()\ntest/test_cursor_universal.py:54: in _spy\n    return _orig(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:16413: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:16515: in _commit_autobind_from_stash\n    self._maybe_autobind_meta(\nbin/Spaces.py:16723: in _maybe_autobind_meta\n    return self._autobind_property_concepts(\nbin/Spaces.py:16644: in _autobind_property_concepts\n    prop_rows = ws.property_rows_for_bytes(key)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:23603: in property_rows_for_bytes\n    lut, discard = _analysis_property_signature(self)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:22000: in _analysis_property_signature\n    raise RuntimeError('property analysis requires learned primitive definitions')\nE   RuntimeError: property analysis requires learned primitive definitions",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 34.85%)\r\nbatch = 2 (\u0394=0.026s, 50.00%)\r\n"
+    },
+    {
+      "nodeid": "test/test_cursor_universal.py::test_trial_cursor_no_dataloader_iteration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013636659132316709,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cursor_universal.py::test_trial_cursor_three_tuple_signature",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018045806791633368,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

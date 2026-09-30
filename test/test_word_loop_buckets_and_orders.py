@@ -73,7 +73,7 @@ def test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories():
     assert ps == 32768
     assert cs == 65536
     assert ws == 8
-    assert root.findtext("./WholeSpace/propertyBasis") == "true"
+    assert root.find("./WholeSpace/propertyBasis") is None
     assert int(root.findtext("./ConceptualSpace/activeVectors")) == 32768
     assert root.find("./WholeSpace/activeVectors") is None
     # PS/WS recurse in native 128-WHAT events. Their sparse codebook

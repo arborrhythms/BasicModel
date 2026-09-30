@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+    "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+    "test/test_operator_superposition.py::test_operator_superposition_resolves_against_codebook"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-296.recycle.json"
+}

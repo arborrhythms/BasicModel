@@ -24,6 +24,7 @@ def test_default_interpret_reuses_a_witnessed_association():
     word = interpret.lookup_word([7], [], form='cat')
     kind = cs.new_concept()
     _concept_alloc_of(cs).reference_orders[kind] = 2
+    interpret.define(word, kind)
     cs.bind_word_concept('cat', kind)
     assert interpret.forward(word) == kind
     assert interpret.reverse(kind) == word
@@ -138,11 +139,12 @@ def test_native_program_captures_the_symbol_band_and_one_field_time(tmp_path):
     from What import What
     model = build_model(tmp_path, word_capacity=8)
     raw = model.inputSpace.prepInput(['the cat sat'])
-    with torch.no_grad():
+    from reading_fixtures import capture_readings
+    with capture_readings(model) as readings, torch.no_grad():
         model.runBatch(train=False, split='validation', batchSize=1,
             batch_override=(raw, torch.empty(1, 0)),
             questions=(What.present(0, split='validation'),))
-    program, = model._last_understanding.answer_program
+    program, = readings[0]
     assert program.symbol_where.shape == (*program.rows.shape, 4)
     addresses = model.where_encoding.decode_index(program.symbol_where)
     starts = model.inputSpace._ar_word_part_offsets[0,

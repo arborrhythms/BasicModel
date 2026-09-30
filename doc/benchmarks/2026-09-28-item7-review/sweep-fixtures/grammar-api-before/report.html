@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 4/4 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0011329170083627105</pre></td><td><pre>test/test_merge_structural_not_operator.py:52: in test_merge_not_inserted_as_operator
+    pos = ws.insert_operations(g)
+          ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;insert_operations&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0014150839997455478</pre></td><td><pre>test/test_merge_structural_not_operator.py:61: in test_semantic_operators_still_inserted
+    ws.insert_operations(g)
+    ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;insert_operations&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0009835410164669156</pre></td><td><pre>test/test_merge_structural_not_operator.py:70: in test_only_semantic_operators_in_codebook
+    pos = ws.insert_operations(g)
+          ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;insert_operations&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.002969958004541695</pre></td><td><pre>test/test_semantic_categories_pipeline.py:82: in test_recovers_on_transitional_grammar_participation
+    op_vectors = {m: seed._seed_operator_vector(m)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;_seed_operator_vector&#x27;</pre></td><td><pre></pre></td></tr></table></body></html>

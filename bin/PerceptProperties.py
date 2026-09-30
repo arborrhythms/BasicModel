@@ -31,6 +31,42 @@ def counts_in_spans(byte_ids, spans, observed=None):
     return prefix.gather(1, hi) - prefix.gather(1, lo)
 
 
+class _PropertySupportRead(torch.autograd.Function):
+    """Min/max over observed bytes without retaining the broadcast product.
+
+    Autograd's reduction saves every event/property/byte value. Recompute
+    that bounded workspace in backward instead, including neutral-byte ties
+    so the gradient is exactly the dense amin/amax gradient.
+    """
+    @staticmethod
+    def forward(ctx, weights, present, conjunctive):
+        chunks = []
+        for start in range(0, weights.shape[0], 256):
+            values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+                                 1. if conjunctive else 0.)
+            chunks.append(values.amin(-1) if conjunctive else values.amax(-1))
+        result = (torch.cat(chunks, -1) if chunks else
+                  weights.new_empty((*present.shape[:-1], 0)))
+        ctx.save_for_backward(weights, present, result)
+        ctx.conjunctive = conjunctive
+        return result
+
+    @staticmethod
+    def backward(ctx, gradient):
+        weights, present, result = ctx.saved_tensors
+        chunks = []
+        for start in range(0, weights.shape[0], 256):
+            values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+                                 1. if ctx.conjunctive else 0.)
+            ties = values == result[..., start:start + 256, None]
+            share = gradient[..., start:start + 256, None] / ties.sum(-1, keepdim=True)
+            credited = torch.where(present.unsqueeze(-2), share * ties, 0.)
+            if present.ndim > 1:
+                credited = credited.sum(tuple(range(present.ndim - 1)))
+            chunks.append(credited)
+        return (torch.cat(chunks, 0) if chunks else torch.zeros_like(weights)), None, None
+
+
 class PrimitiveProperties(nn.Module):
     """One bounded coefficient per property and byte, with no tag reader.
 
@@ -47,15 +83,16 @@ class PrimitiveProperties(nn.Module):
         # unwritten primitive. Only the former supplies counterevidence.
         self.register_buffer('observed', torch.zeros(int(rows), 256, device=device, dtype=torch.bool))
 
-    def coefficients(self):
+    def coefficients(self, rows=None):
         # Projection constrains storage after the optimizer step. The read
         # uses an STE at the rails: clamp's zero boundary derivative would
         # freeze an a-priori 0/1 definition against all later evidence.
-        return self.members + (self.members.clamp(0, 1) - self.members).detach()
+        members = self.members if rows is None else self.members.index_select(0, rows)
+        return members + (members.clamp(0, 1) - members).detach()
 
-    def forward(self, byte_ids, observed=None):
+    def forward(self, byte_ids, observed=None, *, rows=None):
         ids = byte_ids.to(device=self.members.device, dtype=torch.long).clamp(0, 255)
-        result = self.coefficients().t()[ids]
+        result = self.coefficients(rows).t()[ids]
         if observed is not None:
             result = result * observed.to(result).unsqueeze(-1)
         return result
@@ -69,34 +106,34 @@ class PrimitiveProperties(nn.Module):
         known = (self.observed | (self.members.detach() != 0)).t()[ids]
         return (1 - self(byte_ids)) * known * observed.to(self.members).unsqueeze(-1)
 
-    def evidence_on_counts(self, counts):
+    def evidence_on_counts(self, counts, *, rows=None):
         """Two observed poles of a property on each native run.
 
         A run witnesses a property or its complement only on known primitives;
         unseen bytes and padding cannot create a closed-world negative.
         """
         present = counts.to(self.members).unsqueeze(-2) > 0
-        known = self.observed | (self.members.detach() != 0)
+        observed = self.observed if rows is None else self.observed.index_select(0, rows)
+        members = self.members if rows is None else self.members.index_select(0, rows)
+        known = observed | (members.detach() != 0)
         complete = ((~present | known).all(-1)
                     & (counts.sum(-1, keepdim=True) > 0))
-        positive = self.on_counts(counts)
-        negative = self.on_counts(counts, complement=True)
+        positive = self.on_counts(counts, rows=rows)
+        negative = self.on_counts(counts, complement=True, rows=rows)
         return torch.stack((positive, negative), -1) * complete[..., None]
 
-    def on_counts(self, counts, *, conjunctive=True, complement=False):
+    def on_counts(self, counts, *, conjunctive=True, complement=False, rows=None):
         """Read a byte multiset by intersection or union of its properties.
 
         Counts keep the ordered witness separate while allowing each live
         run to use a bounded 256-column tensor in compiled code.
         """
-        weights = self.coefficients()
+        weights = self.coefficients(rows)
         if complement:
             weights = 1 - weights
         # Counts identify the observed support. Repeating a primitive does
         # not change its membership or make a long run less of a whole.
-        values = torch.where(counts.to(weights).unsqueeze(-2) > 0, weights,
-                             1. if conjunctive else 0.)
-        result = values.amin(-1) if conjunctive else values.amax(-1)
+        result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
         return result * (counts.sum(-1, keepdim=True) > 0).to(result)
 
     def reverse(self, evidence):
@@ -149,7 +186,10 @@ class PrimitiveProperties(nn.Module):
         key = prefix + 'members'
         if key not in state_dict:
             state_dict[key] = self.members.detach().clone()
-        if prefix + 'observed' not in state_dict:
+            # Dropped dictionary checkpoints have neither column. Preserve
+            # the complete a-priori examples, including witnessed exclusions.
+            state_dict.setdefault(prefix + 'observed', self.observed.detach().clone())
+        elif prefix + 'observed' not in state_dict:
             state_dict[prefix + 'observed'] = state_dict[key] != 0
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                      missing_keys, unexpected_keys, error_msgs)

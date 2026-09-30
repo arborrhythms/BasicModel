@@ -1,0 +1,33 @@
+--- doc/benchmarks/2026-09-26-item8/measure.py
++++ doc/benchmarks/2026-09-28-item7-review/measure.py
+@@ -8,7 +8,7 @@
+ 
+ ROOT = Path(__file__).resolve().parents[3]
+ sys.path[:0] = [str(ROOT / 'bin'), str(ROOT / 'test'),
+-                str(ROOT / 'doc/benchmarks/2026-09-21-item10')]
++                str(Path(__file__).resolve().parent)]
+ 
+ 
+ def xor(path, seed):
+@@ -82,9 +82,9 @@
+             return result
+         def batch(*a, **kw):
+             nonlocal counter
+-            result = run_batch(*a, **kw)
+-            understanding = model._last_understanding
+-            programs = understanding.sentence_programs or {0: understanding.answer_program}
++            from reading_fixtures import capture_readings
++            with capture_readings(model) as programs:
++                result = run_batch(*a, **kw)
+             for slot, rows in programs.items():
+                 for row, program in enumerate(rows):
+                     if program is not None:
+@@ -94,7 +94,7 @@
+         model.runEpoch, model.runBatch = epoch, batch
+         return model, cfg
+     probe.BaseModel.from_config = staticmethod(build)
+-    sys.argv = [str(ROOT / 'doc/benchmarks/2026-09-21-item10/probe.py'), '--out', str(path)]
++    sys.argv = [str(Path(__file__).with_name('probe.py')), '--out', str(path)]
+     try:
+         probe.main()
+         Path(path).with_name('routing.json').write_text(json.dumps(reports, indent=2) + '\n')

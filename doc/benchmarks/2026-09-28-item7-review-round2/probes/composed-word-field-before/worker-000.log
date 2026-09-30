@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_word_publication_preserves_the_composed_concept_field __________
+test/test_item7_word_interpretation.py:63: in test_word_publication_preserves_the_composed_concept_field
+    result = BasicModel._publish_reading_symbols(host, carrier)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11521: in _publish_reading_symbols
+    field = owner.cs_read_memberships(percepts, self._reading_word_extents)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item7_word_interpretation.py:57: in read_again
+    pytest.fail('completed symbolic evidence was replaced by word admission')
+E   Failed: completed symbolic evidence was replaced by word admission
+=========================== short test summary info ============================
+FAILED test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field
+1 failed in 2.18s

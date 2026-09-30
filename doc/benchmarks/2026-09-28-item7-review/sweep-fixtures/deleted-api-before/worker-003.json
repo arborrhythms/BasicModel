@@ -1,0 +1,83 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+    "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+    "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail"
+  ],
+  "completed": [
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+    "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+    "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009042910533025861,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043699995148926973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00030633294954895973,
+      "message": "test/test_active_codebook_reads.py:85: in test_wholespace_nearest_and_terminal_targets_ignore_inactive_exact_match\n    row, _distance = ws.nearest_ws_row(query)\n                     ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'nearest_ws_row'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00033416692167520523,
+      "message": "test/test_active_codebook_reads.py:106: in test_ensure_ws_position_rejects_inactive_row_without_taxonomy_mutation\n    ws.ensure_ws_position(3)\n    ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'ensure_ws_position'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04147375002503395,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_topk_priming_scores_only_active_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00030083395540714264,
+      "message": "test/test_active_codebook_reads.py:136: in test_topk_priming_scores_only_active_rows\n    mask = ws._topk_priming_mask(act)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_topk_priming_mask'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_semantic_arrangement_is_invariant_to_inactive_tail",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00028799998108297586,
+      "message": "test/test_active_codebook_reads.py:149: in test_semantic_arrangement_is_invariant_to_inactive_tail\n    first = ws.semantic_arrangement_loss(torch.tensor([0]))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'semantic_arrangement_loss'. Did you mean: 'semantic_arrangement_weight'?",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

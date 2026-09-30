@@ -1,0 +1,37 @@
+--- before/test/test_packed_reconstruction_parity.py
++++ after/test/test_packed_reconstruction_parity.py
+@@ -68,8 +68,12 @@
+     captured = {}
+ 
+     def capture(S, reference, roots, depths=None, end=None, end_depth=None, sentence_slot=None):
+-        captured.update(roots=roots.detach().clone(), end=end.detach().clone(),
+-                        depth=depths.detach().clone(), end_depth=end_depth.detach().clone())
++        # Reconstruction is scored once per sentence. A later sentence can
++        # be absent from a shorter batch row, so it cannot overwrite that
++        # row's last live sentence with its own empty end-state slot.
++        captured[int(sentence_slot)] = dict(
++            roots=roots.detach().clone(), end=end.detach().clone(),
++            depth=depths.detach().clone(), end_depth=end_depth.detach().clone())
+         return reconstruct(S, reference, roots, depths, end, end_depth, sentence_slot)
+ 
+     model.__dict__.pop("_reconstruct_compiled", None)
+@@ -81,6 +85,7 @@
+         for step, samples in enumerate(steps):
+             raw = (model.inputSpace.prepPackedInput(samples) if packed
+                    else model.inputSpace.prepInput(samples))
++            captured.clear()
+             with capture_readings(model) as readings, torch.no_grad():
+                 model.runBatch(
+                     train=False, batchNum=step, batchSize=len(rows), split="validation",
+@@ -95,8 +100,9 @@
+                     slot = sentence if packed else 0
+                     mask = active[b] & (ids[b] == slot)
+                     last = sentence == len(row) - 1 if packed else True
+-                    root = (captured["end"][b] if last
+-                            else captured["roots"][b, slot].reshape(3, -1))
++                    captured_sentence = captured[slot]
++                    root = (captured_sentence["end"][b] if last
++                            else captured_sentence["roots"][b, slot].reshape(3, -1))
+                     program = readings[slot][b]
+                     records[b, sentence] = {
+                         "root": root.clone(),

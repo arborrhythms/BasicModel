@@ -1,0 +1,3502 @@
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -34,7 +34,8 @@
+         if kind < 0:
+             break
+         if kind == 0:
+-            has_point = program.reference_relations is None or not bool(program.reference_relations[word])
++            has_point = program.reference_relations is None or not bool(
++                program.reference_relations[word])
+             stack.append(dict(value=values[word], ref=int(refs[word]), rule=None,
+                               children=(), leaves=(word,), has_point=has_point))
+             continue
+@@ -45,11 +46,38 @@
+         operands = tuple(stack[-arity:])
+         del stack[-arity:]
+         relation_rule = catalog[local].method_name in ('part', 'whole', 'equal', 'implies')
+-        for operand, actual in zip(operands, frames[action, :arity]):
++        selected_refs = (None if program.operation_refs is None else
++                         list(program.operation_refs[action].tolist()))
++        for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
+             operand['value'] = actual
++            if program.operation_relations is not None:
++                operand['has_point'] = not bool(program.operation_relations[action, role])
++            if program.operation_refs is not None:
++                selected = operand
++                while selected['children']:
++                    headed = getattr(selected['rule'], 'head_role', 0)
++                    if not headed and selected['rule'].method_name in ('lower', 'bind', 'surface', 'preposition'):
++                        headed = 2
++                    if not headed:
++                        break
++                    selected = selected['children'][headed-1]
++                reference = int(program.operation_refs[action, role])
++                # A trial's newly requested singleton still had its source
++                # address. Resolve that alias to the winning host's admitted
++                # identity; an already selected earlier occurrence is unchanged.
++                pending_order = False
++                if not selected['children'] and program.reference_orders is not None:
++                    leaf = selected['leaves'][0]
++                    pending_order = (int(program.reference_orders[leaf]) >= 0
++                                     and reference == int(program.concept_ids[leaf]))
++                    if pending_order:
++                        reference = int(refs[leaf])
++                if reference > 0 or pending_order:
++                    selected['ref'] = reference
++                    selected_refs[role] = reference
+         stack.append(dict(value=frames[action, 2], local=local, ref=-1,
+                           rule=catalog[local], children=operands,
+-                          operand_refs=None if program.operation_refs is None else tuple(program.operation_refs[action].tolist()),
++                          operand_refs=None if selected_refs is None else tuple(selected_refs),
+                           leaves=tuple(i for child in operands for i in child['leaves']),
+                           has_point=not relation_rule and all(child['has_point'] for child in operands)))
+     if len(stack) not in (1, 3):
+@@ -167,7 +195,7 @@
+             if predicate is None:
+                 vp = head(operands[1])
+                 if len(vp['children']) == 2 and (name(vp) == 'verb'
+-                        or getattr(vp['rule'], 'clause_form', None) == 'VP'):
++                                                 or getattr(vp['rule'], 'clause_form', None) == 'VP'):
+                     verb = head(vp['children'][0])
+                     predicate, predicate_ref = value(verb), concept(verb)
+                     right, right_ref = operand(vp['children'][1])
+@@ -215,6 +243,7 @@
+             role_nodes = role_nodes[2], role_nodes[1], role_nodes[0]
+             described = replace(described, roles=described.roles[[2, 1, 0]],
+                                 role_mask=described.role_mask[[2, 1, 0]])
++
+         def retain_completed(part):
+             if id(part) in owned:
+                 return
+@@ -234,16 +263,16 @@
+             program.end_state[0] if top else value(root)), relation=relation,
+             refs=references, children=tuple(children),
+             subject_word_id=(-1 if registry is None else
+-                registry.space.concept_id_at_row(int(program.word_rows[head(role_nodes[0])["leaves"][0]])) or -1),
++                             registry.space.concept_id_at_row(int(program.word_rows[head(role_nodes[0])["leaves"][0]])) or -1),
+             factored_refs=factored_refs,
+             eternal=relation is None and node['rule'] is None and node['ref'] > 0
+-                    and program.symbol_when is None,
++            and program.symbol_when is None,
+             **bands(root))
+         if equality:
+             converse = replace(field, refs=(field.refs[2], field.refs[1], field.refs[0]),
+-                meaning=replace(field.meaning, roles=field.meaning.roles[[2, 1, 0]],
+-                                role_mask=field.meaning.role_mask[[2, 1, 0]]),
+-                factored_refs=None if field.factored_refs is None else field.factored_refs[::-1])
++                               meaning=replace(field.meaning, roles=field.meaning.roles[[2, 1, 0]],
++                                               role_mask=field.meaning.role_mask[[2, 1, 0]]),
++                               factored_refs=None if field.factored_refs is None else field.factored_refs[::-1])
+             field = replace(field, companions=(converse,))
+         return field
+ 
+@@ -256,7 +285,8 @@
+                 references.append(('clause', len(children)))
+                 child = recover(node)
+                 children.append(child)
+-                roles.append(torch.zeros_like(program.leaves[0]) if child.point is None else child.point)
++                roles.append(torch.zeros_like(
++                    program.leaves[0]) if child.point is None else child.point)
+             else:
+                 references.append(concept(node))
+                 roles.append(value(node))
+@@ -265,9 +295,10 @@
+             probe = meaning
+             if probe is None:
+                 probe = ConceptualMeaning(torch.stack(roles), torch.ones(3, dtype=torch.bool),
+-                    role_refs=tuple(('sym', ref) if type(ref) is int and ref > 0 else None for ref in references))
++                                          role_refs=tuple(('sym', ref) if type(ref) is int and ref > 0 else None for ref in references))
+             try:
+-                operation = registry.signature_for(replace(probe, mode='interrogative')).operation.semantic_id
++                operation = registry.signature_for(
++                    replace(probe, mode='interrogative')).operation.semantic_id
+             except ValueError:
+                 pass
+         if operation not in relative:
+@@ -275,12 +306,11 @@
+                 raise ValueError('three slots have no selected relative clause')
+             operation = 'operator'
+         meaning = ConceptualMeaning(torch.stack(roles), torch.ones(3, dtype=torch.bool, device=program.leaves.device),
+-            mode="assertive" if meaning is None else meaning.mode,
+-            polarity=True if meaning is None else meaning.polarity)
++                                    mode="assertive" if meaning is None else meaning.mode,
++                                    polarity=True if meaning is None else meaning.polarity)
+         if operation == 'whole':
+             operation = 'part'
+             references = references[2], references[1], references[0]
+         return Clause(meaning, relation=operation, refs=tuple(references), children=tuple(children),
+                       **bands(dict(leaves=tuple(range(len(values))))))
+     return recover(stack[0], top=True)
+-
+--- a/bin/ClauseScope.py
++++ b/bin/ClauseScope.py
+@@ -14,6 +14,7 @@
+ 
+     def __init__(self, binary, unary):
+         super().__init__()
++
+         def table(rules):
+             rows = []
+             for rule in rules:
+@@ -27,7 +28,8 @@
+                     head = 2
+                 modes = dict(getattr(rule, 'reference_kinds', ()))
+                 generic = any(mode in ('generic', 'kind') for mode in modes.values())
+-                particular = any(mode in ('particular', 'name', 'pronoun') for mode in modes.values())
++                particular = any(mode in ('particular', 'name', 'pronoun')
++                                 for mode in modes.values())
+                 rows.append((relative, sentence, predicate, head, generic, particular))
+             return torch.tensor(rows or [(0,) * 6], dtype=torch.long)
+         self.register_buffer('binary', table(binary), persistent=False)
+@@ -59,6 +61,23 @@
+         blank[..., 1] = -1
+         return torch.where(active[:, None, None], blank, state)
+ 
++    @classmethod
++    def resolve(cls, state, choice, references, relative):
++        B, K, _ = state.shape
++        positions = torch.arange(K, device=state.device)[None]
++        updated = state
++        for role in range(2):
++            position = torch.where(choice.kind == 1, torch.full_like(
++                choice.position, 1-role), choice.position)
++            used = choice.applied & ((choice.kind == 1) | (role == 0))
++            selected = used[:, None] & (positions == position[:, None])
++            flags = updated[..., 0] | torch.where(
++                relative[:, role, None], cls.RELATIVE | cls.SENTENCE, 0)
++            ids = references[:, role, None].expand(B, K)
++            replacement = torch.stack((flags, ids), -1)
++            updated = torch.where(selected[:, :, None], replacement, updated)
++        return updated
++
+     def apply(self, state, choice, slot):
+         B, K, _ = state.shape
+         binary = choice.kind == 1
+@@ -66,7 +85,8 @@
+         table_b = self.binary.to(state.device)[choice.local_op.clamp(0, self.binary.shape[0] - 1)]
+         table_u = self.unary.to(state.device)[choice.local_op.clamp(0, self.unary.shape[0] - 1)]
+         rule = torch.where(binary[:, None], table_b, table_u)
+-        selected = state.gather(1, choice.position.clamp(0, K - 1)[:, None, None].expand(B, 1, 2))[:, 0]
++        selected = state.gather(1, choice.position.clamp(
++            0, K - 1)[:, None, None].expand(B, 1, 2))[:, 0]
+         left = torch.where(binary[:, None], state[:, min(1, K - 1)], selected)
+         right = torch.where(binary[:, None], state[:, 0], selected)
+         headed = rule[:, 3] > 0
+@@ -82,7 +102,7 @@
+         flags += self.SENTENCE * sentence.long() + self.PREDICATE * predicate.long()
+         preserved = headed | unary
+         flags = torch.where(preserved & ~sentence & ~predicate,
+-            flags | inherited.bitwise_and(self.SENTENCE), flags)
++                            flags | inherited.bitwise_and(self.SENTENCE), flags)
+         previous_ref = torch.where(headed, head[:, 1], selected[:, 1])
+         already_ended = unary & (selected[:, 0].bitwise_and(self.SENTENCE) != 0)
+         closing = sentence & ~already_ended & choice.applied
+@@ -91,9 +111,10 @@
+         reference = torch.where(preserved & ~closing, previous_ref, reference)
+         parent = torch.stack((flags, reference), -1)
+         rewritten = torch.where((unary & choice.applied)[:, None, None]
+-            & (torch.arange(K, device=state.device)[None, :, None] == choice.position[:, None, None]),
+-            parent[:, None], state)
+-        blank = torch.zeros_like(state[:, :1]); blank[..., 1] = -1
++                                & (torch.arange(K, device=state.device)[None, :, None] == choice.position[:, None, None]),
++                                parent[:, None], state)
++        blank = torch.zeros_like(state[:, :1])
++        blank[..., 1] = -1
+         folded = torch.cat((parent[:, None], state[:, 2:], blank), 1) if K > 1 else state
+         result = torch.where((binary & choice.applied)[:, None, None], folded, rewritten)
+         return result, torch.where(closing, torch.where(relative, 3, 1), 0)
+--- a/bin/GrammarLessons.py
++++ b/bin/GrammarLessons.py
+@@ -104,6 +104,9 @@
+     if len(programs) != len(lessons):
+         raise ValueError("one optional grammar lesson is required per forward row")
+     layer = language._tree_layer(2)
++    # A supplied syntax tree has no question context. Each teacher state is
++    # scored alone, independently of the last reading's context or batch size.
++    context_width = getattr(layer.chooser, 'WHAT_CONTEXT_DIM', 0)
+     costs = []
+     for program, lesson in zip(programs, lessons):
+         if lesson is None:
+@@ -114,11 +117,13 @@
+                                          variables=lesson.get("variables", ()))
+         for window, target, _closing, _depth in binary:
+             if target >= 0:
+-                _, _, route = layer(window.detach()[None], slots=1)
++                _, _, route = layer(window.detach()[None], slots=1,
++                    what_ctx=window.new_zeros(1, context_width))
+                 costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
+         for value, target in unary:
+             if target >= 0:
+-                _, _, route = layer(value.detach()[None, None], slots=1)
++                _, _, route = layer(value.detach()[None, None], slots=1,
++                    what_ctx=value.new_zeros(1, context_width))
+                 costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
+     return torch.stack(costs).mean() if costs else None
+ 
+--- a/bin/Interpret.py
++++ b/bin/Interpret.py
+@@ -98,12 +98,15 @@
+                 candidates = same_order
+             else:
+                 lower = [cid for cid in candidates if cs._concept_source_order(cid) < order]
+-                nearest = max((cs._concept_source_order(cid) for cid in lower), default=-1)
+-                sources = [cid for cid in lower if cs._concept_source_order(cid) == nearest]
+-                if len(sources) != 1:
+-                    raise ValueError('requested grammar order has no unambiguous source')
+-                from ConceptIndex import _symbol_at
+-                candidates = {_symbol_at(cs, sources[0], order)}
++                if lower:
++                    nearest = max(cs._concept_source_order(cid) for cid in lower)
++                    sources = [cid for cid in lower if cs._concept_source_order(cid) == nearest]
++                    if len(sources) != 1:
++                        raise ValueError('requested grammar order has no unambiguous source')
++                    from ConceptIndex import _symbol_at
++                    candidates = {_symbol_at(cs, sources[0], order)}
++                # An already known kind remains that kind when no particular
++                # is available. An order request cannot invent a downcast.
+         if len(candidates) > 1:
+             matches = ({obj for w, obj, _ in alloc.word_obj_meta.values()
+                         if w == word and obj in candidates} if order is None else
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -7420,7 +7420,7 @@
+     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
+                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                 grammar_context=None, replay_action=None, allowance=None,
+-                rounds_left=None, load_depth=None):
++                rounds_left=None, load_depth=None, reference_data=None):
+         B, N, D = x.shape
+         if N < 1:
+             raise ValueError("compose needs a nonempty static slab")
+@@ -7435,8 +7435,8 @@
+                 grammar_op = getattr(op, 'gl', op)
+                 if hasattr(grammar_op, 'set_bind_context'):
+                     grammar_op.set_bind_context(slab=x)
+-        binary = self._stacked_reduced(x, grammar_context)
+-        unary = self._stacked_applied(x, grammar_context)
++        binary = self._stacked_reduced(x, grammar_context, reference_data)
++        unary = self._stacked_applied(x, grammar_context, reference_data)
+         content = x[..., :self.d_model]
+         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
+         stop_scores, binary_scores = self.chooser.score_binary(
+@@ -7467,6 +7467,9 @@
+             pressure = self.reduction_pressure(load.to(binary_scores),
+                 allowance=limit, rounds_left=rounds_left)
+             binary_scores = binary_scores + pressure[:, None, None]
++        if reference_data is not None:
++            binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
++            unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
+         binary_scores = binary_scores.masked_fill(~live[:, 1:, None], -torch.inf)
+         unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
+         stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
+@@ -7533,6 +7536,20 @@
+                        stopped=active & (kind == 0), valid=active,
+                        binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
+                        unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
++        if reference_data is not None:
++            b_operands = torch.stack((reference_data['left'], reference_data['right']), -2)
++            u_operands = torch.stack(
++                (reference_data['unary'], torch.zeros_like(reference_data['unary'])), -2)
++            operands = torch.cat((b_operands.reshape(B, nb, 2, D),
++                                 u_operands.reshape(B, nu, 2, D), x.new_zeros(B, 1, 2, D)), 1)
++            routing['operands'] = operands.gather(
++                1, action[:, None, None, None].expand(B, 1, 2, D))[:, 0]
++            for label in ('refs', 'relations'):
++                b = reference_data['binary_' + label].reshape(B, nb, 2)
++                u = reference_data['unary_' + label].reshape(B, nu, 2)
++                values = torch.cat(
++                    (b, u, torch.zeros((B, 1, 2), device=b.device, dtype=b.dtype)), 1)
++                routing[label] = values.gather(1, action[:, None, None].expand(B, 1, 2))[:, 0]
+         return hard, path, routing
+ 
+     def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
+@@ -7605,23 +7622,19 @@
+             return None
+         return torch.stack(priors, dim=-1)
+ 
+-
+-    def _stacked_reduced(self, x, grammar_context=None):
+-        """[B, N-1, R_reduce, D] candidate ops applied to each adjacent pair."""
++    def _stacked_reduced(self, x, grammar_context=None, reference_data=None):
++        """Candidate operators consume their own resolved operands."""
+         if x.shape[1] < 2 or not self.r_reduce:
+             return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), self.r_reduce, x.shape[-1])
+-        left = x[:, :-1, :]
+-        right = x[:, 1:, :]
+-        per_op = [
+-            op.forward_with_grammar_context(
+-                left, right, x, context=grammar_context)
+-            if grammar_context is not None and hasattr(op, "forward_with_grammar_context")
+-            else op.forward_with_context(left, right, x)
+-            if hasattr(op, "forward_with_context")
+-            else op(left, right)
+-            for op in self.ops
+-        ]
+-        return torch.stack(per_op, dim=2)                      # [B, N-1, R, D]
++        result = []
++        for i, op in enumerate(self.ops):
++            left = x[:, :-1] if reference_data is None else reference_data['left'][:, :, i]
++            right = x[:, 1:] if reference_data is None else reference_data['right'][:, :, i]
++            result.append(op.forward_with_grammar_context(left, right, x, context=grammar_context)
++                          if grammar_context is not None and hasattr(op, 'forward_with_grammar_context')
++                          else op.forward_with_context(left, right, x) if hasattr(op, 'forward_with_context')
++                          else op(left, right))
++        return torch.stack(result, 2)
+ 
+ 
+     def _category_apply_prior(self, cat_ctx):
+@@ -7645,14 +7658,14 @@
+             return None
+         return torch.stack(priors, dim=-1)
+ 
+-
+-    def _stacked_applied(self, x, grammar_context=None):
++    def _stacked_applied(self, x, grammar_context=None, reference_data=None):
+         """[B, N, R_apply, D] each unary op applied to every position."""
+         if self.r_apply == 0:
+             B, N, D = x.shape
+             return x.new_zeros(B, N, 0, D)
+-        per_op = [self._apply_op(op, x, grammar_context=grammar_context)
+-                  for op in self.unary_ops]
++        per_op = [self._apply_op(op, x if reference_data is None else reference_data['unary'][:, :, i],
++                                 grammar_context=grammar_context)
++                  for i, op in enumerate(self.unary_ops)]
+         return torch.stack(per_op, dim=2)
+ 
+ 
+@@ -13472,7 +13485,7 @@
+ 
+     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
+                          sample=True, masked_action=None, replay_action=None,
+-                         allowance=None, rounds_left=None):
++                         allowance=None, rounds_left=None, reference_scope=None):
+         """The shared compose layer with the two newest occupied STM slots."""
+         buffer, depth = state[:2]
+         B, K, D = buffer.shape
+@@ -13483,18 +13496,37 @@
+         # STOP tests the whole sentence/STM depth, not the two-slot window.
+         limit = torch.as_tensor(slots, device=buffer.device)
+         stop_slots = torch.where(depth <= limit, n, 0)
++        references = None
++        if reference_scope is not None:
++            from ReferenceContext import prepare_operands
++            scopes = reference_scope.gather(1, source[..., None].expand(B, n, 2))
++            positions = depth[:, None] - 1 - source
++            live_positions = depth[:, None] - 1 - torch.arange(K, device=buffer.device)[None]
++            orders = torch.where(live_positions >= 0, state[2], -1)
++            references = prepare_operands(window, scopes[..., 1], scopes[..., 0], positions,
++                                          rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
++                                          bank=self._reference_bank,
++                                          live=(buffer, reference_scope[..., 1], orders,
++                                                reference_scope[..., 0].bitwise_and(1) != 0, live_positions),
++                                          active=(torch.arange(n, device=buffer.device)[None] < window_depth[:, None]) & row_gate.reshape(B, 1))
+         _, _, route = self.language_layer.operation_layer(
+             window, depth=window_depth, slots=stop_slots,
+             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
+             replay_action=replay_action, allowance=slots if allowance is None else allowance,
+             rounds_left=rounds_left, load_depth=depth,
+             op_prior=op_prior, grammar_context=self._structural_context(
+-                phase='compose', input_stream=buffer))
++                phase='compose', input_stream=buffer), reference_data=references)
+         position = (window_depth - 1 - route['position']).clamp_min(0)
+-        return LanguageOperationChoice(
++        choice = LanguageOperationChoice(
+             route['candidate'], route['kind'], position, route['op'],
+             route['valid'] & (route['kind'] != 0), route['probability'],
+             route['action'], route['valid'])
++        if reference_scope is None:
++            return choice
++        selected = buffer.gather(1, position[:, None, None].expand(B, 1, D))[:, 0]
++        originals = torch.stack((torch.where((choice.kind == 1)[:, None], buffer[:, min(1, K - 1)], selected),
++                                 torch.where((choice.kind == 1)[:, None], buffer[:, 0], torch.zeros_like(selected))), 1)
++        return choice, route['refs'], route['relations'], route['operands'], (route['operands'] - originals).detach()
+ 
+ 
+     @torch.compiler.disable
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -8994,7 +8994,7 @@
+ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+     """Durable clause rows with shared references and independent evidence.
+ 
+-    An idea stores one fused point and its owned factored derivation. A
++    An idea stores one fused point without its reading derivation. A
+     relation stores three reference slots, with null point operands for
+     referenced relations. Only part, implication and operator relations are
+     admitted by the closing. Trust is external provenance; c_plus and c_minus
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -9418,16 +9418,19 @@
+         return cands[: self.WHAT_STEP_MAX_CANDIDATES]
+ 
+     def _referent_representation(self, understanding, b, referents, word,
+-                                 answer_row, *, detach=True, programs=None):
+-        """QUERY(w) uses the owned interpretation at the referent's WORD row.
+-
+-        Indexed programs carry full-width leaves; a missing referent retains
+-        the root. The older perceptual-slot adapter applies only to topologies
+-        without programs. Openings detach; subquestion answers stay live.
++                                 answer_row, *, detach=True):
++        """Use an unambiguous lexical association, or retain the answer root.
++
++        A completed field has no word list. An opening supplies no grammatical
++        order, so competing associations remain unresolved.
+         """
+         if understanding.sentence_states:
++            from Spaces import _concept_alloc_of
+             owner = self._concept_owner()
+-            cid = owner.resolve_word_concept(word)
++            alloc = _concept_alloc_of(owner)
++            candidates = tuple(cid for cid in owner.word_concepts(word)
++                               if owner._concept_source_order(cid) > 0 and not alloc.refs(cid, 'ended'))
++            cid = candidates[0] if len(candidates) == 1 else None
+             row = None if cid is None else owner._csw_row_of(cid)
+             rep = answer_row[0, 0] if row is None else owner.similarity_codebook.getW()[row]
+             root = answer_row.detach() if detach else answer_row
+@@ -12251,6 +12254,10 @@
+         n_levels = min(closing_width, _syn) if _syn > 0 else closing_width
+         rule_ids, arities, mask = trace.choices()
+         choice_positions = getattr(trace, '_choice_positions', torch.zeros_like(rule_ids))
++        reference_offsets = getattr(trace, '_choice_reference_offsets', None)
++        if reference_offsets is None:
++            reference_offsets = reference.new_zeros(B, rule_ids.shape[1], 2 * D)
++        reference_offsets = reference_offsets.detach()
+         binary_map = trace.rule_map(2)
+         unary_map = trace.rule_map(1)
+         active = isp._word_active_mask.to(dtype=torch.bool)
+@@ -12380,6 +12387,11 @@
+         occurrence_left, occurrence_right = occurrence_left.clone(), occurrence_right.clone()
+         malformed = malformed.clone()
+ 
++        def _reference_offsets(slot_b):
++            index = slot_b.clamp(
++                0, reference_offsets.shape[1] - 1).reshape(B, 1, 1).expand(B, 1, 2 * D)
++            return reference_offsets.gather(1, index).reshape(B, 2, D)
++
+         def _operand_reference(slot_b):
+             """The retained leaf at the actual operand occurrence, if any."""
+             pos_l = _col_rows(occurrence_left, slot_b)
+@@ -12391,6 +12403,8 @@
+             pos = torch.where(use_right, pos_r, pos_l).clamp(0, W - 1)
+             valid = torch.logical_or(found_r, found_l)
+             ref = reference.gather(1, pos.reshape(B, 1, 1).expand(B, 1, D)).reshape(B, D).detach()
++            offsets = _reference_offsets(slot_b)
++            ref = ref + torch.where(use_right[:, None], offsets[:, 1], offsets[:, 0])
+             return torch.where(valid[:, None], ref, torch.zeros_like(ref)), (use_right, valid)
+ 
+         def _undo_binary(stack, depth, slot_b, ok, ref, side="right", *, sentence):
+@@ -12407,6 +12421,8 @@
+                 basis=basis, basis_valid=basis_valid & (bank_sentence_ids == sentence[:, None]),
+                 candidate_limit=basis_limit,
+                 return_status=True)
++            offsets = _reference_offsets(slot_b)
++            left, right = left - offsets[:, 0], right - offsets[:, 1]
+             split = torch.cat(
+                 (right.unsqueeze(1), left.unsqueeze(1), stack[:, 1:cap - 1, :]), dim=1)
+             new_stack = torch.where(valid.reshape(B, 1, 1), split, stack)
+@@ -12421,6 +12437,7 @@
+             valid = ok & (slot_b >= 0) & _col_rows(mask, slot_b) & known
+             valid = valid & (_col_rows(arities, slot_b) == 1) & (recorded_position >= 0) & (position < depth)
+             undone, unavailable = language.reverse_unary_step(top, local, valid, return_status=True)
++            undone = undone - _reference_offsets(slot_b)[:, 0]
+             updated = stack.scatter(1, position[:, None, None].expand(B, 1, D), undone[:, None])
+             return torch.where(valid[:, None, None], updated, stack), depth, unavailable
+ 
+@@ -13079,6 +13096,7 @@
+         positions, actions, targets, columns = program
+         journal = getattr(self._reconstruction_stack(), "_choice_values", None)
+         addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
++        relations = getattr(self._reconstruction_stack(), "_choice_ref_relations", None)
+         entries = []
+         for b in range(int(positions.shape[0])):
+             pos = positions[b]
+@@ -13119,29 +13137,13 @@
+                     journal[b, columns[b, :L].clamp_min(0)].reshape(L, 3, leaf_slab.shape[-1])),
+                 operation_refs=(None if addresses is None else
+                     addresses[b, columns[b, :L].clamp_min(0)]),
++                operation_relations=(None if relations is None else
++                                     relations[b, columns[b, :L].clamp_min(0)]),
+                 **{name: value[b].index_select(0, pos.to(value.device))
+                    for name, value in (
+                        ('symbol_where', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_where', None)),
+                        ('symbol_when', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_when', None)))
+                    if torch.is_tensor(value)})
+-            disc = getattr(getattr(self, 'symbolSpace', None), 'discourse', None)
+-            held = getattr(disc, 'situation_references', None)
+-            if reference_orders is not None:
+-                from ReferenceContext import resolve_occurrences
+-                from dataclasses import replace
+-                from Queries import _basis, _existing_row
+-                values = list(entry.leaves.unbind())
+-                for index in (entry.reference_ids != entry.concept_ids).nonzero().flatten().tolist():
+-                    cid = int(entry.reference_ids[index])
+-                    if cid > 0:
+-                        values[index] = _basis(owner())[_existing_row(owner(), ('sym', cid))].to(entry.leaves)
+-                entry = replace(entry, reference_values=torch.stack(values))
+-                pending = None if disc is None else disc._inter_last_meaning[b]
+-                entry = resolve_occurrences(self.languageSpace, entry, frames=held(b) if callable(held) else (),
+-                    prediction=None if pending is None else pending.prediction,
+-                    live_orders=[owner()._concept_source_order(int(cid)) if int(cid) > 0 else -1
+-                                 for cid in entry.reference_ids],
+-                    content_width=int(getattr(owner(), 'nWhat', entry.leaves.shape[-1])))
+             entries.append(entry)
+         return tuple(entries)
+ 
+@@ -14032,7 +14034,7 @@
+         self._sentence_run_active = True
+         self._open_sentence_slot = None
+         self._sentence_reconstruction = self._sentence_ends and (
+-            self.reconstruct_in_loop or (self.serial_object_meta
++            self.reconstruct_in_loop or (self._aligned_serial_word_mode()
+                 and not self.detached_reverse and self.loss.reconstruction_scale > 0))
+         keep_ideas = self._recon_keep_ideas
+         self._recon_keep_ideas = keep_ideas or self._sentence_reconstruction
+@@ -14080,6 +14082,7 @@
+             self._sentence_training = False
+             self._sentence_run_active = False
+             self._open_sentence_slot = None
++            self.languageSpace._reference_bank = None
+ 
+     def _run_sentence_batch(self, *args, **kwargs):
+         """One public batch, with two local trials only when training is requested."""
+@@ -20116,6 +20119,14 @@
+                 right_slab.scatter(1, column, torch.where(active[:, None], right[:, None], right_slab.gather(1, column))))
+ 
+     @staticmethod
++    def _tensor_record_selected_values(journal, slot, value, active):
++        B = journal.shape[0]
++        column = slot.reshape(-1, 1, 1).expand(B, 1,
++                                               journal.shape[-1]).clamp(0, journal.shape[1] - 1)
++        selected = torch.where(active[:, None], value, journal.gather(1, column)[:, 0])
++        return journal.scatter(1, column, selected[:, None])
++
++    @staticmethod
+     def _tensor_record_operation_values(journal, slot, state, choice):
+         """Capture actual operands before fusion and the selected result."""
+         buffer = state[0]
+@@ -20275,6 +20286,8 @@
+         trace._choice_ends = lang[21]
+         trace._choice_values = lang[22]
+         trace._choice_refs = lang[23]
++        trace._choice_reference_offsets = lang[24]
++        trace._choice_ref_relations = lang[25]
+         self._packed_sentence_roots = lang[9]
+         self._tensor_sentence_roots_live = lang[13]
+         self._tensor_sentence_roots_depth = lang[14]
+@@ -20410,7 +20423,7 @@
+         """After both trials train, discard their operations at the closing."""
+         stm, lang, feedback = state
+         lang = list(lang)
+-        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23):
++        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25):
+             value = lang[index]
+             blank = torch.full_like(value, -1) if index in (4, 5, 15, 16, 17, 18, 23) else torch.zeros_like(value)
+             mask = active.reshape(active.shape[0], *((1,) * (value.ndim - 1)))
+@@ -20511,10 +20524,86 @@
+                      if clause.meaning.mode == 'interrogative' and registry is not None else None)
+             fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query))
+         self._sentence_fields[sid] = tuple(fields)
++        record_categories = getattr(self.languageSpace, 'record_category_observations', None)
++        trace = getattr(self, '_reconstruction_stack', lambda: None)()
++        if callable(record_categories) and trace is not None:
++            inputs = getattr(self, 'inputSpace', None)
++            word_mask = getattr(inputs, '_word_active_mask', None)
++            sentence_ids = getattr(inputs, '_packed_sentence_ids', None)
++            if torch.is_tensor(word_mask) and torch.is_tensor(sentence_ids):
++                word_mask = word_mask & (sentence_ids == sid)
++            record_categories(trace, word_mask)
+         state = self._clause_end_state(state, sid, view['clauses'], row_ids)
+         state = self._discard_sentence_record(state, active)
+         self._publish_sentence_scratch(state)
+         return state
++
++    def _sentence_reference_types(self, like):
++        """Stage existing typed dictionary points for this open reading only."""
++        from ReferenceContext import ReferenceTypes
++        language = self.languageSpace
++        orders = sorted({order for rule in (*language._compose_binary_rules,
++                                            *language._compose_unary_rules)
++                         for _role, order in getattr(rule, 'reference_orders', ())})
++        sources = self._word_symbol_concept_ids()
++        words = getattr(self.inputSpace, '_ar_word_concept_rows', None)
++        if not orders or not torch.is_tensor(sources) or not torch.is_tensor(words):
++            return None
++        batch, count = sources.shape
++        owner = self._concept_owner()
++        basis = owner.similarity_codebook.getW()
++        identities = torch.full((batch, count, len(orders)), -1,
++                                device=like.device, dtype=torch.long)
++        values = like.new_zeros(batch, count, len(orders), like.shape[-1])
++        for b in range(batch):
++            for w in range(count):
++                surface = owner.word_surface_for_row(int(words[b, w]))
++                if surface is None:
++                    continue
++                for index, order in enumerate(orders):
++                    identity = owner.resolve_word_concept(
++                        surface, order=order, previous=int(sources[b, w]))
++                    row = None if identity is None else owner._csw_row_of(identity)
++                    if row is not None:
++                        identities[b, w, index] = identity
++                        values[b, w, index] = basis[row].to(like)
++        return ReferenceTypes(sources, sources.new_tensor(orders), identities, values)
++
++    def _sentence_reference_bank(self, active, like):
++        """Read only the predictor's bounded situation, with a fresh trial graph."""
++        from ReferenceContext import ReferenceBank
++        disc = getattr(self.symbolSpace, 'discourse', None)
++        B, D = active.shape[0], like.shape[-1]
++        C = max(1, int(getattr(disc, '_inter_chain_window', 1)))
++        ids = torch.full((B, C), -1, device=like.device, dtype=torch.long)
++        values = like.new_zeros(B, C, D)
++        valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
++        relations = torch.zeros_like(valid)
++        predicted = torch.zeros(B, device=like.device, dtype=torch.bool)
++        queries = []
++        for b in range(B):
++            query = like.new_zeros(D)
++            pending = (None if disc is None or b >= len(disc._inter_last_meaning)
++                       else disc._inter_last_meaning[b])
++            prediction = getattr(pending, 'prediction', None)
++            if prediction is not None and bool(active[b]):
++                query = prediction.roles[0].to(like)
++                inputs = getattr(pending, 'inputs', None)
++                if self._sentence_training and torch.is_grad_enabled() and inputs is not None:
++                    estimates, _, _ = disc._inter_predictor(*(v.detach() for v in inputs))
++                    query = estimates[0, 0].to(like)
++                predicted[b] = True
++                for i, frame in enumerate(disc.situation_references(b)[-C:]):
++                    if frame.order != 1:
++                        continue
++                    ids[b, i] = frame.row_id
++                    valid[b, i] = True
++                    relations[b, i] = frame.point is None
++                    if frame.point is not None:
++                        values[b, i] = frame.point.detach().to(like)
++            queries.append(query)
++        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
++                             self._sentence_reference_types(like))
+ 
+     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
+                                 lang, empty_feedback, perceive, symbolize, compose_word):
+@@ -20566,6 +20655,8 @@
+                         self._exploration_prefix_slots(actions, forced, owners)
+                         if self.languageSpace._tree_layer(2).temperature == 0 else None)
+                 self._restore_sentence_state(before)
++                self.languageSpace._reference_bank = self._sentence_reference_bank(
++                    present, before[0][0])
+                 current_stm, current_lang, current_feedback = before
+                 latches = [empty_feedback, empty_feedback]
+                 for index, payload in cached:
+@@ -20882,6 +20973,8 @@
+             torch.zeros_like(choices[0]),
+             words.new_zeros(B, choices[0].shape[1], 3 * concept_dim),
+             torch.full((B, choices[0].shape[1], 2), -1, dtype=torch.long, device=words.device),
++            words.new_zeros(B, choices[0].shape[1], 2 * concept_dim),
++            torch.zeros(B, choices[0].shape[1], 2, dtype=torch.bool, device=words.device),
+         )
+         empty_cs_sub = (
+             zero_concept.clone(),
+@@ -21129,6 +21222,8 @@
+             closing_events = current_cs_lang[21]
+             operation_values = current_cs_lang[22]
+             operation_refs = current_cs_lang[23]
++            reference_offsets = current_cs_lang[24]
++            reference_relations = current_cs_lang[25]
+             round_active = commit.reshape(B)
+             post_op = unary_op = torch.full_like(current_stm[1], -1)
+             post_valid = unary_valid = torch.zeros_like(round_active)
+@@ -21137,16 +21232,30 @@
+                     break
+                 before = final_stm
+                 slot = 3 * index + round_index
+-                choice = language.choose_operation(
++                proposal = language.choose_operation(
+                     before, round_active, slots=scope.slots(clause_state, before[1]),
+                     allowance=capacity - 1, rounds_left=3 - round_index,
+                     masked_action=self._compose_masked_action(slot, before[1]),
+                     replay_action=self._compose_replayed_action(slot, before[1]),
+-                    op_prior=self._chunk_structural_prior(wholes, B, before[0]))
+-                operation_refs = self._tensor_record_operation_refs(
+-                    operation_refs, slot, clause_state, choice)
+-                operation_values = self._tensor_record_operation_values(
+-                    operation_values, slot, before, choice)
++                    op_prior=self._chunk_structural_prior(wholes, B, before[0]),
++                    reference_scope=clause_state if sentence_transactions else None)
++                choice = proposal[0] if sentence_transactions else proposal
++                if sentence_transactions:
++                    _, refs, relative, operands, offsets = proposal
++                    clause_state = scope.resolve(clause_state, choice, refs, relative)
++                    operation_values = self._tensor_record_selected_values(operation_values, slot,
++                                                                           torch.cat((operands.flatten(1), choice.candidate), -1), choice.applied)
++                    operation_refs = self._tensor_record_selected_values(
++                        operation_refs, slot, refs, choice.applied)
++                    reference_offsets = self._tensor_record_selected_values(reference_offsets, slot,
++                                                                            offsets.flatten(1), choice.applied)
++                    reference_relations = self._tensor_record_selected_values(
++                        reference_relations, slot, relative, choice.applied)
++                else:
++                    operation_refs = self._tensor_record_operation_refs(
++                        operation_refs, slot, clause_state, choice)
++                    operation_values = self._tensor_record_operation_values(
++                        operation_values, slot, before, choice)
+                 final_stm = cs.apply_language_choice(before, choice)
+                 clause_state, ended = scope.apply(clause_state, choice, slot)
+                 closing_events = record_clause_end(closing_events, slot, ended)
+@@ -21203,16 +21312,30 @@
+                     final = _gather_word(sentence_end_mask & ~intermediate_end_mask, index).reshape(B)
+                     group = torch.where(final, 0, group)
+                 slot = 3 * width + group * closing_width + closing_index
+-                choice = language.choose_operation(
++                proposal = language.choose_operation(
+                     pre_closing, closing_active, slots=scope.slots(clause_state, pre_closing[1]),
+                     allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=closing_budget - closing_index,
+                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
+                     replay_action=self._compose_replayed_action(slot, pre_closing[1]),
+-                    op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]))
+-                operation_refs = self._tensor_record_operation_refs(
+-                    operation_refs, slot, clause_state, choice)
+-                operation_values = self._tensor_record_operation_values(
+-                    operation_values, slot, pre_closing, choice)
++                    op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
++                    reference_scope=clause_state if sentence_transactions else None)
++                choice = proposal[0] if sentence_transactions else proposal
++                if sentence_transactions:
++                    _, refs, relative, operands, offsets = proposal
++                    clause_state = scope.resolve(clause_state, choice, refs, relative)
++                    operation_values = self._tensor_record_selected_values(operation_values, slot,
++                                                                           torch.cat((operands.flatten(1), choice.candidate), -1), choice.applied)
++                    operation_refs = self._tensor_record_selected_values(
++                        operation_refs, slot, refs, choice.applied)
++                    reference_offsets = self._tensor_record_selected_values(reference_offsets, slot,
++                                                                            offsets.flatten(1), choice.applied)
++                    reference_relations = self._tensor_record_selected_values(
++                        reference_relations, slot, relative, choice.applied)
++                else:
++                    operation_refs = self._tensor_record_operation_refs(
++                        operation_refs, slot, clause_state, choice)
++                    operation_values = self._tensor_record_operation_values(
++                        operation_values, slot, pre_closing, choice)
+                 end_stm = cs.apply_language_choice(pre_closing, choice)
+                 clause_state, ended = scope.apply(clause_state, choice, slot)
+                 closing_events = record_clause_end(closing_events, slot, ended)
+@@ -21270,7 +21393,8 @@
+                 prediction, *trace_state, next_sentence_roots,
+                 wholes, chunk_slab, chunk_count, next_live_roots,
+                 next_live_depth, left_rows, right_rows, position_slab, action_slab, attempted_slab,
+-                clause_state, closing_events, operation_values, operation_refs)
++                clause_state, closing_events, operation_values, operation_refs,
++                reference_offsets, reference_relations)
+             language_feedback = language.feedback_from_local_choices(
+                 (pre_op, post_op), (pre_valid, post_valid),
+                 unary_op, unary_valid, like=word_idea)
+@@ -21437,6 +21561,8 @@
+             trace._choice_ends = final_cs_lang[21].clone()
+             trace._choice_values = final_cs_lang[22].clone()
+             trace._choice_refs = final_cs_lang[23].clone()
++            trace._choice_reference_offsets = final_cs_lang[24].clone()
++            trace._choice_ref_relations = final_cs_lang[25].clone()
+         stm._clause_state = final_cs_lang[20].clone()
+         sentence_roots = final_cs_lang[9].clone()
+         final_wholes = final_cs_lang[10].clone()
+@@ -21828,7 +21954,7 @@
+         # advances. Pins: test_bounded_stm_fold::test_cap_equivalence (the
+         # high-water mark survives) + test_per_word_ss_padding_noop (the
+         # per-forward advance == active-prefix count, not N).
+-        if (stm is not None and not _chunk_replayed
++        if (stm is not None and not _tensor_peer_pipeline and not _chunk_replayed
+                 and not _compiled_static_loop):
+             # Only the columns that ACTUALLY ran advanced the mirror, so the
+             # over-count is ``_n_trips - N_loop`` (== ``N_words - N_loop`` on
+@@ -22980,56 +23106,24 @@
+         return x
+ 
+     @torch.compiler.disable
+-    def _idea_decode_ws(self):
+-        """The WholeSpace that owns the grammar ``<generate>`` machinery.
+-
+-        It is ``symbolSpace.wholeSpace`` -- the S-space_role host where
+-        ``_attach_per_space_syntactic_layer`` installs the SyntacticLayer
+-        (Language.py) and whose subspace is populated by the forward. This is the
+-        LAST per-stage WholeSpace (``wholeSpaces[-1]``), NOT ``wholeSpaces[0]``
+-        (which has no syntacticLayer and an empty subspace). Falls back to the
+-        last per-stage WS."""
+-        ws = getattr(getattr(self, "symbolSpace", None), "wholeSpace", None)
+-        if ws is None and getattr(self, "wholeSpaces", None):
+-            ws = self.wholeSpaces[-1]
+-        return ws
+-
+-    @torch.compiler.disable
+     def _run_idea_decode_generate(self):
+-        """Run the grammar ``<generate>`` reverse (idea -> symbol expansion ->
+-        concept) on the SYNTACTIC WholeSpace and return its result (Stage D3).
+-        Runs ``WholeSpace.reverse`` -> ``SyntacticLayer.reverse`` (the generate
+-        rules) -> ``reverseSymbols`` -> ``reverseEnd``. Best-effort: any failure
+-        returns ``None`` so the reconstruction path is never broken."""
+-        ws = self._idea_decode_ws()
+-        if ws is None or getattr(ws, "subspace", None) is None:
++        """Generate from the completed clause with the common output chooser."""
++        seed = self._sentence_end_state(None)
++        if seed is None:
+             return None
+-        try:
+-            return ws.reverse(ws.subspace)
+-        except (RuntimeError, AssertionError, ValueError, TypeError, IndexError):
+-            return None
++        words, _count, _truncated, _cost = self._output_generate_walk(
++            self._walk_operand(seed), self._walk_budget(), False)
++        carrier = self.conceptualSpace.subspace.carrier_like()
++        carrier.set_event(words)
++        return carrier
+ 
+     @torch.compiler.disable
+     def _idea_decode_drive(self, x):
+-        """Stage D3 CONSUMER: drive the reverse SEED from the grammar
+-        ``<generate>`` decode, so the surface words come from the grammar
+-        (generation = dual of comprehension), not the carried reconstruction.
+-
+-        The grammar decode (``_run_idea_decode_generate`` on the syntactic WS)
+-        yields the idea's symbol expansion; ``decode_to_concept`` maps it to
+-        concept space. When that matches the reverse seed ``x``'s event shape
+-        EXACTLY, we set it as the seed and let the existing ``_reverse_body ->
+-        _reverse_perceptual -> _reverse_text`` chain render it to words (the
+-        injection point verified by the D3 map: the seed event drives the words).
+-
+-        SHAPE-GUARDED: drives only on an exact shape match. The
+-        ``symbol_dim == concept_dim`` design invariant makes ``decode_to_concept``
+-        an exact (identity) lift; the COMPACT-symbol configs (``nOutputDim`` 8 <<
+-        concept width, e.g. MM_20M) need a LEARNED ``symbol_dim -> concept_dim``
+-        expander (a lossy bottleneck, a training follow-on) -- there the widths
+-        differ and this falls back to ``x`` unchanged. Best-effort + gated by
+-        ``idea_decode`` (default off -> never called -> byte-identical). The
+-        grammar decode is also parked on ``_idea_decode_parked`` for observability."""
++        """Use generated concepts as the reverse seed when its shape agrees.
++
++        The shared generate walk owns the choice of words. Its fresh carrier
++        never writes into the completed field or the property basis.
++        """
+         self._idea_decode_parked = None
+         gen = self._run_idea_decode_generate()
+         if gen is None or x is None:
+@@ -23042,7 +23136,6 @@
+             return x
+         self._idea_decode_parked = gev.detach().clone()
+         try:
+-            ws = self._idea_decode_ws()
+             cur = x.materialize()
+         except Exception:
+             return x
+@@ -23060,46 +23153,19 @@
+         return x
+ 
+     def _grammar_reverse_ops(self):
+-        """Enumerate the arity-2 REVERSE ops from the grammar's ``<generate>``
+-        section (Alec 2026-07-14, doc/plans/2026-07-14-signed-space-snap-
+-        design.md) — symmetric to ``_stm_reducer``'s ``<compose>`` enumeration.
+-
+-        A generate rule (``op_I1, op_I2 = op.reverse(op_O1)``) carries
+-        ``.reverse`` in its canonical string; its ``method_name`` resolves the
+-        SAME host layer the forward uses (``syntacticLayer._by_name``). Keep
+-        the arity-2 hosts whose ``reverse`` accepts ``left_rows`` (the
+-        snap/recommender family — union / intersection / …). Returns
+-        ``[(name, host), …]``; the reverse operation set the derivation
+-        chooses from, DETERMINED FROM THE GRAMMAR FILE, not the forward
+-        trace."""
+-        ws = getattr(self, "wholeSpace", None)
+-        sl = getattr(ws, "syntacticLayer", None)
+-        if sl is None or not hasattr(sl, "_by_name"):
+-            return []
+-        try:
+-            from Language import TheGrammar
+-        except ImportError:
+-            return []
+-        ops, seen = [], set()
+-        for rdef in TheGrammar.rules:
+-            if ".reverse" not in (getattr(rdef, "canonical", "") or ""):
+-                continue                        # a <compose> (forward) rule
+-            mn = getattr(rdef, "method_name", None)
+-            if not mn or mn in seen:
+-                continue
+-            host = sl._by_name.get(mn)
+-            if host is None or int(getattr(host, "arity", 1)) != 2:
+-                continue
+-            rv = getattr(host, "reverse", None)
+-            try:
+-                names = rv.__code__.co_varnames
+-            except AttributeError:
+-                continue
+-            if "left_rows" not in names:
+-                continue                        # not snap/recommender-capable
+-            seen.add(mn)
+-            ops.append((mn, host))
+-        return ops
++        """Declared binary generate hosts that support a dictionary witness."""
++        language = self.languageSpace
++        result = []
++        seen = set()
++        for name, operation in zip(language._generate_binary_names,
++                                   language._generate_binary_ops):
++            host = getattr(operation, 'gl', operation)
++            reverse = getattr(host, 'reverse', None)
++            parameters = getattr(getattr(reverse, '__code__', None), 'co_varnames', ())
++            if name not in seen and 'left_rows' in parameters:
++                seen.add(name)
++                result.append((name, host))
++        return result
+ 
+     def _reverse_choose_op(self, parent, reverse_ops, basis, word_rows):
+         """Reverse chooser (Alec 2026-07-14): the reverse derivation's own
+--- a/bin/ReferenceContext.py
++++ b/bin/ReferenceContext.py
+@@ -4,6 +4,7 @@
+ live constituents and frames already admitted to the predictor's situation.
+ """
+ from dataclasses import dataclass, replace
++from typing import NamedTuple
+ 
+ import torch
+ from torch.nn import functional as F
+@@ -58,77 +59,149 @@
+         head = getattr(rules[local], 'head_role', 0)
+         if not head and getattr(rules[local], 'method_name', None) in ('lower', 'bind', 'surface', 'preposition'):
+             head = 2
+-        stack.append(operands[head - 1] if head else tuple(leaf for operand in operands for leaf in operand))
++        stack.append(operands[head - 1]
++                     if head else tuple(leaf for operand in operands for leaf in operand))
+     return requests
+ 
+ 
+-def resolve_occurrences(language, program, *, frames=(), prediction=None,
+-                        content_width=None, forced=None, live_orders=None):
+-    """Choose addresses and semantic values without changing word provenance.
+-
+-    The predictor scores the candidate points. A hard selected value keeps
+-    its softmax derivative; input content and the reconstruction leaves are
+-    unchanged. ``forced`` selects a native candidate in mechanism tests only.
++class ReferenceTypes(NamedTuple):
++    """Existing dictionary interpretations of the current sentence's words."""
++    sources: torch.Tensor
++    orders: torch.Tensor
++    identities: torch.Tensor
++    values: torch.Tensor
++
++
++class ReferenceBank(NamedTuple):
++    ids: torch.Tensor
++    values: torch.Tensor
++    valid: torch.Tensor
++    relations: torch.Tensor
++    query: torch.Tensor
++    predicted: torch.Tensor
++    types: object = None
++
++
++def resolve_order(value, identity, order, types):
++    """Select an existing grammar-requested type before its numerical use.
++
++    A newly requested singleton keeps its source point during the trial;
++    the winning closing admits its identity. This read never allocates.
+     """
+-    requests = reference_requests(language, program.actions)
+-    ids = (program.concept_ids if program.reference_ids is None else program.reference_ids).clone()
+-    orders = (ids.new_full(ids.shape, -1) if program.reference_orders is None
+-              else program.reference_orders.clone())
+-    values = list((program.leaves if program.reference_values is None else program.reference_values).unbind())
+-    relations = torch.zeros_like(ids, dtype=torch.bool)
+-    if program.reference_relations is not None:
+-        relations = program.reference_relations.clone()
+-    anchors = tuple(frame for frame in frames if isinstance(frame, SituationFrame))
+-    live = []
+-    width = int(content_width or program.leaves.shape[-1])
+-    forced = {} if forced is None else forced
+-    native_orders = orders if live_orders is None else live_orders
+-    admitted = 0
+-    for leaf, (order, mode) in sorted(requests.items()):
++    if types is None:
++        return value, identity
++    batch, positions, width = value.shape
++    words, orders = types.identities.shape[1:]
++    source = identity[:, :, None] == types.sources[:, None, :]
++    associated = (identity[:, :, None, None] == types.identities[:, None]).any(-1)
++    matching = ((source | associated) & (identity > 0)[:, :, None])[:, :, :, None]
++    matching = matching & (types.orders == order)[None, None, None, :]
++    matching = matching & (types.identities[:, None] > 0)
++    matching = matching.reshape(batch, positions, words * orders)
++    found = matching.any(-1)
++    selected = matching.to(torch.long).argmax(-1)
++    ids = types.identities.reshape(batch, 1, -1).expand(batch, positions, -1)
++    ids = ids.gather(2, selected[:, :, None]).squeeze(2)
++    points = types.values.reshape(batch, 1, words * orders, width)
++    points = points.expand(batch, positions, -1, width).gather(
++        2, selected[:, :, None, None].expand(batch, positions, 1, width)).squeeze(2)
++    # The existing identity already has its live activation and modifiers.
++    changed = found & (ids != identity)
++    return (torch.where(changed[:, :, None], points, value),
++            torch.where(found, ids, identity))
++
++
++def resolve_operand(value, identity, position, *, mode, bank, live, active, forced_reference=None):
++    """A hard reference proposal before its numerical grammar operation.
++
++    Only the existing predictor anchors and earlier occupied constituents are
++    candidates. The caller masks unavailable proposals before the global
++    operation softmax; an unselected pronoun proposal cannot reject a reading.
++    """
++    live_values, live_ids, live_orders, live_relations, live_positions = live
++    B, P, D = value.shape
++    C = bank.ids.shape[1]
++    K = live_ids.shape[1]
++    own_valid = (identity > 0) & (mode != 'pronoun')
++    held = bank.valid & bank.predicted[:, None]
++    earlier = (live_positions[:, None, :] < position[:, :, None])
++    earlier &= (live_ids[:, None, :] > 0) & (live_orders[:, None, :] == 1)
++    ids = torch.cat((identity[:, :, None], bank.ids[:, None].expand(B, P, C),
++                     live_ids[:, None].expand(B, P, K)), -1)
++    values = torch.cat((value[:, :, None], bank.values[:, None].expand(B, P, C, D),
++                        live_values[:, None].expand(B, P, K, D)), -2)
++    valid = torch.cat((own_valid[:, :, None], held[:, None].expand(B, P, C), earlier), -1)
++    relations = torch.cat((torch.zeros_like(own_valid[:, :, None]),
++                          bank.relations[:, None].expand(B, P, C),
++                          live_relations[:, None].expand(B, P, K)), -1)
++    # The first occurrence of an address owns its candidate mass.
++    size = ids.shape[-1]
++    preceding = torch.arange(size, device=ids.device)[
++        None, :] < torch.arange(size, device=ids.device)[:, None]
++    duplicate = ((ids[..., :, None] == ids[..., None, :]) & preceding & valid[..., None, :]).any(-1)
++    valid = valid & ~duplicate
++    available = valid.any(-1)
++    # An unavailable proposal receives a harmless local value but is masked
++    # out of the operation chooser. Keep the softmax finite for all rows.
++    safe_valid = valid | (~available[:, :, None] & (torch.arange(size, device=ids.device) == 0))
++    query = torch.where(bank.predicted[:, None, None], bank.query[:, None, :], value)
++    logits = F.cosine_similarity(
++        values, query[:, :, None, :], dim=-1).masked_fill(~safe_valid, -torch.inf)
++    probabilities = logits.softmax(-1)
++    selected = probabilities.argmax(-1)
++    if forced_reference is not None:
++        forced = torch.as_tensor(forced_reference, device=ids.device)
++        permitted = valid & (ids == forced[..., None])
++        if not torch.compiler.is_compiling() and not bool(permitted.any(-1).all()):
++            raise ValueError('forced identity is outside the bounded candidate set')
++        torch._assert_async(permitted.any(-1).all(),
++                            'forced identity is outside the bounded candidate set')
++        selected = permitted.to(torch.long).argmax(-1)
++    point = values.gather(2, selected[:, :, None, None].expand(B, P, 1, D)).squeeze(2)
++    probability = probabilities.gather(2, selected[:, :, None]).squeeze(2)
++    resolved = point * (1 + (probability-probability.detach()))[:, :, None]
++    refs = ids.gather(2, selected[:, :, None]).squeeze(2)
++    relative = relations.gather(2, selected[:, :, None]).squeeze(2)
++    used = active & available
++    return (torch.where(used[:, :, None], resolved, value),
++            torch.where(used, refs, identity), relative & used, available | ~active)
++
++
++def prepare_operands(window, identities, flags, positions, *, rules, unary_rules,
++                     bank, live, active):
++    """Resolve each candidate's declared noun roles before evaluating it."""
++    B, N, D = window.shape
++
++    def propose(value, ids, scope, pos, rule, role, valid):
++        order = dict(getattr(rule, 'reference_orders', ())).get(role)
++        mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
++        if order is not None:
++            value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+         if order != 1:
+-            continue
+-        # Earlier noun leaves are already live constituents, even when no
+-        # earlier operation explicitly requested an identity choice for them.
+-        for earlier in range(admitted, leaf):
+-            if (int(ids[earlier]) > 0 and int(native_orders[earlier]) == 1
+-                    and requests.get(earlier, (1, None))[0] == 1):
+-                point = values[earlier]
+-                live.append(SituationFrame(1, torch.stack((point, point * 0, point * 0)),
+-                    torch.tensor([True, False, False]), int(ids[earlier]),
+-                    None if bool(relations[earlier]) else point))
+-        admitted = leaf + 1
+-        candidates = []
+-        if mode != 'pronoun' and int(ids[leaf]) > 0:
+-            candidates.append((int(ids[leaf]), values[leaf], False))
+-        # A cold predictor has no standing identity expectation. Live bind
+-        # operands remain available; older rows need the predictor carrier.
+-        carried = (*anchors, *live) if prediction is not None else tuple(live)
+-        for frame in carried:
+-            if frame.order == 1 and all(cid != frame.row_id for cid, _, _ in candidates):
+-                candidates.append((frame.row_id,
+-                    values[leaf].new_zeros(values[leaf].shape) if frame.point is None
+-                    else frame.point.to(values[leaf]), frame.point is None))
+-        if not candidates:
+-            if mode == 'pronoun':
+-                raise ValueError('pronoun has no particular in the bounded situation')
+-            continue
+-        bank = torch.stack([value for _, value, _ in candidates])
+-        query = values[leaf] if prediction is None else prediction.roles[0].to(bank)
+-        scores = F.cosine_similarity(bank[:, :width], query[None, :width], dim=-1)
+-        probabilities = scores.softmax(0)
+-        if leaf in forced:
+-            choices = [i for i, (cid, _, _) in enumerate(candidates) if cid == forced[leaf]]
+-            if not choices:
+-                raise ValueError('forced identity is outside the bounded candidate set')
+-            selected = choices[0]
+-        else:
+-            selected = int(probabilities.argmax())
+-        cid, point, is_relation = candidates[selected]
+-        probability = probabilities[selected]
+-        values[leaf] = point * (1 + (probability - probability.detach()))
+-        ids[leaf], orders[leaf], relations[leaf] = cid, 1, is_relation
+-        role_values = torch.stack((values[leaf], torch.zeros_like(point), torch.zeros_like(point)))
+-        live.append(SituationFrame(1, role_values, torch.tensor([True, False, False]),
+-                                   cid, None if is_relation else point))
+-    return replace(program, reference_ids=ids, reference_orders=orders,
+-                   reference_values=torch.stack(values), reference_relations=relations)
++            return value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid)
++        return resolve_operand(value, ids, pos, mode=mode, bank=bank, live=live, active=valid)
++    lefts, rights, brefs, brels, bvalid = [], [], [], [], []
++    for rule in rules:
++        left = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
++                       rule, 'I1', active[:, :-1] & active[:, 1:])
++        right = propose(window[:, 1:], identities[:, 1:], flags[:, 1:], positions[:, 1:],
++                        rule, 'I2', active[:, :-1] & active[:, 1:])
++        lefts.append(left[0])
++        rights.append(right[0])
++        brefs.append(torch.stack((left[1], right[1]), -1))
++        brels.append(torch.stack((left[2], right[2]), -1))
++        bvalid.append(left[3] & right[3])
++    values, urefs, urels, uvalid = [], [], [], []
++    for rule in unary_rules:
++        operand = propose(window, identities, flags, positions, rule, 'I1', active)
++        values.append(operand[0])
++        urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
++        urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))
++        uvalid.append(operand[3])
++
++    def stack(items, width, tail=(), *, dtype=None):
++        return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
++    return dict(left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
++                binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),
++                binary_relations=stack(brels, N-1, (2,), dtype=torch.bool), unary_relations=stack(urels, N, (2,), dtype=torch.bool),
++                binary_valid=stack(bvalid, N-1, dtype=torch.bool), unary_valid=stack(uvalid, N, dtype=torch.bool))
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -22305,6 +22305,12 @@
+     name = "Whole percepts"
+     config_section = "WholeSpace"
+ 
++    def _register_requirements(self):
++        """Property inventory capacity is independent of the live field width."""
++        # The base check is for a direct dictionary store. WholeSpace instead
++        # evaluates its fixed property basis at every live input position.
++        return None
++
+ 
+     held_at_zero = False
+ 
+--- a/bin/Understanding.py
++++ b/bin/Understanding.py
+@@ -59,12 +59,13 @@
+     # Actual left/right operands and result, only while this reading is open.
+     operation_values: Any = None
+     operation_refs: Any = None
++    operation_relations: Any = None
+     @property
+     def _tensor_fields(self):
+         core = ("rows", "word_rows", "activations", "leaves", "actions",
+                 "targets", "end_state", "concept_ids")
+         return core + tuple(name for name in ("reference_ids", "reference_orders", "symbol_where", "symbol_when",
+-                                             "reference_values", "reference_relations", "operation_values", "operation_refs")
++                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations")
+                             if getattr(self, name) is not None)
+ 
+     def __post_init__(self) -> None:
+@@ -101,6 +102,9 @@
+         if self.operation_refs is not None and (self.operation_refs.shape != (self.actions.shape[0], 2)
+                 or self.operation_refs.dtype != torch.long):
+             raise ValueError('operation references must hold two operand addresses per action')
++        if self.operation_relations is not None and (self.operation_relations.shape != (self.actions.shape[0],2)
++                or self.operation_relations.dtype != torch.bool):
++            raise ValueError('operation reference kinds must align to operand addresses')
+         forms = self.lexical_forms
+         if forms is None:
+             forms = (None,) * int(self.rows.numel())
+--- a/bin/bench_sentence_expectation.py
++++ b/bin/bench_sentence_expectation.py
+@@ -136,7 +136,7 @@
+             roles = prediction[:, None].expand(-1, 3, -1)
+             presence = None
+         else:
+-            roles, presence = head(values, masks)
++            roles, presence, _sentence_kind = head(values, masks)
+         squared = (roles - targets).square().mean(-1)
+         per_role = squared.mean(0)
+         return {
+--- a/bin/eval_nanochat_grammar.py
++++ b/bin/eval_nanochat_grammar.py
+@@ -559,11 +559,28 @@
+     """Report the committed per-round grammar choices and completion status."""
+     import torch
+     _reset_model(model)
+-    with torch.no_grad(), warnings.catch_warnings():
+-        warnings.simplefilter('ignore')
+-        model.forward(model.inputSpace.prepInput([str(text)]))
+-    trace = model._reconstruction_stack()
+-    rules, arities, mask = trace.choices()
++    # This diagnostic owns a temporary copy of the winning open reading.
++    # The completed model field keeps no operation trace.
++    captured = {}
++    observe = model._sentence_observation
++    def capture(*args, **kwargs):
++        result = observe(*args, **kwargs)
++        if kwargs.get('admit'):
++            trace = model._reconstruction_stack()
++            for name in ('_choice_rule_ids', '_choice_arities', '_choice_mask',
++                         '_choice_positions', '_choice_attempted'):
++                captured[name] = getattr(trace, name).detach().clone()
++        return result
++    model._sentence_observation = capture
++    try:
++        with torch.no_grad(), warnings.catch_warnings():
++            warnings.simplefilter('ignore')
++            model.forward(model.inputSpace.prepInput([str(text)]))
++    finally:
++        model._sentence_observation = observe
++    from types import SimpleNamespace
++    trace = SimpleNamespace(**captured)
++    rules, arities, mask = (trace._choice_rule_ids, trace._choice_arities, trace._choice_mask)
+     attempted = trace._choice_attempted
+     active = model.inputSpace._word_active_mask
+     width = active.shape[1]
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -1393,10 +1393,6 @@
+       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
+       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
+       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
+-      <!-- Gate WholeSpace's stack-rewrite LanguageLayer dispatch
+-           (``self.use_stack_router``). Default false keeps the legacy
+-           forward path. -->
+-      <xs:element name="useStackRouter" type="xs:boolean" minOccurs="0"/>
+       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+       <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
+       <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
+--- a/test/reading_fixtures.py
++++ b/test/reading_fixtures.py
+@@ -5,6 +5,51 @@
+ """
+ from dataclasses import replace
+ import torch
++
++
++def resolve_reading_references(language, entry, *, frames=(), prediction=None,
++                               forced=None):
++    """Force a mechanism reading through the live tensor reference chooser.
++
++    This fixture runs before ``record_reading`` executes its operators. The
++    production word brick resolves each candidate's operands directly.
++    """
++    from ReferenceContext import ReferenceBank, reference_requests, resolve_operand
++    ids = (entry.reference_ids if entry.reference_ids is not None else entry.concept_ids).clone()
++    orders = (entry.reference_orders.clone() if entry.reference_orders is not None
++              else torch.full_like(ids, -1))
++    values = list(entry.leaves.unbind())
++    relations = torch.zeros_like(ids, dtype=torch.bool)
++    anchors = tuple(frame for frame in frames if frame.order == 1)
++    points = [torch.zeros_like(values[0]) if frame.point is None else frame.point
++              for frame in anchors]
++    bank = ReferenceBank(
++        ids.new_tensor([[frame.row_id for frame in anchors]]),
++        torch.stack(points)[None] if points else entry.leaves.new_zeros(1, 0, entry.leaves.shape[-1]),
++        torch.ones(1, len(anchors), dtype=torch.bool),
++        torch.tensor([[frame.point is None for frame in anchors]], dtype=torch.bool),
++        (entry.leaves[0] if prediction is None else prediction.roles[0])[None],
++        torch.tensor([prediction is not None]))
++    requests = reference_requests(language, entry.actions)
++    for leaf, (order, mode) in sorted(requests.items()):
++        if order != 1:
++            continue
++        live_orders = orders.clone()
++        for index, (requested, _kind) in requests.items():
++            live_orders[index] = requested
++        value, identity, relative, available = resolve_operand(
++            values[leaf][None, None], ids[leaf].reshape(1, 1), ids.new_tensor([[leaf]]),
++            mode=mode, bank=bank,
++            live=(torch.stack(values)[None], ids[None], live_orders[None],
++                  relations[None], torch.arange(len(values))[None]),
++            active=torch.ones(1, 1, dtype=torch.bool),
++            forced_reference=None if forced is None else forced.get(leaf))
++        if not bool(available.all()):
++            raise ValueError('pronoun has no particular in the bounded situation')
++        values[leaf], ids[leaf], relations[leaf] = value[0, 0], identity[0, 0], relative[0, 0]
++        orders[leaf] = 1
++    return replace(entry, reference_ids=ids, reference_orders=orders,
++                   reference_values=torch.stack(values), reference_relations=relations)
+ 
+ 
+ def record_reading(language, entry):
+@@ -64,6 +109,53 @@
+ 
+ 
+ @contextmanager
++def capture_operation_traces(model):
++    """Let a test observe the winner's trace before the boundary discards it."""
++    from types import SimpleNamespace
++    captured = []
++    original = model._sentence_observation
++    def observe(*args, **kwargs):
++        result = original(*args, **kwargs)
++        if kwargs.get('admit'):
++            trace = model._reconstruction_stack()
++            captured.append(SimpleNamespace(**{
++                name: getattr(trace, name).detach().clone() for name in (
++                    '_choice_rule_ids', '_choice_arities', '_choice_mask',
++                    '_choice_positions', '_choice_attempted')}))
++        return result
++    model._sentence_observation = observe
++    try:
++        yield captured
++    finally:
++        model._sentence_observation = original
++
++
++def force_absolute_reading(model):
++    """Force an absolute grammar for untrained provisioning mechanism fixtures.
++
++    Both binary absolute operators remain eligible for the explore deviation;
++    a unary negation permits a deviation from a one-slot stop. This is an
++    explicit supplied reading, never a claim about learned English parsing.
++    """
++    layer = model.languageSpace._tree_layer(2)
++    binary = layer.chooser.score_binary
++    unary = layer.chooser.score_unary
++    binary_names = [rule.method_name for rule in model.languageSpace._compose_binary_rules]
++    unary_names = [rule.method_name for rule in model.languageSpace._compose_unary_rules]
++    allowed = ('lift', 'union', 'intersection', 'sum')
++    def binary_scores(*args, **kwargs):
++        stop, scores = binary(*args, **kwargs)
++        mask = torch.tensor([name in allowed for name in binary_names], device=scores.device)
++        return stop, scores.masked_fill(~mask, -torch.inf) + 1e6
++    def unary_scores(*args, **kwargs):
++        stop, scores = unary(*args, **kwargs)
++        mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device)
++        return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
++    layer.chooser.score_binary = binary_scores
++    layer.chooser.score_unary = unary_scores
++
++
++@contextmanager
+ def capture_readings(model):
+     """A caller-owned probe of the open sentence; nothing is attached to rows."""
+     captured = {}
+@@ -104,7 +196,7 @@
+     stm = (entry.end_state[None], torch.ones(1, dtype=torch.long),
+            torch.zeros(1, 3, dtype=torch.long), torch.zeros(1, 3, dtype=torch.long),
+            torch.full((1, 3), -1, dtype=torch.long), torch.ones(1, 3))
+-    lang = [torch.zeros(1, 1) for _ in range(24)]
++    lang = [torch.zeros(1, 1) for _ in range(26)]
+     lang[9] = torch.zeros(1, sid + 1, width)
+     lang[13] = entry.end_state.reshape(1, 1, 3 * width).expand(1, sid + 1, -1).clone()
+     lang[14] = torch.ones(1, sid + 1, dtype=torch.long)
+--- a/test/test_abstraction_order_canonical.py
++++ b/test/test_abstraction_order_canonical.py
+@@ -154,49 +154,29 @@
+     assert int(cb.fold_sequence(chunk)[0]) == Codebook.FOLD_SIGMA
+ 
+ 
+-def test_forward_stamps_stage0_analysis_pi():
+-    # The stage-0 unity snap names its analysis descriptors: the selected
+-    # analysis_store rows carry FOLD_PI at pass slot 0 after a forward.
+-    m = _model()
+-    ws0 = m.wholeSpaces[0]
+-    an = ws0.analysis_store
+-    assert isinstance(an, Codebook) and an.ramsification is not None
+-    x = _batch(m)
++def test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary():
++    m = _model()
++    ws = m.wholeSpaces[0]
++    basis = ws.subspace.what
++    assert isinstance(basis, Codebook) and basis.ramsification is not None
++    before = basis.getW().detach().clone()
+     with torch.no_grad():
+-        m.forward(x)
+-    idx = getattr(ws0, "_stage0_indices", None)
+-    assert idx is not None, "fixture must exercise the stage-0 unity snap"
+-    rows = idx.detach().reshape(-1).long().cpu()
+-    seq = an.ramsification[rows]                       # [n, max_order]
+-    assert bool((seq[:, 0] == Codebook.FOLD_PI).all())
+-    for r in rows.tolist():
+-        assert an.abstraction_order(r) >= 1
+-
+-
+-def test_forward_stamps_symbolic_emission_winner_at_pass_slot():
+-    # At t>0 the symbolic iteration emits ONE winner row per stream; the
+-    # winner is stamped FOLD_PI at ITS pump pass slot.
+-    m = _model()
+-    x = _batch(m)
++        m.forward(_batch(m))
++    assert not hasattr(ws, 'analysis_store')
++    assert ws._stage0_indices is None
++    torch.testing.assert_close(basis.getW(), before, rtol=0, atol=0)
++
++
++def test_property_passes_never_mint_symbolic_word_winners():
++    m = _model()
++    assert len(m.wholeSpaces) > 1
++    before = [ws.subspace.what.getW().detach().clone() for ws in m.wholeSpaces]
+     with torch.no_grad():
+-        m.forward(x)
+-    stamped_any = False
+-    for t, ws in enumerate(m.wholeSpaces):
+-        if t == 0:
+-            continue
+-        em = getattr(ws, "_symbolic_emission", None)
+-        if em is None:
+-            continue
+-        _win, wrow = em
+-        cb = ws.subspace.what
+-        assert isinstance(cb, Codebook) and cb.ramsification is not None
+-        for r in wrow.reshape(-1).tolist():
+-            assert int(cb.fold_sequence(int(r))[t]) == Codebook.FOLD_PI
+-            stamped_any = True
+-    assert stamped_any, ("no t>0 symbolic emission fired -- the fixture "
+-                         "must exercise the multi-pass pump")
+-
+-
++        m.forward(_batch(m))
++    for ws, original in zip(m.wholeSpaces, before):
++        assert not hasattr(ws, '_symbolic_emission')
++        assert not hasattr(ws, '_ws_pos_to_row')
++        torch.testing.assert_close(ws.subspace.what.getW(), original, rtol=0, atol=0)
+ 
+ 
+ def test_lbg_split_inherits_fold_provenance():
+--- a/test/test_compose_records.py
++++ b/test/test_compose_records.py
+@@ -31,7 +31,7 @@
+ 
+ def test_older_slot_unary_is_preserved_in_the_committed_postfix_program():
+     model, _, _ = _program_fixture()
+-    positions, actions, targets = BasicModel._derivation_program(model)
++    positions, actions, targets, _ = BasicModel._derivation_program(model)
+     assert positions.tolist() == [[0, 1]]
+     assert actions.tolist() == [[[0, -1, 0], [2, 0, -1], [0, -1, 1], [1, 0, -1]]]
+     # Unary doubling and ordered binary subtraction expose an operand swap.
+@@ -134,8 +134,8 @@
+     owners, _, _ = BasicModel._compose_round_owners(model, ids)
+     assert owners[0, 6:10].tolist() == [1] * 4
+     assert owners[0, 10:14].tolist() == [0] * 4
+-    _, first, _ = BasicModel._derivation_program(model, t=0)
+-    final_positions, final, _ = BasicModel._derivation_program(model, t=1)
++    _, first, _, _ = BasicModel._derivation_program(model, t=0)
++    final_positions, final, _, _ = BasicModel._derivation_program(model, t=1)
+     assert first[0, :2].tolist() == [[0, -1, 0], [2, 0, -1]]
+     assert final_positions.tolist() == [[1]]
+     assert final[0, :1].tolist() == [[0, -1, 0]]
+--- a/test/test_generation_catalog.py
++++ b/test/test_generation_catalog.py
+@@ -229,9 +229,9 @@
+         construction = model._last_answer_construction
+         loss = recorded["output"]
+         assert loss.requires_grad and float(loss.detach()) > 0
+-        assert all(not program.end_state.requires_grad
+-                   for program in construction.derivation.program if program is not None)
+-        # The committed program is detached at its closing. Keep the actual
++        assert all(not field.end_state.requires_grad
++                   for field in construction.derivation.sentence_states if field is not None)
++        # The committed field is detached at its closing. Keep the actual
+         # pre-commit tensors to check that answer loss cannot revisit them.
+         sources = [value for value in sentence_sources if value.requires_grad]
+         assert sources, "the sentence trials must carry live compose conclusions"
+--- a/test/test_grammar_lesson_context.py
++++ b/test/test_grammar_lesson_context.py
+@@ -0,0 +1,33 @@
++"""Supplied syntax lessons have no inherited batch question context."""
++from types import SimpleNamespace
++
++import torch
++
++from GrammarLessons import compose_loss
++from Language import OperationSelectionLayer
++
++
++def test_teacher_state_uses_neutral_context_without_mutating_the_reading():
++    class Sum(torch.nn.Module):
++        def forward(self, left, right):
++            return left + right
++    class Difference(torch.nn.Module):
++        def forward(self, left, right):
++            return left - right
++    layer = OperationSelectionLayer(d_model=4, ops=(Sum(), Difference()), chooser='mlp')
++    context = torch.ones(3, layer.chooser.WHAT_CONTEXT_DIM)
++    layer._what_context = context
++    language = SimpleNamespace(_tree_layer=lambda _: layer,
++        _compose_binary_rules=(SimpleNamespace(method_name='sum'), SimpleNamespace(method_name='difference')),
++        _compose_unary_rules=())
++    program = SimpleNamespace(leaves=torch.eye(4)[:2])
++    lesson = {'tree': ['sum', 0, 1]}
++    first = compose_loss(language, [program], [lesson])
++    assert first is not None and first.requires_grad and torch.isfinite(first)
++    assert layer._what_context is context
++    layer._what_context = context * -5
++    second = compose_loss(language, [program], [lesson])
++    torch.testing.assert_close(first, second, rtol=0, atol=0)
++    first.backward()
++    assert any(parameter.grad is not None and bool(parameter.grad.any())
++               for parameter in layer.chooser.parameters())
+--- a/test/test_idea_decode_d3.py
++++ b/test/test_idea_decode_d3.py
+@@ -1,11 +1,7 @@
+-"""Idea-decode Stage D3 CONSUMER (doc/old/2026-06-20-idea-decoder.md): under
+-<ideaDecode>, the grammar <generate> reverse runs on the SYNTACTIC WholeSpace
+-(symbolSpace.wholeSpace, the one with the SyntacticLayer + a populated
+-subspace -- NOT wholeSpaces[0]) and DRIVES the reverse seed, so the surface
+-words come from the grammar. Shape-guarded: drives on an exact match (the
+-symbol_dim==concept_dim invariant); compact-symbol configs fall back unchanged
+-(they need a learned symbol->concept expander). Default off -> byte-identical
+-(the reverse-roundtrip suite is the off-path witness).
++"""Idea-decode consumes the shared generate walk over the completed field.
++
++The optional reverse-seed consumer keeps its exact-shape guard. WholeSpace
++has no grammar decoder; the generate policy is owned by SymbolSpace.
+ """
+ 
+ import pytest
+@@ -53,15 +49,11 @@
+ 
+ 
+ @pytest.mark.slow
+-def test_grammar_decode_runs_on_syntactic_ws():
+-    """WS-reference fix: the grammar <generate> reverse uses the SYNTACTIC WS
+-    (symbolSpace.wholeSpace), which has a live SyntacticLayer + populated
+-    subspace -- so it returns a real [B,1,symbol_dim] decode (NOT None as it did
+-    when seeded from the empty wholeSpaces[0])."""
++def test_grammar_decode_runs_from_the_completed_field():
++    """The declared generate grammar produces a real conceptual field."""
+     m = _forward(_build("MM_mereology_serial.xml"))
+-    ws = m._idea_decode_ws()
+-    assert ws is m.symbolSpace.wholeSpace
+-    assert type(getattr(ws, "syntacticLayer", None)).__name__ == "SyntacticLayer"
++    assert not hasattr(m.wholeSpace, "syntacticLayer")
++    assert type(m.symbolSpace.subspace.syntacticLayer).__name__ == "SyntacticLayer"
+     with torch.no_grad():
+         gen = m._run_idea_decode_generate()
+     assert gen is not None
+--- a/test/test_idea_decode_owner.py
++++ b/test/test_idea_decode_owner.py
+@@ -0,0 +1,36 @@
++"""Idea decoding uses the common generate walk and a completed field."""
++from types import SimpleNamespace
++
++import torch
++
++from Models import BasicModel
++from Spaces import SubSpace
++
++
++def test_idea_decode_uses_the_field_and_a_fresh_carrier():
++    seed = torch.tensor([[[1., 2., 3., 4.], [0., 0., 0., 0.], [0., 0., 0., 0.]]])
++    generated = torch.tensor([[[4., 3., 2., 1.], [1., 1., 1., 1.]]])
++    carrier = SubSpace([1, 4], [1, 4], nInputDim=4, nOutputDim=4)
++    carrier.set_event(seed[:, :1])
++    before = carrier.materialize().clone()
++    calls = []
++    def generate(value, budget, stamped_events):
++        calls.append((value, budget, stamped_events))
++        return generated, torch.tensor([2]), torch.tensor([False]), torch.tensor(0.)
++    owner = SimpleNamespace(
++        conceptualSpace=SimpleNamespace(subspace=carrier),
++        _sentence_end_state=lambda _: seed,
++        _walk_operand=lambda value: value,
++        _walk_budget=lambda: 2,
++        _output_generate_walk=generate)
++    result = BasicModel._run_idea_decode_generate(owner)
++    assert result is not None and result is not carrier
++    torch.testing.assert_close(result.materialize(), generated, rtol=0, atol=0)
++    torch.testing.assert_close(carrier.materialize(), before, rtol=0, atol=0)
++    assert len(calls) == 1 and calls[0][0] is seed
++    assert calls[0][1:] == (2, False)
++
++
++def test_idea_decode_without_a_completed_field_has_no_operand():
++    owner = SimpleNamespace(_sentence_end_state=lambda _: None)
++    assert BasicModel._run_idea_decode_generate(owner) is None
+--- a/test/test_item7_references.py
++++ b/test/test_item7_references.py
+@@ -7,7 +7,8 @@
+ 
+ from reading_fixtures import finish_reading
+ from Layers import MeaningExpectation
+-from ReferenceContext import SituationFrame, resolve_occurrences
++from ReferenceContext import SituationFrame
++from reading_fixtures import resolve_reading_references as resolve_occurrences
+ from Understanding import AnswerProgram
+ from test_item7_storage import clause_store, idea_clause
+ from test_sentence_expectation import layer, observe
+@@ -128,8 +129,11 @@
+     language, program = language_and_program()
+     prior = frame()
+     for logit in torch.linspace(-2., 2., 37):
+-        monkeypatch.setattr(ReferenceContext.F, 'cosine_similarity',
+-            lambda *a, **k: torch.stack((logit * 0, logit)))
+-        got = ReferenceContext.resolve_occurrences(language, program,
++        def scores(values, *_args, **_kwargs):
++            result = values.new_zeros(values.shape[:-1])
++            result[..., 1] = logit
++            return result
++        monkeypatch.setattr(ReferenceContext.F, 'cosine_similarity', scores)
++        got = resolve_occurrences(language, program,
+             frames=(prior,), prediction=prediction(prior.point), forced={0: prior.row_id})
+         torch.testing.assert_close(got.reference_values[0], prior.point, rtol=0, atol=0)
+--- a/test/test_learning_readiness.py
++++ b/test/test_learning_readiness.py
+@@ -113,7 +113,7 @@
+     from data import Data
+     from test_compiled_word_chunk import _tiny_canonical_model
+     from test_packed_reconstruction_parity import reset
+-    from test_reverse_traversal import _select_completed_binary_path
++    from reading_fixtures import force_absolute_reading
+     from LearningEvaluation import FINEWEB_CORPUS, checkpoint_readiness
+     from eval_fineweb_learning import load_model, read_validation
+     from What import What
+@@ -134,9 +134,9 @@
+     model._tensor_peer_while_eager = True
+     model._chart_compose_per_word = lambda: None
+     model.reconstruction_placement = 'eager'
+-    # This is checkpoint/prediction plumbing. Supply complete observations;
+-    # unconstrained unary rounds may correctly exhaust the compose budget.
+-    _select_completed_binary_path(model)
++    # This is checkpoint/prediction plumbing with an explicitly supplied
++    # absolute reading, not a measurement of the untrained English parser.
++    force_absolute_reading(model)
+     data = model.inputSpace.data
+     manifest = dict(dataset='text', corpus=FINEWEB_CORPUS,
+                     shards=[dict(path='fixture.parquet', size=123)])
+@@ -177,7 +177,7 @@
+                            for i in range(4)]}
+     monkeypatch.setattr(Data, 'load', heldout)
+     loaded = load_model(tmp_path/'tiny_chunk_model.xml', path, minimum_sentences=3)
+-    _select_completed_binary_path(loaded)
++    force_absolute_reading(loaded)
+     try:
+         report = read_validation(loaded, sentences=4, gain=0.)
+         assert report['predicted_targets'] == 2
+--- a/test/test_live_references.py
++++ b/test/test_live_references.py
+@@ -0,0 +1,198 @@
++import torch
++from ReferenceContext import ReferenceBank, resolve_operand
++
++
++def test_grammar_order_resolution_survives_the_numerical_journal():
++    from dataclasses import replace
++    from ClauseJournal import finish_clause
++    from reading_fixtures import record_reading
++    from test_item7_references import language_and_program
++    language, entry = language_and_program()
++    language._compose_binary_rules[0].reference_orders = (('I1', 2),)
++    language._compose_binary_rules[0].reference_kinds = (('I1', 'generic'),)
++    entry = record_reading(language, entry)
++    entry = replace(entry, reference_ids=torch.tensor([7, 3]),
++                    reference_orders=torch.tensor([2, -1]))
++    field = finish_clause(language, entry)
++    assert field.refs[0] == 7
++
++
++def test_existing_kind_point_is_resolved_before_the_operator():
++    from types import SimpleNamespace
++    from ReferenceContext import prepare_operands
++    value = torch.tensor([[[1., 0., 0., 0.]]])
++    kind = torch.tensor([.2, .3, .4, .5])
++    types = SimpleNamespace(sources=torch.tensor([[1]]),
++                            orders=torch.tensor([2]), identities=torch.tensor([[[7]]]),
++                            values=kind.reshape(1, 1, 1, 4))
++    bank = SimpleNamespace(types=types)
++    rule = SimpleNamespace(reference_orders=(('I1', 2),),
++                           reference_kinds=(('I1', 'generic'),))
++    result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
++                              torch.tensor([[0]]), rules=(), unary_rules=(rule,), bank=bank, live=None,
++                              active=torch.tensor([[True]]))
++    torch.testing.assert_close(result['unary'][0, 0, 0], kind, rtol=0, atol=0)
++    assert result['unary_refs'][0, 0, 0, 0] == 7
++
++
++def test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind():
++    from ReferenceContext import ReferenceTypes, resolve_order
++    value = torch.tensor([[[1., 0., 0., 0.]]])
++    types = ReferenceTypes(torch.tensor([[1]]), torch.tensor([1, 2]),
++                           torch.tensor([[[-1, 7]]]), torch.zeros(1, 1, 2, 4))
++    point, identity = resolve_order(value, torch.tensor([[-1]]), 2, types)
++    torch.testing.assert_close(point, value, rtol=0, atol=0)
++    assert identity.item() == -1
++
++
++def test_occurrence_is_operand_and_predictor_gradient_is_live():
++    value = torch.tensor([[[1., 0., 0., 0.]]])
++    earlier = torch.tensor([[[.2, .3, .4, .5]]])
++    query = torch.nn.Parameter(earlier[:, 0].clone())
++    bank = ReferenceBank(torch.tensor([[5]]), earlier, torch.tensor([[True]]),
++                         torch.tensor([[False]]), query, torch.tensor([True]))
++    live = (value, torch.tensor([[1]]), torch.tensor([[1]]),
++            torch.tensor([[False]]), torch.tensor([[0]]))
++    resolved, ref, relation, available = resolve_operand(value, torch.tensor([[1]]), torch.tensor([[0]]),
++                                                         mode='particular', bank=bank, live=live, active=torch.tensor([[True]]))
++    torch.testing.assert_close(resolved, earlier, rtol=0, atol=0)
++    assert ref.item() == 5 and available.item() and not relation.item()
++    resolved.sum().backward()
++    assert query.grad is not None and query.grad.any()
++
++
++def test_cold_reference_is_exact_and_pronoun_proposal_is_maskable():
++    value = torch.tensor([[[1., 0., 0., 0.]]])
++    bank = ReferenceBank(torch.tensor([[-1]]), torch.zeros_like(value), torch.tensor([[False]]),
++                         torch.tensor([[False]]), value[:, 0], torch.tensor([False]))
++    live = (value, torch.tensor([[1]]), torch.tensor([[1]]),
++            torch.tensor([[False]]), torch.tensor([[0]]))
++    for mode in ('particular', 'pronoun'):
++        result = resolve_operand(value, torch.tensor([[1]]), torch.tensor([[0]]), mode=mode,
++                                 bank=bank, live=live, active=torch.tensor([[True]]))
++        assert result[-1].item() == (mode == 'particular')
++        torch.testing.assert_close(result[0], value, rtol=0, atol=0)
++
++
++def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
++    from types import SimpleNamespace
++    from Language import OperationSelectionLayer, LanguageSpace
++
++    class Sum(torch.nn.Module):
++        def forward(self, left, right): return left+right
++    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),), chooser='mlp')
++    first = torch.tensor([1., 0., 0., 0.])
++    second = torch.tensor([0., 0., 1., 0.])
++    prior = torch.tensor([.2, .3, .4, .5])
++    query = torch.nn.Parameter(prior.clone())
++    owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
++                            _compose_binary_rules=(SimpleNamespace(reference_orders=(
++                                ('I1', 1),), reference_kinds=(('I1', 'particular'),)),),
++                            _compose_unary_rules=(), _structural_context=lambda **kw: None,
++                            _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
++                                                          torch.tensor([[False]]), query[None], torch.tensor([True])))
++    buffer = torch.stack((second, first, torch.zeros_like(first)))[None]
++    state = (buffer, torch.tensor([2]), torch.tensor([[1, 1, -1]]), torch.zeros(1, 3, dtype=torch.long),
++             torch.tensor([[2, 0, -1]]), torch.ones(1, 3))
++    scope = torch.tensor([[[0, 3], [0, 1], [0, -1]]])
++
++    def choose(state, scope):
++        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope)
++    eager = choose(state, scope)
++    compiled = torch.compile(choose, backend='eager', fullgraph=True)(state, scope)
++    for result in (eager, compiled):
++        choice, refs, relations, operands, offsets = result
++        torch.testing.assert_close(choice.candidate[0], prior+second, rtol=0, atol=0)
++        assert refs.tolist() == [[5, 3]]
++        torch.testing.assert_close(operands[0, 0], prior, rtol=0, atol=0)
++        torch.testing.assert_close(operands-offsets, torch.stack((first, second))[None])
++        assert not relations.any()
++    eager[0].candidate.sum().backward()
++    assert query.grad is not None and query.grad.any()
++
++
++def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, monkeypatch):
++    from test_meronomy_ladder import _build_ladder_variant
++    from ReferenceContext import ReferenceBank
++    import util
++    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
++    model = _build_ladder_variant(tmp_path, 'live_identity', [
++        ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>')])
++    model._tensor_peer_while_eager = True
++    model._chart_compose_per_word = lambda: None
++    model._install_unit_span_fn()
++    model.reconstruct_in_loop = True
++    model.loss.reconstruction_scale = 1.
++    model.reconstruction_placement = 'eager'
++
++    def eager_while(condition, body, values):
++        while bool(condition(*values)):
++            values = body(*values)
++        return values
++    monkeypatch.setattr(torch, 'while_loop', eager_while)
++    language = model.languageSpace
++    rules = list(language._compose_binary_rules)
++    op = next(i for i, r in enumerate(rules) if r.method_name == 'lift')
++    rules[op] = rules[op]._replace(reference_orders=(
++        ('I1', 1),), reference_kinds=(('I1', 'particular'),))
++    language._compose_binary_rules = tuple(rules)
++    layer = language._tree_layer(2)
++    original = layer.forward
++
++    def forced(x, **kwargs):
++        stop = (x.shape[1]-1)*layer.r_reduce+x.shape[1]*layer.r_apply
++        kwargs['replay_action'] = torch.where(kwargs['depth'] >= 2, op, stop)
++        return original(x, **kwargs)
++    monkeypatch.setattr(layer, 'forward', forced)
++    width = model.conceptualSpace.stm.concept_dim
++    prior = torch.nn.functional.normalize(torch.arange(1, width+1, dtype=torch.float32), dim=0)
++    query = torch.nn.Parameter(prior.clone())
++    from ClauseRow import Clause
++    from Meaning import ConceptualMeaning
++    store = model.symbolSpace.ltm_store
++    from ClauseRow import attach_clause_index
++    attach_clause_index(model, store, model._concept_owner())
++    index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior))
++    cid = int(store.row_ids[index])
++
++    def held(active, like):
++        B = active.shape[0]
++        return ReferenceBank(torch.full((B, 1), cid, dtype=torch.long), prior[None, None].expand(B, 1, width),
++                             torch.ones(B, 1, dtype=torch.bool), torch.zeros(
++                                 B, 1, dtype=torch.bool),
++                             query[None].expand(B, width), torch.ones(B, dtype=torch.bool))
++    monkeypatch.setattr(model, '_sentence_reference_bank', held)
++    observed = []
++    observation = model._sentence_observation
++
++    def capture(*a, **kw):
++        view = observation(*a, **kw)
++        if not kw.get('admit', False):
++            observed.append(view)
++        return view
++    monkeypatch.setattr(model, '_sentence_observation', capture)
++    try:
++        model(model.inputSpace.prepInput(['alpha beta']))
++        view = observed[-1]
++        entry = view['entries'][0]
++        clause = view['clauses'][0]
++        actions = entry.actions[:, 0] == 1
++        assert int(actions.sum()) == len(entry.leaves)-1
++        frame = entry.operation_values[actions][-1]
++        torch.testing.assert_close(frame[0], prior, rtol=0, atol=0)
++        torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=0, atol=0)
++        assert entry.operation_refs[actions][-1, 0].item() == cid
++        assert clause.refs[0] == cid
++        torch.testing.assert_close(clause.point, frame[2], rtol=0, atol=0)
++        torch.testing.assert_close(
++            model._sentence_fields[0][0].end_state[0], frame[2], rtol=0, atol=0)
++        assert not torch.equal(entry.leaves[0], prior)
++        active = model.inputSpace._word_active_mask
++        assert not model._recon_truncated.any()
++        torch.testing.assert_close(model._recon_ideas[active], entry.leaves, rtol=1e-4, atol=1e-4)
++        clause.point.sum().backward()
++        assert query.grad is not None and query.grad.any()
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++        torch._dynamo.reset()
+--- a/test/test_nanochat_grammar_eval.py
++++ b/test/test_nanochat_grammar_eval.py
+@@ -142,6 +142,11 @@
+     data_dir = Path(__file__).resolve().parents[1] / "data"
+     model, _ = gate.build_eval_model(
+         data_dir / "MM_nanochat_grammar_gate.xml", autoload=False)
++    # This measures the grammar's online capacity and trace, with no trained
++    # native identities to provision the arbitrary spelling corpus into LTM.
++    model.conceptualSpace._ltm_consolidation = False
++    from reading_fixtures import force_absolute_reading
++    force_absolute_reading(model)
+     # First word is a 20-part cold spelling: deliberately wider than PS=8.
+     text = "abcdefghijklmnopqrst " + " ".join(
+         f"w{i}" for i in range(63))
+@@ -155,8 +160,8 @@
+     assert trace["max_raw_parts_per_word"] == 20
+     assert trace["word_constituents_truncated"] is False
+     assert trace["sentence_truncated"] is False
+-    # The operation budget is fixed. Random unary choices can leave an
+-    # incomplete forest, which the diagnostic must report accurately.
++    # This is an explicitly forced absolute reading, so completion means
++    # one root after exactly 63 binary operations. The deadline is fixed.
+     assert trace['total_reductions'] == trace['online']['binary'] + trace['closing']['binary']
+     assert 1 <= trace['final_depth'] <= trace['stm_capacity']
+     assert trace['complete'] == bool((model._stm_post_depth > 0).all())
+--- a/test/test_output_walk.py
++++ b/test/test_output_walk.py
+@@ -212,11 +212,10 @@
+          "<packSentences>false</packSentences>\n      <outputInLoop>true</outputInLoop>")])
+     m._tensor_peer_while_eager = True
+     m._chart_compose_per_word = lambda: None
+-    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
++    m.reconstruct_in_loop = False
++    m.loss.reconstruction_scale = 0.
+     with torch.no_grad():
+-        out = m._forward_with_compiled_sentence_state(None)
+-        m._publish_compiled_sentence_state(out)
+-        u = m._capture_understanding(out[:4] if isinstance(out, tuple) else out)
++        u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+         derivation = m._resolve_answer(u, What.supervised(0))
+         idea, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
+     D = int(m.conceptualSpace.stm.concept_dim)
+@@ -225,13 +224,14 @@
+     end = m._sentence_end_state(None)
+     assert torch.allclose(idea, end)                        # zero-initialised conditioning
+     T = m._walk_budget()
+-    assert torch.is_tensor(targets) and tuple(targets.shape) == (2, T)
++    assert targets is None  # generation has no input-reading targets
+     with torch.no_grad():
+         words, n_emitted, truncated, cost = m._output_generate_walk(
+             m._walk_operand(idea), T, False, targets)
+     assert tuple(words.shape) == (2, T, D)
+     assert bool((n_emitted >= 1).all())                     # each row emitted at least its root
+     m.End(); m.symbolSpace.soft_reset()
++
+ 
+ 
+ def test_output_ignores_input_derivation_on_conceptual_slots():
+@@ -530,23 +530,21 @@
+ 
+ 
+ def test_materialised_idea_follows_the_symbol_rows():
+-    """The symbol table and the concept table share row indices, so the
+-    answer is materialised from its symbols' rows and its derivation: the
+-    concept dictionary rows at the rows, folded by the recorded derivation
+-    through the grammar's forward ops.  With the rows the forward pushed,
+-    the replay reproduces the forward's end state exactly; a different
+-    symbol at a word (its row exchanged with its neighbour's) gives a
+-    different idea, without any snap of a symbol vector."""
++    """A completed answer owns its field; a new reading uses its own words.
++
++    Exchanging the later input's row staging cannot alter the held answer.
++    Reading those exchanged words produces a distinct field through the same
++    sentence driver. Generation has no reading actions to replay.
++    """
+     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+     from What import What
+     m = _model()
+     m._tensor_peer_while_eager = True
+     m._chart_compose_per_word = lambda: None
+-    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
++    m.reconstruct_in_loop = False
++    m.loss.reconstruction_scale = 0.
+     with torch.no_grad():
+-        out = m._forward_with_compiled_sentence_state(None)
+-        m._publish_compiled_sentence_state(out)
+-        u = m._capture_understanding(out[:4] if isinstance(out, tuple) else out)
++        u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+         derivation = m._resolve_answer(u, What.supervised(0))
+         idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
+         end = m._sentence_end_state(None)
+@@ -561,13 +559,14 @@
+         assert torch.equal(m._word_symbol_rows()[:, :2], rows[:, :2].flip(1))
+         held, _r, _s, _t = m._materialize_answer_idea(u, derivation, What.supervised(0))
+         torch.testing.assert_close(held, idea0, rtol=0, atol=0)
+-        exchanged = m._capture_understanding(out[:4])
++        exchanged = _capture_program_probe(m, ["plus 12 1", "plus 3 4"])
+         new_derivation = m._resolve_answer(exchanged, What.supervised(0))
+         idea1, _r, _s, targets1 = m._materialize_answer_idea(
+             exchanged, new_derivation, What.supervised(0))
+     assert not torch.allclose(idea1, idea0, atol=1e-4)
+-    assert torch.equal(targets1, targets)                       # the derivation is unchanged
++    assert targets1 is targets is None  # neither reading supplies generation actions
+     m.End(); m.symbolSpace.soft_reset()
++
+ 
+ 
+ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present():
+@@ -577,12 +576,17 @@
+     m.eval()
+     m._tensor_peer_while_eager = True
+     m._chart_compose_per_word = lambda: None
+-    try:
++    m.reconstruct_in_loop = False
++    m.loss.reconstruction_scale = 0.
++    try:
++        with torch.no_grad():
++            u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
++        # The standalone kernel leaves an unrelated open reading record.
++        # Output must ignore it and continue from the held completed field.
+         _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+         with torch.no_grad():
+             out = m._forward_with_compiled_sentence_state(None)
+             m._publish_compiled_sentence_state(out)
+-            u = m._capture_understanding(out[:4])
+             targets = m._derivation_targets(None, m._walk_budget())
+             assert bool((targets >= 0).any())
+             choices = [t.clone() for t in m._reconstruction_stack().choices()]
+@@ -600,6 +604,7 @@
+     finally:
+         m.End()
+         m.symbolSpace.soft_reset()
++
+ 
+ 
+ def _generate_variant(tmp_path, names, remove_compose=()):
+@@ -889,7 +894,8 @@
+         with torch.no_grad():
+             inputs = m.inputSpace.prepPackedInput([["12 plus 1", "3 plus 4"], ["8 plus 2"]])
+             out = m(inputs)
+-            layout = torch.tensor([[True, True], [True, False]])
++            layout = torch.zeros_like(m.inputSpace._packed_sentence_slot_mask)
++            layout[:, :2] = torch.tensor([[True, True], [True, False]])
+             assert torch.equal(m.inputSpace._packed_sentence_slot_mask, layout)
+             u = m._capture_understanding(out)
+             assert u.sentence_fields[0][0] is not None
+@@ -916,3 +922,4 @@
+     finally:
+         m.End()
+         m.symbolSpace.soft_reset()
++
+--- a/test/test_positive_int_taxonomy.py
++++ b/test/test_positive_int_taxonomy.py
+@@ -38,74 +38,29 @@
+     return m
+ 
+ 
+-# ---------------------------------------------------------------------------
+-# Positive-int returns from insert_*.
+-# ---------------------------------------------------------------------------
++class TestNativeAddresses(unittest.TestCase):
++    def test_word_concept_returns_a_positive_stable_address(self):
++        from test_two_codebook_meta_taxonomy import _word_concept
++        m = _make_radix_model()
++        pos, row = _word_concept(m, b"alpha")
++        self.assertIsInstance(pos, int)
++        self.assertGreater(pos, 0)
++        again, _ = _word_concept(m, b"alpha")
++        self.assertEqual(again, pos)
++        self.assertEqual(m._concept_owner().concept_parts(pos), [row])
+ 
+-
+-class TestInsertReturnsPositiveInt(unittest.TestCase):
+-    """Each ``insert_*`` allocates a position and returns it as a positive int."""
+-
+-    def test_insert_percept_returns_positive_position(self):
++    def test_idea_address_resolves_to_its_native_row(self):
++        from test_two_codebook_meta_taxonomy import _idea_store, _write_point
+         m = _make_radix_model()
+-        ws = m.wholeSpace
+-        pos = ws.insert_percept(b"alpha")
++        store = _idea_store(m)
++        point = torch.zeros(store.nDim)
++        point[0] = .5
++        row = _write_point(store, point)
++        pos = int(store.row_ids[row])
+         self.assertIsInstance(pos, int)
+-        self.assertGreater(pos, 0,
+-                           "insert_percept must return a positive position "
+-                           f"(allocated via allocate_position); got {pos}")
+-        # Repeat insert of the same bytes returns the SAME position.
+-        again = ws.insert_percept(b"alpha")
+-        self.assertEqual(again, pos,
+-                         "idempotent insert: same bytes -> same position")
+-        # _pos_kind tags this as a PS slot.
+-        self.assertEqual(ws._pos_kind.get(pos), "ps",
+-                         "PS-side insert should tag _pos_kind[pos]='ps'")
+-
+-    def test_insert_whole_returns_positive_position(self):
+-        m = _make_radix_model()
+-        ws = m.wholeSpace
+-        init = torch.zeros(int(ws.nDim))
+-        init[0] = 0.5
+-        pos = ws.insert_whole(init_vec=init)
+-        self.assertIsInstance(pos, int)
+-        self.assertGreater(pos, 0,
+-                           f"insert_whole must return a positive position; got {pos}")
+-        self.assertEqual(ws._pos_kind.get(pos), "ws",
+-                         "SS-side insert should tag _pos_kind[pos]='ws'")
+-        # The position resolves to a real SS row.
+-        ws_row = ws._ws_pos_to_row[pos]
+-        self.assertIsInstance(ws_row, int)
+-        self.assertGreaterEqual(ws_row, 0)
+-        # Inverse direction works too.
+-        self.assertEqual(ws._ws_row_to_pos[ws_row], pos)
+-
+-
+-
+-
+-# ---------------------------------------------------------------------------
+-# Taxonomy storage uses positive ints throughout.
+-# ---------------------------------------------------------------------------
+-
+-
+-
+-
+-# ---------------------------------------------------------------------------
+-# vocab_extras roundtrip with positive-int keys + legacy migration.
+-# ---------------------------------------------------------------------------
+-
+-
+-
+-
+-if __name__ == "__main__":
+-    unittest.main()
+-
+-
+-def test_meta_members_are_positive_native_concept_ids():
+-    from test_item9b_interpret import _operator
+-    cs, interpret = _operator()
+-    word = interpret.lookup_word([1, 2], [], form='ab')
+-    obj = interpret.forward(word)
+-    meta = cs._concept_allocator.interpretations[word, 1][1]
+-    assert all(type(cid) is int and cid > 0 for cid in (word, obj, meta))
+-    assert cs.meta_members(meta) == ((word,), (obj,))
++        self.assertGreater(pos, 0)
++        self.assertEqual(int(store.rel_type[row]), store.REL_NONE)
++        native_row = store.index_of_row(pos)
++        self.assertIsInstance(native_row, int)
++        self.assertGreaterEqual(native_row, 0)
++        self.assertEqual(int(store.row_ids[native_row]), pos)
+--- a/test/test_reasoning_cde_model.py
++++ b/test/test_reasoning_cde_model.py
+@@ -25,6 +25,10 @@
+     def setUpClass(cls):
+         Models.TheData.load('queries')
+         cls.m, _ = BaseModel.from_config(_CONFIG)
++        # Public-boundary and optimizer mechanisms use a supplied reading.
++        # The separate provisioning learning assertion requires its checkpoint.
++        from reading_fixtures import force_absolute_reading
++        force_absolute_reading(cls.m)
+ 
+     @pytest.fixture(autouse=True)
+     def trained_provisioning(self, request):
+--- a/test/test_reduction_pressure.py
++++ b/test/test_reduction_pressure.py
+@@ -153,11 +153,17 @@
+         store = model.symbolSpace.ltm_store
+         before = len(store)
+         inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
+-        model.runBatch(train=False, batchSize=1, split='runtime',
+-                       batch_override=(inputs, torch.zeros(1, 1, 0)))
++        from types import SimpleNamespace
++        from reading_fixtures import capture_operation_traces
++        with capture_operation_traces(model) as traces:
++            model.runBatch(train=False, batchSize=1, split='runtime',
++                           batch_override=(inputs, torch.zeros(1, 1, 0)))
+         assert len(store) - before == 2
+         assert (model._tensor_sentence_roots_depth[0, :2] > 0).all()
+-        trace = model._reconstruction_stack()
++        # The caller observes the open readings; the completed rows discard
++        # their operation records. Retain the same unary-execution assertion.
++        trace = SimpleNamespace(**{name: torch.cat([getattr(item, name) for item in traces], 1)
++            for name in ('_choice_arities', '_choice_mask')})
+         assert (trace._choice_arities[trace._choice_mask] == 1).any()
+     finally:
+         model.End()
+--- a/test/test_router_fires_per_word.py
++++ b/test/test_router_fires_per_word.py
+@@ -1,41 +1,9 @@
+-"""Per-word router firing on the serial forward path.
+-
+-ORIGINAL TASK (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4): the
+-serial per-word loop (``BasicModel._forward_body_per_word``) fired
+-``symbolSpace.compose`` over the STM snapshot ONCE PER WORD, so the in-STM
+-predictor's conditioning context was repopulated mid-sentence.
+-
+-SUPERSEDED by the space_role-free bounded-STM grammar fold
+-(doc/plans/2026-06-05-space_role-free-bounded-stm-fold.md, Phase 1 / Task 3):
+-
+-  * **Task 3 DELETED the per-word ``symbolSpace.compose(_snap)`` fire** in
+-    ``_forward_body_per_word`` (the $\\approx 89\\%$-cost full re-parse).
+-    The grammar fold no longer happens per word. The per-word loop now only
+-    ingests each word (PS->CS->SS + ``stm.push_step_masked``) and folds via
+-    two surviving primitives:
+-      - capacity back-pressure: ``_stm_operation_step`` fires inside
+-        ``_per_word_body_step`` whenever the STM hits ``capacity``,
+-      - the sentence-end sweep: ``_stm_reduce_to_single_S`` collapses the
+-        accumulated STM to a single root idea S at the NULL closing.
+-  * **There is no grammar space_role anymore.** The old S/C/P-space_role compose loop
+-    is gone. ``<routerWireSerial>`` is consequently a **no-op for any
+-    per-word ``compose`` fire on the serial forward** — ``compose`` fires
+-    ZERO times per serial forward in EVERY mode (``both``, ``per-word``,
+-    ``off``, ``boundary``). ``compose`` now has only the *boundary*
+-    ``_chart_compose_at_C`` call site, which is NOT on the serial forward
+-    path (its forward caller is the parallel ``_forward_per_stage``); the
+-    serial boundary runs ``_stm_reduce_to_single_S`` instead.
+-
+-This file remains the targeted gate. The two per-word tests below assert the
+-NEW contract: ``compose`` is not fired per word in serial mode, and the
+-bounded-STM fold (back-pressure + end sweep) still forms the root within
+-capacity. The remaining tests pin ``<routerWireSerial>`` gating where it is
+-still live — the *reverse-path* boundary fire (``_chart_generate_from_stm``
+--> ``symbolSpace.generate``), which still gates on ``{both, boundary}`` vs
+-``{off, per-word}`` (``test_boundary_generate_gated_by_router_wire_serial``).
+-
+-Harness mirrors ``test/test_two_mode_dispatch.py`` (the
+-``MM_xor_loopback.xml`` serial grammar config; cheap PS/CS/SS boot).
++"""Serial words use the shared operation layer and one sentence boundary.
++
++The forward never invokes a separate ``symbolSpace.compose`` pass. Words
++and closing rounds use the same chooser; the reverse boundary dispatch
++still follows ``routerWireSerial``. The online-round fixture explicitly
++forces an absolute reading, so it tests routing rather than learned parsing.
+ """
+ 
+ import os
+@@ -66,7 +34,7 @@
+ 
+ 
+ def _write_config_with_overrides(base_config_path, symbolic_order=1,
+-                                 router_wire_serial=None):
++                                 router_wire_serial=None, word_capacity=None):
+     """Materialize a temp XML overlaying ``<symbolicOrder>`` and
+     (optionally) ``<routerWireSerial>`` inside ``<architecture>``.
+ 
+@@ -84,6 +52,17 @@
+     if router_wire_serial is not None:
+         inject += (
+             f"\n    <routerWireSerial>{router_wire_serial}</routerWireSerial>")
++    if word_capacity is not None:
++        # Use word-major perception so the traversal capacity is independent
++        # of this fixture's eight-slot conceptual workspace.
++        inject += (f"\n    <serialObjectMeta>true</serialObjectMeta>"
++                   f"\n    <serialWordCapacity>{word_capacity}</serialWordCapacity>")
++        text = text.replace("<PartSpace>", "<PartSpace><synthesis>meronomy</synthesis>", 1)
++        for section, element in (("InputSpace", "nOutput"), ("PartSpace", "nInput")):
++            text = re.sub(
++                rf"(<{section}>.*?<{element}>)\d+(</{element}>)",
++                lambda match: match[1] + str(word_capacity * 8) + match[2],
++                text, count=1, flags=re.S)
+     if "<architecture>" in text:
+         text = text.replace(
+             "<architecture>", f"<architecture>\n    {inject}", 1)
+@@ -100,13 +79,13 @@
+     return tmp.name
+ 
+ 
+-def _make_serial_model(router_wire_serial=None):
++def _make_serial_model(router_wire_serial=None, word_capacity=None):
+     """Build a serial-mode grammar model, optionally overriding
+     ``<routerWireSerial>``."""
+     init_device("cpu")
+     cfg = _write_config_with_overrides(
+         _GRAMMAR_CONFIG, symbolic_order=1,
+-        router_wire_serial=router_wire_serial)
++        router_wire_serial=router_wire_serial, word_capacity=word_capacity)
+     try:
+         init_config(path=cfg, defaults_path=_DEFAULTS)
+         Language.TheGrammar._configured = False
+@@ -155,25 +134,20 @@
+ 
+ 
+ def _run_forward_spying_fold(model):
+-    """Run one serial forward while spying on the bounded-STM fold
+-    primitives. Returns a dict with:
+-
+-      * ``compose``       — ``symbolSpace.compose`` call count,
+-      * ``sweep``         — ``_stm_reduce_to_single_S`` (sentence-end)
+-                            call count,
+-      * ``reduce``        — ``_stm_operation_step`` (back-pressure +
+-                            sweep micro-step) call count,
+-      * ``capacity``      — the STM capacity (int),
+-      * ``post_depth_max``— max STM depth after the forward (host int),
+-      * ``single_S``      — the collapsed root idea tensor (or ``None``),
+-      * ``post_sweep_depth_max`` — max ``_stm_post_depth`` (or ``None``).
+-    """
++    """Count online/closing chooser calls and the single row-writing boundary."""
++    from reading_fixtures import force_absolute_reading
++    from unittest.mock import patch
++    force_absolute_reading(model)
++    def eager_while(condition, body, values):
++        while bool(condition(*values)):
++            values = body(*values)
++        return values
+     ss = model.symbolSpace
+     stm = model.conceptualSpace.stm
+     counts = {"compose": 0, "sweep": 0, "reduce": 0}
+     orig_compose = ss.compose
+-    orig_sweep = model._stm_reduce_to_single_S
+-    orig_reduce = model._stm_operation_step
++    orig_sweep = model._commit_sentence
++    orig_reduce = model.languageSpace.choose_operation
+ 
+     def _compose_spy(*a, **k):
+         counts["compose"] += 1
+@@ -188,18 +162,20 @@
+         return orig_reduce(*a, **k)
+ 
+     ss.compose = _compose_spy
+-    model._stm_reduce_to_single_S = _sweep_spy
+-    model._stm_operation_step = _reduce_spy
++    model._commit_sentence = _sweep_spy
++    model.languageSpace.choose_operation = _reduce_spy
+     try:
+-        x = _one_input(model)
+-        with warnings.catch_warnings():
+-            warnings.simplefilter("ignore")
+-            with torch.no_grad():
++        # Sixteen words traverse an eight-slot workspace. This tests online
++        # operation rounds as well as the fixed closing budget.
++        x = model.inputSpace.prepInput([" ".join(["hello", "world"] * 8)])
++        with warnings.catch_warnings():
++            warnings.simplefilter("ignore")
++            with torch.no_grad(), patch("torch.while_loop", eager_while):
+                 model.forward(x)
+     finally:
+         ss.compose = orig_compose
+-        model._stm_reduce_to_single_S = orig_sweep
+-        model._stm_operation_step = orig_reduce
++        model._commit_sentence = orig_sweep
++        model.languageSpace.choose_operation = orig_reduce
+ 
+     post_depth = stm._depth
+     single_S = getattr(model, "_stm_single_S", None)
+@@ -227,7 +203,7 @@
+ 
+ @pytest.mark.parametrize('mode', ['both', 'per-word'])
+ def test_serial_words_use_the_shared_operation_layer(mode):
+-    model = _make_serial_model(router_wire_serial=mode)
++    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+     probe = _run_forward_spying_fold(model)
+     assert probe['compose'] == 0  # no second independently selected parse
+     assert probe['sweep'] == 1
+@@ -239,21 +215,7 @@
+ 
+ 
+ def test_router_wire_serial_boundary_no_serial_forward_compose():
+-    """``routerWireSerial='boundary'`` fires ``compose`` ZERO times on a
+-    serial forward.
+-
+-    NOTE on the serial forward path: the forward sentence-boundary
+-    ``compose`` (``_chart_compose_at_C``) is NOT on the serial per-word
+-    forward path — its only forward caller is ``_forward_per_stage``
+-    (the *parallel* per-stage body); the serial forward boundary instead
+-    runs ``_stm_reduce_to_single_S``. The per-word ``compose`` fire that
+-    used to live on the serial forward was DELETED in Task 3 (no grammar
+-    space_role / no per-word re-parse anymore). So under ``boundary`` a serial
+-    forward fires ``compose`` ZERO times: there is no per-word leg, and the
+-    boundary leg has no serial-forward call site. (The boundary ``compose``
+-    / ``generate`` fires live on the parallel forward and the reverse path,
+-    e.g. ``_chart_generate_from_stm`` from ``reverse``.)
+-    """
++    """Boundary routing does not add a second serial forward compose pass."""
+     model = _make_serial_model(router_wire_serial="boundary")
+     n_calls, _ = _count_compose_calls(model)
+     assert n_calls == 0, (
+@@ -277,7 +239,7 @@
+ 
+ def test_boundary_generate_gated_by_router_wire_serial():
+     """The reverse-path boundary fire (``_chart_generate_from_stm`` ->
+-    ``symbolSpace.generate``) is gated by ``<routerWireSerial>``:
++    ``symbolSpace.reverse``) is gated by ``<routerWireSerial>``:
+ 
+       * ``both`` / ``boundary`` -> the boundary generate fires,
+       * ``off`` / ``per-word``  -> the boundary generate is suppressed.
+@@ -295,17 +257,17 @@
+             with torch.no_grad():
+                 model.forward(x)
+         state = {"n": 0}
+-        orig = ss.generate
++        orig = ss.reverse
+ 
+         def _spy(*a, **k):
+             state["n"] += 1
+             return orig(*a, **k)
+ 
+-        ss.generate = _spy
++        ss.reverse = _spy
+         try:
+             model._chart_generate_from_stm()
+         finally:
+-            ss.generate = orig
++            ss.reverse = orig
+         return state["n"]
+ 
+     assert _generate_fires("both") >= 1, (
+--- a/test/test_runtime_split_ingestion.py
++++ b/test/test_runtime_split_ingestion.py
+@@ -57,6 +57,10 @@
+             m, _ = Models.BasicModel.from_config(
+                 os.path.join(_DATA, "MM_grammar.xml"))
+         Models.TheData.load("xor")
++        # This tests ingestion and external provenance. Its untrained chooser
++        # receives an explicit absolute reading; parsing quality is separate.
++        from reading_fixtures import force_absolute_reading
++        force_absolute_reading(m)
+         _CACHE.append((m, Models))
+     return _CACHE[0]
+ 
+--- a/test/test_structural_checkpoint.py
++++ b/test/test_structural_checkpoint.py
+@@ -90,10 +90,11 @@
+     source.save_weights(path)
+ 
+     saved = torch.load(path, map_location="cpu", weights_only=False)
+-    assert saved["structural_extras"]["version"] == 1
++    assert saved["structural_extras"]["version"] == 2
+     # Count-based WS raising is deleted; even a stale source attribute must
+     # not be saved beside the live concept-id and refinement state.
+-    assert "_mereology_raised" not in saved["structural_extras"]["whole_spaces"][0]["attributes"]
++    assert "whole_spaces" not in saved["structural_extras"]
++    assert "_mereology_raised" not in saved["structural_extras"]["whole_properties"][0]["attributes"]
+ 
+     restored_alloc = _allocator()
+     restored_cs = types.SimpleNamespace(_concept_allocator=restored_alloc)
+--- a/test/test_subspace_what_stm_contract.py
++++ b/test/test_subspace_what_stm_contract.py
+@@ -384,7 +384,7 @@
+ 
+ 
+ # ---------------------------------------------------------------------------
+-# Contract F: WholeSpace rule codebook (Phase 3)
++# Contract F: grammar identity/location codebook
+ # ---------------------------------------------------------------------------
+ 
+ _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+@@ -429,7 +429,7 @@
+ 
+ @pytest.fixture(scope="module")
+ def _xor_model():
+-    """A real BasicModel from MM_xor.xml — has a fully-built WholeSpace."""
++    """A real BasicModel with a property WholeSpace and symbolic grammar."""
+     from data import TheData
+     from Models import BaseModel
+     TheData.load("xor")
+@@ -437,42 +437,10 @@
+     return m
+ 
+ 
+-def test_symbolic_space_instance_owns_rule_codebook(_xor_model):
+-    """A built WholeSpace replaces the class-default None with a real codebook."""
+-    from Language import RuleCodebook
+-    ws = _xor_model.wholeSpace
+-    assert isinstance(ws.rule_codebook, RuleCodebook)
+-    # The grammar is wired through so locations route to the V_sym+1 namespace.
+-    assert ws.rule_codebook.grammar is not None
+-
+-
+-def test_v_sym_wired_into_grammar_from_symbolic_space(_xor_model):
+-    """WholeSpace.__init__ must set Grammar.symbol_vocab_size = V_sym."""
+-    from Language import TheGrammar
+-    ws = _xor_model.wholeSpace
+-    # V_sym should equal the symbol codebook's vocab dimension.
+-    cb_W = ws.subspace.what.getW()
+-    if cb_W is not None and cb_W.ndim >= 1:
+-        v_sym = int(cb_W.shape[0])
+-        assert TheGrammar.symbol_vocab_size == v_sym, (
+-            f"TheGrammar.symbol_vocab_size={TheGrammar.symbol_vocab_size} "
+-            f"!= V_sym={v_sym}"
+-        )
+-
+-
+-def test_rule_codebook_does_not_determine_parent_vectors(_xor_model):
+-    """Hard contract: parent.what = op(left, right), NOT rule_codebook[rule_id].what.
+-
+-    We verify this by asserting RuleCodebook has no ``.what`` attribute /
+-    method (it stores identity + location, not content). Phase 4's
+-    REDUCE path computes the parent via SyntacticLayer.execute.
+-    """
+-    ws = _xor_model.wholeSpace
+-    rc = ws.rule_codebook
+-    # The codebook must not be confused with a content codebook.
+-    assert not hasattr(rc, 'forward_to_parent_what'), (
+-        "RuleCodebook must not provide parent-vector lookup"
+-    )
++
++
++
++
+     # Embedding is optional and is for SCORING, not parent vectors.
+     # When present it's [R, D_embed] but the test fixture turns it off.
+     # The contract: the router computes parent.what via SyntacticLayer
+@@ -736,272 +704,21 @@
+         TheGrammar._configured = saved_configured
+ 
+ 
+-# ---------------------------------------------------------------------------
+-# Contract H: WholeSpace owns + dispatches the stack router (Phase 5)
+-# ---------------------------------------------------------------------------
+-
+-def test_symbolic_space_owns_signal_router(_xor_model):
+-    """WholeSpace owns its own LanguageLayer (distinct from Chart's).
+-
+-    Plan acceptance: "WholeSpace owns and calls LanguageLayer."
+-    """
+-    from Language import LanguageLayer
+-    ws = _xor_model.wholeSpace
+-    assert isinstance(ws.languageLayer, LanguageLayer), (
+-        f"WholeSpace.languageLayer must be a LanguageLayer, got "
+-        f"{type(ws.languageLayer)}"
+-    )
+-    # The router must be a different instance from any Chart-owned one
+-    # so the two paths cannot accidentally share scoring state.
+-    chart_router = getattr(
+-        getattr(ws.symbolSpace, 'chart', None), '_signal_router', None)
+-    if chart_router is not None:
+-        assert ws.languageLayer is not chart_router, (
+-            "WholeSpace must own its own router, not share Chart's"
+-        )
+-
+-
+-def test_use_stack_router_flag_default_false(_xor_model):
+-    """Default config must keep the legacy path active.
+-
+-    If MM_xor.xml ever ships <useStackRouter>true</useStackRouter> the
+-    legacy tests would shift to the new path silently; pin the default.
+-    """
+-    ws = _xor_model.wholeSpace
+-    assert ws.use_stack_router is False, (
+-        "Default config must keep use_stack_router=False so existing "
+-        "training + tests run on the legacy path"
+-    )
+-
+-
+-def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
+-    """End-to-end smoke: with the flag flipped, forward dispatches
+-    through _stack_route_forward and writes a non-zero .what.
+-
+-    We toggle the flag on the live instance (the xor fixture is built
+-    with the flag off; this test exercises the dispatch path).
+-    """
+-    ws = _xor_model.wholeSpace
+-    cs = _xor_model.conceptualSpace
+-    # Build a small CS-shaped input subspace. The CS subspace's
+-    # event width matches ws's nDim (symbol_dim == concept_dim).
+-    from Spaces import SubSpace
+-    n = int(cs.subspace.inputShape[0])
+-    d = int(cs.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    # Seed event so is_empty() returns False and materialize() yields a tensor.
+-    in_sub.set_event(torch.randn(1, n, d))
+-    # Stamp a minimal context the forward path expects.
+-    in_sub.symbolSpace = ws.symbolSpace
+-    in_sub.valid_mask = torch.ones(1 * n, dtype=torch.bool)
+-
+-    saved = ws.use_stack_router
+-    saved_what = ws.subspace.what.getW()
+-    try:
+-        ws.use_stack_router = True
+-        out = ws.forward(in_sub)
+-        # Returns self.subspace.
+-        assert out is ws.subspace
+-        new_what = out.materialize(mode="what")
+-        # Stack-rewrite path writes a non-empty .what (not None).
+-        assert new_what is not None
+-        # Activation is set to 1.0 across all output positions.
+-        act = out.materialize(mode="activation")
+-        assert act is not None and torch.all(act > 0)
+-    finally:
+-        ws.use_stack_router = saved
+-        if saved_what is not None:
+-            ws.subspace.what.setW(saved_what)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Contract I: legacy parser state untouched under flag (Phase 6 bypass)
+-# ---------------------------------------------------------------------------
+-
+-def test_stack_router_does_not_touch_word_space_current_rules(_xor_model):
+-    """With use_stack_router=True, the forward must NOT read or write
+-    SymbolSubSpace.current_rules / generate_rules.
+-
+-    Plan §"Phase 6: Retire Active SymbolSpace Parser State" -- "bypass"
+-    leg: the new path skips the cursor-driven current_rules surface
+-    entirely.
+-    """
+-    ws = _xor_model.wholeSpace
+-    ss = ws.symbolSpace
+-    from Spaces import SubSpace
+-    n = int(ws.conceptualSpace.subspace.inputShape[0])
+-    d = int(ws.conceptualSpace.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ss
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    # Stamp sentinel values so we can detect any write.
+-    sentinel = {'SS': [['SENTINEL_NOT_TOUCHED']]}
+-    ss.current_rules = dict(sentinel)
+-    ss.generate_rules = dict(sentinel)
+-    pre_compose_gen = ss._compose_generation
+-    pre_generate_gen = ss._generate_generation
+-
+-    saved = ws.use_stack_router
+-    saved_what = ws.subspace.what.getW()
+-    try:
+-        ws.use_stack_router = True
+-        ws.forward(in_sub)
+-        # current_rules / generate_rules untouched (still the sentinel).
+-        assert ss.current_rules == sentinel, (
+-            f"current_rules mutated under flag-on path: {ss.current_rules}"
+-        )
+-        assert ss.generate_rules == sentinel, (
+-            f"generate_rules mutated under flag-on path: {ss.generate_rules}"
+-        )
+-        # Generation counters untouched (no compose / generate fired).
+-        assert ss._compose_generation == pre_compose_gen
+-        assert ss._generate_generation == pre_generate_gen
+-    finally:
+-        ws.use_stack_router = saved
+-        # Reset state for downstream tests.
+-        ss.current_rules = {}
+-        ss.generate_rules = {}
+-        if saved_what is not None:
+-            ws.subspace.what.setW(saved_what)
+-
+-
+-def test_stack_router_does_not_touch_conceptual_stm(_xor_model):
+-    """With use_stack_router=True, ConceptualSpace.stm must stay untouched.
+-
+-    The new path runs on a temporary stack-mode SubSpace, never on
+-    ConceptualSpace.stm._buffer / _depth (the legacy STM side channel).
+-    """
+-    ws = _xor_model.wholeSpace
+-    cs = ws.conceptualSpace
+-    stm = getattr(cs, 'stm', None)
+-    if stm is None:
+-        pytest.skip("This config has no ConceptualSpace.stm")
+-
+-    from Spaces import SubSpace
+-    n = int(cs.subspace.inputShape[0])
+-    d = int(cs.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ws.symbolSpace
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    pre_buffer = stm._buffer.detach().clone() if hasattr(stm, '_buffer') else None
+-    pre_depth = stm._depth.detach().clone() if hasattr(stm, '_depth') else None
+-
+-    saved = ws.use_stack_router
+-    saved_what = ws.subspace.what.getW()
+-    try:
+-        ws.use_stack_router = True
+-        ws.forward(in_sub)
+-        if pre_buffer is not None:
+-            assert torch.equal(stm._buffer, pre_buffer), (
+-                "ConceptualSpace.stm._buffer mutated under flag-on path"
+-            )
+-        if pre_depth is not None:
+-            assert torch.equal(stm._depth, pre_depth), (
+-                "ConceptualSpace.stm._depth mutated under flag-on path"
+-            )
+-    finally:
+-        ws.use_stack_router = saved
+-        if saved_what is not None:
+-            ws.subspace.what.setW(saved_what)
+-
+-
+-def test_stack_router_dispatches_via_syntactic_layer_execute(_xor_model):
+-    """The new path routes through SyntacticLayer.execute, not
+-    .forward / _next_rule_name (the cursor dispatch).
+-
+-    Plan acceptance: "LanguageLayer calls SyntacticLayer executor, not
+-    cursor dispatch."
+-    """
+-    ws = _xor_model.wholeSpace
+-    sl = ws.syntacticLayer
+-
+-    cursor_calls = {'n': 0}
+-    execute_calls = {'n': 0}
+-
+-    orig_next = sl._next_rule_name
+-    orig_exec = sl.execute
+-
+-    def spy_next_rule(*a, **kw):
+-        cursor_calls['n'] += 1
+-        return orig_next(*a, **kw)
+-
+-    def spy_execute(*a, **kw):
+-        execute_calls['n'] += 1
+-        return orig_exec(*a, **kw)
+-
+-    from Spaces import SubSpace
+-    n = int(ws.conceptualSpace.subspace.inputShape[0])
+-    d = int(ws.conceptualSpace.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ws.symbolSpace
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    saved = ws.use_stack_router
+-    saved_what = ws.subspace.what.getW()
+-    try:
+-        sl._next_rule_name = spy_next_rule
+-        sl.execute = spy_execute
+-        ws.use_stack_router = True
+-        ws.forward(in_sub)
+-        # Cursor must not have fired.
+-        assert cursor_calls['n'] == 0, (
+-            f"Stack-router path called _next_rule_name "
+-            f"{cursor_calls['n']} times; expected 0"
+-        )
+-        # Execute fires once per REDUCE when a binary rule was wired
+-        # (>= 0 because a config without an SS-space_role binary rule will
+-        # skip reductions entirely).
+-        # If N >= 2 AND a binary SS-space_role rule is registered, execute
+-        # should have fired at least once.
+-        # We only assert the negative for the cursor path; the positive
+-        # (>=1 execute call) is asserted in the smoke test above.
+-    finally:
+-        sl._next_rule_name = orig_next
+-        sl.execute = orig_exec
+-        ws.use_stack_router = saved
+-        if saved_what is not None:
+-            ws.subspace.what.setW(saved_what)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Contract J: flag-off path remains byte-identical (regression guardrail)
+-# ---------------------------------------------------------------------------
+-
+-def test_flag_off_does_not_call_stack_route_forward(_xor_model):
+-    """With use_stack_router=False, the new _stack_route_forward must
+-    NOT run; the legacy path stays the only forward dispatcher.
+-    """
+-    ws = _xor_model.wholeSpace
+-    calls = {'n': 0}
+-    orig = ws._stack_route_forward
+-
+-    def spy(*a, **kw):
+-        calls['n'] += 1
+-        return orig(*a, **kw)
+-
+-    from Spaces import SubSpace
+-    n = int(ws.conceptualSpace.subspace.inputShape[0])
+-    d = int(ws.conceptualSpace.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ws.symbolSpace
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    try:
+-        ws._stack_route_forward = spy
+-        # use_stack_router is False by default.
+-        assert ws.use_stack_router is False
+-        ws.forward(in_sub)
+-        assert calls['n'] == 0, (
+-            f"_stack_route_forward ran {calls['n']} times with flag off"
+-        )
+-    finally:
+-        ws._stack_route_forward = orig
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -1464,189 +1181,16 @@
+     assert calls['last_kwargs'].get('rule_codebook') is rc
+ 
+ 
+-def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
+-    """WholeSpace._stack_route_forward must dispatch through
+-    languageLayer.forward(...), not through the low-level shift/reduce
+-    primitives directly. Pins that the WholeSpace integration uses
+-    the plan's target call shape.
+-    """
+-    ws = _xor_model.wholeSpace
+-    calls = {'forward': 0, 'shift': 0, 'reduce': 0}
+-    orig_forward = ws.languageLayer.forward
+-    orig_shift = ws.languageLayer.shift
+-    orig_reduce = ws.languageLayer.reduce
+-
+-    def spy_forward(*a, **kw):
+-        calls['forward'] += 1
+-        return orig_forward(*a, **kw)
+-
+-    def spy_shift(*a, **kw):
+-        calls['shift'] += 1
+-        return orig_shift(*a, **kw)
+-
+-    def spy_reduce(*a, **kw):
+-        calls['reduce'] += 1
+-        return orig_reduce(*a, **kw)
+-
+-    from Spaces import SubSpace
+-    n = int(ws.conceptualSpace.subspace.inputShape[0])
+-    d = int(ws.conceptualSpace.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ws.symbolSpace
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    saved = ws.use_stack_router
+-    saved_what = ws.subspace.what.getW()
+-    try:
+-        ws.languageLayer.forward = spy_forward
+-        ws.languageLayer.shift = spy_shift
+-        ws.languageLayer.reduce = spy_reduce
+-        ws.use_stack_router = True
+-        ws.forward(in_sub)
+-
+-        # Canonical forward fired exactly once (one call per
+-        # WholeSpace.forward invocation).
+-        assert calls['forward'] == 1, (
+-            f"Expected exactly one languageLayer.forward(...) call; "
+-            f"got {calls['forward']}"
+-        )
+-        # shift / reduce still fire (they're called by forward_stack
+-        # under the wrapper) -- the spies count them too because
+-        # forward_stack invokes self.shift / self.reduce on the same
+-        # router instance. This is informational, not a contract.
+-    finally:
+-        ws.languageLayer.forward = orig_forward
+-        ws.languageLayer.shift = orig_shift
+-        ws.languageLayer.reduce = orig_reduce
+-        ws.use_stack_router = saved
+-        if saved_what is not None:
+-            ws.subspace.what.setW(saved_what)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Contract M: WholeSpace.reverse dispatches to LanguageLayer.reverse
+-# under the same flag as the forward branch (symmetry with Phase 5)
+-# ---------------------------------------------------------------------------
+-
+-def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model):
+-    """WholeSpace.reverse calls LanguageLayer.reverse(...) when the
+-    use_stack_router flag is on. Symmetric counterpart to the forward
+-    branch (Phase 5).
+-    """
+-    ws = _xor_model.wholeSpace
+-    calls = {'reverse': 0}
+-    orig_reverse = ws.languageLayer.reverse
+-
+-    def spy_reverse(*a, **kw):
+-        calls['reverse'] += 1
+-        return orig_reverse(*a, **kw)
+-
+-    from Spaces import SubSpace
+-    # The WholeSpace.reverse input is in symbol space; size to match.
+-    n = int(ws.subspace.inputShape[0])
+-    d = int(ws.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ws.symbolSpace
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    saved = ws.use_stack_router
+-    saved_what = ws.subspace.what.getW()
+-    try:
+-        ws.languageLayer.reverse = spy_reverse
+-        ws.use_stack_router = True
+-        # ADAPTED (2026-07-04 serial plan Task 1): the dispatched
+-        # reverse now fails loud on the stub rule; the DISPATCH contract
+-        # (exactly one languageLayer.reverse call) is unchanged.
+-        import pytest
+-        with pytest.raises(NotImplementedError):
+-            ws.reverse(in_sub)
+-        assert calls['reverse'] == 1, (
+-            f"WholeSpace.reverse must call languageLayer.reverse exactly "
+-            f"once with the flag on; got {calls['reverse']}"
+-        )
+-    finally:
+-        ws.languageLayer.reverse = orig_reverse
+-        ws.use_stack_router = saved
+-        if saved_what is not None:
+-            ws.subspace.what.setW(saved_what)
+-
+-
+-def test_symbolic_space_reverse_flag_off_does_not_call_language_layer(_xor_model):
+-    """With use_stack_router=False (default), WholeSpace.reverse must
+-    NOT call languageLayer.reverse; the legacy cursor-based reverse
+-    runs unchanged.
+-    """
+-    ws = _xor_model.wholeSpace
+-    calls = {'reverse': 0}
+-    orig_reverse = ws.languageLayer.reverse
+-
+-    def spy_reverse(*a, **kw):
+-        calls['reverse'] += 1
+-        return orig_reverse(*a, **kw)
+-
+-    from Spaces import SubSpace
+-    n = int(ws.subspace.inputShape[0])
+-    d = int(ws.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ws.symbolSpace
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    saved = ws.use_stack_router
+-    try:
+-        ws.languageLayer.reverse = spy_reverse
+-        assert ws.use_stack_router is False
+-        ws.reverse(in_sub)
+-        assert calls['reverse'] == 0, (
+-            f"Legacy reverse path must not call languageLayer.reverse; "
+-            f"got {calls['reverse']} calls"
+-        )
+-    finally:
+-        ws.languageLayer.reverse = orig_reverse
+-        ws.use_stack_router = saved
+-
+-
+-def test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules(_xor_model):
+-    """Phase 6 symmetry for the reverse path: with the flag on, the
+-    cursor-driven generate_rules path is bypassed.
+-    """
+-    ws = _xor_model.wholeSpace
+-    ss = ws.symbolSpace
+-    from Spaces import SubSpace
+-    n = int(ws.subspace.inputShape[0])
+-    d = int(ws.subspace.muxedSize)
+-    in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+-    in_sub.set_event(torch.randn(1, n, d))
+-    in_sub.symbolSpace = ss
+-    in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
+-
+-    sentinel = {'SS': [['SENTINEL_NOT_TOUCHED']]}
+-    ss.generate_rules = dict(sentinel)
+-    pre_generate_gen = ss._generate_generation
+-
+-    saved = ws.use_stack_router
+-    saved_what = ws.subspace.what.getW()
+-    try:
+-        ws.use_stack_router = True
+-        # ADAPTED (2026-07-04 serial plan Task 1): the stub rule fails
+-        # loud; generate_rules must STILL be untouched by the attempt.
+-        import pytest
+-        try:
+-            ws.reverse(in_sub)
+-        except NotImplementedError:
+-            pass
+-        assert ss.generate_rules == sentinel, (
+-            f"generate_rules mutated under flag-on reverse path: "
+-            f"{ss.generate_rules}"
+-        )
+-        assert ss._generate_generation == pre_generate_gen
+-    finally:
+-        ws.use_stack_router = saved
+-        ss.generate_rules = {}
+-        if saved_what is not None:
+-            ws.subspace.what.setW(saved_what)
++
++
++# ---------------------------------------------------------------------------
++# Retired WholeSpace dispatch is covered by the property/grammar separation below.
++# ---------------------------------------------------------------------------
++
++
++
++
++
+ 
+ 
+ def test_forward_stack_orchestrates_shift_then_reduce():
+@@ -1688,3 +1232,180 @@
+         TheGrammar.rules = saved_rules
+         TheGrammar._configured = saved_configured
+         TheGrammar.symbol_vocab_size = saved_vsym
++
++
++# Item 7, section 11.4: grammar belongs to SymbolSpace; WholeSpace is properties.
++
++def _shared_compose(model):
++    """One real two-slot decision on a caller-owned STM state."""
++    width = model.conceptualSpace.stm.concept_dim
++    buffer = torch.arange(2 * width, dtype=torch.float32).reshape(1, 2, width) / (2 * width)
++    state = (buffer, torch.tensor([2]), torch.ones(1, 2, dtype=torch.long),
++             torch.zeros(1, 2, dtype=torch.long), torch.full((1, 2), -1, dtype=torch.long),
++             torch.ones(1, 2))
++    choice = model.languageSpace.choose_operation(state, torch.tensor([True]), slots=1, sample=False)
++    return state, choice
++
++
++def _shared_generate(model):
++    """A tied inverse from the declared generate catalog, without a cursor."""
++    language = model.languageSpace
++    names = list(language._generate_binary_names)
++    assert names
++    index = 0
++    width = model.conceptualSpace.stm.concept_dim
++    parent = torch.full((1, width), .1)
++    return language.reverse_binary_step(parent, torch.tensor([index]), torch.tensor([True]),
++        reference=torch.full_like(parent, .2), ops=language._generate_binary_ops)
++
++
++def _property_carrier(model):
++    cs = model.conceptualSpace
++    count, width = int(cs.subspace.inputShape[0]), int(cs.subspace.muxedSize)
++    sub = SubSpace([count, width], [count, width], nInputDim=width, nOutputDim=width)
++    sub.set_event(torch.ones(1, count, width))
++    return sub
++
++
++def test_symbolic_space_instance_owns_rule_catalog(_xor_model):
++    from Language import OperationSelectionLayer
++    language = _xor_model.languageSpace
++    operation = _xor_model.symbolSpace.languageLayer.operation_layer
++    assert isinstance(operation, OperationSelectionLayer)
++    assert operation is language._tree_layer(2)
++    assert len(language._compose_binary_rules) == len(operation.ops)
++
++
++def test_word_admission_preserves_the_property_inventory(_xor_model):
++    ws = _xor_model.wholeSpace
++    before = ws.subspace.what.getW().detach().clone()
++    _xor_model._concept_owner().new_concept()
++    torch.testing.assert_close(ws.subspace.what.getW(), before, rtol=0, atol=0)
++    assert not hasattr(ws, 'rule_codebook')
++
++
++def test_rule_codebook_does_not_determine_parent_vectors():
++    from Language import RuleCodebook
++    rc = RuleCodebook(num_rules=1)
++    assert not hasattr(rc, 'forward_to_parent_what'), (
++        'RuleCodebook must not provide parent-vector lookup')
++
++
++def test_symbolic_space_owns_signal_router(_xor_model):
++    from Language import LanguageLayer
++    ss = _xor_model.symbolSpace
++    assert isinstance(ss.languageLayer, LanguageLayer)
++    assert ss.languageLayer is _xor_model.languageSpace.language_layer
++    assert not hasattr(_xor_model.wholeSpace, 'languageLayer')
++
++
++def test_stack_router_gate_is_retired(_xor_model):
++    assert not hasattr(_xor_model.wholeSpace, 'use_stack_router')
++    assert not hasattr(_xor_model.wholeSpace, '_stack_route_forward')
++
++
++def test_shared_operation_writes_the_caller_owned_stack(_xor_model):
++    state, choice = _shared_compose(_xor_model)
++    out = _xor_model.conceptualSpace.apply_language_choice(state, choice)
++    assert out[0] is not None
++    assert torch.isfinite(out[0]).all()
++    assert out[1].tolist() == [1]
++    assert bool((out[0][:, 0].abs().sum(-1) > 0).all())
++
++
++def test_stack_router_does_not_touch_word_space_current_rules(_xor_model):
++    ss = _xor_model.symbolSpace.subspace
++    sentinel = {'SS': [['SENTINEL_NOT_TOUCHED']]}
++    current, generate = ss.current_rules, ss.generate_rules
++    ss.current_rules, ss.generate_rules = dict(sentinel), dict(sentinel)
++    pre_compose_gen, pre_generate_gen = ss._compose_generation, ss._generate_generation
++    try:
++        _shared_compose(_xor_model)
++        assert ss.current_rules == sentinel
++        assert ss.generate_rules == sentinel
++        assert ss._compose_generation == pre_compose_gen
++        assert ss._generate_generation == pre_generate_gen
++    finally:
++        ss.current_rules, ss.generate_rules = current, generate
++
++
++def test_stack_router_does_not_touch_conceptual_stm(_xor_model):
++    stm = _xor_model.conceptualSpace.stm
++    pre_buffer, pre_depth = stm._buffer.detach().clone(), stm._depth.detach().clone()
++    _shared_compose(_xor_model)
++    assert torch.equal(stm._buffer, pre_buffer)
++    assert torch.equal(stm._depth, pre_depth)
++
++
++def test_shared_compose_does_not_dispatch_a_cursor(_xor_model, monkeypatch):
++    sl = _xor_model.symbolSpace.subspace.syntacticLayer
++    calls = {'cursor': 0}
++    original = sl._next_rule_name
++    def cursor(*args, **kwargs):
++        calls['cursor'] += 1
++        return original(*args, **kwargs)
++    monkeypatch.setattr(sl, '_next_rule_name', cursor)
++    _shared_compose(_xor_model)
++    assert calls['cursor'] == 0
++
++
++def test_property_forward_does_not_compose(_xor_model, monkeypatch):
++    operation = _xor_model.symbolSpace.languageLayer.operation_layer
++    calls = {'forward': 0}
++    original = operation.forward
++    def forward(*args, **kwargs):
++        calls['forward'] += 1
++        return original(*args, **kwargs)
++    monkeypatch.setattr(operation, 'forward', forward)
++    _xor_model.wholeSpace.forward(_property_carrier(_xor_model))
++    assert calls['forward'] == 0
++
++
++def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model, monkeypatch):
++    operation = _xor_model.symbolSpace.languageLayer.operation_layer
++    calls = {'forward': 0}
++    original = operation.forward
++    def forward(*args, **kwargs):
++        calls['forward'] += 1
++        return original(*args, **kwargs)
++    monkeypatch.setattr(operation, 'forward', forward)
++    _shared_compose(_xor_model)
++    assert calls['forward'] == 1
++
++
++def test_symbolic_space_reverse_dispatches_to_declared_operator(_xor_model, monkeypatch):
++    language = _xor_model.languageSpace
++    calls = {'reverse': 0}
++    original = language.reverse_binary_step
++    def reverse(*args, **kwargs):
++        calls['reverse'] += 1
++        return original(*args, **kwargs)
++    monkeypatch.setattr(language, 'reverse_binary_step', reverse)
++    _shared_generate(_xor_model)
++    assert calls['reverse'] == 1
++
++
++def test_property_reverse_does_not_call_grammar(_xor_model, monkeypatch):
++    language = _xor_model.languageSpace
++    calls = {'reverse': 0}
++    original = language.reverse_binary_step
++    def reverse(*args, **kwargs):
++        calls['reverse'] += 1
++        return original(*args, **kwargs)
++    monkeypatch.setattr(language, 'reverse_binary_step', reverse)
++    _xor_model.wholeSpace.reverse(_property_carrier(_xor_model))
++    assert calls['reverse'] == 0
++
++
++def test_symbolic_space_reverse_does_not_touch_generate_rules(_xor_model):
++    ss = _xor_model.symbolSpace.subspace
++    sentinel = {'SS': [['SENTINEL_NOT_TOUCHED']]}
++    generate = ss.generate_rules
++    ss.generate_rules = dict(sentinel)
++    pre_generate_gen = ss._generate_generation
++    try:
++        _shared_generate(_xor_model)
++        assert ss.generate_rules == sentinel
++        assert ss._generate_generation == pre_generate_gen
++    finally:
++        ss.generate_rules = generate
+--- a/test/test_surface_grammar.py
++++ b/test/test_surface_grammar.py
+@@ -232,19 +232,22 @@
+     optimizer = model.getOptimizer(lr=.003)
+     try:
+         inputs = model.inputSpace.prepInput(list(chosen))
+-        result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
+-            split="train", optimizer=optimizer, source_rows=[0, 1],
+-            batch_override=(inputs, torch.empty(2, 0)))
++        from reading_fixtures import capture_readings
++        with capture_readings(model) as readings:
++            result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
++                split="train", optimizer=optimizer, source_rows=[0, 1],
++                batch_override=(inputs, torch.empty(2, 0)))
+         assert result is not None
+         for owner, original in zip(owners, before):
+             assert any(not torch.equal(old, new) for old, new in zip(original, owner.parameters()))
+         understanding = model._last_understanding
+         assert understanding.input_reconstruction is not None
+-        assert model._grammar_lesson_objectives(understanding, split="test", source_rows=[0, 1]) is None
++        programs = readings[0]
++        assert model._grammar_lesson_objectives(programs, split="test", source_rows=[0, 1]) is None
+         with pytest.raises(ValueError, match="does not match"):
+-            model._grammar_lesson_objectives(understanding, split="train", source_rows=[1, 0])
++            model._grammar_lesson_objectives(programs, split="train", source_rows=[1, 0])
+         data.grammar_lessons = {}
+-        assert model._grammar_lesson_objectives(understanding, split="train", source_rows=[0, 1]) is None
++        assert model._grammar_lesson_objectives(programs, split="train", source_rows=[0, 1]) is None
+     finally:
+         data.grammar_lessons = {}
+         model.End()
+--- a/test/test_symbolize_layer.py
++++ b/test/test_symbolize_layer.py
+@@ -38,20 +38,6 @@
+     Models.TheData.load("xor")
+     m.eval()
+     return m
+-
+-
+-def _ws_row_from_pos(ws, pos):
+-    """Resolve the fixture's native property position to its stored row."""
+-    row = ws._ws_pos_to_row.get(int(pos))
+-    assert row is not None, f'property position {pos} has no row binding'
+-    return int(row)
+-
+-
+-def _ps_row_from_pos(ws, pos):
+-    """Resolve the fixture's native percept position to its stored row."""
+-    row = ws._ps_pos_to_row.get(int(pos))
+-    assert row is not None, f'percept position {pos} has no row binding'
+-    return int(row)
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -288,10 +274,7 @@
+         ws = m.wholeSpace
+         ps_space = m.perceptualSpace
+         D = int(ws.nDim)
+-        # Ensure PS / SS have at least one row so the nearest-match
+-        # search isn't a no-op.
+-        ws.insert_percept(b"nan_guard_left")
+-        ws.insert_whole()
++        # The pure numerical operator checks inputs before its arithmetic.
+         meta = SymbolizeLayer(
+             wholeSpace=ws,
+             perceptualSpace=ps_space,
+@@ -308,8 +291,6 @@
+         ws = m.wholeSpace
+         ps_space = m.perceptualSpace
+         D = int(ws.nDim)
+-        ws.insert_percept(b"inf_guard_right")
+-        ws.insert_whole()
+         meta = SymbolizeLayer(
+             wholeSpace=ws,
+             perceptualSpace=ps_space,
+@@ -343,24 +324,16 @@
+         ws = m.wholeSpace
+         ps_space = m.perceptualSpace
+         ps_store = ps_space.percept_store
+-        ps_idx = ws.insert_percept(b"compose_word")
+-        ps_row = _ps_row_from_pos(ws,ps_idx)
+-        ws_idx = ws.insert_whole()
+-        ws_row = _ws_row_from_pos(ws,ws_idx)
+         D = int(ws.nDim)
+         a = torch.zeros(D)
+         a[0] = 1.0
+         b = torch.zeros(D)
+         b[1] = 1.0
+-        with torch.no_grad():
+-            ps_store._basis.W.data[ps_row, :] = a
+-            ws.subspace.what.getW().data[ws_row, :] = b
+         meta = SymbolizeLayer(
+             wholeSpace=ws,
+             perceptualSpace=ps_space,
+         )
+-        # First call: forward seeds a META; capture state for an
+-        # apples-to-apples compose comparison.
++        # Compare direct numerical execution and the declared compose face.
+         out_forward = meta.forward(a, b)
+         out_compose = meta.compose(a, b)
+         torch.testing.assert_close(out_forward, out_compose)
+@@ -487,20 +460,12 @@
+         ws = m.wholeSpace
+         ps_space = m.perceptualSpace
+         ps_store = ps_space.percept_store
+-        # Pre-seed a PS row + SS row so forward can resolve nearest-
+-        # match cleanly and register a META.
+-        ps_idx = ws.insert_percept(b"dispatch_word")
+-        ps_row = _ps_row_from_pos(ws,ps_idx)
+-        ws_idx = ws.insert_whole()
+-        ws_row = _ws_row_from_pos(ws,ws_idx)
++        # The registered operator consumes these two actual points.
+         D = int(ws.nDim)
+         ps_vec = torch.zeros(D)
+         ps_vec[0] = 1.0
+         ws_vec = torch.zeros(D)
+         ws_vec[1] = 1.0
+-        with torch.no_grad():
+-            ps_store._basis.W.data[ps_row, :] = ps_vec
+-            ws.subspace.what.getW().data[ws_row, :] = ws_vec
+         ss, cs, prev_rules = self._wire_meta_into_cs_space_role(m)
+         try:
+             registered = ss.host_layer('CS', 'symbolize')
+@@ -514,9 +479,7 @@
+                 _calls.append((left, right))
+                 return _orig(left, right)
+             object.__setattr__(registered, 'forward', _record)
+-            # Invoke the registered layer's compose with codebook-
+-            # matching operands (so forward exercises the radix-mode
+-            # META-allocation branch).
++            # Invoke the registered layer with the same two operand values.
+             out = registered.compose(ps_vec, ws_vec)
+             self.assertTrue(torch.is_tensor(out),
+                             "compose must return a tensor (META vec).")
+@@ -550,18 +513,11 @@
+         ws = m.wholeSpace
+         ps_space = m.perceptualSpace
+         ps_store = ps_space.percept_store
+-        ps_idx = ws.insert_percept(b"adapter_word")
+-        ps_row = _ps_row_from_pos(ws,ps_idx)
+-        ws_idx = ws.insert_whole()
+-        ws_row = _ws_row_from_pos(ws,ws_idx)
+         D = int(ws.nDim)
+         ps_vec = torch.zeros(D)
+         ps_vec[0] = 1.0
+         ws_vec = torch.zeros(D)
+         ws_vec[1] = 1.0
+-        with torch.no_grad():
+-            ps_store._basis.W.data[ps_row, :] = ps_vec
+-            ws.subspace.what.getW().data[ws_row, :] = ws_vec
+         ss, cs, prev_rules = self._wire_meta_into_cs_space_role(m)
+         try:
+             registered = ss.host_layer('CS', 'symbolize')
+--- a/test/test_two_codebook_meta_taxonomy.py
++++ b/test/test_two_codebook_meta_taxonomy.py
+@@ -38,131 +38,73 @@
+     return m
+ 
+ 
+-# ---------------------------------------------------------------------------
+-# Position → row helpers (mirror the implementation lookup tables).
+-# ---------------------------------------------------------------------------
++def _word_concept(model, raw):
++    store = model.perceptualSpace.percept_store
++    row = store.insert(raw)
++    owner = model._concept_owner()
++    return owner.interpret.lookup_word((row,), (), form=raw), row
+ 
+ 
+-def _ws_row_from_pos(ws, pos):
+-    """``pos`` -> SS.codebook row index via ``WholeSpace._ws_pos_to_row``."""
+-    row = ws._ws_pos_to_row.get(int(pos))
+-    if row is None:
+-        raise AssertionError(
+-            f"position {pos} has no SS-side row binding; expected an "
+-            f"SS or META position")
+-    return int(row)
++def _idea_store(model):
++    from ClauseRow import attach_clause_index
++    from Layers import TernaryTruthStore
++    owner = model._concept_owner()
++    store = TernaryTruthStore(int(owner.outputShape[-1]), capacity=8)
++    attach_clause_index(model, store, owner)
++    return store
+ 
+ 
+-def _ps_row_from_pos(ws, pos):
+-    """``pos`` -> PerceptStore row index via ``WholeSpace._ps_pos_to_row``."""
+-    row = ws._ps_pos_to_row.get(int(pos))
+-    if row is None:
+-        raise AssertionError(
+-            f"position {pos} has no PS-side row binding; expected a "
+-            f"PS position")
+-    return int(row)
+-
+-
+-# ---------------------------------------------------------------------------
+-# Tests
+-# ---------------------------------------------------------------------------
++def _write_point(store, point):
++    from ClauseRow import Clause
++    from Meaning import ConceptualMeaning
++    return store.write_clause(Clause(ConceptualMeaning.from_description(point), point=point))
+ 
+ 
+ class TestInsertPercept(unittest.TestCase):
+-    """``insert_percept`` delegates to PerceptStore; returns positive idx."""
+-
+-    def test_insert_percept_returns_positive_idx_and_inserts(self):
++    def test_word_concept_has_positive_id_and_owned_percept_inverse(self):
+         m = _make_radix_model()
+-        ws = m.wholeSpace
+-        # PerceptStore starts empty in a freshly built model
+         ps = m.perceptualSpace.percept_store
+-        self.assertIsNotNone(ps,
+-                             "MM_xor radix-mode model must have a "
+-                             "percept_store on PartSpace")
++        self.assertIsNotNone(ps)
+         starting_size = len(ps)
+-        pos = ws.insert_percept(b"hello")
++        pos, row = _word_concept(m, b"hello")
+         self.assertIsInstance(pos, int)
+-        self.assertGreater(pos, 0,
+-                           f"insert_percept must return a positive position; "
+-                           f"got {pos}")
+-        self.assertEqual(ws._pos_kind.get(pos), "ps",
+-                         "PS position must be tagged 'ps' in _pos_kind")
+-        ps_row = _ps_row_from_pos(ws, pos)
+-        self.assertEqual(ps_row, starting_size,
+-                         "the new percept id should be the next slot")
+-        self.assertEqual(ps.bytes_for(ps_row), b"hello",
+-                         "inverse_table lookup must match insertion")
+-        # Repeat insert of the same canonical bytes returns the same position.
+-        again = ws.insert_percept(b"hello")
+-        self.assertEqual(again, pos,
+-                         "re-inserting same bytes must return the same position")
++        self.assertGreater(pos, 0)
++        self.assertEqual(m._concept_owner().concept_parts(pos), [row])
++        self.assertEqual(row, starting_size)
++        self.assertEqual(ps.bytes_for(row), b"hello")
++        again, _ = _word_concept(m, b"hello")
++        self.assertEqual(again, pos)
+ 
+ 
+-class TestInsertWhole(unittest.TestCase):
+-    """``insert_whole`` allocates a fresh WS row + position (positive int)."""
++class TestInsertIdea(unittest.TestCase):
++    def test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows(self):
++        m = _make_radix_model()
++        store = _idea_store(m)
++        _write_point(store, torch.ones(store.nDim))
++        before = store.slots.detach().clone()
++        point = torch.zeros(store.nDim)
++        point[0], point[1] = .7, -.3
++        row = _write_point(store, point)
++        pos = int(store.row_ids[row])
++        self.assertIsInstance(pos, int)
++        self.assertGreater(pos, 0)
++        self.assertEqual(int(store.rel_type[row]), store.REL_NONE)
++        self.assertGreaterEqual(row, 0)
++        self.assertLess(row, store.capacity)
++        self.assertTrue(torch.allclose(store.slots[row, 0], point, atol=1e-5))
++        for previous in range(row):
++            self.assertTrue(torch.allclose(before[previous], store.slots[previous], atol=1e-6))
+ 
+-    def test_insert_whole_returns_positive_position_and_writes_row(self):
++    def test_distinct_occurrences_get_distinct_addresses(self):
+         m = _make_radix_model()
+-        ws = m.wholeSpace
+-        cb = ws.subspace.what
+-        W_before = cb.getW().detach().clone()
+-        # Use a custom init vector so the test can check exact write.
+-        init_vec = torch.zeros(int(ws.nDim))
+-        init_vec[0] = 0.7
+-        init_vec[1] = -0.3
+-        pos = ws.insert_whole(init_vec=init_vec)
+-        self.assertIsInstance(pos, int)
+-        self.assertGreater(pos, 0,
+-                           f"insert_whole must return a positive position; "
+-                           f"got {pos}")
+-        self.assertEqual(ws._pos_kind.get(pos), "ws",
+-                         "fresh WS whole must be tagged 'ws' in _pos_kind")
+-        ws_row = _ws_row_from_pos(ws, pos)
+-        self.assertGreaterEqual(ws_row, 0)
+-        self.assertLess(ws_row, cb.nVectors)
+-        W_after = cb.getW().detach()
+-        # Compare on the codebook's dtype/device.
+-        expected = init_vec.to(device=W_after.device, dtype=W_after.dtype)
+-        self.assertTrue(
+-            torch.allclose(W_after[ws_row], expected, atol=1e-5),
+-            f"WS row {ws_row} should match init_vec; got "
+-            f"{W_after[ws_row].tolist()} vs {expected.tolist()}")
+-        # Other pre-existing rows untouched.
+-        for r in range(min(W_before.shape[0], W_after.shape[0])):
+-            if r == ws_row:
+-                continue
+-            self.assertTrue(
+-                torch.allclose(W_before[r], W_after[r], atol=1e-6),
+-                f"row {r} changed unexpectedly after insert_whole")
+-
+-    def test_insert_whole_default_init_random(self):
+-        """init_vec=None falls back to a random-ish init."""
+-        m = _make_radix_model()
+-        ws = m.wholeSpace
+-        pos_a = ws.insert_whole()
+-        pos_b = ws.insert_whole()
+-        self.assertNotEqual(pos_a, pos_b,
+-                            "Distinct insert_whole calls must return "
+-                            "distinct positions")
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-if __name__ == "__main__":
+-    unittest.main()
++        store = _idea_store(m)
++        first = _write_point(store, torch.ones(store.nDim))
++        second = _write_point(store, torch.ones(store.nDim))
++        self.assertNotEqual(int(store.row_ids[first]), int(store.row_ids[second]))
+ 
+ 
+ def test_wholespace_has_no_meta_decode_or_persisted_taxonomy():
+     from Spaces import WholeSpace
+-    for name in ('insert_meta', 'reverse_decode', 'taxonomy_parent', 'taxonomy_children'):
++    for name in ('insert_percept', 'insert_whole', 'insert_meta', 'reverse_decode',
++                 'taxonomy_parent', 'taxonomy_children'):
+         assert not hasattr(WholeSpace, name)
+--- a/test/test_unified_thought_controller.py
++++ b/test/test_unified_thought_controller.py
+@@ -152,7 +152,9 @@
+             understood = _capture_program_probe(model, ['12 plus 1', '3 plus 4'])
+         model._staged_in_sub = None
+         registry = model.grammatical_thoughts
+-        ref = ('sym', model._concept_owner().resolve_word_concept('12', order=1))
++        # The controller-credit mechanism needs an explicit native operand;
++        # learned segmentation is not a fixture for the spelling "12".
++        ref = ('sym', model._concept_owner().new_concept())
+         query = registry.form('equal', ref, ref)
+         monkeypatch.setattr(model.languageSpace, 'program_meaning', lambda *_a: query)
+         model.selected_thought_policy_weight = 1

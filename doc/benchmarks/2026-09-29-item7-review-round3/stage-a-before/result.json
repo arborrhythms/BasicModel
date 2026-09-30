@@ -1,0 +1,43 @@
+{
+  "groups": [
+    {
+      "selector": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/probes_stage_a.py",
+      "reason": "test_failure",
+      "exit_code": 1,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_category_em_smoke.py",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "reason": "memory",
+      "exit_code": 137,
+      "receipt": "group-02/result.json"
+    }
+  ],
+  "diagnostic_only": [
+    {
+      "selector": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 1,
+      "reason": "completed",
+      "peak_memory_bytes": 11792213232,
+      "elapsed_seconds": 13.637496792012826
+    },
+    {
+      "selector": "test/test_nanochat_grammar_eval.py::test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+      "diagnostic_only": true,
+      "memory_guard": null,
+      "returncode": 0,
+      "reason": "completed",
+      "peak_memory_bytes": 14562340048,
+      "elapsed_seconds": 5.7419862089445814
+    }
+  ],
+  "reason": "failed"
+}

@@ -1,0 +1,28 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____________________ test_merge_not_inserted_as_operator ______________________
+test/test_merge_structural_not_operator.py:52: in test_merge_not_inserted_as_operator
+    pos = ws.insert_operations(g)
+          ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'
+____________________ test_semantic_operators_still_inserted ____________________
+test/test_merge_structural_not_operator.py:61: in test_semantic_operators_still_inserted
+    ws.insert_operations(g)
+    ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'
+___________________ test_only_semantic_operators_in_codebook ___________________
+test/test_merge_structural_not_operator.py:70: in test_only_semantic_operators_in_codebook
+    pos = ws.insert_operations(g)
+          ^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'insert_operations'
+=========================== short test summary info ============================
+FAILED test/test_merge_structural_not_operator.py::test_merge_not_inserted_as_operator
+FAILED test/test_merge_structural_not_operator.py::test_semantic_operators_still_inserted
+FAILED test/test_merge_structural_not_operator.py::test_only_semantic_operators_in_codebook
+3 failed in 2.39s

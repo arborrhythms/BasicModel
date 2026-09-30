@@ -1,0 +1,1430 @@
+{
+  "HEAD": {
+    "rows": [
+      {
+        "trial": 0,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-00.json"
+          ],
+          "pid": 79152,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8209881856,
+          "elapsed_seconds": 285.7439312080387,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-00.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 3.928066760749971e-10,
+          "ending_training_predictions": [
+            -2.2172927856445312e-05,
+            0.9999827742576599,
+            0.9999839067459106,
+            -2.288818359375e-05
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 271.67681066691875,
+          "after_900_updates_mse": 3.2808955552354746e-10,
+          "after_900_updates_predictions": [
+            1.7404556274414062e-05,
+            1.0000176429748535,
+            1.0000176429748535,
+            1.9669532775878906e-05
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 1,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-01.json"
+          ],
+          "pid": 79875,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8205064984,
+          "elapsed_seconds": 266.8222782500088,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-01.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.1131030023097992,
+          "ending_training_predictions": [
+            0.3383212089538574,
+            0.6610389351844788,
+            0.6657625436782837,
+            0.3336787223815918
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 256.93211041693576,
+          "after_900_updates_mse": 0.11307524144649506,
+          "after_900_updates_predictions": [
+            0.3382718563079834,
+            0.6610900163650513,
+            0.665795087814331,
+            0.33364683389663696
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 2,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-02.json"
+          ],
+          "pid": 80497,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8205687552,
+          "elapsed_seconds": 270.3762984590139,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-02.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 4.630707053365768e-07,
+          "ending_training_predictions": [
+            0.0006805062294006348,
+            0.9993190765380859,
+            0.9993176460266113,
+            0.0006781816482543945
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 257.98111220798455,
+          "after_900_updates_mse": 4.4822414224654494e-07,
+          "after_900_updates_predictions": [
+            0.00067138671875,
+            0.9993312358856201,
+            0.9993302226066589,
+            0.0006680488586425781
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 3,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-03.json"
+          ],
+          "pid": 80945,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8204081896,
+          "elapsed_seconds": 290.56610024999827,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-03.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.026128441095352173,
+          "ending_training_predictions": [
+            0.17240500450134277,
+            0.8496842384338379,
+            0.8474974632263184,
+            0.1701129972934723
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 277.1679897091817,
+          "after_900_updates_mse": 0.0244002565741539,
+          "after_900_updates_predictions": [
+            0.1243751049041748,
+            0.8167598843574524,
+            0.8224433660507202,
+            0.13049355149269104
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 4,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-04.json"
+          ],
+          "pid": 81938,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8206015256,
+          "elapsed_seconds": 286.1742987919133,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-04.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.3215630352497101,
+          "ending_training_predictions": [
+            0.5126262903213501,
+            0.38488245010375977,
+            0.3135184645652771,
+            0.41694116592407227
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 276.685543541098,
+          "after_900_updates_mse": 0.3236429989337921,
+          "after_900_updates_predictions": [
+            0.4877277910709381,
+            0.36595961451530457,
+            0.301927387714386,
+            0.4091222584247589
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 5,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-05.json"
+          ],
+          "pid": 83190,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8204557056,
+          "elapsed_seconds": 300.1136019169353,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-05.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 4.572948952841216e-08,
+          "ending_training_predictions": [
+            0.00019490718841552734,
+            0.9997704029083252,
+            0.9997706413269043,
+            0.0001990199089050293
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 286.08258791593835,
+          "after_900_updates_mse": 4.4210381133780174e-08,
+          "after_900_updates_predictions": [
+            0.00022432208061218262,
+            0.9998036623001099,
+            0.9998022317886353,
+            0.00022104382514953613
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 6,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-06.json"
+          ],
+          "pid": 84180,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8205654784,
+          "elapsed_seconds": 247.46809875010513,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-06.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.2485499083995819,
+          "ending_training_predictions": [
+            0.4984102249145508,
+            0.501441240310669,
+            0.5014533400535583,
+            0.49867546558380127
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 238.99849433312193,
+          "after_900_updates_mse": 0.24855032563209534,
+          "after_900_updates_predictions": [
+            0.4984109401702881,
+            0.5014408230781555,
+            0.5014532208442688,
+            0.4986759424209595
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 7,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-07.json"
+          ],
+          "pid": 85121,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8204917504,
+          "elapsed_seconds": 216.38915833388455,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-07.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.15863893926143646,
+          "ending_training_predictions": [
+            0.3982507288455963,
+            0.6017544269561768,
+            0.6016906499862671,
+            0.3983744978904724
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 210.93333016708493,
+          "after_900_updates_mse": 0.15855921804904938,
+          "after_900_updates_predictions": [
+            0.3981517255306244,
+            0.6018543243408203,
+            0.60179203748703,
+            0.39827442169189453
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 8,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-08.json"
+          ],
+          "pid": 85877,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8203967280,
+          "elapsed_seconds": 206.8793230841402,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-08.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.18720167875289917,
+          "ending_training_predictions": [
+            0.43320223689079285,
+            0.5677425861358643,
+            0.5664992928504944,
+            0.4317097067832947
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 201.65568904206157,
+          "after_900_updates_mse": 0.18676693737506866,
+          "after_900_updates_predictions": [
+            0.43269380927085876,
+            0.5682406425476074,
+            0.5670077204704285,
+            0.4312138557434082
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 9,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-09.json"
+          ],
+          "pid": 86336,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 8202836760,
+          "elapsed_seconds": 202.06165049993433,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-head/run-09.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 5.35901835974073e-06,
+          "ending_training_predictions": [
+            0.0023155808448791504,
+            0.9976833462715149,
+            0.997687041759491,
+            0.002314627170562744
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 196.93294212501496,
+          "after_900_updates_mse": 5.260485522740055e-06,
+          "after_900_updates_predictions": [
+            0.002297341823577881,
+            0.9977087378501892,
+            0.9977113008499146,
+            0.0022969841957092285
+          ],
+          "store_owner_present": false,
+          "store_rows": 0,
+          "definition_rows": 0
+        },
+        "completed_under_guard": true
+      }
+    ],
+    "completed_under_guard": 10,
+    "median_ending_mse": 0.06961572170257568
+  },
+  "before AK": {
+    "rows": [
+      {
+        "trial": 0,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-00.json"
+          ],
+          "pid": 86710,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 593184208,
+          "elapsed_seconds": 182.44152441597544,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-00.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.04248496890068054,
+          "ending_training_predictions": [
+            0.2055838704109192,
+            0.7934623956680298,
+            0.7933841943740845,
+            0.205735981464386
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 178.45505358395167,
+          "after_900_updates_mse": 0.04228069633245468,
+          "after_900_updates_predictions": [
+            0.20638614892959595,
+            0.7945579290390015,
+            0.7953343987464905,
+            0.2059929370880127
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 1,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-01.json"
+          ],
+          "pid": 87581,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 623625680,
+          "elapsed_seconds": 156.1630583750084,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-01.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.1433953046798706,
+          "ending_training_predictions": [
+            0.38071149587631226,
+            0.6243361830711365,
+            0.6233744025230408,
+            0.3816671371459961
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 151.99537433404475,
+          "after_900_updates_mse": 0.14326868951320648,
+          "after_900_updates_predictions": [
+            0.3773474097251892,
+            0.6197904944419861,
+            0.6203333139419556,
+            0.37679916620254517
+          ],
+          "store_owner_present": true,
+          "store_rows": 1020,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 2,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-02.json"
+          ],
+          "pid": 88241,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 584844776,
+          "elapsed_seconds": 183.88471316709183,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-02.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.2445593774318695,
+          "ending_training_predictions": [
+            0.4871481955051422,
+            0.5118613243103027,
+            0.4940386116504669,
+            0.4966365396976471
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 179.48387129209004,
+          "after_900_updates_mse": 0.24487809836864471,
+          "after_900_updates_predictions": [
+            0.5233149528503418,
+            0.5343914031982422,
+            0.5313831567764282,
+            0.518903374671936
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 3,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-03.json"
+          ],
+          "pid": 89000,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 613320144,
+          "elapsed_seconds": 189.53905775002204,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-03.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.12519821524620056,
+          "ending_training_predictions": [
+            0.3546987771987915,
+            0.646916925907135,
+            0.6472635269165039,
+            0.3548111617565155
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 185.16675233398564,
+          "after_900_updates_mse": 0.12494666874408722,
+          "after_900_updates_predictions": [
+            0.35613906383514404,
+            0.6486237645149231,
+            0.6498589515686035,
+            0.35621291399002075
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 4,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-04.json"
+          ],
+          "pid": 89689,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 674137648,
+          "elapsed_seconds": 204.66478774999268,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-04.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.33627447485923767,
+          "ending_training_predictions": [
+            0.5737705230712891,
+            0.41278699040412903,
+            0.41134023666381836,
+            0.5696892738342285
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 200.23385695903562,
+          "after_900_updates_mse": 0.33495745062828064,
+          "after_900_updates_predictions": [
+            0.5807049870491028,
+            0.41905149817466736,
+            0.41521281003952026,
+            0.5684490203857422
+          ],
+          "store_owner_present": true,
+          "store_rows": 1020,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 5,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-05.json"
+          ],
+          "pid": 90512,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 689407512,
+          "elapsed_seconds": 206.96284983400255,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-05.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.19378158450126648,
+          "ending_training_predictions": [
+            0.4422808587551117,
+            0.5596494078636169,
+            0.5595831274986267,
+            0.4377652108669281
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 202.7145557499025,
+          "after_900_updates_mse": 0.1937020719051361,
+          "after_900_updates_predictions": [
+            0.442194402217865,
+            0.5597344636917114,
+            0.559678316116333,
+            0.4376705288887024
+          ],
+          "store_owner_present": true,
+          "store_rows": 1020,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 6,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-06.json"
+          ],
+          "pid": 91144,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 656967168,
+          "elapsed_seconds": 205.22383954189718,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-06.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.18662823736667633,
+          "ending_training_predictions": [
+            0.42955976724624634,
+            0.5702585577964783,
+            0.5660699605941772,
+            0.4347624182701111
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 200.92900537489913,
+          "after_900_updates_mse": 0.18620900809764862,
+          "after_900_updates_predictions": [
+            0.42909178137779236,
+            0.5707314014434814,
+            0.5665715336799622,
+            0.4342631995677948
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 7,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-07.json"
+          ],
+          "pid": 91540,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 608044544,
+          "elapsed_seconds": 185.17245125002228,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-07.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.08990462124347687,
+          "ending_training_predictions": [
+            0.3032718598842621,
+            0.7039134502410889,
+            0.7025620937347412,
+            0.3025030493736267
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 180.94231516704895,
+          "after_900_updates_mse": 0.0898129791021347,
+          "after_900_updates_predictions": [
+            0.29483169317245483,
+            0.6951555609703064,
+            0.6970652937889099,
+            0.29601794481277466
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 8,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-08.json"
+          ],
+          "pid": 91881,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 597231056,
+          "elapsed_seconds": 185.381825709017,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-08.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.06369277834892273,
+          "ending_training_predictions": [
+            0.25218749046325684,
+            0.7493630647659302,
+            0.7461565732955933,
+            0.25281858444213867
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 181.1107489161659,
+          "after_900_updates_mse": 0.06351113319396973,
+          "after_900_updates_predictions": [
+            0.2518303394317627,
+            0.7497155666351318,
+            0.7465230226516724,
+            0.2524542510509491
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 9,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-09.json"
+          ],
+          "pid": 92086,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 625346048,
+          "elapsed_seconds": 139.21200199984014,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/final3-mm-grammar-candidate/run-09.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.0028398323338478804,
+          "ending_training_predictions": [
+            0.053792208433151245,
+            0.9467374682426453,
+            0.9466762542724609,
+            0.05277696251869202
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 134.96019420796074,
+          "after_900_updates_mse": 0.002896032063290477,
+          "after_900_updates_predictions": [
+            0.05432713031768799,
+            0.946226954460144,
+            0.9461643695831299,
+            0.05331861972808838
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      }
+    ],
+    "completed_under_guard": 10,
+    "median_ending_mse": 0.13429675996303558
+  },
+  "candidate": {
+    "rows": [
+      {
+        "trial": 0,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-00.json"
+          ],
+          "pid": 10532,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 607340032,
+          "elapsed_seconds": 167.64347683405504,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-00.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.2405891716480255,
+          "ending_training_predictions": [
+            0.4906899929046631,
+            0.50978684425354,
+            0.5095996260643005,
+            0.4906919598579407
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 163.7616549578961,
+          "after_900_updates_mse": 0.24067577719688416,
+          "after_900_updates_predictions": [
+            0.4903903901576996,
+            0.5091325044631958,
+            0.5093052387237549,
+            0.4903959035873413
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 1,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-01.json"
+          ],
+          "pid": 11135,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 613942784,
+          "elapsed_seconds": 179.79374633403495,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-01.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.17215575277805328,
+          "ending_training_predictions": [
+            0.4137347936630249,
+            0.5840402841567993,
+            0.5845993757247925,
+            0.4145676791667938
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 176.03525016689673,
+          "after_900_updates_mse": 0.17211121320724487,
+          "after_900_updates_predictions": [
+            0.41591158509254456,
+            0.5861216187477112,
+            0.585540235042572,
+            0.4151989817619324
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 2,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-02.json"
+          ],
+          "pid": 11535,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 606242256,
+          "elapsed_seconds": 131.90105208288878,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-02.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.07625026255846024,
+          "ending_training_predictions": [
+            0.2748900055885315,
+            0.7238200902938843,
+            0.7244042754173279,
+            0.27786362171173096
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 128.13454154203646,
+          "after_900_updates_mse": 0.07601725310087204,
+          "after_900_updates_predictions": [
+            0.274471253156662,
+            0.7242459058761597,
+            0.7248221635818481,
+            0.2774371802806854
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 3,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-03.json"
+          ],
+          "pid": 11712,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 619234792,
+          "elapsed_seconds": 145.98811516701244,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-03.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 5.688690362148918e-05,
+          "ending_training_predictions": [
+            0.0014847815036773682,
+            0.9880309104919434,
+            0.9910951852798462,
+            0.0016697943210601807
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 142.19108358281665,
+          "after_900_updates_mse": 3.744202695088461e-05,
+          "after_900_updates_predictions": [
+            0.008571475744247437,
+            1.0005385875701904,
+            0.9978806972503662,
+            0.00845673680305481
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 4,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-04.json"
+          ],
+          "pid": 11831,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 700843568,
+          "elapsed_seconds": 195.7236342919059,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-04.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.00014209044456947595,
+          "ending_training_predictions": [
+            0.013860583305358887,
+            0.995593249797821,
+            0.9941489696502686,
+            0.017960846424102783
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 191.4491251660511,
+          "after_900_updates_mse": 0.00011904200073331594,
+          "after_900_updates_predictions": [
+            0.009314388036727905,
+            0.9868404865264893,
+            0.987436056137085,
+            0.0076409876346588135
+          ],
+          "store_owner_present": true,
+          "store_rows": 1020,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 5,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-05.json"
+          ],
+          "pid": 12193,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 568034768,
+          "elapsed_seconds": 141.1070084159728,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-05.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 7.122189948916002e-09,
+          "ending_training_predictions": [
+            6.958842277526855e-05,
+            0.9999009966850281,
+            0.999904990196228,
+            6.940960884094238e-05
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 136.89267304213718,
+          "after_900_updates_mse": 6.309464950504662e-09,
+          "after_900_updates_predictions": [
+            9.28044319152832e-05,
+            0.9999395608901978,
+            0.999934732913971,
+            9.334087371826172e-05
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 6,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-06.json"
+          ],
+          "pid": 12688,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 566674872,
+          "elapsed_seconds": 143.42878700001165,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-06.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.1296699047088623,
+          "ending_training_predictions": [
+            0.36047178506851196,
+            0.640404224395752,
+            0.6401375532150269,
+            0.36045747995376587
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 139.1765234170016,
+          "after_900_updates_mse": 0.12946473062038422,
+          "after_900_updates_predictions": [
+            0.35942742228507996,
+            0.6396734118461609,
+            0.6399535536766052,
+            0.35944706201553345
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 7,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-07.json"
+          ],
+          "pid": 12886,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 641598976,
+          "elapsed_seconds": 138.42072416702285,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-07.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.030989069491624832,
+          "ending_training_predictions": [
+            0.1837294101715088,
+            0.8358278274536133,
+            0.833946943283081,
+            0.1888747215270996
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 134.20114775002003,
+          "after_900_updates_mse": 0.03123270720243454,
+          "after_900_updates_predictions": [
+            0.1672908365726471,
+            0.8107339143753052,
+            0.8128236532211304,
+            0.16151770949363708
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 8,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-08.json"
+          ],
+          "pid": 13101,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 566887864,
+          "elapsed_seconds": 159.82385670905933,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-08.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.248850017786026,
+          "ending_training_predictions": [
+            0.5009650588035583,
+            0.5014402866363525,
+            0.5009192228317261,
+            0.4967803657054901
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 154.30040329205804,
+          "after_900_updates_mse": 0.24868151545524597,
+          "after_900_updates_predictions": [
+            0.5007797479629517,
+            0.5016139149665833,
+            0.5010841488838196,
+            0.4966285824775696
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      },
+      {
+        "trial": 9,
+        "process": {
+          "command": [
+            "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/measure_mm_grammar.py",
+            "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-09.json"
+          ],
+          "pid": 13235,
+          "exit_code": 0,
+          "reason": "exit",
+          "peak_memory_bytes": 569787856,
+          "elapsed_seconds": 158.57351462496445,
+          "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-candidate/run-09.log"
+        },
+        "measurement": {
+          "epochs": 900,
+          "seed": null,
+          "configuration": "data/MM_grammar.xml",
+          "completed_epochs": 900,
+          "ending_training_mse": 0.039486050605773926,
+          "ending_training_predictions": [
+            0.1990988850593567,
+            0.8017616868019104,
+            0.8015846014022827,
+            0.19908976554870605
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "elapsed_seconds": 153.71002083295025,
+          "after_900_updates_mse": 0.03942495584487915,
+          "after_900_updates_predictions": [
+            0.19839724898338318,
+            0.8009645938873291,
+            0.8011353015899658,
+            0.1979295313358307
+          ],
+          "store_owner_present": true,
+          "store_rows": 1024,
+          "definition_rows": 4
+        },
+        "completed_under_guard": true
+      }
+    ],
+    "completed_under_guard": 10,
+    "median_ending_mse": 0.05786815658211708
+  }
+}

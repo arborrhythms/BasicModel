@@ -1,0 +1,28 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______________________ test_ps_to_ws_null_before_binding _______________________
+test/test_ps_ss_binding.py:67: in test_ps_to_ws_null_before_binding
+    vec, pos, grounded = ws.resolve_ps_terminal(4242, promote_threshold=2)
+                         ^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'
+____________________ test_ps_to_ws_binding_after_repetition ____________________
+test/test_ps_ss_binding.py:77: in test_ps_to_ws_binding_after_repetition
+    _, _, g1 = ws.resolve_ps_terminal(pid, promote_threshold=2)
+               ^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'
+________________ test_byte_fallback_terminal_is_never_grounded _________________
+test/test_ps_ss_binding.py:94: in test_byte_fallback_terminal_is_never_grounded
+    vec, pos, grounded = ws.resolve_ps_terminal(-1, promote_threshold=2)
+                         ^^^^^^^^^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'WholeSpace' object has no attribute 'resolve_ps_terminal'
+=========================== short test summary info ============================
+FAILED test/test_ps_ss_binding.py::test_ps_to_ws_null_before_binding - Attrib...
+FAILED test/test_ps_ss_binding.py::test_ps_to_ws_binding_after_repetition - A...
+FAILED test/test_ps_ss_binding.py::test_byte_fallback_terminal_is_never_grounded
+3 failed in 2.12s

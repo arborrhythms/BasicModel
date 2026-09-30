@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "completed": [
+    "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-00/worker-000.json"
+      ],
+      "pid": 74964,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431834432,
+      "elapsed_seconds": 7.308895375113934,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+      ],
+      "completed": [
+        "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.021958875004202127,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-00",
+  "elapsed_seconds": 15.235494750086218,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 481314016,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-00/collect.json"
+    ],
+    "pid": 74945,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 481314016,
+    "elapsed_seconds": 7.56194437504746,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round4/ag-selected-property-after/group-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

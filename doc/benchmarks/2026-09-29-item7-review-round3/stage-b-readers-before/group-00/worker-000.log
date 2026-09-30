@@ -1,0 +1,62 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting __
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:19: in test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting
+    assert cs.word_surface_for_row(row) is None
+E   AssertionError: assert b'hello' is None
+E    +  where b'hello' = word_surface_for_row(0)
+E    +    where word_surface_for_row = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_surface_for_row
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+___________ test_pending_field_word_reservation_survives_checkpoint ____________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:32: in test_pending_field_word_reservation_survives_checkpoint
+    fresh._restore_structural_extras(saved)
+bin/Models.py:4983: in _restore_structural_extras
+    store.load_semantic_extras(saved)
+bin/Layers.py:9454: in load_semantic_extras
+    raise ValueError("truth semantic checkpoint occurrence namespace differs")
+E   ValueError: truth semantic checkpoint occurrence namespace differs
+__________ test_taxonomy_keeps_the_forms_derived_from_definition_rows __________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:46: in test_taxonomy_keeps_the_forms_derived_from_definition_rows
+    assert parent in cs.word_concepts('animal')
+E   AssertionError: assert 5 in (1, 2)
+E    +  where (1, 2) = word_concepts('animal')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+___________ test_migrated_meta_has_no_live_identity_or_inventory_row ___________
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py:62: in test_migrated_meta_has_no_live_identity_or_inventory_row
+    assert meta not in alloc.placement
+E   assert 3 not in {1: 0, 2: 1, 3: 0}
+E    +  where {1: 0, 2: 1, 3: 0} = <Layers.ConceptAllocator object at 0x1401b1dc0>.placement
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py:450: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_migrated_meta_has_no_live_identity_or_inventory_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_pending_field_word_reservation_survives_checkpoint
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows
+FAILED doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers.py::test_migrated_meta_has_no_live_identity_or_inventory_row
+4 failed, 6 warnings in 2.29s

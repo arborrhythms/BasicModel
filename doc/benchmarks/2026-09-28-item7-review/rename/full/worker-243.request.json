@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_ss_codebook_operations.py::test_operations_inserted_into_ws_codebook",
+    "test/test_ss_codebook_operations.py::test_build_auto_inserts_operations",
+    "test/test_ss_codebook_operations.py::test_insert_operations_is_idempotent",
+    "test/test_ss_codebook_operations.py::test_operations_are_distinct_from_meaning_symbols"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review/rename/full/worker-243.recycle.json"
+}

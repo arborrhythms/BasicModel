@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probes_z_symbolization.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.013578499900177121</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probes_z_symbolization.py:16: in test_full_inventory_refuses_symbolization_and_still_writes_the_part_row
+    row = f.store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:237: in write_clause
+    index_plan = None if make_index_plan is None else make_index_plan(clause)
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:145: in &lt;lambda&gt;
+    lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ConceptIndex.py:147: in __init__
+    self.validate_rows()
+bin/ConceptIndex.py:175: in validate_rows
+    raise RuntimeError(&#x27;native conceptual row capacity exhausted before clause admission&#x27;)
+E   RuntimeError: native conceptual row capacity exhausted before clause admission</pre></td><td><pre></pre></td></tr></table></body></html>

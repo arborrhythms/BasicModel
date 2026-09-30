@@ -1,0 +1,6 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py::test_more_than_eight_words_reuse_the_attended_field</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>3.4564307909458876</pre></td><td><pre>doc/benchmarks/2026-09-30-item7-review-round4/probe_ae.py:30: in test_more_than_eight_words_reuse_the_attended_field
+    assert len(slot) == 1, word
+E   AssertionError: lynx
+E   assert 0 == 1
+E    +  where 0 = len(tensor([], dtype=torch.int64))</pre></td><td><pre>{&quot;form&quot;: &quot;lynx&quot;, &quot;lookup&quot;: [12], &quot;word&quot;: null, &quot;objects&quot;: [], &quot;carrier_ids&quot;: [-1, -1, -1, -1, -1, -1, -1, -1], &quot;source_is_terminal&quot;: true}
+</pre></td></tr></table></body></html>

@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 5/5 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_item7_clause_program.py::test_nested_clause_retains_its_own_field_without_program_or_targets</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.007791583891957998</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_clause_program.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004803250078111887</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_clause_program.py::test_selected_clause_tree_owns_its_local_references</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004321875050663948</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_clause_program.py::test_bare_unlocated_np_reuses_its_concept_identity</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004216750152409077</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_item7_clause_program.py::test_three_slot_closing_registers_its_composite_operand</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0039389170706272125</pre></td><td><pre>test/test_item7_clause_program.py:94: in test_three_slot_closing_registers_its_composite_operand
+    row = store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:341: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:297: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:297: in &lt;genexpr&gt;
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:299: in preflight
+    raise ValueError(&#x27;predicate identity requires the clause index&#x27;)
+E   ValueError: predicate identity requires the clause index</pre></td><td><pre></pre></td></tr></table></body></html>

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py::test_pending_field_word_reservation_survives_checkpoint",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.5116116660647094,
+      "message": "doc/benchmarks/2026-09-29-item7-review-round3/probes_definition_readers_v2.py:35: in test_pending_field_word_reservation_survives_checkpoint\n    assert target.interpret._pending == cs.interpret._pending\nE   AssertionError: assert {} == {1: {'forms':...holes': (1,)}}\nE     \nE     Right contains 1 more item:\nE     {1: {'forms': ('00',), 'parts': ((48, 48),), 'wholes': (1,)}}\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

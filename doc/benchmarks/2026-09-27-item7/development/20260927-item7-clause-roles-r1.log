@@ -1,0 +1,30 @@
+..F...........................................                           [100%]
+=================================== FAILURES ===================================
+_______ test_05_embedded_part_is_unasserted_and_propagates_operator_kind _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1231e60f0>
+
+    def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        inner = ('part', 'cats', 'animals')
+        clause = f.clause(('lift', 'he', ('verb', 'said', inner)))
+        row = f.store.seal_clause(clause, trust=.6)
+        assert row == 1 and f.store.rel_type[:2].tolist() == [f.store.REL_PARTOF, f.store.REL_OPERATOR]
+        assert f.store.refs[row, 2] == f.store.row_ids[0]
+        assert not bool(f.store.slots[row, 2].any())
+>       assert f.store.trust[:2].tolist() == [0., .6]
+E       assert [0.0, 0.6000000238418579] == [0.0, 0.6]
+E         
+E         At index 1 diff: 0.6000000238418579 != 0.6
+E         Use -v to get more diff
+
+test/test_item7_acceptance.py:111: AssertionError
+=============================== warnings summary ===============================
+test/test_item7_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind
+1 failed, 45 passed, 1 warning in 2.54s

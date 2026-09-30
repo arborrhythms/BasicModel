@@ -1,0 +1,133 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_forward_bpe_emits_word_level_vectors",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_accepts_bpe_with_nVectors_256",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_reads_new_config_fields",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_rejects_bpe_with_nVectors_below_256",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_max_fusion_elementwise_max",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_train_step_respects_nVectors_cap",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bpe_constructs_shared_store_with_aligned_ids",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_round_trips_smoke_prompt_through_store",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_mphf_constructs_shared_store_with_aligned_ids",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_promotion_mirrors_into_store",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter"
+  ],
+  "completed": [
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_forward_bpe_emits_word_level_vectors",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_accepts_bpe_with_nVectors_256",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_reads_new_config_fields",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_rejects_bpe_with_nVectors_below_256",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_max_fusion_elementwise_max",
+    "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_train_step_respects_nVectors_cap",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bpe_constructs_shared_store_with_aligned_ids",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_round_trips_smoke_prompt_through_store",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_mphf_constructs_shared_store_with_aligned_ids",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_promotion_mirrors_into_store",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_forward_bpe_emits_word_level_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05944383307360113,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_accepts_bpe_with_nVectors_256",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038886083057150245,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_reads_new_config_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010760457953438163,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_init_rejects_bpe_with_nVectors_below_256",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011227250099182129,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_max_fusion_elementwise_max",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03988558310084045,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestPerceptualSpaceBPE::test_train_step_respects_nVectors_cap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010081250220537186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bpe_constructs_shared_store_with_aligned_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.039306042017415166,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_round_trips_smoke_prompt_through_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038753333035856485,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016808300279080868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_mphf_constructs_shared_store_with_aligned_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03870012518018484,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_promotion_mirrors_into_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03940774989314377,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.039099707966670394,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

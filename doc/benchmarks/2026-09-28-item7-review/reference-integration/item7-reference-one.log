@@ -1,0 +1,91 @@
+F
+=================================== FAILURES ===================================
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7952/test_public_reading_fuses_the_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110f7fe30>
+
+    def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path,monkeypatch):
+        from test_meronomy_ladder import _build_ladder_variant
+        from LiveReferences import ReferenceBank
+        import util
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        model=_build_ladder_variant(tmp_path,'live_identity',[
+            ('<architecture>','<architecture><ltmConsolidation>true</ltmConsolidation>')])
+        model._tensor_peer_while_eager=True
+        model._chart_compose_per_word=lambda:None
+        model._install_unit_span_fn()
+        model.reconstruct_in_loop=False
+        model.loss.reconstruction_scale=0.
+        language=model.languageSpace
+        rules=list(language._compose_binary_rules)
+        op=next(i for i,r in enumerate(rules) if r.method_name=='lift')
+        rules[op]=rules[op]._replace(reference_orders=(('I1',1),),reference_kinds=(('I1','particular'),))
+        language._compose_binary_rules=tuple(rules)
+        layer=language._tree_layer(2)
+        original=layer.forward
+        def forced(x,**kwargs):
+            stop=(x.shape[1]-1)*layer.r_reduce+x.shape[1]*layer.r_apply
+            kwargs['replay_action']=torch.where(kwargs['depth']>=2,op,stop)
+            return original(x,**kwargs)
+        monkeypatch.setattr(layer,'forward',forced)
+        width=model.conceptualSpace.stm.concept_dim
+        prior=torch.nn.functional.normalize(torch.arange(1,width+1,dtype=torch.float32),dim=0)
+        query=torch.nn.Parameter(prior.clone())
+        from ClauseRow import Clause
+        from Meaning import ConceptualMeaning
+        store=model.symbolSpace.ltm_store
+>       index=store.write_clause(Clause(ConceptualMeaning.from_description(prior),point=prior))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_live_references_draft.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore()
+clause = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(),...), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, eternal=False, factored_refs=None)
+trust = 0.0, origin = None, stream = -1, kind = 'observation', evidence = None
+text = None, expectation = None
+
+    @torch.no_grad()
+    def write_clause(self, clause, *, trust=0., origin=None, stream=-1, kind='observation',
+                    evidence=None, text=None, expectation=None):
+        """Write embedded S rows first, without granting them assertion authority.
+    
+        The caller supplies provenance. Clause operators supply only structure
+        and polarity. Repeated relations join independent evidence poles.
+        """
+        if not isinstance(clause, Clause):
+            raise TypeError('write_clause requires a completed field')
+        assertion = self.__dict__.get('_clause_assertion')
+        if assertion is not None:
+            if clause.meaning.mode == 'interrogative':
+                raise ValueError('a TruthSet cannot assert an interrogative clause')
+            trust, origin, text = assertion['trust'], assertion['origin'], assertion['text']
+            kind = 'fact'
+            clause = replace(clause, meaning=replace(clause.meaning, mode='assertive'))
+        import math
+        if not math.isfinite(float(trust)):
+            raise ValueError('clause provenance must be finite')
+        if evidence is not None and (len(evidence) != 2 or any(
+                not math.isfinite(float(x)) or not 0 <= float(x) <= 1 for x in evidence)):
+            raise ValueError('clause evidence requires two finite poles in [0, 1]')
+        allocate = getattr(self, '_allocate_clause_row', None)
+        if allocate is None:
+>           raise ValueError('clause admission requires the shared concept allocator')
+E           ValueError: clause admission requires the shared concept allocator
+
+bin/ClauseRow.py:219: ValueError
+=============================== warnings summary ===============================
+test/test_live_references_draft.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_live_references_draft.py::test_public_reading_fuses_the_reference_before_capture_and_write
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 warning in 2.77s

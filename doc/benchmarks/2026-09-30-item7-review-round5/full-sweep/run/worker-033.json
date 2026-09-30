@@ -1,0 +1,383 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_item9b_capacity_contract.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+    "test/test_item9b_capacity_contract.py::test_atomic_byte_admission_preflights_the_complete_batch",
+    "test/test_item9b_capacity_contract.py::test_admission_preserves_optimizer_parameter_and_moments",
+    "test/test_item9b_capacity_contract.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+    "test/test_item9b_capacity_contract.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+    "test/test_item9b_capacity_contract.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+    "test/test_item9b_capacity_contract.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+    "test/test_item9b_capacity_contract.py::test_large_where_ranges_keep_symbol_row_addresses_exact"
+  ],
+  "completed": [
+    "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_item9b_capacity_contract.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+    "test/test_item9b_capacity_contract.py::test_atomic_byte_admission_preflights_the_complete_batch",
+    "test/test_item9b_capacity_contract.py::test_admission_preserves_optimizer_parameter_and_moments",
+    "test/test_item9b_capacity_contract.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+    "test/test_item9b_capacity_contract.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+    "test/test_item9b_capacity_contract.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+    "test/test_item9b_capacity_contract.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+    "test/test_item9b_capacity_contract.py::test_large_where_ranges_keep_symbol_row_addresses_exact"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001467792084440589,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002066750079393387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unfold_index.py::test_unfold_candidates_are_the_current_priming_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000490417005494237,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009410375030711293,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006683208979666233,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007793874945491552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007496957900002599,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007568999892100692,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009281124919652939,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006712417118251324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23904825001955032,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_23_fuse_parts_before_word_admission",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.037351541919633746,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025183330290019512,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034742499701678753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013512250036001205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05198345798999071,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23096408392302692,
+      "message": "",
+      "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20340579189360142,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002112958813086152,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.3022868749685585,
+      "message": "",
+      "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.241490124957636,
+      "message": "",
+      "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.3575389171019197,
+      "message": "",
+      "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.526668125065044,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.555688624968752,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.589549000142142,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04063891712576151,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18600304191932082,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.15614295797422528,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032029207795858383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007006251253187656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_atomic_byte_admission_preflights_the_complete_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029762485064566135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_admission_preserves_optimizer_parameter_and_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000675917137414217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00044049997813999653,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028323750011622906,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06816954212263227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040187500417232513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_capacity_contract.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017916690558195114,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

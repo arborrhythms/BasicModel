@@ -1,0 +1,30 @@
+{
+  "groups": [
+    {
+      "selector": "test/test_item7_predicate_storage.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-00/result.json"
+    },
+    {
+      "selector": "test/test_meronomy_ladder.py",
+      "reason": "suite_timeout",
+      "exit_code": 124,
+      "receipt": "group-01/result.json"
+    },
+    {
+      "selector": "test/test_type_run_spans.py",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-02/result.json"
+    },
+    {
+      "selector": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "reason": "passed",
+      "exit_code": 0,
+      "receipt": "group-03/result.json"
+    }
+  ],
+  "diagnostic_only": [],
+  "reason": "failed"
+}

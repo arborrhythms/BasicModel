@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-29-item7-review-round3/probe_graph_setup.py::test_registry_capacity_is_exhausted_before_a_sentence_is_read"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/graph-setup-completion/group-00/worker-000.recycle.json"
+}

@@ -1,0 +1,83 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_search_then_mint.py::test_gate_requires_the_knob",
+    "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+    "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+    "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+    "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+    "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+    "test/test_search_then_mint.py::test_folds_never_create_rows"
+  ],
+  "completed": [
+    "test/test_search_then_mint.py::test_gate_requires_the_knob",
+    "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+    "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+    "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+    "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+    "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+    "test/test_search_then_mint.py::test_folds_never_create_rows"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_search_then_mint.py::test_gate_requires_the_knob",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00012900005094707012,
+      "message": "test/test_search_then_mint.py:49: in test_gate_requires_the_knob\n    ws.interpret_word(3)\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_search_then_mint.py::test_unlicensed_miss_is_a_placeholder_never_a_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001068750862032175,
+      "message": "test/test_search_then_mint.py:60: in test_unlicensed_miss_is_a_placeholder_never_a_row\n    d = ws.interpret_word(7, licensed=False)\n        ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_search_then_mint.py::test_licensed_miss_mints_then_hits",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 8.804199751466513e-05,
+      "message": "test/test_search_then_mint.py:73: in test_licensed_miss_mints_then_hits\n    d1 = ws.interpret_word(7, licensed=True, object_id=2)\n         ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_search_then_mint.py::test_licensed_miss_without_object_stays_placeholder",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 8.858297951519489e-05,
+      "message": "test/test_search_then_mint.py:90: in test_licensed_miss_without_object_stays_placeholder\n    d = ws.interpret_word(9, licensed=True, object_id=None)\n        ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_search_then_mint.py::test_mint_gauge_orients_object_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00021404202561825514,
+      "message": "test/test_search_then_mint.py:103: in test_mint_gauge_orients_object_row\n    d = ws.interpret_word(5, licensed=True, object_id=0,\n        ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_search_then_mint.py::test_mint_shift_pushes_the_oriented_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00018641597125679255,
+      "message": "test/test_search_then_mint.py:138: in test_mint_shift_pushes_the_oriented_row\n    d = ws.shift_word(ss, 0, 9, rows, licensed=True, object_id=1,\n        ^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'shift_word'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_search_then_mint.py::test_folds_never_create_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 8.533394429832697e-05,
+      "message": "test/test_search_then_mint.py:157: in test_folds_never_create_rows\n    ws.interpret_word(1, licensed=True, object_id=0)\n    ^^^^^^^^^^^^^^^^^\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'interpret_word'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

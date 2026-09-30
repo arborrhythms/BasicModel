@@ -1,0 +1,137 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 33/33 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_type_run_spans.py::test_lut_type_assignments</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00019416597206145525</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_lut_high_bytes_are_letters</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00011441705282777548</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_words_split_on_space</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.000590750016272068</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_alnum_splits_by_type</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002377500059083104</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_punct_run_is_one_span</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002192090032622218</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_letters_punct_space_letters</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00020883302204310894</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003459160216152668</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_single_char</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00040383299347013235</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_punct_only_run</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003037910209968686</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_all_space_row_is_zero_padded</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0001704170135781169</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00031570903956890106</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00024637498427182436</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_byte_mode_returns_none</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00010833400301635265</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_none_input_returns_none</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>9.50830290094018e-05</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_word_mode_type_runs</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00019066594541072845</pre></td><td><pre>test/test_type_run_spans.py:158: in test_stage_word_mode_type_runs
+    assert _stage(&quot;word&quot;, &quot;abc123&quot;)[0].tolist() == [[0, 3], [3, 6]]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:144: in _stage
+    return WholeSpace.stage_analysis_spans(fake, u)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_accepts_three_dim_unity</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00022645900025963783</pre></td><td><pre>test/test_type_run_spans.py:166: in test_stage_accepts_three_dim_unity
+    out = WholeSpace.stage_analysis_spans(fake, u)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00023325008805841208</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_live_ws_has_type_subspace_with_four_tagged_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.007062291027978063</pre></td><td><pre>test/test_type_run_spans.py:217: in test_live_ws_has_type_subspace_with_four_tagged_rows
+    assert isinstance(sub, SubSpace)
+E   assert False
+E    +  where False = isinstance(None, SubSpace)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_type_subspace_is_idempotent_on_rebuild</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.008863291935995221</pre></td><td><pre>test/test_type_run_spans.py:236: in test_type_subspace_is_idempotent_on_rebuild
+    assert (a.type_subspace.what.property_kind
+            ^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;what&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_byte_mode_builds_no_type_subspace</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.006070125033147633</pre></td><td><pre>test/test_type_run_spans.py:249: in test_byte_mode_builds_no_type_subspace
+    assert _analysis_type_lut(ws) is _LUT_ANALYSIS_TYPE
+E   assert tensor([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 0, 3, ...1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) is tensor([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 0, 3, ...1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+E    +  where tensor([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 0, 3, ...1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\n        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) = _analysis_type_lut(WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...ing()\n    (whenEncoding): WhenStartDurationEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n))</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004564750008285046</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004561917041428387</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004783541080541909</pre></td><td><pre>test/test_type_run_spans.py:296: in test_derived_cut_byte_identical_across_a_spread_of_inputs
+    module = _cut_from_module(samples)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:274: in _cut_from_module
+    return WholeSpace.stage_analysis_spans(fake, u)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_tags_and_cut</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004833624931052327</pre></td><td><pre>test/test_type_run_spans.py:306: in test_checkpoint_roundtrip_preserves_tags_and_cut
+    extras = a.vocab_extras()
+             ^^^^^^^^^^^^^^
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;WholeSpace&#x27; object has no attribute &#x27;vocab_extras&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_type_subspace_is_not_a_parameter_and_survives_a_backward</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0049370829947292805</pre></td><td><pre>test/test_type_run_spans.py:327: in test_type_subspace_is_not_a_parameter_and_survives_a_backward
+    tc = ws.type_subspace.what
+         ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;what&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_digit_wholes_cut_each_digit</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0001050001010298729</pre></td><td><pre>test/test_type_run_spans.py:358: in test_digit_wholes_cut_each_digit
+    assert _digit_spans(&quot;12 plus 1&quot;) == [[0, 1], [1, 2], [3, 7], [8, 9]]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:352: in _digit_spans
+    from Spaces import _analysis_digit_mask
+E   ImportError: cannot import name &#x27;_analysis_digit_mask&#x27; from &#x27;Spaces&#x27; (/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/bin/Spaces.py)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_digit_wholes_knob</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0001232909271493554</pre></td><td><pre>test/test_type_run_spans.py:366: in test_stage_digit_wholes_knob
+    assert WholeSpace.stage_analysis_spans(fake, _bytes(&quot;14 plus 1&quot;))[0].tolist() == \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23145: in stage_analysis_spans
+    return stage_analysis_spans_legacy(self, IS_concepts, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Legacy.py:81: in stage_analysis_spans_legacy
+    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_digit_wholes_property_basis_signature</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00013062497600913048</pre></td><td><pre>test/test_type_run_spans.py:377: in test_digit_wholes_property_basis_signature
+    from Spaces import _analysis_digit_mask, _analysis_property_signature
+E   ImportError: cannot import name &#x27;_analysis_digit_mask&#x27; from &#x27;Spaces&#x27; (/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item7-sweep-fixtures-uj4h5dsc/bin/Spaces.py)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00023624999448657036</pre></td><td><pre>test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut
+    canonical = WholeSpace.stage_analysis_spans(
+bin/Spaces.py:23153: in stage_analysis_spans
+    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[hi, there]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00017625000327825546</pre></td><td><pre>test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut
+    canonical = WholeSpace.stage_analysis_spans(
+bin/Spaces.py:23153: in stage_analysis_spans
+    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[12 plus 1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00017179199494421482</pre></td><td><pre>test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut
+    canonical = WholeSpace.stage_analysis_spans(
+bin/Spaces.py:23153: in stage_analysis_spans
+    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[a...b]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0001449580304324627</pre></td><td><pre>test/test_meronomy_ladder.py:46: in test_word_and_grammatical_cuts_equal_the_meronomy_cut
+    canonical = WholeSpace.stage_analysis_spans(
+bin/Spaces.py:23153: in stage_analysis_spans
+    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00017512496560811996</pre></td><td><pre>test/test_meronomy_ladder.py:235: in test_tiling_ladder_nests_units_in_space_bounded_wholes
+    WholeSpace.stage_analysis_spans(fake, _bytes(&quot;12 plus 1, ok&quot;))
+bin/Spaces.py:23153: in stage_analysis_spans
+    spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:23217: in _stage_type_run_spans
+    prop_lut, discard_mask = _analysis_property_signature(self)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21971: in _analysis_property_signature
+    raise RuntimeError(&#x27;property analysis requires learned primitive definitions&#x27;)
+E   RuntimeError: property analysis requires learned primitive definitions</pre></td><td><pre></pre></td></tr></table></body></html>

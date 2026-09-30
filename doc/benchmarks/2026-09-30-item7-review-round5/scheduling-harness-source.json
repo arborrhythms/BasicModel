@@ -1,0 +1,28 @@
+{
+  "reason": "User rejected 3\u20134 hour suite duration. Only harness scheduling and final XOR summary source selection changed; tested source remains final-source.json.",
+  "prior_manifest": "final-harness-source.json",
+  "files": {
+    "audit_source.py": "6b75a072f18120452ad4d56620a5392a4cf43d7975011251ae6506d24e6e1775",
+    "run_final_mm_grammar.py": "17fd95ed6a5659d9898e895c2af27f6d18d0877cd815e5a3370af6455b0b2f24",
+    "matching_diagnostic.py": "17e5f5307ca1d444b3480fabf6184b002332d844a20f0676b188b3cd035c66aa",
+    "run_full_sweep.py": "ef2f54103b326b94ab742a51f9fd3db67f83eeefaf5650b53d739a815713bce3",
+    "record_ports.py": "18dd31b21a57aa95f06e00d4b695bcc3ed27f363def0902b1f1c37fd68112c1e",
+    "audit_final_source.py": "55d75a446f7d136059b9aad8bcedfa8052809cecfe9ca1dd706c35250162c9c0",
+    "run_xor_matched.py": "af2422b6b94dee6db20191ce51427128eb5f426454453d7c1f933d0a98df95bb",
+    "run_final_validation.py": "fe4073b02ec7e055a309c47a445a90d95dfc3820fe83dc19c1332c3c653be127",
+    "finish_three_slot_repair.py": "f491440e9176a27045fb7111d8c9ff51e7409e204901bed062cbbd8450603e00",
+    "test_three_slot_predicate_probe.py": "a433e0e228259690f595fed9ad9b5e2c4e75663eb9d1f60ef65d4dc3de8a2597",
+    "xor_observer_round5.py": "0ac70685359b954572a283dd377e49403d76e84ac6268ca0c6f748b4d7e8ead4",
+    "resource_schedule.py": "944f0a8f8b073785826dae9e748b86128139e2f80c02e17f17e87d5b7eaf1648",
+    "summarize_receipt.py": "e4abac32495bd201215da0ef65175127d67ca7e22410b98d12660dc46c15fd3d",
+    "measure_mm_grammar.py": "1c5fcdad2665693aedb3bd57a32578fc6f64ead0179555fbcddc8368aab92d77",
+    "run_checks_matched.py": "213ca710500d4434e4490ffea6dfdab8d2dd532249174c037b0dd626a96dc16f",
+    "summarize_final_receipt.py": "2969a1bd9ed71d9c813098ef767b3756482ae829163a8d2e665371e5d4e31b92",
+    "resume_scheduled_validation.py": "5d00133ad092ea7429bcfd6078376efd6d5d7ce6fedde2d24bf02c79dc0316e0",
+    "run_validation.py": "c52e3cbb0f234e138b3ede746d533a3325cbf85971aa8eec8dbe9cc8e017d2b1",
+    "run_final_sweep.py": "561bce572271b2bf45b34dfd61374c8c23ca2b325ea415d9bdcd221ca84116df",
+    "summarize_xor.py": "6668e4c0e38a1a4f8c9b165639ff8529a4a9ff0533a303ecbaec97a8993219c1",
+    "run_scheduled_checks.py": "b01519561dc81f57556406bd4896a15104cf777e138da49d1d29ca6f519904a9",
+    "test_resource_schedule.py": "48fe63af6cacf01bb20e4005e669548f28bdd9eae567d9922a8a7e36bdd58bde"
+  }
+}

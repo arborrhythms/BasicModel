@@ -1,0 +1,5 @@
+test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source
+test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+
+3 tests collected in 1.93s

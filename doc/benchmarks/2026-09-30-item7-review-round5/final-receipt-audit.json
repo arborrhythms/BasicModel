@@ -1,0 +1,34 @@
+{
+  "audited_at": "2026-09-30T21:30:47.469668+00:00",
+  "runtime_source_digest": "e8faf905cfe40c76e064a52bcf61e4063034a21f619d13b0a6e777e05569fdf1",
+  "source_files": 712,
+  "all_final_receipts_source_matched": true,
+  "supporting_inputs_match": true,
+  "scheduling_harness_matches": true,
+  "earlier_harness_changes": [
+    "run_final_sweep.py",
+    "summarize_final_receipt.py"
+  ],
+  "earlier_harness_bodies_preserved": true,
+  "head_xor_attempts": 49,
+  "final_xor_attempts": 49,
+  "exact_repetitions_per_tree": 15,
+  "mm_full_runs_each_tree": 10,
+  "item7_passed": 202,
+  "recorded_ports_match_current_bodies": true,
+  "scope_exclusions_checked_in": "final-source-audit.json",
+  "git": {
+    "basicmodel": {
+      "head": "1678ee1fb79c474ffaee5725fd035716de5f1913",
+      "index_empty": true
+    },
+    "WikiOracle": {
+      "head": "850798fc0f4b1be5d115f5322dcc83d198b0bd0a",
+      "index_empty": true
+    }
+  },
+  "parent_worktree_status_unchanged": true,
+  "nanochat_status_predated_this_round": true,
+  "reconstruction_campaign": "Historical round-4 receipt only; not rerun or relabelled",
+  "commits": false
+}

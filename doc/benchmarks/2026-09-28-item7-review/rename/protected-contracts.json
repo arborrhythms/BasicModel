@@ -1,0 +1,48 @@
+{
+  "data/XOR_grammar.xml": {
+    "exact_bytes": true,
+    "only_documented_vocabulary_changes": true,
+    "before_sha256": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d",
+    "after_sha256": "dd788c3f37a03a8c6ac71dfa5c3f7fc624e455cf685af354508d66d6681fdc4d"
+  },
+  "data/MM_grammar.xml": {
+    "exact_bytes": true,
+    "only_documented_vocabulary_changes": true,
+    "before_sha256": "a7a880cdc8b07fc2081e37d1ae2e37a2d8db99f73036d30c9345b02434e62386",
+    "after_sha256": "a7a880cdc8b07fc2081e37d1ae2e37a2d8db99f73036d30c9345b02434e62386"
+  },
+  "test/test_mm_xor.py": {
+    "exact_bytes": true,
+    "only_documented_vocabulary_changes": true,
+    "before_sha256": "f31b7717533ebe163c0f1d6c9460fb8095415295b8ffc88737908d094fab382a",
+    "after_sha256": "f31b7717533ebe163c0f1d6c9460fb8095415295b8ffc88737908d094fab382a",
+    "assertions_preserved": 15
+  },
+  "test/test_explicit_dimensions.py": {
+    "exact_bytes": true,
+    "only_documented_vocabulary_changes": true,
+    "before_sha256": "7dc6fe7d1d5fa1a47f62cefdb09ec57d3ca71224a642bdc6f23bedfcdfdd4805",
+    "after_sha256": "7dc6fe7d1d5fa1a47f62cefdb09ec57d3ca71224a642bdc6f23bedfcdfdd4805",
+    "assertions_preserved": 14
+  },
+  "test/test_thinking_kernel.py": {
+    "exact_bytes": true,
+    "only_documented_vocabulary_changes": true,
+    "before_sha256": "029071ba50b8b35b2e19a77749862bf276cfab8626eb2d7abe7e2b10452f010e",
+    "after_sha256": "029071ba50b8b35b2e19a77749862bf276cfab8626eb2d7abe7e2b10452f010e",
+    "assertions_preserved": 2
+  },
+  "test/test_stm_relative_sentence_end_state.py": {
+    "exact_bytes": true,
+    "only_documented_vocabulary_changes": true,
+    "before_sha256": "9a5bb0f3f623665dafde814f773945ea32d85ff8e109f444fbed383dfdc8d308",
+    "after_sha256": "9a5bb0f3f623665dafde814f773945ea32d85ff8e109f444fbed383dfdc8d308",
+    "assertions_preserved": 34
+  },
+  "pytest.ini": {
+    "exact_bytes": true,
+    "only_documented_vocabulary_changes": true,
+    "before_sha256": "fd2c736dc663af060e6a62112524794e709b01ca240da47480f1262344cf1dc1",
+    "after_sha256": "fd2c736dc663af060e6a62112524794e709b01ca240da47480f1262344cf1dc1"
+  }
+}

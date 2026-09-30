@@ -1,0 +1,8 @@
+doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_b.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_b.py::TestReasoningCDEModel::test_gates_on
+doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_b.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture
+doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_b.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration
+doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_b.py::TestReasoningCDEModel::test_truthset_provisions_source_rows
+doc/benchmarks/2026-09-30-item7-review-round4/probe_ai_b.py::test_normal_policy_metadata_diagnostic
+
+6 tests collected in 3.82s

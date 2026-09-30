@@ -1883,9 +1883,12 @@ class XMLConfig:
 
         if not os.path.exists(path):
             return {}
-        XMLConfig._validate_against_schema(path)
         tree = ET.parse(path)
         root = tree.getroot()
+        if root.find('.//WholeSpace/propertyBasis') is not None:
+            raise ValueError('WholeSpace propertyBasis is retired: every WholeSpace is a property basis '
+                             '(two-truths spec §11.4, September 28). Remove the element.')
+        XMLConfig._validate_against_schema(path)
         cfg = {}
         for section in root:
             cfg[section.tag] = _parse_element(section)

@@ -1,0 +1,155 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+  ],
+  "completed": [
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-00/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-00/worker-000.json"
+      ],
+      "pid": 4496,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 497419632,
+      "elapsed_seconds": 9.088552374974824,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-00/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "completed": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.7239946250338107,
+          "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.0805125419283286,
+          "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.7052693750010803,
+          "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.1471703329589218,
+          "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.7070702919736505,
+          "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.0950973749859259,
+          "message": "test/test_grounded_xor.py:208: in test_native_unseeded_xor\n    learn_grounded_xor(tmp_path, pool)\ntest/test_grounded_xor.py:130: in learn_grounded_xor\n    assert len(rows) == 4\nE   assert 0 == 4\nE    +  where 0 = len([])",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-00",
+  "elapsed_seconds": 12.813538249931298,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 497419632,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-00/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-00/collect.json"
+    ],
+    "pid": 4488,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 427771080,
+    "elapsed_seconds": 3.506782792042941,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-29-item7-review-round3/baseline-candidate/gate-00/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

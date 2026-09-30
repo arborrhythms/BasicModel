@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+    "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
+    "test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick",
+    "test/test_word_buffer_flush.py::test_buffer_lazy_resize",
+    "test/test_word_buffer_flush.py::test_legacy_scalar_path_unaffected_by_buffer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-28-item7-review-round2/full-sweep/continuation-03/worker-121.recycle.json"
+}

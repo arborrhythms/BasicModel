@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_selected_property_rows_are_gathered_before_byte_read ___________
+/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/basicmodel-item7-round4-ag-zba0g_m6/doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py:28: in test_selected_property_rows_are_gathered_before_byte_read
+    assert observed_widths == [len(selected)], observed_widths
+E   AssertionError: [513]
+E   assert [513] == [3]
+E     
+E     At index 0 diff: 513 != 3
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item7-review-round4/probe_selected_property_rows.py::test_selected_property_rows_are_gathered_before_byte_read
+1 failed in 4.21s

@@ -1,0 +1,36 @@
+{
+  "gates": {
+    "test/test_grounded_xor.py": {
+      "unchanged": true,
+      "sha256": "e69ab36fe7a7a7a43fa21164a936262638a11121d41998664165b55dacff045c"
+    },
+    "test/test_concept_output.py": {
+      "unchanged": true,
+      "sha256": "9f5cf9e6b2f5e33bd072ca07ad0390ee00c6f6155405acd0b9c76ee6fe94f677"
+    },
+    "test/test_explicit_dimensions.py": {
+      "unchanged": true,
+      "sha256": "7dc6fe7d1d5fa1a47f62cefdb09ec57d3ca71224a642bdc6f23bedfcdfdd4805"
+    },
+    "test/test_mm_xor.py": {
+      "unchanged": true,
+      "sha256": "ce7ca19088d696d085869280320e05eed5a1cb6aa2e8954e77b6d70dc0fc31fc"
+    },
+    "test/test_thinking_kernel.py": {
+      "unchanged": true,
+      "sha256": "72fdc6378169eccc584c85537826e0c13dbf19d3c15ed77d7e1df0f7d928a4ca"
+    },
+    "test/test_packed_reconstruction_parity.py": {
+      "unchanged": true,
+      "sha256": "5f41dbcae6cb362b3444740a73f06b7d708323de8c73c2ac9c21f8624a012ce1"
+    }
+  },
+  "deferred_methods": {
+    "NonLayer.forward": {
+      "unchanged_since_HEAD": true
+    },
+    "ConjunctionLayer.forward": {
+      "unchanged_since_HEAD": true
+    }
+  }
+}

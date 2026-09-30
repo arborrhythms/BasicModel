@@ -77,7 +77,7 @@ def test_first_sight_admits_concepts_before_reconstruction(tmp_path):
         owner = model._concept_owner()
         before = owner._concept_allocator.next_id
         active_before = model._active_inventory_rows
-        assert not owner._concept_allocator.word_obj_meta
+        assert not owner.definitions.word_ids
         _stage(model)
         isp = model.inputSpace
         active = isp._word_active_mask

@@ -1,0 +1,43 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+  ],
+  "completed": [
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.055454084067605436,
+      "message": "test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol\n    assert all(owner.word_concepts(word) for word in words), {\nE   AssertionError: {'go': (), 'hi': (), 'no': (), 'we': ()}\nE   assert False\nE    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x120888ba0>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1435254589887336,
+      "message": "test/test_item7_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol\n    assert all(owner.word_concepts(word) for word in words), {\nE   AssertionError: {'go': (), 'hi': (), 'no': (), 'we': ()}\nE   assert False\nE    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x120a0fae0>)",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.14250499999616295,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

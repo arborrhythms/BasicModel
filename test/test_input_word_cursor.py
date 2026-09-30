@@ -157,7 +157,7 @@ def test_none_buffer_returns_none_even_when_enabled():
     assert self._per_word_cursor == 0
 
 
-def test_yields_words_one_per_call_in_T_order_then_null_seals():
+def test_yields_words_one_per_call_in_T_order_then_null_ends():
     """Enabled: one ground-truth [B,1,D] slice per call, in T-order,
     advancing the cursor, then None at the NULL sentinel (end of valid
     lexed content -- here T-positions >= valid_len are all-zero)."""
@@ -175,15 +175,15 @@ def test_yields_words_one_per_call_in_T_order_then_null_seals():
         torch.testing.assert_close(w, buf[:, p:p + 1, :])
         assert self._per_word_cursor == p + 1, "cursor advances by 1"
 
-    # Cursor reached the NULL/end sentinel -> seals with None, idempotent.
+    # Cursor reached the NULL/end sentinel -> endings with None, idempotent.
     for _ in range(3):
         assert next_word(self) is None
-    assert self._per_word_cursor == valid_len, "no advance past the seal"
+    assert self._per_word_cursor == valid_len, "no advance past the closing"
 
 
-def test_full_buffer_walks_all_T_then_seals():
+def test_full_buffer_walks_all_T_then_ends():
     """No padding: valid_len == T. Cursor must walk all T positions
-    then seal (end of valid content == end of buffer)."""
+    then closing (end of valid content == end of buffer)."""
     next_word, self = _bare_inputspace()
     self._per_word_enabled = True
     B, T, D = 2, 4, 3
@@ -199,9 +199,9 @@ def test_full_buffer_walks_all_T_then_seals():
     torch.testing.assert_close(torch.cat(seen, dim=1), buf)
 
 
-def test_empty_valid_content_seals_immediately():
+def test_empty_valid_content_ends_immediately():
     """All-zero buffer = no valid lexed content => first call is the
-    NULL seal (None), cursor never advances."""
+    NULL closing (None), cursor never advances."""
     next_word, self = _bare_inputspace()
     self._per_word_enabled = True
     _seed(self, B=2, T=5, D=4, valid_len=0)

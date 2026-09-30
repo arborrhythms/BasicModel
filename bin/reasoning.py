@@ -87,8 +87,7 @@ def _as_vec(x) -> torch.Tensor:
     return torch.nan_to_num(x.reshape(-1).float())
 
 
-# The parthood relation kind. The reasoner climbs REL_PARTOF rows (the tag is
-# ignored for the untagged RelativeTruthStore, which yields all rows). The row
+# The parthood relation kind. The reasoner climbs REL_PARTOF rows. The row
 # iteration + the climb primitive (wholes / parts / _chain_to_target) are the
 # CANONICAL ones on ConceptualSpace -- shared with ConceptualSpace.reason, not
 # re-implemented here.
@@ -115,8 +114,7 @@ class TruthGroundedReasoner:
 
     def reasoning_store(self):
         """The reasoning corpus: an explicit ``store=`` wins; else the model's
-        ``_reasoning_store()`` (unified TernaryTruthStore under
-        <ltmConsolidation>, else RelativeTruthStore); else None."""
+        shared ``TernaryTruthStore``; else None."""
         if self._store is not None:
             return self._store
         cs = getattr(self.model, "conceptualSpace", None)

@@ -1,30 +1,4 @@
-"""LTM consolidation -- stages 2-6: the unified TernaryTruthStore wired in
-(doc/specs/mereological-order-raising.md "Truth / Ideas processing", "Two
-consolidation questions"; Alec 2026-06-18).
-
-The discourse LTM (InterSentenceLayer end-state chain) and the
-RelativeTruthStore are COMBINED into ONE ``Layers.TernaryTruthStore`` on
-SymbolSubSpace (``ltm_store``) behind the dark gate ``<ltmConsolidation>``
-(default OFF -> the legacy two-store path, byte-identical):
-
-  * CONSTRUCTION: gate ON -> ltm_store present, relative_store absent; gate OFF
-    -> the reverse (the legacy RTS, no ltm_store).
-  * WRITES (observe site): each end-state appends a ternary row -- depth==1 an
-    absolute idea, depth>=3 a relation (NP1=idea1, VP=predicate, NP2=idea2)
-    with the per-row scalar trust.
-  * ROUTING: the ineffable branch of ``_route_learned_relation`` returns the
-    ``('idea', -1)`` marker WITHOUT writing a separate store (the row already
-    lives in ltm_store from observe).
-  * REASONING: ``reason`` / ``verify_relation`` read the ltm_store on the
-    CONTENT slice (unscaled vectors + a separate trust column -- no un-baking).
-  * SURVIVE-RESET + PERSISTENCE: ltm_store is an attribute (not in self.layers)
-    with only a lowercase ``reset()`` -> survives every Reset cascade and rides
-    the state_dict.
-  * XML PROVISIONING: a ``<truthSet>`` is appended at load (``provision_ltm``).
-
-Flag-off must stay byte-identical (the existing suite covers that); these tests
-cover the gate-ON path.
-"""
+"""Shared clause rows, external provenance, luminosity and provisioning."""
 
 from __future__ import annotations
 
@@ -83,6 +57,13 @@ def _make_model(config):
             return (x.new_full((*x.shape[:2], 1), 1e6),
                     x.new_full(candidates.shape[:-1], -1e6))
         chooser.score_binary, chooser.score_unary = binary, unary
+        # Provisioning mechanism: independently identified input. This fixture
+        # forces reading evidence as well as grammar, never authority.
+        from dataclasses import replace
+        original_write = m.symbolSpace.ltm_store.write_clause
+        def identified(clause, **kwargs):
+            return original_write(replace(clause, evidence=(.8, 0.)), **kwargs)
+        m.symbolSpace.ltm_store.write_clause = identified
     return m
 
 
@@ -97,27 +78,14 @@ def _make_model_provisioned(config):
 # -- stage 2: gate + construction ------------------------------------------
 
 class TestConstruction(unittest.TestCase):
-    def test_gate_off_builds_relative_store_only(self):
-        m = _make_model(_OFF_CONFIG)
-        ss = m.symbolSpace
-        self.assertFalse(m.ltm_consolidation)
-        self.assertIsNotNone(ss.relative_store,
-                             "gate OFF -> the legacy RelativeTruthStore")
-        self.assertIsNone(ss.ltm_store,
-                          "gate OFF -> no unified ltm_store")
-        self.assertFalse(getattr(m.conceptualSpace, "_ltm_consolidation",
-                                 False))
-
-    def test_gate_on_builds_ltm_store_only(self):
+    def test_shared_store_is_unconditional(self):
         from Layers import TernaryTruthStore
-        m = _make_model(_ON_CONFIG)
-        ss = m.symbolSpace
-        self.assertTrue(m.ltm_consolidation)
-        self.assertIsInstance(ss.ltm_store, TernaryTruthStore)
-        self.assertIsNone(ss.relative_store,
-                          "gate ON -> RelativeTruthStore is retired")
-        self.assertTrue(getattr(m.conceptualSpace, "_ltm_consolidation",
-                                False))
+        for config in (_OFF_CONFIG, _ON_CONFIG):
+            m = _make_model(config)
+            self.assertTrue(m.ltm_consolidation)
+            self.assertIsInstance(m.symbolSpace.ltm_store, TernaryTruthStore)
+            self.assertFalse(hasattr(m.symbolSpace, 'relative_store'))
+            self.assertTrue(m.conceptualSpace._ltm_consolidation)
 
     def test_ltm_store_widths(self):
         m = _make_model(_ON_CONFIG)
@@ -158,37 +126,40 @@ class TestProvisioning(unittest.TestCase):
         from Layers import TernaryTruthStore as T
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        # The fixture provisions 3 truths: one absolute idea ("cat"), one
-        # implies ("fire causes smoke"), one partOf ("paw partOf cat"). Each
-        # lands exactly one real parsed end-state row, in order.
-        self.assertEqual(len(store), 3)
-        # rel_type is driven by the entry's KIND tag (the absolute idea has no
-        # kind -> REL_NONE; the kinds override whatever the surface parse did).
-        self.assertEqual(store.ideas().tolist(), [0])
-        self.assertEqual(sorted(store.relations().tolist()), [1, 2])
-        self.assertEqual(store.relations(T.REL_IMPLIES).tolist(), [1])
-        self.assertEqual(store.relations(T.REL_PARTOF).tolist(), [2])
+        # This numerical fixture's grammar composes absolute scenes. XML
+        # labels cannot turn its selected scenes into relation assertions.
+        asserted = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
+        definitions = store.relations(T.REL_DEF).tolist()
+        self.assertEqual(len(asserted), 3)
+        self.assertTrue(definitions)
+        self.assertEqual(len(store), len(asserted) + len(definitions))
+        self.assertEqual(store.ideas().tolist(), asserted)
+        self.assertEqual(store.relations().tolist(), definitions)
 
     def test_provisioned_trust_and_earliest_timestamps(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
+        rows = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
+        self.assertEqual(len(rows), 3)
         # Each row's trust is OVERWRITTEN with the XML trust.
-        self.assertAlmostEqual(store.row(0)["trust"], 0.9, places=5)
-        self.assertAlmostEqual(store.row(1)["trust"], 0.8, places=5)
-        self.assertAlmostEqual(store.row(2)["trust"], 0.7, places=5)
-        # Provisioned rows take the earliest monotonic ticks; the clock then
-        # continues past them.
-        self.assertEqual([store.row(i)["timestamp"] for i in range(3)],
-                         [0.0, 1.0, 2.0])
+        self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
+        self.assertAlmostEqual(store.row(rows[1])["trust"], 0.8, places=5)
+        self.assertAlmostEqual(store.row(rows[2])["trust"], 0.7, places=5)
+        # Definitions and assertions share one clock. Provisioning preserves
+        # assertion order even though DEF rows occupy intervening ticks.
+        stamps = [store.row(i)["timestamp"] for i in rows]
+        self.assertEqual(stamps, sorted(set(stamps)))
+        next_tick = float(store._next_ts)
+        self.assertGreater(next_tick, max(stamps))
         nxt = store.append_idea(torch.ones(store.nDim))
-        self.assertEqual(store.row(nxt)["timestamp"], 3.0)
+        self.assertEqual(store.row(nxt)["timestamp"], next_tick)
 
     def test_provisioned_rows_are_real_encodings(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
         # The REAL parse lands a non-zero NP1 for every row (no all-zero row,
         # and no mean-pool placeholder -- it is the actual parsed end-state).
-        for i in range(len(store)):
+        for i in store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist():
             self.assertGreater(float(store.row(i)["np1"].norm()), 0.0)
 
     def test_provision_idempotent_count_via_runepoch_trigger(self):
@@ -205,8 +176,9 @@ class TestProvisioning(unittest.TestCase):
         # provisioning fired (3 truths) + at least the batch's own append.
         self.assertTrue(m._ltm_provisioned)
         self.assertGreaterEqual(len(store), 3)
-        # The first three rows are the provisioned truths (earliest ticks).
-        self.assertAlmostEqual(store.row(0)["trust"], 0.9, places=5)
+        rows = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
+        self.assertEqual(len(rows), 3)
+        self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
 
     def test_provision_noop_when_gate_off(self):
         m = _make_model(_OFF_CONFIG)
@@ -233,7 +205,7 @@ class TestObserveWrites(unittest.TestCase):
             trust = float(tet) if tet is not None else 0.0
             if d >= 3:
                 store.append_relation(payload[d - 2], payload[d - 1],
-                                      payload[0], rel_type=T.REL_OTHER,
+                                      payload[0], rel_type=T.REL_OPERATOR,
                                       trust=trust)
             else:
                 store.append_idea(payload[0], trust=trust)
@@ -266,7 +238,7 @@ class TestObserveWrites(unittest.TestCase):
         store = self._drive_observe(m, [3], [p], [0.9])
         self.assertEqual(len(store), 1)
         r = store.row(0)
-        self.assertEqual(r["rel_type"], T.REL_OTHER)
+        self.assertEqual(r["rel_type"], T.REL_OPERATOR)
         self.assertAlmostEqual(r["trust"], 0.9, places=5)
         # NP1=idea1, VP=predicate, NP2=idea2.
         self.assertAlmostEqual(float(r["np1"][1]), 1.0, places=5)
@@ -285,33 +257,6 @@ class TestObserveWrites(unittest.TestCase):
 
 # -- stage 4: routing (ineffable -> marker, no separate store write) -------
 
-class TestRouting(unittest.TestCase):
-    def _accept_but_ineffable(self, cs):
-        cs._learn_score_children_in_codebook = lambda i1, i2: 0.0
-        cs._learn_score_is_truth_obvious = lambda rel: 1.0
-        cs._learn_score_resolves_contradiction = lambda rel: 1.0
-        cs.truth_criterion = 0.0
-
-    def test_ineffable_returns_marker_no_store_write(self):
-        m = _make_model(_ON_CONFIG)
-        cs = m.conceptualSpace
-        self.assertTrue(getattr(cs, "_ltm_consolidation", False))
-        self._accept_but_ineffable(cs)
-        cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
-        D = int(cs.nDim)
-        predicate = torch.zeros(D); predicate[0] = 1.0
-        idea1 = torch.zeros(D); idea1[1] = 1.0
-        idea2 = torch.zeros(D); idea2[2] = 1.0
-        store = m.symbolSpace.ltm_store
-        n_before = len(store)
-        out = cs._maybe_learn_relation(predicate, idea1, idea2)
-        # ('idea', -1): the explicit-knowing home is the unified ltm_store; the
-        # ineffable branch does NOT write a distinct row (the row was already
-        # appended at the observe site).
-        self.assertIsInstance(out, tuple)
-        self.assertEqual(out, ("idea", -1))
-        self.assertEqual(len(store), n_before,
-                         "ineffable branch must NOT write a separate store")
 
 
 # -- stage 4/5: reasoning + verification over the ltm_store ----------------
@@ -328,7 +273,7 @@ class TestReasonOverLtm(unittest.TestCase):
         A = torch.zeros(D); A[0] = 1.0
         P = torch.zeros(D); P[2] = 1.0
         B = torch.zeros(D); B[1] = 1.0
-        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8)
+        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8, evidence=(.8, 0.))
         # No explicit store= -> the consolidation path picks the ltm_store.
         q = torch.zeros(cw); q[0] = 1.0
         res = cs.reason(q, 0.5, parthood_threshold=0.5)
@@ -354,7 +299,7 @@ class TestReasonOverLtm(unittest.TestCase):
         res = cs.reason(q, 1.0, parthood_threshold=0.5)
         self.assertEqual(len(res["derived"]), 0)
 
-    def test_verify_relation_writes_scalar_no_rebake(self):
+    def test_verify_relation_joins_evidence_without_changing_provenance_or_vectors(self):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
@@ -365,14 +310,15 @@ class TestReasonOverLtm(unittest.TestCase):
         A = torch.zeros(D); A[0] = 1.0
         P = torch.zeros(D); P[2] = 1.0
         B = torch.zeros(D); B[1] = 1.0
-        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8)
+        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8, evidence=(.8, 0.))
         np1_before = store.row(idx)["np1"].clone()
         ante = torch.zeros(cw); ante[0] = 1.0
         cons = torch.zeros(cw); cons[1] = 1.0
         new = cs.verify_relation(idx, [(ante, cons)], support_weight=0.5)
-        # full support -> nudged toward +1: 0.5*0.8 + 0.5*1.0 = 0.9.
-        self.assertAlmostEqual(new, 0.9, places=5)
-        self.assertAlmostEqual(store.row(idx)["trust"], 0.9, places=5)
+        # A weaker supporting witness cannot erase the existing positive pole.
+        self.assertAlmostEqual(new, 0.8, places=5)
+        self.assertAlmostEqual(store.row(idx)["trust"], 0.8, places=5)
+        self.assertAlmostEqual(store.row(idx)["evidence"][0], 0.8, places=5)
         # The stored vector is UNCHANGED (no magnitude re-bake -- unscaled).
         self.assertTrue(torch.allclose(store.row(idx)["np1"], np1_before,
                                        atol=1e-6))
@@ -589,9 +535,9 @@ class TestTruthLayerLtmView(unittest.TestCase):
         tl = m.symbolSpace.truth_layer
         self.assertIs(tl.ltm_backed, m.symbolSpace.ltm_store)
 
-    def test_truth_layer_not_attached_when_gate_off(self):
+    def test_truth_layer_uses_the_shared_store_with_old_gate_off(self):
         m = _make_model(_OFF_CONFIG)
-        self.assertIsNone(m.symbolSpace.truth_layer.ltm_backed)
+        self.assertIs(m.symbolSpace.truth_layer.ltm_backed, m.symbolSpace.ltm_store)
 
     def test_attach_does_not_duplicate_store_in_state_dict(self):
         m = _make_model(_ON_CONFIG)
@@ -613,9 +559,9 @@ class TestTruthLayerLtmView(unittest.TestCase):
         a = torch.zeros(D); a[0] = 1.0
         b = torch.zeros(D); b[1] = 1.0
         store.append_idea(a, trust=0.5)                     # conversation
-        i_prov = store.append_idea(a, trust=0.9)
+        i_prov = store.append_idea(a, trust=0.9, evidence=(.9, 0.))
         store.set_origin(i_prov, T.ORIGIN_PROVISIONED, text="prov")
-        i_user = store.append_idea(b, trust=-0.5)
+        i_user = store.append_idea(b, trust=-0.5, evidence=(0., .5))
         store.set_origin(i_user, T.ORIGIN_USER, text="user")
         n = tl.sync_from_ltm()
         self.assertEqual(n, 2)
@@ -632,7 +578,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
         self.assertAlmostEqual(tl._trusts[1], -0.5, places=5)
         self.assertFalse(tl.is_empty())
 
-    def test_sync_relation_row_flattens_live_slots(self):
+    def test_sync_excludes_relation_rows(self):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
         store = m.symbolSpace.ltm_store
@@ -647,9 +593,8 @@ class TestTruthLayerLtmView(unittest.TestCase):
                                   trust=0.6)
         store.set_origin(i, T.ORIGIN_USER, text="rel")
         tl.sync_from_ltm()
-        exp = torch.zeros(tl.nDim)
-        exp[:cw] = (np1[:cw] + vp[:cw] + np2[:cw]) / 3.0 * 0.6
-        self.assertTrue(torch.allclose(tl.truths[0], exp, atol=1e-6))
+        self.assertEqual(int(tl.count), 0)
+        self.assertFalse(bool(tl.truths.any()))
 
     def test_sync_empty_selection_empties_view(self):
         m = _make_model(_ON_CONFIG)
@@ -675,7 +620,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         m = _make_model(_SERIAL_CONFIG)
         return m, m.symbolSpace.ltm_store, m.symbolSpace.truth_layer
 
-    def test_unary_preference_still_seals_and_records_user_truth(self):
+    def test_unary_preference_still_ends_and_records_user_truth(self):
         from Layers import TernaryTruthStore as T
         m, store, _ = self._fresh()
         m.provision_ltm()
@@ -704,11 +649,12 @@ class TestRuntimeUserIngestion(unittest.TestCase):
                             {"content": "loving there", "trust": -0.5}])
         # lazy provisioning fired first (3 XML truths, earliest ticks) ...
         self.assertTrue(m._ltm_provisioned)
-        self.assertEqual(
-            store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist(), [0, 1, 2])
+        provisioned = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
+        self.assertEqual(len(provisioned), 3)
         # ... then one real end-state row per user truth, tagged + trusted.
         user_rows = store.rows_of_origin(T.ORIGIN_USER).tolist()
         self.assertEqual(len(user_rows), 2)
+        self.assertLess(max(provisioned), min(user_rows))
         r0 = store.row(user_rows[0])
         r1 = store.row(user_rows[1])
         self.assertAlmostEqual(r0["trust"], 0.9, places=5)
@@ -726,7 +672,8 @@ class TestRuntimeUserIngestion(unittest.TestCase):
                             {"content": "loving there", "trust": -0.5}])
         # The view covers provisioned + user rows; sources carry the texts
         # clarifications reference.
-        self.assertEqual(int(tl.count.item()), 5)
+        self.assertEqual(int(tl.count.item()), sum(
+            int(store.rel_type[i]) == store.REL_NONE for i in range(len(store))))
         self.assertIn("hello world", tl._sources)
         self.assertIn("loving there", tl._sources)
         self.assertIn(0.9, [round(t, 5) for t in tl._trusts if t is not None])
@@ -758,7 +705,8 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertEqual(
             len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov,
             "provisioned rows persist across user resubmits")
-        self.assertEqual(int(tl.count.item()), n_prov + 1)
+        self.assertEqual(int(tl.count.item()), sum(
+            int(store.rel_type[i]) == store.REL_NONE for i in range(len(store))))
         self.assertIn("hello there", tl._sources)
         self.assertNotIn("hello world", tl._sources)
 
@@ -805,7 +753,8 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertEqual(len(store), len(conv) + len(user) + len(prov))
         # The view keeps reading only the user TruthSet surface.
         tl.sync_from_ltm()
-        self.assertEqual(int(tl.count.item()), len(user) + len(prov))
+        self.assertEqual(int(tl.count.item()), sum(
+            int(store.rel_type[i]) == store.REL_NONE for i in user + prov))
 
 
 # -- load-time LTM revive, gated by <stateless> ----------------------------
@@ -824,9 +773,9 @@ class TestStatelessRevive(unittest.TestCase):
         store.reset()
         D = store.nDim
         v = torch.zeros(D); v[0] = 1.0
-        i0 = store.append_idea(v, trust=0.9)
+        i0 = store.append_idea(v, trust=0.9, evidence=(.9, 0.))
         store.set_origin(i0, T.ORIGIN_PROVISIONED, text="cat")
-        i1 = store.append_idea(v, trust=0.8)
+        i1 = store.append_idea(v, trust=0.8, evidence=(.8, 0.))
         store.set_origin(i1, T.ORIGIN_USER, text="hello world")
         store.append_idea(v, trust=0.3)                    # ORIGIN_CONVERSATION
         return store
@@ -892,7 +841,7 @@ class TestStatelessRevive(unittest.TestCase):
         store.reset()
         D = store.nDim
         v = torch.zeros(D); v[0] = 1.0
-        i0 = store.append_idea(v, trust=0.7)
+        i0 = store.append_idea(v, trust=0.7, evidence=(.7, 0.))
         store.set_origin(i0, T.ORIGIN_PROVISIONED, text="p")
         store.append_idea(v, trust=0.2)                    # conversation
         sd = m.state_dict()
