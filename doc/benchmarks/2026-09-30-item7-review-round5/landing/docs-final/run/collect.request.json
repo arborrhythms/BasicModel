@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_doc_links.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

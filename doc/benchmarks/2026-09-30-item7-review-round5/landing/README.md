@@ -18,7 +18,7 @@ retrieval, ownership and oracle-isolation assertion is unchanged.
 | The six failing cases | [6 passed](cases/run/result.json) |
 | Their six complete files | [59 passed](files/run/result.json) |
 | Every item-7 case | [202 passed](item7/run/result.json) |
-| Documentation links, including todo.md | [Final prose check](docs/run/result.json) |
+| Documentation links, including todo.md | [169 passed, final prose](docs-final/run/result.json) |
 
 No case was skipped or stopped in the three code selections. Each selection
 completed every collected node once. The bounded runner preserves its 8 GiB
@@ -50,3 +50,9 @@ Item 6.9 is next, in a new session, from its
 The reviewed implementation is accepted under §25; the remaining XOR_grammar
 and intermittent exact-roundtrip work stays in 6.9. NonLayer and
 ConjunctionLayer were not changed in this landing. Nanochat is untouched.
+
+Implementation commit `9810fc77a1e0557f420deaf6bd1b3c45dba91c20` contains all 712 validated source
+files and four supporting fixtures, with every committed blob verified
+against the landing manifest ([verification](committed-source-verification.json)).
+The following documentation record supplies the committed identity; item 6.9
+starts from the published descendant of this implementation.

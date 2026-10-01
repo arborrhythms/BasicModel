@@ -2597,3 +2597,7 @@ MM_grammar runs complete, median ending MSE **.1066178977** against HEAD's
 round-4 evidence, with no re-baseline, and the prior depth-three campaign
 remains red. Item 6.9 takes the XOR baseline and equal-trial comparison next;
 none of its runtime changes is included in this landing.
+
+Implementation `9810fc7` contains all 712 validated source files and
+four supporting fixtures; every committed blob matches the landing manifest.
+The final documentation check passes all 169 links, including todo.md.

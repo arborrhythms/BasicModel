@@ -1,0 +1,19 @@
+{
+  "status": "accepted_for_publication",
+  "authorization": "Alec 2026-09-30; specification sections 24 and 25",
+  "implementation_commit": "9810fc77a1e0557f420deaf6bd1b3c45dba91c20",
+  "verified_source": "committed-source-verification.json",
+  "cases_passed": 6,
+  "six_files_passed": 59,
+  "item7_passed": 202,
+  "documentation_links_passed": 169,
+  "final_documentation_receipt": "docs-final/run/result.json",
+  "final_documentation_hashes_match": true,
+  "original_sweep_preserved": "../full-sweep/summary.json",
+  "no_new_full_sweep": true,
+  "xor_grammar": "both gates remain red",
+  "exact_roundtrips": "12/15",
+  "mm_grammar": "10/10 complete; median ending MSE 0.10661789774894714",
+  "depth_three": "prior campaign remains red",
+  "next_item": "6.9, plan section 8, in a new session"
+}
